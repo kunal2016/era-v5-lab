@@ -1,0 +1,24 @@
+doc_id,read,verdict,diseases,evidence,hex,note
+6e3f1042350208e8,full,clean,,,,"2-line BSD copyright notice in docstring, not E4"
+8bcfa4035deb24d4,full,clean,,,,"revert commit; \xb0 is an ASCII escape, not a hidden character"
+9d30dd5022ad5778,full,clean,,,,"<abbr> HTML is a code string, not B2"
+4fbd1ab363ab8a7c,full,clean,,,,
+f1655eb8394db886,full,fix,E4,"19-line AGPL-3.0 licence header at offset 182 (old contents) and 1707 (new contents)",,"same long licence block repeated in old and new; boilerplate"
+c797be44be0c47d6,full,clean,,,,
+1f6e19669909b827,full,clean,,,,"© and é are a real company name (Numérigraphe); 2-line AGPL notice, not E4; 8.0.2.0.0 is a version, not an IP"
+b8cc60e16bfb08b8,full,clean,,,,"2-line AGPL notice, not E4"
+e0c1e30626b9b1ff,full,fix,F1,"email at offset 518, 1092",,in author_email
+6454d40260da86f0,full,fix,F1,"email at offset 480, 1019",,in author_email
+50869346672057a8,full,clean,,,,
+49b151d5092e2af4,full,fix,F1,"email at offset 742, 1961",,in author_email
+1a04398a8eb0d640,full,fix,F1,"email at offset 262, 832",,in author_email
+731f2c77835a7cde,full,clean,,,,
+ad8d26fb7fc543f0,full,fix,F1,"email at offset 426, 920",,in author_email
+657218c9c3ab3831,full,fix,F1,"email at offset 622, 1764",,in author_email
+c1e24dd0c7ff94e0,full,clean,,,,
+19c86ce5aabab9b7,full,fix,F1,"email at offset 167, 477, 1280",,in author_email
+2310f4b6668f3556,full,clean,,,,
+a2a76259799729fa,full,fix,F1,"email at offset 668, 1580",,in author_email
+59db3993ab02a2c9,full,fix,F1,"email at offset 321, 1117",,in author_email
+e7c1647714ab6ee6,full,fix,F1,"email at offset 423, 1444",,in author_email
+d8136c75de468ac6,full,fix,F1,"email at offset 519, 1735",,in maintainer_email
