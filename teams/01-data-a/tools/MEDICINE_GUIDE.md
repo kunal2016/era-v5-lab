@@ -1,9 +1,9 @@
 # Medicine sheet guide (proposal for Data A)
 
 One structure for every pack: code, English, maths, science and Indic. It keeps the five
-parts of `diagnosis/templates/medicine_TEMPLATE.md` and adds three things so that sheets can
-be compared and tested by one script: a `Scope:` line, a runnable `python medicine` block, and
-the reach next to the harm.
+parts of `diagnosis/templates/medicine_TEMPLATE.md`, follows the format the Data A tools read
+(`medicine_extract.py`, `harm_test.py`, `rule_report.py`: see `tools/README.md`), and adds a
+`Scope:` line and the reach next to the harm, so sheets can be compared.
 
 ## Sheet layout
 
@@ -24,19 +24,19 @@ False triggers: <patterns that look like a disease but are not, e.g. Java @Gener
 
 Scope: <domains this rule may run on: all | code | hi, mr | ...>
 
-1. **Disease:** code, count, three examples: `doc_id`: evidence
+1. **Disease:** <CODE>, count, three examples: `doc_id`: evidence
    (type + offset for F1 and E3; hex cell for A and G codes)
-2. **Medicine:** the rule in words, then one self-contained block:
+2. **Medicine:** the rule in words, then one self-contained Python block:
 
-   ```python medicine
+   ```python
    import re
    SETTING = "..."                # settings the team may change, at the top
-   def medicine(text):
+   def cure_<code>(text):         # e.g. cure_f1; returns the new text
        ...
-       return new_text, "fix"     # "keep" | "fix" | "drop"
+       return new_text            # to drop the document: return ("drop", "")
    ```
 
-3. **Action:** fix or drop, and why.
+3. **Action:** fix (or drop), and why.
 4. **Harm test:** gold set used (own clean rows N, or team gold file), changed, dropped, %,
    PASS or FAIL (limit 1%), and reach: labelled cases fixed, x of y.
 5. **Side effects:** where the rule is wrong, and what it deliberately leaves alone.
@@ -64,10 +64,13 @@ Scope: <domains this rule may run on: all | code | hi, mr | ...>
 
 ## Check before you submit
 
+Each section needs a `**Disease:** <CODE>` line and an `**Action:** fix` (or `drop`) line, and
+the function must be named `cure_<code>`. Then, with the Data A tools:
+
 ```
-python teams/01-data-a/tools/extract_medicines.py diagnosis/submissions/<pack>/<handle>/medicine.md
-python teams/01-data-a/tools/harm_test.py <pack>.parquet diagnosis/submissions/<pack>/<handle>/labels.csv \
-    --md diagnosis/submissions/<pack>/<handle>/medicine.md
+python -I teams/01-data-a/tools/medicine_extract.py diagnosis/submissions/<pack>/<handle>/medicine.md --out /tmp/rules.py
+python -I teams/01-data-a/tools/harm_test.py --pack <pack>.parquet --gold teams/01-data-a/gold/<pack>_gold.csv \
+    --rules /tmp/rules.py --rule <CODE>
 ```
 
-Every medicine should load (`OK`) and pass. Put the numbers the harm test prints into part 4.
+Every medicine should be found by the extractor and pass. Put the numbers into part 4.
