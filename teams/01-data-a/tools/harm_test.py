@@ -22,6 +22,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import extract_medicines  # noqa: E402
 
 
+def read_gold(path):
+    """Gold file: a CSV with a doc_id column (e.g. doc_id,reader_1,reader_2 from build_gold.py),
+    or a plain list with one doc_id per line."""
+    lines = [l.strip() for l in open(path, encoding="utf-8-sig") if l.strip() and not l.startswith("#")]
+    if lines and "doc_id" in [c.strip() for c in lines[0].split(",")]:
+        return [r["doc_id"].strip() for r in csv.DictReader(open(path, encoding="utf-8-sig")) if r.get("doc_id")]
+    return [l.split(",")[0].strip() for l in lines]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("pack"); ap.add_argument("labels"); ap.add_argument("--gold")
@@ -32,7 +41,7 @@ def main():
     docs = {r["doc_id"]: r["text"] for r in pq.read_table(a.pack).to_pylist()}
     labels = list(csv.DictReader(open(a.labels, encoding="utf-8-sig")))
     if a.gold:
-        gold = [l.strip() for l in open(a.gold, encoding="utf-8") if l.strip()]
+        gold = read_gold(a.gold)
         gold_name = f"team gold set ({os.path.basename(a.gold)})"
     else:
         gold = [l["doc_id"] for l in labels if l["verdict"] == "clean" and l["read"] == "full"]
@@ -44,7 +53,8 @@ def main():
     print(f"Medicines: {len(meds)} from {source}")
     for p in problems:
         print(f"   could not load {p}")
-    print(f"Gold set: {gold_name}, {len(gold)} documents\n")
+    print(f"Gold set: {gold_name}, {len(gold)} documents" +
+          ("  (none of these doc_ids are in this pack: harm test NOT_EVALUATED)" if not gold else "") + "\n")
     ok_all = True
     rows = []
     for name, (code, med) in meds.items():
@@ -57,7 +67,7 @@ def main():
                 changed.append(g)
         harm = len(changed) + len(dropped)
         pct = 100 * harm / len(gold) if gold else 0
-        verdict = "PASS" if pct <= 1.0 else "FAIL"
+        verdict = "NOT_EVALUATED" if not gold else ("PASS" if pct <= 1.0 else "FAIL")
         ok_all &= verdict == "PASS"
 
         cases = [l["doc_id"] for l in labels if code in l["diseases"].split(";")]
@@ -79,11 +89,16 @@ def main():
     if len(rows) > 1:
         print(f"{'medicine':28} {'changed':>7} {'dropped':>7} {'harm':>6}  result  reach")
         for name, c, d, pct, v, fx, n in rows:
-            print(f"{name:28} {c:7d} {d:7d} {pct:5.1f}%  {v:6}  {fx}/{n}")
+            print(f"{name:28} {c:7d} {d:7d} {pct:5.1f}%  {v:13}  {fx}/{n}")
         print()
     if problems:
         ok_all = False
-    print("ALL MEDICINES PASS" if ok_all else "AT LEAST ONE MEDICINE FAILS (or could not be loaded)")
+    if ok_all:
+        print("ALL MEDICINES PASS")
+    elif not gold:
+        print("NOT EVALUATED: no gold documents from this pack")
+    else:
+        print("AT LEAST ONE MEDICINE FAILS (or could not be loaded)")
 
 
 if __name__ == "__main__":

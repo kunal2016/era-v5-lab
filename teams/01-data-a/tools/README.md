@@ -1,17 +1,20 @@
-# Data A tools: harm test and gold sets
+# Data A tools: harm test and hex check
 
-Three small scripts for the week-1 medicine work. They read pack data from your own
+Small scripts for the week-1 medicine work. They read pack data from your own
 computer; no pack data, labels of other people or results go in this folder.
 
 | Script | What it does |
 | --- | --- |
 | `harm_test.py` | Runs medicines on a gold set and reports, per medicine, how many gold documents it changes or drops (fails above 1%) and how many labelled cases it fixes |
 | `extract_medicines.py` | Reads the runnable medicines out of `medicine.md` files (convention below) |
-| `build_gold.py` | Builds a gold set per pack from two or more readers' `labels.csv`: documents that at least two readers read in `full` and marked `clean`. Also reports reader agreement |
+| `hexcheck.py` | For one or more doc_ids, lists only the unusual characters in the whole document (no 2,000-character limit), with a hint per character (A1 to A6), and G-group candidates: G1 word cut before a vowel sign or virama, G2 joiner not after a virama, G4 Latin digit inside an Indic number, and characters an NFKC step would change. For documents labelled with an Indic language, also G3 hints (traces of dropped text). Prints ready `hex` cells in the agreed format |
 
 Requires Python 3.8+ and `pip install pyarrow`.
 
 ## Medicine convention
+
+`MEDICINE_GUIDE.md` has the proposed common layout for every pack (code, English, maths,
+science, Indic), the rules every medicine follows, and what a rule must never touch per domain.
 
 So one script can test every student's medicines, end each medicine section in
 `medicine.md` with one complete block in this shape:
@@ -29,7 +32,8 @@ def medicine(text):          # always this name and signature
 ```
 ````
 
-The heading must start `## Medicine <N>: <CODE>` (the code from DISEASES.md). A section
+The heading must start `## Medicine <N>: <CODE>` (the code from DISEASES.md). The spec v1
+contract `def apply_rule(text, metadata)` returning `(new_text or None, dropped)` is accepted too. A section
 without a block, or with code that does not run, is reported, not skipped silently.
 
 **Loading a `medicine.md` runs its code.** Read other people's blocks before you run them.
@@ -37,6 +41,9 @@ without a block, or with code that does not run, is reported, not skipped silent
 ## Usage
 
 ```
+# unusual characters and G candidates, with hex cells in the agreed format
+python hexcheck.py <pack>.parquet <doc_id> [<doc_id> ...]
+
 # list the medicines a file defines
 python extract_medicines.py diagnosis/submissions/<pack>/<handle>/medicine.md
 
@@ -44,12 +51,18 @@ python extract_medicines.py diagnosis/submissions/<pack>/<handle>/medicine.md
 python harm_test.py <pack>.parquet diagnosis/submissions/<pack>/<handle>/labels.csv \
     --md diagnosis/submissions/<pack>/<handle>/medicine.md
 
-# harm test on a team gold set (one doc_id per line); --md takes several files
+# harm test on a team gold set: the doc_id,reader_1,reader_2 CSVs that build_gold.py writes
+# to teams/01-data-a/gold/ (a plain one-id-per-line list also works); --md takes several files
 python harm_test.py <pack>.parquet <labels.csv> --gold gold/<pack>.txt --md <medicine.md> [<medicine.md> ...]
 
-# gold sets from all readers' labels: <root>/<pack_id>/<handle>/labels.csv
-python build_gold.py diagnosis/submissions --out gold
 ```
+
+`hexcheck.py` finds candidates only. G3 (Indic text dropped by an English-only step) has no
+character to point at, so it gives hints instead: under half the letters in the labelled script,
+three or more empty lines in a row, headings or list items with nothing after them, and text that
+ends mid-sentence. G3 has no hex cell: put a short quote and the offset in `evidence`. A missing
+joiner (G2) cannot be seen from the characters at all: judge that by reading. In an Indic document, the ordinary letters, signs
+and digits of the document's own script are treated as normal and not listed.
 
 The harm test needs the pack's text, so it runs per pack: each pack's readers run the
 domain's medicines on their own pack's gold set and post the table.

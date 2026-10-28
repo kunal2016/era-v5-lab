@@ -1,6 +1,9 @@
 """Read runnable medicines out of medicine.md files.
 
-Convention (one per medicine section in medicine.md):
+Convention (one per medicine section in medicine.md). Either function shape is accepted:
+    def medicine(text) -> (new_text, "keep" | "fix" | "drop")
+    def apply_rule(text, metadata) -> (new_text or None, dropped)   # spec v1 contract
+
 
     ## Medicine <N>: <CODE> <title>
     ...
@@ -51,11 +54,24 @@ def load(path):
             found.append((name, code, None, f"code does not run: {type(e).__name__}: {e}"))
             continue
         fn = ns.get("medicine")
+        if not callable(fn) and callable(ns.get("apply_rule")):
+            fn = _from_apply_rule(ns["apply_rule"])
         if not callable(fn):
-            found.append((name, code, None, "block does not define medicine(text)"))
+            found.append((name, code, None, "block defines neither medicine(text) nor apply_rule(text, metadata)"))
             continue
         found.append((name, code, _checked(fn, name), None))
     return found
+
+
+def _from_apply_rule(apply_rule):
+    """Adapt the spec v1 contract apply_rule(text, metadata) -> (new_text | None, dropped)."""
+    def run(text, metadata=None):
+        new, dropped = apply_rule(text, metadata or {})
+        if dropped:
+            return text, "drop"
+        new = text if new is None else new
+        return new, ("fix" if new != text else "keep")
+    return run
 
 
 def _checked(fn, name):
