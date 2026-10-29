@@ -140,7 +140,7 @@ fa9f649647b10adf,full,clean,,,,
 e0232faa50916197,full,clean,,,,
 289d7a8171ba1f05,full,clean,,,,
 b808cabae4844504,full,clean,,,,
-396118e5988bcbfc,full,fix,E4,8-line copyright notice at offset 151 (old contents); 8-line copyright notice at offset 720 (new contents),,"long licence text, repeated in old and new"
+396118e5988bcbfc,full,clean,,,,"6-line BenchExec header in the short SPDX form (SPDX-FileCopyrightText, SPDX-License-Identifier: Apache-2.0) in old and new contents, not E4"
 313a5a1ef2c4e9ab,full,clean,,,,
 18aa4337278fea70,full,clean,,,,
 a6d111cb81ecd63e,full,clean,,,,

@@ -1,8 +1,8 @@
 # Medicine sheet: cadj-commits (kunal2016)
 
-Status: DRAFT. Counts are from the first 300 labelled rows, with the medicine's own count over all
-500 documents in brackets; they will be updated when all 500 rows are labelled. Harm tests are
-PRELIMINARY (run on my own 251 clean rows) and will be re-run on the team gold set.
+Status: counts are from all 500 labelled rows (427 clean, 73 fix). Harm tests are run with the
+Data A `harm_test.py` on the cadj-commits gold set built with `build_gold.py` (121 documents that two
+readers marked clean; unofficial backup copy, 30 Oct), and on my own 427 clean rows.
 
 Pack: about 500 commits (commit message, file path, old contents, new contents) from
 bigcode/commitpackft, about 71 each in Python, JavaScript, TypeScript, Java, C++, Go and Rust.
@@ -15,8 +15,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 ## Medicine 1: F1 personal emails and profile URLs
 
-1. **Disease:** F1, personal data of private people. 31 cases in rows 1 to 300
-   (medicine finds 42 of 500 documents, 71 email addresses). Most are `author_email=` in Python
+1. **Disease:** F1, personal data of private people. 41 labelled documents in the 500 rows
+   (the medicine changes 42 of the 500 documents, 71 email addresses). Most are `author_email=` in Python
    `setup.py` files and `Signed-off-by:` lines in commit messages. Each address usually appears
    twice, once in the old and once in the new file. Examples (type and offset only):
    - `e0c1e30626b9b1ff`: email at offset 518, 1092 (`author_email` in setup.py)
@@ -56,9 +56,9 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 3. **Action:** fix. The code is good training data; only the address is removed. The
    placeholder is a valid address, so strings like `author_email="user@example.com"` stay valid code.
 
-4. **Harm test (preliminary):** on my 251 clean rows the medicine changes **1** document and drops
-   **0** (0.4%, limit 1%): **PASS**. It fixes 31 of 31 labelled F1 cases.
-   The one changed gold document is `8ae8af60edff9ffb`, a test that creates a made-up user with a
+4. **Harm test:** on the gold set (121 documents) the medicine changes **0** and drops **0**
+   (0.00%, limit 1%): **PASS**. On my 427 clean rows it changes **1** (0.23%): **PASS**. It fixes
+   41 of 41 labelled F1 documents. The one changed clean row is `8ae8af60edff9ffb`, a test that creates a made-up user with a
    fake address. Replacing it does not break the code, but it counts against the 1% limit.
 
 5. **Side effects:**
@@ -72,8 +72,9 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 ## Medicine 2: E4 long licence headers
 
-1. **Disease:** E4, repeated licence headers. 19 cases in rows 1 to 300 (medicine finds 32 of 500
-   documents). Because each document holds the old and the new file, every header appears twice.
+1. **Disease:** E4, repeated licence headers. 33 labelled documents in the 500 rows (the medicine
+   changes 32 of the 500 documents), including 12 Rust compiler files with the 9-line rustc
+   Apache-2.0/MIT header. Because each document holds the old and the new file, every header appears twice.
    The medicine would remove about 25,600 characters (2.8% of the pack). Examples:
    - `f1655eb8394db886`: 19-line AGPL-3.0 header at offset 182 (old) and 1707 (new)
    - `abd2e71e0f18d22a`: 19-line Apache-2.0 header at offset 463 (old) and 1282 (new)
@@ -214,9 +215,12 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix (team decision 2.2: replace with SPDX, rather than remove entirely).
 
-4. **Harm test (preliminary):** on my 251 clean rows the medicine changes **0** documents and drops
-   **0** (0.0%): **PASS**. It fixes 18 of 19 labelled E4 cases. The one it leaves alone,
-   `396118e5988bcbfc`, already uses the short SPDX form, so I will relabel it clean.
+4. **Harm test:** on the gold set (121 documents) the medicine changes **0** and drops **0**
+   (0.00%): **PASS**; on my 427 clean rows it changes **0**: **PASS**. It fixes 32 of 33 labelled
+   E4 documents. The one it leaves alone is `ab46a006529db278` (Serde): the same Apache-2.0/MIT
+   wording as the rustc header but 7 lines, under `E4_MIN_LINES`. I label all 13 Rust-style headers
+   E4 for consistency; whether such pointer notices are E4 at all is open (Q2.1).
+   `396118e5988bcbfc` already uses the short SPDX form, so it is labelled clean.
    Short licence notices are left untouched by design, and my label sheet marks them clean:
    Microsoft's 4-line MIT notice (`9b72597490efcd15`), Chromium's 3-line BSD notice
    (`81d9e46b717ff00c`), the LLVM notice with an SPDX line (`0a9865cc8da6d8b5`), and 2-line notices
@@ -235,7 +239,7 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 ## Medicine 3: A2 carriage returns
 
-1. **Disease:** A2, control characters. 5 cases in rows 1 to 300, which is all 5 documents in the whole pack,
+1. **Disease:** A2, control characters. 5 labelled documents in the 500 rows, which is every A2 document in the pack,
    311 carriage returns (U+000D) in total. All are Windows line endings (CRLF). Examples:
    - `f9b766f8d70fd170`: `170 U+000D CARRIAGE RETURN (14x)`, in the commit message
    - `aa905c0bfba1f969`: 99 carriage returns (document 197)
@@ -256,7 +260,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix.
 
-4. **Harm test (preliminary):** changes **0** of 251 clean rows (0.0%): **PASS**. Fixes 5 of 5
+4. **Harm test:** changes **0** of the 121 gold documents and **0** of my 427 clean rows (0.00%):
+   **PASS**. Fixes 5 of 5
    labelled cases, which is every A2 document in the pack. The number of lines stays the same.
 
 5. **Side effects:**
@@ -288,7 +293,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix.
 
-4. **Harm test (preliminary):** changes **0** of 251 clean rows (0.0%): **PASS**. Fixes 1 of 1.
+4. **Harm test:** changes **0** of the 121 gold documents and **0** of my 427 clean rows (0.00%):
+   **PASS**. Fixes 1 of 1.
 
 5. **Side effects:** a U+FEFF anywhere else is left alone, because inside a string it can be
    deliberate. Other A1 characters (zero-width space, bidi marks) are not handled; none were
@@ -296,10 +302,15 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 ## How to reproduce
 
-Each medicine above ends with a ` ```python ` block that defines `medicine(text)` and
-returns the new text. The harm test reads these blocks straight from this file:
+Each medicine has one ` ```python ` block that defines `cure_<code>(text)` and returns the new text
+(the Data A convention). With the Data A tools (branch `g1-harm-test`, Linux, macOS or WSL):
 
 ```
-python harm_test.py cadj-commits.parquet labels.csv --md medicine.md                 # preliminary, own clean rows
-python harm_test.py cadj-commits.parquet labels.csv --md medicine.md --gold gold.txt # team gold set
+python -I teams/01-data-a/tools/medicine_extract.py <this medicine.md> --out /tmp/rules.py --registry /tmp/registry.json
+for c in F1 E4 A2 A1; do
+  python -I teams/01-data-a/tools/harm_test.py --pack cadj-commits.parquet \
+      --gold cadj-commits_gold.csv --rules <this medicine.md> --rule $c
+done
 ```
+
+Registry IDs (29 Oct extraction): F1 `DB-F1-002`, E4 `DB-E4-001`, A2 `DB-A2-001`, A1 `DB-A1-001`.
