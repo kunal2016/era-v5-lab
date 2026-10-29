@@ -22,7 +22,7 @@ a2a76259799729fa,full,fix,F1,"email at offset 668, 1580",,in author_email
 59db3993ab02a2c9,full,fix,F1,"email at offset 321, 1117",,in author_email
 e7c1647714ab6ee6,full,fix,F1,"email at offset 423, 1444",,in author_email
 d8136c75de468ac6,full,fix,F1,"email at offset 519, 1735",,in maintainer_email
-f9b766f8d70fd170,full,fix,A2;F1,"14x U+000D CARRIAGE RETURN, first at offset 170 (commit message); email at offset 1503, 2437",170 U+000D CARRIAGE RETURN (14x),CRLF line endings; in author_email
+f9b766f8d70fd170,full,fix,A2;F1,"14x U+000D CARRIAGE RETURN, first at offset 170 (commit message) | email at offset 1503, 2437",170 U+000D CARRIAGE RETURN (14x),CRLF line endings; in author_email
 a74ed5caf45ae502,full,fix,F1,"email at offset 436, 1365",,in author_email
 e79c7bd2ebb438da,full,fix,F1,"email at offset 469, 1199",,in author_email
 d903e4efac48eab8,full,fix,F1,"email at offset 700, 1939",,in author_email
@@ -114,7 +114,7 @@ b96ed027a30ca684,full,clean,,,,
 30bd2f092528ed10,full,clean,,,,
 40ba25a5557b668b,full,clean,,,,
 e1ac0fe06057a1c4,full,clean,,,,"note: short notice, not E4: 6-line copyright notice at offset 119 (old contents); 6-line copyright notice at offset 1687 (new contents)"
-abd2e71e0f18d22a,full,fix,E4;F1,19-line Apache-2.0 at offset 463 (old contents); 19-line Apache-2.0 at offset 1282 (new contents); email at offset 175,,"long licence text, repeated in old and new; in Author line"
+abd2e71e0f18d22a,full,fix,E4;F1,19-line Apache-2.0 at offset 463 (old contents); 19-line Apache-2.0 at offset 1282 (new contents) | email at offset 175,,"long licence text, repeated in old and new; in Author line"
 e4e3fa92f8852c4d,full,clean,,,,
 1d7e00875808a5fc,full,clean,,,,
 d16e4fd3054c1740,full,clean,,,,
@@ -235,7 +235,7 @@ ca69ffea503764cc,full,clean,,,,
 4b20050a106f69a3,full,clean,,,,
 3b3b9541672cc0a5,full,fix,E4,17-line AGPL-3.0 at offset 216 (old contents); 17-line AGPL-3.0 at offset 1763 (new contents),,"long licence text, repeated in old and new"
 021286770f57d4d5,full,clean,,,,
-13208b2f948e8596,full,fix,E4;F1,"16-line Apache-2.0 at offset 391 (old contents); 16-line Apache-2.0 at offset 1567 (new contents); email at offset 95, 155",,"long licence text, repeated in old and new; in Author line, commit message"
+13208b2f948e8596,full,fix,E4;F1,"16-line Apache-2.0 at offset 391 (old contents); 16-line Apache-2.0 at offset 1567 (new contents) | email at offset 95, 155",,"long licence text, repeated in old and new; in Author line, commit message"
 a31b320e6e179063,full,clean,,,,
 ae52e7873f24c7de,full,fix,E4,13-line Apache-2.0 at offset 154 (old contents); 13-line Apache-2.0 at offset 1394 (new contents),,"long licence text, repeated in old and new"
 440c92b9c4d6ac62,full,clean,,,,
@@ -280,9 +280,9 @@ ebe2880f48619bf9,full,clean,,,,
 cd54c02ce8f0a908,full,fix,E4,15-line AGPL-3.0 at offset 198 (old contents); 15-line AGPL-3.0 at offset 1541 (new contents),,"long licence text, repeated in old and new; note: not F1: role/noreply address at offset 1094; note: not F1: role/noreply address at offset 2437"
 14f7b5efcf8e3818,full,clean,,,,
 5cd576385b620016,full,fix,F1,email at offset 81,,in Signed-off-by
-4c25f9f3425b8be1,full,fix,A2;E4;F1,"76x U+000D CARRIAGE RETURN, first at offset 150 (old contents); 15-line Apache-2.0 at offset 148 (old contents); 15-line Apache-2.0 at offset 1158 (new contents); email at offset 919, 2010",150 U+000D CARRIAGE RETURN (76x),"CRLF line endings; long licence text, repeated in old and new; in new contents, old contents"
+4c25f9f3425b8be1,full,fix,A2;E4;F1,"76x U+000D CARRIAGE RETURN, first at offset 150 (old contents) | 15-line Apache-2.0 at offset 148 (old contents); 15-line Apache-2.0 at offset 1158 (new contents) | email at offset 919, 2010",150 U+000D CARRIAGE RETURN (76x),"CRLF line endings; long licence text, repeated in old and new; in new contents, old contents"
 b9e9591f7dbbc7c8,full,fix,E4,13-line Apache-2.0 at offset 259 (new contents),,long licence text
-75b7f3f5f2d69c0a,full,fix,E4;F1,16-line Apache-2.0 at offset 199 (new contents); email at offset 1194,,long licence text; in new contents
+75b7f3f5f2d69c0a,full,fix,E4;F1,16-line Apache-2.0 at offset 199 (new contents) | email at offset 1194,,long licence text; in new contents
 1c56eaf125d0bd95,full,fix,E4,19-line copyright notice at offset 207 (new contents),,long licence text
 bd1ffc60ca2502b3,full,clean,,,,
 66173709f68f8d00,full,fix,E4,16-line Apache-2.0 at offset 185 (new contents),,long licence text
@@ -298,4 +298,4 @@ deb2db6055a9e9ee,full,clean,,,,
 81d9e46b717ff00c,full,clean,,,,"Chromium 3-line BSD licence notice, not E4"
 6bae50bb91bf86f4,full,clean,,,,
 cb013ee6eaf9fd01,full,clean,,,,
-3f4afa6706cfd149,full,fix,E4;F1,"15-line Apache-2.0 at offset 147 (old contents); 15-line Apache-2.0 at offset 1522 (new contents); email at offset 182, 1557",,"long licence text, repeated in old and new; in new contents, old contents"
+3f4afa6706cfd149,full,fix,E4;F1,"15-line Apache-2.0 at offset 147 (old contents); 15-line Apache-2.0 at offset 1522 (new contents) | email at offset 182, 1557",,"long licence text, repeated in old and new; in new contents, old contents"
