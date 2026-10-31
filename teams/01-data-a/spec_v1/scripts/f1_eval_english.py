@@ -2,9 +2,9 @@
 
   python -I f1_eval_english.py <g1-harm-test checkout> <packs dir> [docs per pack for planting, default 40]
 
-../clean_english.py's f1() runs DA-F1-005 on English text (the shared ../../tools/f1_rule.py does not run on en or eng). Each check is
-also made with the shared rule, switched on for en and eng in memory only (prose has no tree, so regex alone decides), to
-show what switching it on would do. Neither file is changed.
+../clean.py's f1() runs DA-F1-005 on the English packs (its SCOPE); the shared ../../tools/f1_rule.py runs on the code packs
+only. Each check is also made with the shared rule, switched on for en and eng in memory only (prose has no tree, so regex
+alone decides), to show what switching it on would do. Neither file is changed.
 
   1 real      F1 hits per pack after the rules before it: docs changed or dropped, gold docs touched, tags by kind
   2 planted   made-up details (f1_eval.py's values) on a line of their own at the end of real gold docs: the right tag
@@ -14,7 +14,6 @@ show what switching it on would do. Neither file is changed.
 Writes ../results/f1_eval_english.json.
 """
 import csv
-import importlib.util
 import json
 import re
 import sys
@@ -28,9 +27,8 @@ SPEC = HERE.parent
 WT, PACKS = Path(sys.argv[1]), Path(sys.argv[2])
 N_PLANT = int(sys.argv[3]) if len(sys.argv) > 3 else 40
 PACK_IDS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
-spec = importlib.util.spec_from_file_location("clean_both", SPEC / "clean_english.py")
-c = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(c)
+sys.path.insert(0, str(SPEC))
+import clean as c
 AT = "@"  # pr-guard reads added lines for email addresses, so made-up ones are joined at run time
 TAGS = ("<EMAIL>", "<PHONE>", "<ADDRESS>")
 
@@ -68,14 +66,24 @@ def shared(doc):
 
 
 RULES = {"DA-F1-005": c.f1, "shared F1 (in memory)": shared}
-before_f1 = lambda r: c._run(r, *c._PIPELINES["english"])  # every English rule before F1, as clean() runs them
+assert c._PIPELINES["english"][-1] is c._english_f1_005
+before_f1 = lambda r: c._run(r, *c._PIPELINES["english"][:-1])  # every English rule before F1, as clean() runs them
+
+
+def rows_of(pack):
+    """The pack's documents, each with its pack_id: clean.py picks the rules by it."""
+    path = PACKS / f"{pack}.parquet"
+    cols = [k for k in ("doc_id", "text", "url", "lang_label", "pack_id") if k in pq.read_schema(path).names]
+    rows = pq.read_table(path, columns=cols).to_pylist()
+    assert all(r.setdefault("pack_id", pack) == pack for r in rows), f"{pack}: a document has another pack_id"
+    return rows
 
 
 def main():
     report = {"real": {}, "planted": {}, "keep": {}, "second_run": {}}
     print("== 1 real docs: F1 after the other English rules")
     for pack in PACK_IDS:
-        rows = pq.read_table(PACKS / f"{pack}.parquet", columns=["doc_id", "text", "url", "lang_label"]).to_pylist()
+        rows = rows_of(pack)
         gold = {r["doc_id"] for r in csv.DictReader(open(WT / f"teams/01-data-a/gold/{pack}_gold.csv", encoding="utf-8"))}
         out = {}
         for name, fn in RULES.items():
@@ -100,7 +108,7 @@ def main():
     print(f"\n== 2 planted on a line of their own at the end of real gold docs ({N_PLANT} per pack). Share with the right tag and nothing else changed")
     pos, keep = defaultdict(Counter), defaultdict(Counter)
     for pack in PACK_IDS:
-        rows = {r["doc_id"]: r for r in pq.read_table(PACKS / f"{pack}.parquet", columns=["doc_id", "text", "url", "lang_label"]).to_pylist()}
+        rows = {r["doc_id"]: r for r in rows_of(pack)}
         gold = sorted(r["doc_id"] for r in csv.DictReader(open(WT / f"teams/01-data-a/gold/{pack}_gold.csv", encoding="utf-8")))[:N_PLANT]
         for d in gold:
             r = rows[d]
@@ -129,7 +137,7 @@ def main():
     for pack in PACK_IDS:
         again = []
         n = 0
-        for r in pq.read_table(PACKS / f"{pack}.parquet", columns=["doc_id", "text", "url", "lang_label"]).to_pylist():
+        for r in rows_of(pack):
             a, once = c.clean(r)
             if a == "drop" or not any(k in once and k not in r["text"] for k in TAGS):
                 continue

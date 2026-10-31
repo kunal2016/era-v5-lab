@@ -18,12 +18,12 @@ LICENCE = "// Licensed under the Apache License, Version 2.0 (the License);\n// 
 
 @pytest.fixture
 def prose(monkeypatch):
-    """F1 on prose, before a prose family is switched on."""
+    """The shared F1 (tools/f1_rule.py) on prose. clean.py runs it on the code packs only; English has its own F1, DA-F1-005."""
     monkeypatch.setattr(c, "_F1_LANGS", c._F1_LANGS | {"en"})
 
 
-def go(text): return {"doc_id": "x", "text": text, "url": "a/b.go", "lang_label": "go"}
-def en(text): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": "en"}
+def go(text): return {"doc_id": "x", "text": text, "url": "a/b.go", "lang_label": "go", "pack_id": "code-go"}
+def en(text): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": "en", "pack_id": "en-dclm"}
 
 
 @pytest.mark.parametrize("fn, text, action", [
@@ -82,12 +82,12 @@ def test_a_row_of_another_language_passes_unchanged():
     ("The City Council is at 12 Elm Grove Road.", "The City Council is at 12 Elm Grove Road."),
 ])
 def test_f1_replaces_a_private_person_and_keeps_organisations(prose, line, expect):
-    assert c.f1(en(line))[1] == expect
+    assert c._shared_f1(en(line))[1] == expect
 
 
 @pytest.mark.parametrize("line", ["Released on 2021-03-14 at 10:30.", "Version 1.2.3.4 of the tool.", "Total 123 456 7890 units.", f"logo{AT}2x.png and {AT}types/node", 'x = [1000 2000 3000]'])
 def test_f1_leaves_numbers_and_code_that_look_alike(prose, line):
-    assert c.f1(en(line)) == ("keep", line)
+    assert c._shared_f1(en(line)) == ("keep", line)
 
 
 def test_b4_leaves_the_email_tag_and_fixes_the_others():
@@ -107,12 +107,12 @@ def test_f1_in_code_touches_only_comments_and_strings(text, expect):
 
 def test_f1_drops_a_personal_listing(prose):
     listing = "\n".join(f"person{i}{AT}mail.io" for i in range(6))
-    assert c.f1(en(listing))[0] == "drop"
+    assert c._shared_f1(en(listing))[0] == "drop"
 
 
 def test_f1_keeps_a_long_article_with_one_address(prose):
     text = EN_TEXT * 20 + f"Written by a{AT}mail.io\n"
-    a, new = c.f1(en(text))
+    a, new = c._shared_f1(en(text))
     assert a == "fix" and "<EMAIL>" in new
 
 
@@ -123,8 +123,10 @@ def test_clean_twice_is_clean_once(row):
     assert c.clean(dict(row, text=once)) == ("keep", once)
 
 
-def test_a_family_with_no_rules_yet_passes_unchanged():
-    assert c.clean(en(EN_TEXT)) == ("keep", EN_TEXT)
+@pytest.mark.parametrize("row", [{"doc_id": "x", "text": "﻿<reponame>a\n" + GO_CODE, "url": "a/b.go", "lang_label": "go"},  # no pack_id
+                                 dict(go("﻿<reponame>a\n" + GO_CODE), pack_id="code-unknown")])
+def test_a_doc_without_a_known_pack_passes_unchanged(row):
+    assert c.clean(row) == ("keep", row["text"])
 
 
 def test_f1_tag_survives_a_second_clean():

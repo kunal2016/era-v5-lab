@@ -11,11 +11,13 @@ teams/01-data-a/
     spec_v1_<family>.md     scope, order, conflicts, open items, freeze state
     medicine_<family>.md    the runnable rules: one block per rule, in run order
     decisions_<family>.md   why each rule was picked or not, for each disease
-    clean.py                the cleaner, generated from the sheets
+    specv1.md               the four family sheets collated: what tools/build_clean.py reads
+    clean.py                the cleaner, generated from specv1.md, with the scope table at the top
+    README_clean.md         how to build, test and run clean.py, step by step
     run_clean.py            runs the cleaner on one pack
     tests/                  unit tests on made-up values
-    harm_tests.md           every clean.py function on every gold set
-    results/clean_<pack>_harm.json   the reports behind harm_tests.md: IDs and digests only
+    harm_tests.md           each rule on the gold sets of its packs, each clean.py function, and clean()
+    results/specv1_<pack>_harm.json   the reports behind harm_tests.md: IDs and digests only
     results/<pack>_harm.json   harm_test.py --report on the sheet: IDs and digests only
     results/stress_<pack>_harm.json   the same, with disputed docs left in
     results/evidence.json, inputs_manifest.json   every medicine on every pack; digest of every input
@@ -101,26 +103,31 @@ These tools are on `g1-harm-test`, not on this base branch. Results here were ma
 
 ## The cleaner
 
-`clean.py` is the cleaner. It is generated from the medicine sheets in this folder, so **add rules to a sheet, never to `clean.py`**.
+`clean.py` is the cleaner. `../tools/build_clean.py` generates it from `specv1.md`, which collates the four family sheets, so **add rules to a sheet, never to `clean.py`**.
+
+A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its block, and for a math rule its `ORIGIN` packs too. The build puts those pack IDs in one table, `SCOPE`, at the top of `clean.py`, and each rule reads its entry there. A document goes to the family of its `pack_id` and runs that family's rules in sheet order. A document with a missing or unknown `pack_id` passes unchanged and is not eligible for release. `run_clean.py` takes `pack_id` from the file name when a pack has no such column. `make_harm_tests.py` tests each rule only on the gold sets of the packs in its `SCOPE` entry. It also runs every rule that does not apply to a pack on that whole pack, where it must change nothing.
 
 | where | what | who changes it |
 |---|---|---|
-| `medicine_<family>.md` | The rules of one family: `code`, `en`, `math`, `sci` | The PR for that family |
+| `medicine_<family>.md` | The rules of one family: `code`, `english`, `math`, `sci` | The PR for that family |
+| `specv1.md` | The four sheets collated, with the packs of each rule | The pipeline owner |
 | `decisions_<family>.md` | Why each rule was picked or not | The same PR |
-| `../tools/f1_rule.py` | The one F1 rule, shared by all families | A PR that names the family it adds |
-| `clean.py`, `harm_tests.md`, `results/clean_*` | Generated | Only the rebuild step, after a merge |
+| `../tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code packs | A PR that names the family it adds |
+| `clean.py`, `harm_tests.md`, `results/specv1_*` | Generated | Only the rebuild step, after a merge |
 
 ## Run it
+
+Step by step, with every option, output and error: [README_clean.md](README_clean.md).
 
 ```
 pip install pyarrow pytest tree-sitter-language-pack ftfy
 python tools/build_clean.py
 python -m pytest spec_v1/tests
 python spec_v1/run_clean.py --pack <pack>.parquet --out out
-python tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs>
+python tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs> [<another folder with packs> ...]
 ```
 
-Paths start at `teams/01-data-a/`. `ftfy` is needed once the English A3 rule is in. `make_harm_tests.py` uses `harm_test.py`, which is on `g1-harm-test` until PR 140 merges. The packs are not in the repo, so get your link from the lab plan sheet.
+Paths start at `teams/01-data-a/`. Run `make_harm_tests.py` where all 13 packs are: a pack it cannot find is listed as not run in `harm_tests.md`. `ftfy` is needed once the English A3 rule is in. `make_harm_tests.py` uses `harm_test.py`, which is on `g1-harm-test` until PR 140 merges. The packs are not in the repo, so get your link from the lab plan sheet.
 
 ## Add your medicines without double work
 

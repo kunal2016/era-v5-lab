@@ -1,49 +1,68 @@
-"""Write ../spec_v1/clean.py from every medicine sheet but the English one, and ../spec_v1/clean_english.py from every
-sheet: one function per disease code, each rule's code unchanged. clean.py stays the code family's cleaner as committed.
+"""Write ../spec_v1/clean.py from ../spec_v1/specv1.md: one function per disease code, each rule's code unchanged, and one
+scope table at the top that says which packs each rule applies to.
 
-  python -I build_clean.py
+  python -I build_clean.py [--sheet ../spec_v1/specv1.md] [--out ../spec_v1/clean.py]
 
-Reads teams/01-data-a/spec_v1/medicine_<family>.md. Each rule block goes into its own closure, so helpers with the same name
-in two blocks or two families do not clash. Prints any string that indenting a block changed: only a multi-line string
-can change, and a docstring or a verbose regex does not care.
+specv1.md has one "## Medicine N — <family> / <code> / `<ID>`" section per rule, each with one python block. A block names
+its packs in SPEC_PACKS, and a math block checks its ORIGIN packs too (PACKS); the scope is what both allow. The build
+moves those pack IDs into SCOPE and points SPEC_PACKS and PACKS at it, so pack IDs are written once. A document goes to the
+family of its pack_id and runs that family's rules in sheet order; a missing or unknown pack_id passes unchanged.
+
+Each rule block goes into its own closure, so helpers with the same name in two blocks do not clash. Prints any string
+that indenting a block changed: only a multi-line string can change, and a docstring or a verbose regex does not care.
 """
-import ast, re, sys, textwrap
+import argparse, ast, re, textwrap
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SPEC = HERE.parent / "spec_v1"
+SECTION = re.compile(r"^## Medicine (\d+) — (\w+) / (\w+) / `(DA-[A-H]\d-\d{3})`\n(.*?)(?=^## Medicine \d+ — |\Z)", re.S | re.M)
 BLOCK = re.compile(r"^```python\n(.*?)^```", re.S | re.M)  # at line start: a rule can hold ``` inside a regex
-CODE_ORDER = ["A1", "A2", "A6", "A4", "A5", "A3", "B1", "B2", "B3", "E1", "E2", "C3", "C4", "C5", "D4", "E4", "C1", "C2", "D3", "B4", "E3", "F1"]  # the code and English sheets' stages, merged; other codes follow
-_f1 = {"re": re, "cache": lambda f: f}; exec((HERE / "f1_rule.py").read_text(encoding="utf-8"), _f1)
-SHARED_F1_LANGS = _f1["_F1_LANGS"]  # where the shared F1 runs; a family outside it keeps its own F1 block
+CODE_ORDER = ["A1", "A2", "A6", "A4", "A5", "A3", "B1", "B2", "B5", "B3", "E1", "E2", "C3", "C4", "C5", "D4", "E4", "C1", "C2", "D1", "D3", "B4", "E3", "F1"]  # RULES order; each family runs in its own sheet order
+SHARED_F1 = "f1_rule.py"  # the shared F1 (TSAI ruling of 31 Oct), in SCOPE under this name: it runs on the code packs, last
+MUST_KEEP = {"DA-F1-005": "english"}  # the instructor's F1 rule: on every pack of its family, never left out
 
 
-def rules(path, family):
-    text = path.read_text(encoding="utf-8")
-    keep = {m[0]: m[1] for m in re.findall(r"^\| \d+ \| `(DA-[A-H]\d-\d{3})` \|.*\| (KEEP|DROP) \|$", text, re.M)}  # a sheet may keep a decision column
+def literal(b, name, rid):
+    """The value of the one-line assignment name = <literal> in a block."""
+    lines = re.findall(rf"^{name} = (.*?)(?:\s+#.*)?$", b, re.M)
+    assert len(lines) == 1, f"{rid}: {len(lines)} lines set {name}"
+    return ast.literal_eval(lines[0])
+
+
+def rules(sheet):
     out = []
-    for b in BLOCK.findall(text):
-        b = textwrap.dedent(b)
-        if 'RULE_ID = "' not in b: continue
-        rid = re.search(r'^RULE_ID = "([^"]+)"', b, re.M).group(1); code = re.search(r'^CODE = "([^"]+)"', b, re.M).group(1)
-        if keep.get(rid) == "DROP": continue
-        ns = {}; exec(re.search(r"^LANGS = .*$", b, re.M).group(0), ns)
-        if code == "F1" and ns["LANGS"] & SHARED_F1_LANGS: continue  # F1 is one shared rule, f1_rule.py, under the TSAI decision
+    for n, family, code, rid, body in SECTION.findall(sheet.read_text(encoding="utf-8")):
+        blocks = BLOCK.findall(body)
+        assert len(blocks) == 1, f"medicine {n} ({rid}): {len(blocks)} python blocks"
+        b = textwrap.dedent(blocks[0])
+        assert re.search(rf'^RULE_ID = "{rid}"$', b, re.M) and re.search(rf'^CODE = "{code}"$', b, re.M), f"medicine {n}: block does not match its heading {code} {rid}"
+        packs = set(literal(b, "SPEC_PACKS", rid))
+        b = re.sub(r"^SPEC_PACKS = .*$", f'SPEC_PACKS = SCOPE["{rid}"]', b, flags=re.M)
+        if re.search(r"^PACKS = ", b, re.M):  # a math block: its own ORIGIN packs, inside the SPEC_PACKS guard
+            assert re.search(r'^PACKS = set\(ORIGIN\.split\(", "\)\)', b, re.M), f"{rid}: PACKS is not set(ORIGIN.split(...))"
+            packs &= set(literal(b, "ORIGIN", rid).split(", "))
+            b = re.sub(r"^PACKS = .*$", f'PACKS = SCOPE["{rid}"]  # the math packs share the "en" tag, so the pack is checked too', b, flags=re.M)
+        assert packs, f"{rid}: applies to no pack"
+        for line in b.split("\n"):  # pack IDs come only from SCOPE
+            assert "pack_id" not in line or re.search(r'doc\.get\("pack_id"\) not in (SPEC_PACKS|PACKS)\b', line), f"{rid}: reads pack_id outside the guard: {line.strip()}"
         if family == "code" and rid == "DA-B4-009":  # <EMAIL> is the tag TSAI asks for, so B4 must not rewrite it. Move this to the sheet when the team agrees.
             assert b.count('"<EMAIL>": "user@example.com", ') == 1
             b = b.replace('"<EMAIL>": "user@example.com", ', "")
-        b = re.sub(r"^AUTHOR = .*\n", "", b, flags=re.M)  # the sheets keep it for medicine_conflicts.py; the cleaner has no use for it
-        ns = {}; exec(re.search(r"^LANGS = .*$", b, re.M).group(0), ns)
-        out.append(dict(id=rid, code=code, family=family, langs=ns["LANGS"], name=f"_{family}_{rid[3:].lower().replace('-', '_')}", src=b.rstrip(), sheet=path.name))
+        b = re.sub(r"^AUTHOR = .*\n", "", b, flags=re.M)  # the sheet keeps it for medicine_conflicts.py; the cleaner has no use for it
+        out.append(dict(n=int(n), id=rid, code=code, family=family, packs=packs, name=f"_{family}_{rid[3:].lower().replace('-', '_')}", src=b.rstrip()))
+    assert [r["n"] for r in out] == list(range(1, len(out) + 1)), "medicine sections are not numbered 1, 2, 3, ..."
+    ids = [r["id"] for r in out]
+    assert len(ids) == len(set(ids)), "two medicines share an ID"
     return out
 
 
 def strings(node): return [n.value for n in ast.walk(node) if isinstance(n, ast.Constant) and isinstance(n.value, str)]
 
 
-def factory(r):
+def factory(r, sheet):
     body = textwrap.indent(r["src"], "    ")
-    text = f'@cache\ndef {r["name"]}():\n    # {r["id"]}, {r["sheet"]}\n{body}\n    return medicine\n'
+    text = f'@cache\ndef {r["name"]}():\n    # {r["id"]}, {sheet}, medicine {r["n"]} ({r["family"]})\n{body}\n    return medicine\n'
     a, b = strings(ast.parse(r["src"])), strings(ast.parse(text))
     changed = [x for x, y in zip(a, b) if x != y]
     if len(a) != len(b) or changed:
@@ -51,74 +70,91 @@ def factory(r):
     return text
 
 
-RUN = """def _run(doc, *factories):
+def scope_line(key, packs, note):
+    return f'    "{key}": frozenset({{{", ".join(f"{chr(34)}{p}{chr(34)}" for p in sorted(packs))}}}),  # {note}\n'
+
+
+SHARED = """
+_shared_f1 = f1
+
+
+@cache
+def _shared_f1_rule():
+    # the shared F1, tools/f1_rule.py: the TSAI F1 ruling of 31 Oct. It has no pack guard of its own, so _run applies SCOPE
+    return _shared_f1
+"""
+RUN = """
+
+def _run(doc, *factories):
+    \"\"\"Run the rules in order: a drop ends the document, a fix passes its text on. A rule runs only on the packs SCOPE gives it.\"\"\"
     d = dict(doc)
     for make in factories:
+        if doc.get("pack_id") not in SCOPE[_ID[make]]:
+            continue
         action, text = make()(d)
         if action == "drop":
             return ("drop", doc["text"])
         d["text"] = text
     return ("fix" if d["text"] != doc["text"] else "keep", d["text"])
 """
-F1_DISPATCH = """
-
-def f1(doc):
-    \"\"\"F1: the shared rule where it runs (_F1_LANGS); for a family it does not run on, that family's own F1 rule.\"\"\"
-    own = _OWN_F1.get(_FAMILY.get(doc.get("lang_label")))
-    if own is None or doc.get("lang_label") in _F1_LANGS:
-        return _shared_f1(doc)
-    return own()(doc)
-"""
 CLEAN = """
 
 def clean(doc):
-    \"\"\"The whole pipeline for one document. F1 runs last, in the data-safety stage.\"\"\"
-    action, text = _run(doc, *_PIPELINES.get(_FAMILY.get(doc.get("lang_label")), ()))
-    if action == "drop":
-        return ("drop", doc["text"])
-    action, text = f1(dict(doc, text=text))
-    if action == "drop":
-        return ("drop", doc["text"])
-    return ("fix" if text != doc["text"] else "keep", text)
+    \"\"\"The whole pipeline for one document: its pack's family in sheet order, then the shared F1 (code packs only).
+    A missing or unknown pack_id passes unchanged; such a document is not eligible for release.\"\"\"
+    return _run(doc, *_PIPELINES.get(_FAMILY.get(doc.get("pack_id")), ()), _shared_f1_rule)
 """
 
 
-def build(sheets, dest):
-    """Write dest, the cleaner of the given sheets."""
-    families = {p.stem.removeprefix("medicine_"): rules(p, p.stem.removeprefix("medicine_")) for p in sheets}
-    all_rules = [r for fam in families.values() for r in fam]
-    names = [r["name"] for r in all_rules]
-    assert len(names) == len(set(names)), "two rules of one family share an ID"
-    lang_family = {}
-    for fam, rs in families.items():
-        for l in sorted(set().union(*[r["langs"] for r in rs])):
-            assert lang_family.get(l, fam) == fam, f"{l} is in two families"
-            lang_family[l] = fam
-    codes = [c for c in CODE_ORDER if c == "F1" or any(r["code"] == c for r in all_rules)] + sorted({r["code"] for r in all_rules} - set(CODE_ORDER))
-    out = ['"""Spec v1 cleaning: one function per disease code, and clean(doc) to run them in order. GENERATED by tools/build_clean.py: change the sheets, not this file.\n\n'
-           "doc is {doc_id, text, url, lang_label}. Each function returns (action, text), action being keep, fix or drop. Each rule has its own LANGS guard,\n"
-           f"so a doc of another language passes unchanged. Families with rules here: {', '.join(families)}. Any other language passes unchanged.\n"
+def build(sheet, dest):
+    rs = rules(sheet)
+    families = {}
+    for r in rs:
+        families.setdefault(r["family"], []).append(r)
+    family_packs = {f: set().union(*(r["packs"] for r in x)) for f, x in families.items()}
+    for f, packs in family_packs.items():
+        others = set().union(*(p for g, p in family_packs.items() if g != f))
+        assert not packs & others, f"{sorted(packs & others)} in two families"
+    for rid, fam in MUST_KEEP.items():
+        r = next((r for r in rs if r["id"] == rid), None)
+        assert r and r["code"] == "F1" and r["packs"] == family_packs[fam], f"{rid} must be in the sheet, under F1, on every {fam} pack"
+    code_packs = family_packs["code"]
+    codes = [c for c in CODE_ORDER if any(r["code"] == c for r in rs)] + sorted({r["code"] for r in rs} - set(CODE_ORDER))
+    assert codes[-1] == "F1", "F1 must be the last disease code"
+    out = ['"""Spec v1 cleaning: one function per disease code, and clean(doc) to run them in order. GENERATED by tools/build_clean.py from\n'
+           f"spec_v1/{sheet.name}: change the sheet, not this file.\n\n"
+           "doc is {doc_id, text, url, lang_label, pack_id}. Each function returns (action, text), action being keep, fix or drop.\n"
+           "SCOPE says which packs each rule applies to; on any other pack, or without a pack_id, a rule does nothing.\n"
+           f"Families: {', '.join(f'{f} ({len(p)} packs, {len(families[f])} rules)' for f, p in family_packs.items())}.\n"
            '"""\n'
-           "import re\nfrom functools import cache\n\n\n"]
-    out += [factory(r) + "\n" for r in all_rules]
+           "import re\nfrom functools import cache\n\n"
+           "# The packs each rule applies to: SPEC_PACKS in the sheet (and a math rule's own ORIGIN packs). Each rule reads its entry.\n"
+           "SCOPE = {\n"]
+    out += [scope_line(r["id"], r["packs"], f'{r["family"]} {r["code"]}, medicine {r["n"]}') for r in rs]
+    out.append(scope_line(SHARED_F1, code_packs, "the shared F1, tools/f1_rule.py: code packs, last"))
+    out.append("}\n\n\n")
+    out += [factory(r, sheet.name) + "\n" for r in rs]
     out.append((HERE / "f1_rule.py").read_text(encoding="utf-8").rstrip() + "\n\n")
+    out.append(SHARED)
+    out.append('\n\n_RULE = {  # rule ID -> its factory, in sheet order\n' + "".join(f'    "{r["id"]}": {r["name"]},\n' for r in rs)
+               + f'    "{SHARED_F1}": _shared_f1_rule,\n}}\n_ID = {{make: rid for rid, make in _RULE.items()}}\n')
     out.append(RUN)
-    own_f1 = {r["family"]: r["name"] for r in all_rules if r["code"] == "F1"}  # families the shared F1 does not run on, with their sheet's F1
-    if own_f1:
-        out.append("\n_shared_f1 = f1\n_OWN_F1 = {" + ", ".join(f'"{f}": {n}' for f, n in own_f1.items()) + "}  # a family the shared F1 does not run on keeps its sheet's F1\n"
-                   + F1_DISPATCH)
     for code in codes:
-        if code == "F1": continue
-        out.append(f'\ndef {code.lower()}(doc):\n    return _run(doc, {", ".join(r["name"] for r in all_rules if r["code"] == code)})\n')
+        names = [r["name"] for r in rs if r["code"] == code] + (["_shared_f1_rule"] if code == "F1" else [])
+        out.append(f'\n\ndef {code.lower()}(doc):\n    return _run(doc, {", ".join(names)})\n')
     out.append("\n\nRULES = {" + ", ".join(f'"{c}": {c.lower()}' for c in codes) + "}  # disease code -> function, the form harm_test.py reads\n")
-    out.append("# rule by rule, in each sheet's run order, which keeps each sheet exactly as it was tested\n_PIPELINES = {\n")
-    out += [f'    "{fam}": ({", ".join(r["name"] for r in rs if r["code"] != "F1")},),\n' for fam, rs in families.items()]  # F1 runs in clean(), last
-    out.append("}\n_FAMILY = {" + ", ".join(f'"{l}": "{f}"' for l, f in sorted(lang_family.items())) + "}\n")
+    out.append("# each family's rules in sheet order; clean() runs the shared F1 after them\n_PIPELINES = {\n")
+    out += [f'    "{f}": ({", ".join(r["name"] for r in x)},),\n' for f, x in families.items()]
+    out.append("}\n_FAMILY = {pack: family for family, rules in _PIPELINES.items() for make in rules for pack in SCOPE[_ID[make]]}  # pack_id -> family\n")
     out.append(CLEAN)
     dest.write_text("".join(out), encoding="utf-8", newline="\n")
-    print(f"{dest.name}:", "rules:", {f: len(r) for f, r in families.items()}, "| functions:", len(codes), "| languages:", sorted(lang_family))
+    print(f"{dest.name}: rules {len(rs)} + shared F1 |", ", ".join(f"{f} {len(x)} rules on {len(family_packs[f])} packs" for f, x in families.items()),
+          "| functions:", len(codes))
 
 
-SHEETS = sorted(SPEC.glob("medicine_*.md"))
-build([p for p in SHEETS if p.stem != "medicine_english"], SPEC / "clean.py")  # the code family's cleaner, as committed
-build(SHEETS, SPEC / "clean_english.py")  # the same with the English sheet: what the English harm tests run
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--sheet", type=Path, default=SPEC / "specv1.md")
+    ap.add_argument("--out", type=Path, default=SPEC / "clean.py")
+    args = ap.parse_args()
+    build(args.sheet, args.out)
