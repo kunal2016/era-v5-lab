@@ -4,9 +4,9 @@
   "gold": "en-fineweb-edu_gold.csv",
   "gold_sha256": "8011a0128873bc6121dc790c425b0c9a7390126fd0032a7ccc99ff7aa1cd82a5",
   "gold_count": 295,
-  "rules": "teams/01-data-a/spec_v1/clean_english.py",
-  "rules_file_sha256": "4a8454a1315e9999ed3ea32a9b05808fecde457d0321a0a7138871f450ccf16f",
-  "code_sha256": "4a8454a1315e9999ed3ea32a9b05808fecde457d0321a0a7138871f450ccf16f",
+  "rules": "teams/01-data-a/spec_v1/clean.py",
+  "rules_file_sha256": "139fd3e4f5cbee12eed7c3dd548fd5a2999b2c3f60b7614d17cb779b9bffedfe",
+  "code_sha256": "139fd3e4f5cbee12eed7c3dd548fd5a2999b2c3f60b7614d17cb779b9bffedfe",
   "limit_percent": "1",
   "limit_documents": 2,
   "status": "PASS",
@@ -104,6 +104,19 @@
     },
     {
       "rule": "B2",
+      "changed": 0,
+      "dropped": 0,
+      "affected_unique": 0,
+      "errors": 0,
+      "error_types": [],
+      "percent": "0.000000",
+      "result": "PASS",
+      "changed_ids": [],
+      "dropped_ids": [],
+      "affected_ids": []
+    },
+    {
+      "rule": "B5",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -248,6 +261,19 @@
       "affected_ids": [
         "ab731016903cbb4f"
       ]
+    },
+    {
+      "rule": "D1",
+      "changed": 0,
+      "dropped": 0,
+      "affected_unique": 0,
+      "errors": 0,
+      "error_types": [],
+      "percent": "0.000000",
+      "result": "PASS",
+      "changed_ids": [],
+      "dropped_ids": [],
+      "affected_ids": []
     },
     {
       "rule": "D3",
