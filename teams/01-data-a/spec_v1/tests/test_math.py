@@ -66,3 +66,39 @@ def test_clean_twice_is_clean_once_on_math(row):
     a, once = c.clean(row)
     assert a == "fix"
     assert c.clean(dict(row, text=once)) == ("keep", once)
+
+
+# ---- v1.1: SomaKorada07's functions (A6 and D3 are new; A3, B5 and C2 follow her rules more closely)
+
+def test_a6_maps_a_symbol_font_glyph():
+    a, new = c.a6(fm("x  y is the exclusive or.\n" + BODY))
+    assert a == "fix" and "⊕" in new and "" not in new
+
+
+def test_a3_repairs_utf8_read_as_cp866():
+    a, new = c.a3(fm("ItтАЩs a proof.\n" + BODY))
+    assert a == "fix" and "’" in new
+
+
+def test_b5_converts_bbcode_in_any_case():
+    a, new = c.b5(fm("[TEX]x^2[/TEX]\n" + BODY))
+    assert a == "fix" and "[TEX]" not in new
+
+
+def test_c2_keeps_repeated_answer_options():
+    options = "".join(f"{k}. {n} apples and {n - 8} pears in the basket on the table\n" for k, n in zip("ABCD", (12, 14, 16, 18)))
+    assert len(options) > 150     # long enough for the passage check
+    text = BODY + ("Question one asks for the sum.\n\n" + options + "\n") + ("Question two asks for the sum again.\n\n" + options + "\n")
+    assert c.c2(fm(text)) == ("keep", text)
+
+
+def test_d3_removes_a_foreign_line_and_drops_a_mostly_foreign_page():
+    line = "Дивитися фільми онлайн\n"
+    a, new = c.d3(fm(BODY + line + BODY))
+    assert a == "fix" and line.strip() not in new
+    assert c.d3(fm(line * 20 + "Short note.\n"))[0] == "drop"
+
+
+def test_greek_letters_are_maths_not_foreign():
+    text = "Let α + β = π and λ > 0.\n" + BODY
+    assert c.d3(fm(text)) == ("keep", text)
