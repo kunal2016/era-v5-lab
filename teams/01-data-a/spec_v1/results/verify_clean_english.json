@@ -1,6 +1,5 @@
 {
-  "cleaner": "teams/01-data-a/spec_v1/clean.py",
-  "sheet": "teams/01-data-a/spec_v1/specv1.md (its English rules)",
+  "sheet": "teams/01-data-a/spec_v1/medicine_english.md",
   "rules": [
     "DA-A1-004",
     "DA-A2-008",
@@ -9,7 +8,7 @@
     "DA-B1-002",
     "DA-B2-002",
     "DA-C3-001",
-    "DA-C3-003",
+    "DA-C3-002",
     "DA-C5-002",
     "DA-D4-001",
     "DA-C1-006",
@@ -18,7 +17,7 @@
     "DA-D3-003",
     "DA-B4-007",
     "DA-B4-008",
-    "DA-B4-012",
+    "DA-B4-009",
     "DA-B4-010",
     "DA-B4-011",
     "DA-F1-005"
@@ -33,7 +32,9 @@
       },
       "function_vs_sheet_blocks": {},
       "clean_vs_sheet": [],
+      "clean_vs_clean_english": [],
       "all_in_order_vs_clean": [],
+      "clean_english_all_in_order_vs_clean": [],
       "second_run_changes": [],
       "docs_with_joiners": 0,
       "joiners_lost_in_kept_lines": []
@@ -47,7 +48,9 @@
       },
       "function_vs_sheet_blocks": {},
       "clean_vs_sheet": [],
+      "clean_vs_clean_english": [],
       "all_in_order_vs_clean": [],
+      "clean_english_all_in_order_vs_clean": [],
       "second_run_changes": [],
       "docs_with_joiners": 0,
       "joiners_lost_in_kept_lines": []
@@ -61,7 +64,9 @@
       },
       "function_vs_sheet_blocks": {},
       "clean_vs_sheet": [],
+      "clean_vs_clean_english": [],
       "all_in_order_vs_clean": [],
+      "clean_english_all_in_order_vs_clean": [],
       "second_run_changes": [],
       "docs_with_joiners": 0,
       "joiners_lost_in_kept_lines": []
@@ -75,7 +80,9 @@
       },
       "function_vs_sheet_blocks": {},
       "clean_vs_sheet": [],
+      "clean_vs_clean_english": [],
       "all_in_order_vs_clean": [],
+      "clean_english_all_in_order_vs_clean": [],
       "second_run_changes": [],
       "docs_with_joiners": 0,
       "joiners_lost_in_kept_lines": []

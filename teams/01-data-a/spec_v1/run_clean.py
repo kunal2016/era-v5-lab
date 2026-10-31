@@ -19,12 +19,6 @@ ap.add_argument("--out", type=Path, default=Path("out"))
 args = ap.parse_args()
 args.out.mkdir(parents=True, exist_ok=True)
 rows = pq.read_table(args.pack).to_pylist()
-pack = args.pack.stem
-for row in rows:  # clean.py picks the rules by pack_id: a pack without the column takes its file name
-    if row.setdefault("pack_id", pack) != pack:
-        sys.exit(f"{args.pack.name}: doc_id {row['doc_id']} has pack_id {row['pack_id']!r}")
-if pack not in c._FAMILY:
-    print(f"note: {pack} is in no family of clean.py, so every doc passes unchanged and is not eligible for release")
 t0, actions, dropped, errors, kept = time.time(), Counter(), [], [], []
 for row in rows:
     try:
@@ -36,7 +30,7 @@ for row in rows:
     if action == "drop": dropped.append(row["doc_id"])
     else: kept.append(dict(row, text=text))
 pq.write_table(pa.Table.from_pylist(kept), args.out / f"{args.pack.stem}_clean.parquet")
-summary = {"pack": args.pack.name, "family": c._FAMILY.get(pack), "rows": len(rows), "actions": dict(actions), "errors": errors, "dropped": dropped, "seconds": round(time.time() - t0, 1), "docs_per_second": round(len(rows) / max(time.time() - t0, 1e-9), 1)}
+summary = {"pack": args.pack.name, "rows": len(rows), "actions": dict(actions), "errors": errors, "dropped": dropped, "seconds": round(time.time() - t0, 1), "docs_per_second": round(len(rows) / max(time.time() - t0, 1e-9), 1)}
 (args.out / f"{args.pack.stem}_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n")
 print({k: v for k, v in summary.items() if k != "dropped"}, "dropped:", len(dropped))
 sys.exit(1 if errors else 0)
