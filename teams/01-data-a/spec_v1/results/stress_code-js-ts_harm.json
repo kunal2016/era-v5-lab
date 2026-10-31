@@ -1,15 +1,15 @@
 {
-  "pack": "code-cpp.parquet",
-  "pack_sha256": "2aa25660b81ccaea5e153ab30c0abd80df2a0cf42531421094c5ff9c96401bd5",
-  "gold": "code-cpp_gold.csv",
-  "gold_sha256": "0f53271f3bebb4b5d62464c74945732af745306fba2ac6035b61d858f61bb973",
-  "gold_count": 120,
-  "rules": "teams/01-data-a/spec/medicine_code.md",
+  "pack": "code-js-ts.parquet",
+  "pack_sha256": "4aa4dea19a83b8db922156838b6772e107f39c4ce6af76bf19b3008a57b27018",
+  "gold": "code-js-ts_gold.csv",
+  "gold_sha256": "d4fc2820d275251bb062474f77d581e1a440972abcaf30cf3519bfdea1a5644a",
+  "gold_count": 207,
+  "rules": "teams/01-data-a/spec_v1/medicine_code.md",
   "rules_file_sha256": "e096bea29f0634a76ae99600753527aa266a1d69ed06c4fd88e800b42c8bf13b",
   "code_sha256": "c4a299ad6f40ed44d51b0974204cc1e4d91b320412f24c73d937def5d827aea1",
   "limit_percent": "1",
-  "limit_documents": 1,
-  "status": "PASS",
+  "limit_documents": 2,
+  "status": "FAIL",
   "results": [
     {
       "rule": "DA-A1-001",
@@ -118,15 +118,19 @@
     {
       "rule": "DA-E1-008",
       "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
+      "dropped": 1,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.483092",
       "result": "PASS",
       "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
+      "dropped_ids": [
+        "0f34612ed9c80d78"
+      ],
+      "affected_ids": [
+        "0f34612ed9c80d78"
+      ]
     },
     {
       "rule": "DA-E1-006",
@@ -247,16 +251,20 @@
     },
     {
       "rule": "DA-E4-007",
-      "changed": 0,
+      "changed": 1,
       "dropped": 0,
-      "affected_unique": 0,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.483092",
       "result": "PASS",
-      "changed_ids": [],
+      "changed_ids": [
+        "67c9226601f26da9"
+      ],
       "dropped_ids": [],
-      "affected_ids": []
+      "affected_ids": [
+        "67c9226601f26da9"
+      ]
     },
     {
       "rule": "DA-C1-004",
@@ -286,16 +294,20 @@
     },
     {
       "rule": "DA-B4-009",
-      "changed": 0,
+      "changed": 1,
       "dropped": 0,
-      "affected_unique": 0,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.483092",
       "result": "PASS",
-      "changed_ids": [],
+      "changed_ids": [
+        "cc42702a51d8a8ee"
+      ],
       "dropped_ids": [],
-      "affected_ids": []
+      "affected_ids": [
+        "cc42702a51d8a8ee"
+      ]
     },
     {
       "rule": "DA-E3-003",
@@ -325,16 +337,25 @@
     },
     {
       "rule": "ALL IN ORDER",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
+      "changed": 2,
+      "dropped": 1,
+      "affected_unique": 3,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
+      "percent": "1.449275",
+      "result": "FAIL",
+      "changed_ids": [
+        "67c9226601f26da9",
+        "cc42702a51d8a8ee"
+      ],
+      "dropped_ids": [
+        "0f34612ed9c80d78"
+      ],
+      "affected_ids": [
+        "67c9226601f26da9",
+        "cc42702a51d8a8ee",
+        "0f34612ed9c80d78"
+      ]
     }
   ]
 }

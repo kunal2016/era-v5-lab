@@ -1,4 +1,4 @@
-"""Make every generated file in spec/: results/evidence.json, medicine_code.md, decisions_code.md, results/*_harm.json, results/inputs_manifest.json.
+"""Make every generated file in spec_v1/: results/evidence.json, medicine_code.md, decisions_code.md, results/*_harm.json, results/inputs_manifest.json.
 
   python -I run_all.py <checkout> <packs dir> [--stress-gold <dir>]
 
@@ -29,7 +29,7 @@ def harm(pack, gold, report, ok):
     run(TEAM / "tools" / "harm_test.py", "--pack", args.packs / f"{pack}.parquet", "--gold", gold, "--rules", SPEC / "medicine_code.md",
         "--rule", "all", "--report", report, ok=ok)
     d = json.loads(report.read_text(encoding="utf-8"))
-    d["rules"] = "teams/01-data-a/spec/medicine_code.md"  # the tool writes the path it was given, which differs per machine
+    d["rules"] = "teams/01-data-a/spec_v1/medicine_code.md"  # the tool writes the path it was given, which differs per machine
     report.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 

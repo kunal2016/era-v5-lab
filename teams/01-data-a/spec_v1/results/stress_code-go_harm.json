@@ -1,10 +1,10 @@
 {
-  "pack": "code-rust.parquet",
-  "pack_sha256": "c5822b7df0e76a6bbca95ea6d73a94f19970fe8a71e5645e9205195193a227e5",
-  "gold": "code-rust_gold.csv",
-  "gold_sha256": "2fbb0779f2da11fb888da093ba55f9b609ecef250f56790903f7c2854bf09c96",
-  "gold_count": 78,
-  "rules": "teams/01-data-a/spec/medicine_code.md",
+  "pack": "code-go.parquet",
+  "pack_sha256": "30fc352199a6b3773d76a692420d25469835e8668ded2cfe8a6be09d71958661",
+  "gold": "code-go_gold.csv",
+  "gold_sha256": "90f0b780a9f7a617a792c5a477414d97385ed1689a09256b8f924b19a35919cf",
+  "gold_count": 171,
+  "rules": "teams/01-data-a/spec_v1/medicine_code.md",
   "rules_file_sha256": "e096bea29f0634a76ae99600753527aa266a1d69ed06c4fd88e800b42c8bf13b",
   "code_sha256": "c4a299ad6f40ed44d51b0974204cc1e4d91b320412f24c73d937def5d827aea1",
   "limit_percent": "1",
@@ -208,29 +208,37 @@
     },
     {
       "rule": "DA-E4-005",
-      "changed": 0,
+      "changed": 1,
       "dropped": 0,
-      "affected_unique": 0,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.584795",
       "result": "PASS",
-      "changed_ids": [],
+      "changed_ids": [
+        "18a278785cdf215a"
+      ],
       "dropped_ids": [],
-      "affected_ids": []
+      "affected_ids": [
+        "18a278785cdf215a"
+      ]
     },
     {
       "rule": "DA-E4-010",
-      "changed": 0,
+      "changed": 1,
       "dropped": 0,
-      "affected_unique": 0,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.584795",
       "result": "PASS",
-      "changed_ids": [],
+      "changed_ids": [
+        "18a278785cdf215a"
+      ],
       "dropped_ids": [],
-      "affected_ids": []
+      "affected_ids": [
+        "18a278785cdf215a"
+      ]
     },
     {
       "rule": "DA-E4-009",
@@ -325,16 +333,20 @@
     },
     {
       "rule": "ALL IN ORDER",
-      "changed": 0,
+      "changed": 1,
       "dropped": 0,
-      "affected_unique": 0,
+      "affected_unique": 1,
       "errors": 0,
       "error_types": [],
-      "percent": "0.000000",
+      "percent": "0.584795",
       "result": "PASS",
-      "changed_ids": [],
+      "changed_ids": [
+        "18a278785cdf215a"
+      ],
       "dropped_ids": [],
-      "affected_ids": []
+      "affected_ids": [
+        "18a278785cdf215a"
+      ]
     }
   ]
 }

@@ -1,18 +1,18 @@
 {
-  "pack": "code-java.parquet",
-  "pack_sha256": "739dc95cdb4241847b051e8c55f5a723a4597919c62f9d6e4ebb9a957d445b00",
-  "gold": "code-java_gold.csv",
-  "gold_sha256": "223d555f68e1bd7ecc93f4d3510e7b3425401539729443b2bff8ed1b0212e869",
-  "gold_count": 116,
-  "rules": "teams/01-data-a/spec/medicine_code.md",
-  "rules_file_sha256": "e096bea29f0634a76ae99600753527aa266a1d69ed06c4fd88e800b42c8bf13b",
-  "code_sha256": "c4a299ad6f40ed44d51b0974204cc1e4d91b320412f24c73d937def5d827aea1",
+  "pack": "code-rust.parquet",
+  "pack_sha256": "c5822b7df0e76a6bbca95ea6d73a94f19970fe8a71e5645e9205195193a227e5",
+  "gold": "code-rust_gold.csv",
+  "gold_sha256": "2fbb0779f2da11fb888da093ba55f9b609ecef250f56790903f7c2854bf09c96",
+  "gold_count": 78,
+  "rules": "teams/01-data-a/spec_v1/clean.py",
+  "rules_file_sha256": "76ac8b21af7c3481f68e6fc2d317c48044250fe1a1eb0331b8b47eb7de112872",
+  "code_sha256": "76ac8b21af7c3481f68e6fc2d317c48044250fe1a1eb0331b8b47eb7de112872",
   "limit_percent": "1",
   "limit_documents": 1,
   "status": "PASS",
   "results": [
     {
-      "rule": "DA-A1-001",
+      "rule": "A1",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -25,7 +25,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-A2-007",
+      "rule": "A2",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -38,7 +38,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-A6-001",
+      "rule": "A6",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -51,7 +51,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-A4-002",
+      "rule": "A4",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -64,7 +64,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-A4-003",
+      "rule": "B3",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -77,7 +77,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-B3-001",
+      "rule": "E1",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -90,7 +90,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-001",
+      "rule": "E2",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -103,7 +103,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-004",
+      "rule": "C3",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -116,7 +116,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-008",
+      "rule": "C4",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -129,7 +129,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-006",
+      "rule": "E4",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -142,7 +142,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-005",
+      "rule": "C1",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -155,7 +155,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E1-007",
+      "rule": "B4",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -168,7 +168,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-E2-001",
+      "rule": "E3",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
@@ -181,137 +181,7 @@
       "affected_ids": []
     },
     {
-      "rule": "DA-C3-002",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-C4-002",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E4-005",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E4-010",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E4-009",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E4-007",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-C1-004",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-C1-005",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-B4-009",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E3-003",
-      "changed": 0,
-      "dropped": 0,
-      "affected_unique": 0,
-      "errors": 0,
-      "error_types": [],
-      "percent": "0.000000",
-      "result": "PASS",
-      "changed_ids": [],
-      "dropped_ids": [],
-      "affected_ids": []
-    },
-    {
-      "rule": "DA-E3-004",
+      "rule": "F1",
       "changed": 0,
       "dropped": 0,
       "affected_unique": 0,
