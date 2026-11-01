@@ -3,7 +3,7 @@
   python -I make_harm_tests.py <checkout> <packs dir> [<packs dir> ...] [--out <harm_tests.md>] [--results <dir>]
 
 <checkout> holds teams/01-data-a/tools/harm_test.py and teams/01-data-a/gold/. harm_test.py is imported as it is, never
-changed, and its own functions read the gold, read the pack and count the harm, as scripts/validate_specv1.py does.
+changed, and its own functions read the gold, read the pack and count the harm, as tools/validate_specv1.py does.
 
 Each rule is tested alone, only on the gold sets of the packs SCOPE (the table at the top of clean.py) gives it. Then each
 disease-code function on every pack where one of its rules applies, and clean() on every pack. Every rule that does not
@@ -19,7 +19,7 @@ from fractions import Fraction
 from pathlib import Path
 import pyarrow.parquet as pq
 
-HERE = Path(__file__).resolve().parents[1] / "spec_v1"
+HERE = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("checkout", type=Path)
 ap.add_argument("packs", type=Path, nargs="+")
@@ -103,7 +103,7 @@ for fam, packs in families.items():
               [(r["rule"], r["result"]) for r in [*rules.values(), *functions.values()] if r["result"] != "PASS"], "| out of scope acting:", sorted(outside), flush=True)
 
 lines = ["# Spec v1 harm tests", "",
-         f"DRAFT. Made by `tools/make_harm_tests.py` on {date.today():%d %b %Y} from `clean.py` (built by `tools/build_clean.py` from `specv1.md`) "
+         f"DRAFT. Made by `spec_v1/tools/make_harm_tests.py` on {date.today():%d %b %Y} from `clean.py` (built by `spec_v1/tools/build_clean.py` from `specv1.md`) "
          "with the team's `harm_test.py`, run as it is. Each cell: gold docs changed + dropped. Limit: `max(1, floor(1% of gold))`, that is "
          "`max(1 document, 1%)` (TSAI decision), each pack on its own gold set, never pooled. An empty gold set is NOT TESTABLE and an error is "
          "never a PASS; a result other than PASS is shown after the count.", "",
@@ -115,8 +115,8 @@ lines = ["# Spec v1 harm tests", "",
 for pack, d in ran.items():
     lines.append(f"| {pack} | {d['family']} | {d['gold_count']} ({d['limit_documents']}) | {cell(d['clean'])} | {d['clean']['result']} | "
                  f"{d['whole_pack']['fixed']} / {d['whole_pack']['dropped']} | {', '.join(d['out_of_scope_rules_acting']) or 'none'} | {d['same_as_specv1_validation']} |")
-lines += ["", "On the code packs `clean()` also runs the shared F1 (`tools/f1_rule.py`) last, and `DA-B4-009` leaves `<EMAIL>`: "
-          "`specv1_validation.json` ran the sheet without either, so a code pack may differ from it.", "",
+lines += ["", "On the code, math and science packs `clean()` also runs the shared F1 (`spec_v1/tools/f1_rule.py`) last, and `DA-B4-009` leaves `<EMAIL>`: "
+          "`specv1_validation.json` ran the sheet without them, so these packs may differ from it.", "",
           "## 2. Each rule alone, on the gold sets of its packs only", ""]
 for fam, packs in families.items():
     tested = [p for p in packs if p in ran]

@@ -9,6 +9,7 @@ documents the reviewers named, so those cases use the doc_id the rule lists in s
   3  the code family: licences, generated files, the shared F1
   4  the English family: look-alikes, ZWJ and ZWNJ, DA-F1-005, clean() equal to the sheet
   5  the math family
+  6  the shared F1 on the math and science packs: the prose path of spec_v1/tools/f1_rule.py (TSAI, 1 Nov)
 """
 import re
 import subprocess
@@ -20,7 +21,7 @@ from pathlib import Path
 import pytest
 
 SPEC = Path(__file__).resolve().parents[1]
-BUILD = SPEC.parent / "tools" / "build_clean.py"
+BUILD = SPEC / "tools" / "build_clean.py"
 sys.path.insert(0, str(SPEC))
 import clean as c
 
@@ -54,7 +55,7 @@ OPENING = ("Background. " + SCI + "The second sentence of the abstract explains 
 def doc(pack, text, lang): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": lang, "pack_id": pack}
 def code(text, lang="go", pack="code-go"): return {"doc_id": "x", "text": text, "url": "a/b", "lang_label": lang, "pack_id": pack}
 def maths(text, pack="math-finemath"): return doc(pack, text, "en")
-def sci(text, doc_id="x"): return dict(doc("sci-finepdfs", text, "en"), doc_id=doc_id)
+def sci(text, doc_id="x"): return dict(doc("sci-finepdfs", text, "eng_Latn"), doc_id=doc_id)  # the science pack's tag
 
 
 def en(text, lang="en"):
@@ -121,6 +122,9 @@ SICK = [
     ("math", "C3", maths("This preview shows page 1 - 2 out of 4 pages.\n" + BODY), "drop", None),
     ("math", "C1", maths(BODY + "Share\nWrite a comment\n"), "fix", None),
     ("math", "C2", maths(BODY + "Introductory Physics Homework Help forum\n" * 6), "fix", None),
+    ("math", "A6", maths("x  y is the exclusive or.\n" + BODY), "fix", None),  # a Symbol-font glyph in the private use area
+    ("math", "D3", maths(BODY + "Дивитися фільми онлайн\n" + BODY), "fix", None),  # a foreign-script spam line
+    ("math", "F1", maths(BODY + "Home: 217-555-0123\n"), "fix", None),  # the shared F1, prose path: a private label on a made-up number
 
     ("sci", "B4", sci("Call FUN and <function name> in the text.\n" + SCI), "fix", None),
     ("sci", "B2", sci("The area is 4 m<sup>2</sup> at the start.\n" + SCI, "7ea84af3398cb3ed"), "fix", None),  # a reviewed ID
@@ -142,7 +146,8 @@ CLEAN = {"code": code(GO_CODE), "english": en(PARA + "\n\n" + PARA), "english, t
 
 
 def test_every_function_is_tested_on_every_family_it_has_a_rule_for():
-    pairs = {(fam, c._ID[make].split("-")[1]) for fam, rules in c._PIPELINES.items() for make in rules} | {("code", "F1")}  # and the shared F1
+    pairs = {(fam, c._ID[make].split("-")[1]) for fam, rules in c._PIPELINES.items() for make in rules}
+    pairs |= {(fam, "F1") for fam, rules in c._PIPELINES.items() if c.SCOPE["f1_rule.py"] & {p for m in rules for p in c.SCOPE[c._ID[m]]}}  # the shared F1
     assert {(fam, fn) for fam, fn, *_ in SICK} == pairs
     assert set(c.RULES) == {fn for _, fn, *_ in SICK}  # one function per disease code
     assert all(c.RULES[k].__name__ == k.lower() for k in c.RULES)
@@ -195,7 +200,8 @@ def test_the_f1_rules_cover_their_whole_family():
     assert c._PIPELINES["english"][-1] is c._english_f1_005  # and last in the English family
     assert 'RULE_ID = "DA-F1-005"' in (SPEC / "clean.py").read_text(encoding="utf-8")
     assert c.SCOPE["DA-F1-006"] == FAMILIES["sci"]
-    assert c.SCOPE["f1_rule.py"] == FAMILIES["code"]  # the shared F1
+    assert c.SCOPE["f1_rule.py"] == FAMILIES["code"] | FAMILIES["math"] | FAMILIES["sci"]  # the shared F1 (TSAI, 1 Nov)
+    assert not c.SCOPE["f1_rule.py"] & FAMILIES["english"]  # English keeps its own F1, DA-F1-005
     assert c.RULES["F1"] is c.f1
 
 
@@ -266,7 +272,7 @@ def test_the_build_stops_on_a_bad_scope(tmp_path, rid, packs, error):
 
 @pytest.fixture
 def prose(monkeypatch):
-    """The shared F1 (tools/f1_rule.py) on prose. clean.py runs it on the code packs only; English has its own F1, DA-F1-005."""
+    """The shared F1 (spec_v1/tools/f1_rule.py) on prose. clean.py runs it on the code, math and sci packs; English has its own F1, DA-F1-005."""
     monkeypatch.setattr(c, "_F1_LANGS", c._F1_LANGS | {"en"})
 
 
@@ -493,6 +499,107 @@ def test_a_teaser_cut_is_trimmed_to_the_last_sentence():
 @pytest.mark.parametrize("row", [maths("Hereâ€™s a​ <br>proof.\nShare\n" + BODY),
                                  maths("the ﬁrst <b>term</b>\n" + BODY, "math-megamath")])
 def test_clean_twice_is_clean_once_on_math(row):
+    a, once = c.clean(row)
+    assert a == "fix"
+    assert c.clean(dict(row, text=once)) == ("keep", once)
+
+
+# Math v1.1: SomaKorada07's functions (A6 and D3 are new; A3, B5 and C2 follow her rules more closely)
+
+def test_a6_maps_a_symbol_font_glyph():
+    a, new = c.a6(maths("x  y is the exclusive or.\n" + BODY))
+    assert a == "fix" and "⊕" in new and "" not in new
+
+
+def test_a3_repairs_utf8_read_as_cp866():
+    a, new = c.a3(maths("ItтАЩs a proof.\n" + BODY))
+    assert a == "fix" and "’" in new
+
+
+def test_b5_converts_bbcode_in_any_case():
+    a, new = c.b5(maths("[TEX]x^2[/TEX]\n" + BODY))
+    assert a == "fix" and "[TEX]" not in new
+
+
+def test_c2_keeps_repeated_answer_options():
+    options = "".join(f"{k}. {n} apples and {n - 8} pears in the basket on the table\n" for k, n in zip("ABCD", (12, 14, 16, 18)))
+    assert len(options) > 150  # long enough for the passage check
+    text = BODY + ("Question one asks for the sum.\n\n" + options + "\n") + ("Question two asks for the sum again.\n\n" + options + "\n")
+    assert c.c2(maths(text)) == ("keep", text)
+
+
+def test_d3_removes_a_foreign_line_and_drops_a_mostly_foreign_page():
+    line = "Дивитися фільми онлайн\n"
+    a, new = c.d3(maths(BODY + line + BODY))
+    assert a == "fix" and line.strip() not in new
+    assert c.d3(maths(line * 20 + "Short note.\n"))[0] == "drop"
+
+
+def test_greek_letters_are_maths_not_foreign():
+    text = "Let α + β = π and λ > 0.\n" + BODY
+    assert c.d3(maths(text)) == ("keep", text)
+
+
+# 6. The shared F1 on the math and science packs: the prose path of spec_v1/tools/f1_rule.py (TSAI, 1 Nov).
+# Made-up values only: 555-01xx numbers, example names and domains.
+
+def sci_prose(text): return dict(doc("sci-finepdfs", text, "eng_Latn"), url="http://a/b.pdf")
+
+
+@pytest.mark.parametrize("text, expect", [
+    ("Call me.\nHome: 312-555-0142\n", "Call me.\nHome: <PHONE>\n"),
+    ("Reach Pat on 312-555-0177 (cell) after six.", "Reach Pat on <PHONE> (cell) after six."),
+    (f"Written by jordan.sample{AT}mailhost.net; questions to info{AT}mailhost.net or someone{AT}example.org",
+     f"Written by <EMAIL>; questions to info{AT}mailhost.net or someone{AT}example.org"),
+])
+def test_prose_f1_gives_private_values_their_tag(text, expect):
+    assert c.f1(sci_prose(text)) == ("fix", expect)
+
+
+def test_prose_f1_contact_card_phone_and_address():
+    a, new = c.f1(sci_prose("Jordan Sample\n12 Maple Lane\nSpringfield, IL 62701\n217-555-0123\n"))
+    assert a == "fix" and "<PHONE>" in new and "<ADDRESS>" in new and "555-0123" not in new and "Maple" not in new
+
+
+def test_prose_f1_people_table():
+    a, new = c.f1(sci_prose("| Name | Telephone | Fax |\n|---|---|---|\n| Jordan Sample | 44 20 5550 0123 | 44 20 5550 0124 |\n"))
+    assert a == "fix" and new.count("<PHONE>") == 2 and "5550" not in new
+
+
+def test_prose_f1_mailing_list_at_form_on_math():
+    a, new = c.f1(maths("Re: patch\nJordan Sample\njsample at mail.example-uni.net\nThu Oct 1 2009\n", "math-megamath"))
+    assert a == "fix" and "jsample at" not in new and "<EMAIL>" in new
+
+
+def test_prose_f1_drops_a_listing_of_individuals():
+    rows = "".join(f"SAMPLE, Jordan Lee, {30 + i}, {i} Maple Lane, Springfield, Clerk. Order made.\n" for i in range(8))
+    assert c.f1(sci_prose(rows))[0] == "drop"
+
+
+@pytest.mark.parametrize("text", [
+    "County Clerk's Office\n100 Main Street\nPhone: 312-555-0100\n",                        # public office
+    "Call 1-800-555-0199 for help.",                                                         # toll free
+    "**Food Pantry Network**\n- Address: 22 Oak Street, Springfield, IL 62701\n- Phone: 217-555-0188\n"
+    "- Website: https://pantry.example.org/\n",                                              # a directory of organisations
+    f"Contact us\n\nsales.team.lead{AT}company-mail.net",                                    # an organisation's mailbox
+    "The data set is available at data.example-archive.net under CC0.",                     # "at" in prose is not an email
+    "We set $x = 312-555$ and n = 1.000.0000 in Table 3, page 555-0123 of the appendix.",  # numbers that look alike
+])
+def test_prose_f1_keeps_organisations_and_look_alikes(text):
+    assert c.f1(sci_prose(text)) == ("keep", text)
+
+
+@pytest.mark.parametrize("row", [
+    {"doc_id": "x", "text": "Home: 312-555-0142", "lang_label": "en"},                                   # no pack_id
+    {"doc_id": "x", "text": "Home: 312-555-0142", "lang_label": "en", "pack_id": "en-dclm"},            # English: has its own F1, DA-F1-005
+    {"doc_id": "x", "text": "Home: 312-555-0142", "lang_label": "en", "pack_id": "sci-finepdfs"},       # wrong tag for that pack
+])
+def test_prose_path_runs_only_on_math_and_sci_packs(row):
+    assert c._shared_f1(row) == ("keep", row["text"])  # the shared rule alone; SCOPE also keeps it off English
+
+
+def test_clean_twice_is_clean_once_on_prose():
+    row = sci_prose(f"Jordan Sample\n12 Maple Lane\nSpringfield, IL 62701\nHome: 217-555-0123\njordan.s{AT}mailhost.net\n")
     a, once = c.clean(row)
     assert a == "fix"
     assert c.clean(dict(row, text=once)) == ("keep", once)

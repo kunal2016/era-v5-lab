@@ -11,7 +11,7 @@ teams/01-data-a/
     spec_v1_<family>.md     scope, order, conflicts, open items, freeze state
     medicine_<family>.md    the runnable rules: one block per rule, in run order
     decisions_<family>.md   why each rule was picked or not, for each disease
-    specv1.md               the four family sheets collated: what tools/build_clean.py reads
+    specv1.md               the four family sheets collated: what spec_v1/tools/build_clean.py reads
     clean.py                the cleaner, generated from specv1.md, with the scope table at the top
     README_clean.md         how to build, test and run clean.py, step by step
     run_clean.py            runs the cleaner on one pack
@@ -103,7 +103,7 @@ These tools are on `g1-harm-test`, not on this base branch. Results here were ma
 
 ## The cleaner
 
-`clean.py` is the cleaner. `../tools/build_clean.py` generates it from `specv1.md`, which collates the four family sheets, so **add rules to a sheet, never to `clean.py`**.
+`clean.py` is the cleaner. `tools/build_clean.py` generates it from `specv1.md`, which collates the four family sheets, so **add rules to a sheet, never to `clean.py`**.
 
 A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its block, and for a math rule its `ORIGIN` packs too. The build puts those pack IDs in one table, `SCOPE`, at the top of `clean.py`, and each rule reads its entry there. A document goes to the family of its `pack_id` and runs that family's rules in sheet order. A document with a missing or unknown `pack_id` passes unchanged and is not eligible for release. `run_clean.py` takes `pack_id` from the file name when a pack has no such column. `make_harm_tests.py` tests each rule only on the gold sets of the packs in its `SCOPE` entry. It also runs every rule that does not apply to a pack on that whole pack, where it must change nothing.
 
@@ -112,7 +112,7 @@ A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its b
 | `medicine_<family>.md` | The rules of one family: `code`, `english`, `math`, `sci` | The PR for that family |
 | `specv1.md` | The four sheets collated, with the packs of each rule | The pipeline owner |
 | `decisions_<family>.md` | Why each rule was picked or not | The same PR |
-| `../tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code packs | A PR that names the family it adds |
+| `tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code, math and science packs | A PR that names the family it adds |
 | `clean.py`, `results/cleaner/harm_tests.md`, `results/cleaner/specv1_*` | Generated | Only the rebuild step, after a merge |
 
 ## Run it
@@ -121,10 +121,10 @@ Step by step, with every option, output and error: [README_clean.md](README_clea
 
 ```
 pip install pyarrow pytest tree-sitter-language-pack ftfy
-python tools/build_clean.py
+python spec_v1/tools/build_clean.py
 python -m pytest spec_v1/tests
 python spec_v1/run_clean.py --pack <pack>.parquet --out out
-python tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs> [<another folder with packs> ...]
+python spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs> [<another folder with packs> ...]
 ```
 
 Paths start at `teams/01-data-a/`. Run `make_harm_tests.py` where all 13 packs are: a pack it cannot find is listed as not run in `harm_tests.md`. `ftfy` is needed once the English A3 rule is in. `make_harm_tests.py` uses `harm_test.py`, which is on `g1-harm-test` until PR 140 merges. The packs are not in the repo, so get your link from the lab plan sheet.
@@ -184,9 +184,10 @@ Then:
 
 ## F1
 
-`../tools/f1_rule.py` follows the TSAI decision: `<PHONE>`, `<EMAIL>` and `<ADDRESS>` for a private person, drop a personal listing, keep organisations and public offices.
+`tools/f1_rule.py` follows the TSAI decision: `<PHONE>`, `<EMAIL>` and `<ADDRESS>` for a private person, drop a personal listing, keep organisations and public offices.
 
-- **Where it runs:** code only for now, because only code has had the harm test. To add a family, put its language tags in `_F1_LANGS`, run the harm test, and put the results in your PR. Prose has no tree, so it runs on regex alone.
+- **Where it runs:** on the code packs, with tree-sitter, and on the math and science packs, with the prose path (`_F1_PROSE`: `math-*` with `en`, `sci-*` with `eng_Latn`), as TSAI approved on 1 Nov. `SHARED_F1_FAMILIES` in `tools/build_clean.py` puts those packs in its `SCOPE` entry; on science it runs after `DA-F1-006`, so the reviewed drops stay. English keeps its own F1, `DA-F1-005`, and never gets the shared rule. The prose path is keyed by `pack_id` because English shares the `en` tag; a doc with no `pack_id` never takes it. To add a family, add it to `SHARED_F1_FAMILIES` and to `_F1_LANGS` (code) or `_F1_PROSE` (prose), run the harm test, and put the results in your PR.
+- **Prose path:** a value is private when a private label sits on it (`Home:`, `Cell:`, `Daytime Phone`), when it is in a person's contact card (each field on its own line, two personal fields or more), or in a `| Name | Telephone |` table. It is kept when its block or the heading above names an organisation or public office, and for toll-free numbers, role mailboxes and example domains. A page mostly of `SURNAME, Forenames, age, address` entries is dropped. It misses a private phone in running prose with no label, non-North-American numbers outside people tables, and addresses that are not "number + name + street type".
 - **Never write a private value** in a commit, a PR or chat. Use doc_ids and offsets, as `regex_check.py` does.
 - **Known limits:** it misses lower-case addresses, and it reads "8 Bit Drive" as an address. An email at a company domain counts as personal unless it is a role address like `support@`. Names are not in the TSAI list, so it leaves them.
-- **B4:** in `clean.py`, the code B4 rule leaves `<EMAIL>` alone, because it is now the F1 tag, and still replaces `<NAME>`, `<KEY>` and `<PASSWORD>`. Before this, a second run turned the tag into `user@example.com`. `../tools/build_clean.py` makes this change, and `medicine_code.md` still has the old rule until the team agrees. 26 docs labelled B4 hold only `<EMAIL>`, so they keep the token.
+- **B4:** in `clean.py`, the code B4 rule leaves `<EMAIL>` alone, because it is now the F1 tag, and still replaces `<NAME>`, `<KEY>` and `<PASSWORD>`. Before this, a second run turned the tag into `user@example.com`. `tools/build_clean.py` makes this change, and `medicine_code.md` still has the old rule until the team agrees. 26 docs labelled B4 hold only `<EMAIL>`, so they keep the token.

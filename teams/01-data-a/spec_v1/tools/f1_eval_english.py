@@ -1,8 +1,8 @@
-"""Does F1 work on the English packs? The English counterpart of ../../tools/f1_eval.py. IDs, counts and made-up values only.
+"""Does F1 work on the English packs? The English counterpart of f1_eval.py. IDs, counts and made-up values only.
 
   python -I f1_eval_english.py <g1-harm-test checkout> <packs dir> [docs per pack for planting, default 40]
 
-../clean.py's f1() runs DA-F1-005 on the English packs (its SCOPE); the shared ../../tools/f1_rule.py runs on the code packs
+../clean.py's f1() runs DA-F1-005 on the English packs (its SCOPE); the shared f1_rule.py runs on the code packs
 only. Each check is also made with the shared rule, switched on for en and eng in memory only (prose has no tree, so regex
 alone decides), to show what switching it on would do. Neither file is changed.
 
