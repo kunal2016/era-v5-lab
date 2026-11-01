@@ -15,7 +15,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
-SHEET = HERE.parent / "medicine_english.md"
+SHEET = HERE.parent / "sheets" / "medicine_english.md"
 PACKS_DIR = Path(sys.argv[1])
 PACKS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
 rules = []

@@ -28,11 +28,11 @@ SPEC = HERE.parent
 CHECKOUT, PACKS_DIR, STRESS = (Path(a).resolve() for a in sys.argv[1:4])
 TEAM = CHECKOUT / "teams" / "01-data-a"
 HARM = TEAM / "tools" / "harm_test.py"
-CLEAN, SHEET = SPEC / "clean.py", SPEC / "medicine_english.md"
+CLEAN, SHEET = SPEC / "clean.py", SPEC / "sheets" / "medicine_english.md"
 OUT = SPEC / "results"
 PACKS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
 SHORT = {"en-dclm": "dclm", "en-fineweb-edu": "fineweb-edu", "en-nemotroncc": "nemotroncc", "en-nemotroncc-synth": "synth"}
-IN_REPO = {CLEAN: "teams/01-data-a/spec_v1/clean.py", SHEET: "teams/01-data-a/spec_v1/medicine_english.md"}
+IN_REPO = {CLEAN: "teams/01-data-a/spec_v1/clean.py", SHEET: "teams/01-data-a/spec_v1/sheets/medicine_english.md"}
 sys.path.insert(0, str(SPEC))
 import clean as c
 
@@ -74,7 +74,7 @@ def ids(rep, name):
 
 def renamed():
     """English IDs that specv1.md (and so clean.py) renamed: {medicine_english.md ID: clean.py ID}."""
-    rows = re.findall(r"^\| \d+ \| english \| \w+ \| `(DA-[^`]+)` \| `(DA-[^`]+)` \|$", (SPEC / "specv1.md").read_text(encoding="utf-8"), re.M)
+    rows = re.findall(r"^\| \d+ \| english \| \w+ \| `(DA-[^`]+)` \| `(DA-[^`]+)` \|$", (SPEC / "sheets" / "specv1.md").read_text(encoding="utf-8"), re.M)
     return {a: b for a, b in rows if a != b}
 
 

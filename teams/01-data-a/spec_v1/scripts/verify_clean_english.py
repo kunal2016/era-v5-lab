@@ -23,7 +23,7 @@ import pyarrow.parquet as pq
 HERE = Path(__file__).resolve().parent
 SPEC = HERE.parent
 PACKS_DIR = Path(sys.argv[1])
-SHEET = SPEC / "specv1.md"
+SHEET = SPEC / "sheets" / "specv1.md"
 PACKS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
 ZWJ, ZWNJ = chr(0x200D), chr(0x200C)
 sys.path.insert(0, str(SPEC))

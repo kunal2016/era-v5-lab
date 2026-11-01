@@ -91,12 +91,12 @@ def main():
     ap.add_argument('--packs', required=True, type=Path)
     ap.add_argument('--gold', required=True, type=Path)
     args = ap.parse_args()
-    sheet = SPEC / 'specv1.md'
+    sheet = SPEC / 'sheets' / 'specv1.md'
     ns, code_digest = ht.load_rules(sheet)
     rules = list(ns['RULES_BY_ID'].items())
     packs = sorted({p for _, fn in rules for p in fn.__globals__['SPEC_PACKS']})
     report = {'rules_code_sha256': code_digest, 'sources': {
-        p.name: digest(p) for p in SPEC.glob('medicine_*.md')
+        p.name: digest(p) for p in (SPEC / 'sheets').glob('medicine_*.md')
         if p.name in {'medicine_code.md', 'medicine_english.md', 'medicine_math.md', 'medicine_sci.md'}},
         'execution': 'harm_test.load_rules/run_rule/run_sheet; repository 1% minimum-one comparison; 5s timeout per rule/document',
         'harm_runner_sha256': digest(Path(ht.__file__)),
