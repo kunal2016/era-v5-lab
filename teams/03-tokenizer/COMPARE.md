@@ -277,3 +277,49 @@ All builds use `train_bpe.py --special-layout v0 --v0-tokenizer <v0.1 tokenizer.
 - **C3, the normalizer,** gives Bn −0.29% and As −0.17% (nukta re-join). Pa is +0.06%. C3 is v2 with the v0.1 specials: its merges, vocab ids and normalizer are identical to v2, and only the 5 renamed special strings differ.
 - **Ids:** `check_ids.py` passes for C1 vs C0, C2 vs v1-c1 and C3 vs v2. It now accepts a reserved slot that is filled by renaming it with its id and flags kept (README rule) and fails any other special change. The three verify scripts pass for each candidate.
 - **C0 sha:** C0's sha differs from `c0_v0ids_manifest.json` (`7e9bb94c…`). That build used the older 20 MB Ta/Te/Kn/Ml corpus; the manifest hashes show the difference. The same slots on `corpus60` give `53c1047f…`, with both the current and the #137 `train_bpe.py`.
+
+## C1, C2, C3 retrained with the week-2 tokenizer sample v0
+
+The same three candidates (same slots, swap, normalizer and v0.1 specials), retrained with text from the week-2 tokenizer sample v0 (`sample_manifest.json` sha256 `7fd647c8…`, 48 `train/` parts, every part checked against the sample's `SHA256SUMS`). The sample's `heldout/` parts are used only to evaluate, never to train. Rule for this retrain: no language may be worse than the committed C1–C3 above.
+
+| Candidate | sha256 (built twice, same both times) | Manifest |
+|---|---|---|
+| **C1** | `36acf1264248c0f7ed1e3b18cfef6e4e9f489660d749c1e9c2b79e80901c82a2` | `train/c1_s0_manifest.json` |
+| **C2** | `b0d44576012cede10ea197d33251377ee5aac72f246aca954b96a95a20f8488a` | `train/c2_s0_manifest.json` |
+| **C3** | `15468e66457b43af79f695cbe585c0d03e3cfe7a4a5d04d189dd3c6b9f02ddc3` | `train/c3_s0_manifest.json` |
+
+- **The sample has no Pa or As pack** (`indic_language_share` lists bn, gu, hi, kn, ml, mr, or, sa, ta, te). Pa and As stay on `corpus60`. Sa (Devanagari) is not a slot language and is left out.
+- **Using all of the sample text made things worse:** check mean Indic +1.18% vs the committed builds, As +14.7%, Mr +5.0%. A script block that two languages share learns from whichever language has more text: Hi had 416 MB against Mr's 137 MB, and Bn 137 MB against As's 20 MB.
+- **So each script block got its own mix** (`train/mix_search.py`, written to `train/mix_s0.json`, built with `train_bpe.py --mix`). A block learns only from its own languages, so blocks can be chosen one at a time. The mix is chosen on FineWeb-2 dev + the even documents of the sample's held-out text, and confirmed on FineWeb-2 check + the odd documents. A block keeps a new mix only if no language of the block is worse for C1, C2 and C3 on both sets; otherwise it stays on `corpus60` and is built exactly as before.
+- **Chosen:** Devanagari trains on `corpus60` + the sample, equal parts per language and per source. Gujarati and Oriya train on the sample. Bengali/Assamese, Tamil, Telugu, Kannada, Malayalam and Gurmukhi stay on `corpus60`: every sample mix tried made one of their languages worse on a choosing or confirming set.
+- **Ids:** `check_ids.py` passes against the committed C1, C2, C3 (356 specials and all 114,333 base ids identical); the three verify scripts pass. Without `--mix`, `train_bpe.py` still builds the committed C1 (`5d386e2e…`).
+
+**Check split** (FineWeb-2 `test`, FineWeb, codeparrot; the table above):
+
+| Tokenizer | En | Code | Hi | Bn | Ta | Te | Kn | Ml | Mr | Gu | Pa | Or | As | Mean |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| C1 sample v0 | 1.2895 | 0.2453 | 1.5670 | 2.1743 | 2.5888 | 2.5508 | 2.5867 | 2.8565 | 2.0161 | 1.9794 | 1.8313 | 2.4000 | 2.1987 | 2.2500 |
+| C2 sample v0 | 1.2895 | 0.2453 | 1.5670 | 2.1743 | 2.5256 | 2.5237 | 2.5581 | 2.8565 | 2.0161 | 2.0762 | 1.9036 | 2.2935 | 2.1987 | 2.2448 |
+| C3 sample v0 | 1.2895 | 0.2453 | 1.5667 | 2.1680 | 2.5256 | 2.5237 | 2.5581 | 2.8565 | 2.0159 | 2.0762 | 1.9046 | 2.2935 | 2.1950 | 2.2440 |
+| C1 vs committed C1 | +0.00% | +0.00% | -0.22% | -0.01% | +0.00% | +0.00% | +0.00% | +0.00% | -0.75% | -0.45% | -0.00% | -0.07% | -0.00% | -0.12% |
+| C2 vs committed C2 | +0.00% | +0.00% | -0.22% | -0.01% | +0.00% | +0.00% | +0.00% | +0.00% | -0.75% | -0.36% | -0.00% | -0.08% | -0.00% | -0.11% |
+| C3 vs committed C3 | +0.00% | +0.00% | -0.24% | -0.01% | +0.00% | +0.00% | +0.00% | +0.00% | -0.76% | -0.36% | -0.00% | -0.08% | -0.00% | -0.12% |
+| C3 sample v0 vs baseline | -0.10% | -0.13% | -1.05% | -4.85% | -17.27% | -15.28% | -15.18% | -14.97% | -19.47% | -3.35% | -23.80% | -40.77% | -16.95% | -17.54% |
+
+**Sample v0 `heldout/`** (all 38 held-out parts; mean over the 9 languages that have one):
+
+| Change | En | Code | Hi | Bn | Ta | Te | Kn | Ml | Mr | Gu | Or | Mean |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| C1 vs committed C1 | +0.00% | +0.00% | -0.83% | -0.03% | +0.00% | +0.00% | +0.00% | +0.00% | -1.21% | -1.63% | -0.37% | -0.38% |
+| C2 vs committed C2 | +0.00% | +0.00% | -0.83% | -0.03% | +0.00% | +0.00% | +0.00% | +0.00% | -1.21% | -1.40% | -0.38% | -0.37% |
+| C3 vs committed C3 | +0.00% | +0.00% | -0.84% | -0.03% | +0.00% | +0.00% | +0.00% | +0.00% | -1.12% | -1.40% | -0.38% | -0.36% |
+| C3 sample v0 vs baseline | -0.14% | +0.17% | -1.52% | -5.44% | -16.10% | -14.38% | -15.39% | -14.74% | -20.03% | -3.49% | -41.02% | -16.89% |
+
+On FineWeb-2 dev, the mean Indic change vs the committed builds is −0.07% for each candidate (Hi −0.26%, Mr −0.29%, Gu −0.14 to −0.29%), with no language worse.
+
+- **Three tokens are worse in total.** On the check split, Kn has +2 tokens out of 240,126 (C1, C2, C3) and En has +1 token out of 1,070,737 (C2, C3). Both Kn tokens come from Kannada lines with Hindi words in them (`केंद्र सरकार की वैक्सीन`, `संस्कृत में`), and the En token from an English line with a Gujarati name (`દક્ષિણ આફ્રિકા`). The Devanagari and Gujarati merges changed, so those words tokenize slightly differently. Every other language and split is the same or better.
+- **Check-split overlap:** up to 2.5% of the check split's unique long lines (Gu: 77 of 3,067) also occur in the sample's train text. Pa shows 10 such lines against `corpus60`, which the split was cleaned against, so these are mostly repeated lines such as site footers.
+- **Reproduce:**
+  1. `sample_to_corpus.py --sample <sample dir> --out corpus_s0 --fallback corpus60 --fallback-langs Pa,As --heldout-out heldout_s0`
+  2. `mix_search.py --c60 corpus60 --s0 corpus_s0 --heldout <fetch_heldout.py out> --heldout-s0 heldout_s0 --work <dir> --out mix_s0.json` (about 25 minutes; reproduces `train/mix_s0.json`)
+  3. From the same directory, the C1, C2, C3 builds above with `--corpus corpus60 --mix mix_s0.json` (about 6 minutes each).
