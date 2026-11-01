@@ -78,6 +78,7 @@ SICK = [
     ("math", "C3", math("This preview shows page 1 - 2 out of 4 pages.\n" + BODY), "drop"),
     ("math", "C1", math(BODY + "Share\nWrite a comment\n"), "fix"),
     ("math", "C2", math(BODY + "Introductory Physics Homework Help forum\n" * 6), "fix"),
+    ("math", "F1", math(BODY + "Home: 217-555-0123\n"), "fix"),  # the shared F1, prose path: a private label on a made-up number
 
     ("sci", "B4", sci("Call FUN and <function name> in the text.\n" + SCI), "fix"),
     ("sci", "B2", sci("The area is 4 m<sup>2</sup> at the start.\n" + SCI, "7ea84af3398cb3ed"), "fix"),  # a reviewed ID
@@ -96,9 +97,9 @@ CLEAN = {"code": code(GO_CODE), "english": english(PARA + "\n" + PARA + "\n"), "
 
 
 def pairs_in_clean_py():
-    """(family, function) for every rule in clean.py, and the shared F1 on the code family."""
+    """(family, function) for every rule in clean.py, and the shared F1 on the families it runs on."""
     out = {(fam, c._ID[make].split("-")[1]) for fam, rules in c._PIPELINES.items() for make in rules}
-    return out | {("code", "F1")}
+    return out | {(fam, "F1") for fam, rules in c._PIPELINES.items() if c.SCOPE["f1_rule.py"] & {p for m in rules for p in c.SCOPE[c._ID[m]]}}
 
 
 def test_every_function_is_tested_on_every_family_it_has_a_rule_for():

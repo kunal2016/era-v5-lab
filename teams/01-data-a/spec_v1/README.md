@@ -112,7 +112,7 @@ A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its b
 | `medicine_<family>.md` | The rules of one family: `code`, `english`, `math`, `sci` | The PR for that family |
 | `specv1.md` | The four sheets collated, with the packs of each rule | The pipeline owner |
 | `decisions_<family>.md` | Why each rule was picked or not | The same PR |
-| `tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code packs | A PR that names the family it adds |
+| `tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code, math and science packs | A PR that names the family it adds |
 | `clean.py`, `results/cleaner/harm_tests.md`, `results/cleaner/specv1_*` | Generated | Only the rebuild step, after a merge |
 
 ## Run it
@@ -186,7 +186,8 @@ Then:
 
 `tools/f1_rule.py` follows the TSAI decision: `<PHONE>`, `<EMAIL>` and `<ADDRESS>` for a private person, drop a personal listing, keep organisations and public offices.
 
-- **Where it runs:** code only for now, because only code has had the harm test. To add a family, put its language tags in `_F1_LANGS`, run the harm test, and put the results in your PR. Prose has no tree, so it runs on regex alone.
+- **Where it runs:** on the code packs, with tree-sitter, and on the math and science packs, with the prose path (`_F1_PROSE`: `math-*` with `en`, `sci-*` with `eng_Latn`), as TSAI approved on 1 Nov. `SHARED_F1_FAMILIES` in `tools/build_clean.py` puts those packs in its `SCOPE` entry; on science it runs after `DA-F1-006`, so the reviewed drops stay. English keeps its own F1, `DA-F1-005`, and never gets the shared rule. The prose path is keyed by `pack_id` because English shares the `en` tag; a doc with no `pack_id` never takes it. To add a family, add it to `SHARED_F1_FAMILIES` and to `_F1_LANGS` (code) or `_F1_PROSE` (prose), run the harm test, and put the results in your PR.
+- **Prose path:** a value is private when a private label sits on it (`Home:`, `Cell:`, `Daytime Phone`), when it is in a person's contact card (each field on its own line, two personal fields or more), or in a `| Name | Telephone |` table. It is kept when its block or the heading above names an organisation or public office, and for toll-free numbers, role mailboxes and example domains. A page mostly of `SURNAME, Forenames, age, address` entries is dropped. It misses a private phone in running prose with no label, non-North-American numbers outside people tables, and addresses that are not "number + name + street type".
 - **Never write a private value** in a commit, a PR or chat. Use doc_ids and offsets, as `regex_check.py` does.
 - **Known limits:** it misses lower-case addresses, and it reads "8 Bit Drive" as an address. An email at a company domain counts as personal unless it is a role address like `support@`. Names are not in the TSAI list, so it leaves them.
 - **B4:** in `clean.py`, the code B4 rule leaves `<EMAIL>` alone, because it is now the F1 tag, and still replaces `<NAME>`, `<KEY>` and `<PASSWORD>`. Before this, a second run turned the tag into `user@example.com`. `tools/build_clean.py` makes this change, and `medicine_code.md` still has the old rule until the team agrees. 26 docs labelled B4 hold only `<EMAIL>`, so they keep the token.

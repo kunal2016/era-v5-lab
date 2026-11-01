@@ -115,8 +115,8 @@ lines = ["# Spec v1 harm tests", "",
 for pack, d in ran.items():
     lines.append(f"| {pack} | {d['family']} | {d['gold_count']} ({d['limit_documents']}) | {cell(d['clean'])} | {d['clean']['result']} | "
                  f"{d['whole_pack']['fixed']} / {d['whole_pack']['dropped']} | {', '.join(d['out_of_scope_rules_acting']) or 'none'} | {d['same_as_specv1_validation']} |")
-lines += ["", "On the code packs `clean()` also runs the shared F1 (`spec_v1/tools/f1_rule.py`) last, and `DA-B4-009` leaves `<EMAIL>`: "
-          "`specv1_validation.json` ran the sheet without either, so a code pack may differ from it.", "",
+lines += ["", "On the code, math and science packs `clean()` also runs the shared F1 (`spec_v1/tools/f1_rule.py`) last, and `DA-B4-009` leaves `<EMAIL>`: "
+          "`specv1_validation.json` ran the sheet without them, so these packs may differ from it.", "",
           "## 2. Each rule alone, on the gold sets of its packs only", ""]
 for fam, packs in families.items():
     tested = [p for p in packs if p in ran]
