@@ -1,0 +1,15 @@
+approval:  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  status: smoke_only  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  reference: G5 implementation check; NOT an approved experimental baseline  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+model:  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  rope_theta: 10000.0  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  norm_eps: 1.0e-06  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  head_mode: projected_ke2_tied  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  tie_embeddings: true  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  reversible: false  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  mtp: false  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  mtp_weight: 0.0  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  moe:  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+    bias: false  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+evaluation:  # source: G5 provisional smoke fixture choices; no quality result or production recommendation
+  approved: false  # source: G5 provisional smoke fixture choices; no quality result or production recommendation

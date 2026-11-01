@@ -1,0 +1,49 @@
+contract:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  lead_snapshot: d15edd8  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  plan_sha256: d9ef201263534c14b0a9cfcc2a056f431cb0f7f27f763bd0c9b762c738ec8090  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+model:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  embedding: g4_raw_ke  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  activation: swiglu  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  position: rope  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  rope_theta: null  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  rotary_fraction: 1.0  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  norm_eps: null  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  head_mode: projected_ke2_tied  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  tie_embeddings: true  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  head_weight_chunk_size: 512  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  reversible: false  # source: G5 lead Monday harness decision; G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  mtp: false  # source: G5 lead Monday harness decision; G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  mtp_weight: null  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  attn_impl: eager  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  ce_impl: torch  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  moe:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    bias: null  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    dispatch: loop  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    bias_gamma: 0.0  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+optim:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  betas:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  - 0.9  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  - 0.999  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  eps: 1.0e-08  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  schedule: constant  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+run:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  micro_batch_size: 1  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  eval_every_steps: 50  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  compile: false  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  flush_every_steps: 10  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+approval:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  status: pending  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  reference: null  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+evaluation:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  boundary_policy: bos_then_all_text_tokens_document_isolated  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  approved: false  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+budgets:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  T1:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    steps: 245  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    max_time_min: 30  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  T2:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    steps: 1221  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    max_time_min: 90  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+  T3:  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    steps: 1221  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
+    max_time_min: 120  # source: G5 harness runtime contract; budgets from plan_v1.md d15edd8; dimensions come only from configs/arms
