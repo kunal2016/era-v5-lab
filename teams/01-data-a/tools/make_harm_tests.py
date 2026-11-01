@@ -1,4 +1,4 @@
-"""Task 4: test spec_v1/clean.py with the team's harm_test.py, and write spec_v1/harm_tests.md.
+"""Task 4: test spec_v1/clean.py with the team's harm_test.py, and write spec_v1/results/cleaner/harm_tests.md.
 
   python -I make_harm_tests.py <checkout> <packs dir> [<packs dir> ...] [--out <harm_tests.md>] [--results <dir>]
 
@@ -23,8 +23,8 @@ HERE = Path(__file__).resolve().parents[1] / "spec_v1"
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("checkout", type=Path)
 ap.add_argument("packs", type=Path, nargs="+")
-ap.add_argument("--out", type=Path, default=HERE / "harm_tests.md")
-ap.add_argument("--results", type=Path, default=HERE / "results")
+ap.add_argument("--out", type=Path, default=HERE / "results" / "cleaner" / "harm_tests.md")
+ap.add_argument("--results", type=Path, default=HERE / "results" / "cleaner")
 args = ap.parse_args()
 TEAM = args.checkout / "teams" / "01-data-a"
 sys.path.insert(0, str(TEAM / "tools")); import harm_test as ht
@@ -56,7 +56,7 @@ def cell(r):
 
 
 families = {fam: sorted(p for p, f in c._FAMILY.items() if f == fam) for fam in c._PIPELINES}  # sorted: the same table on every run
-validation = HERE / "results" / "specv1_validation.json"
+validation = HERE / "results" / "cleaner" / "specv1_validation.json"
 validation = json.loads(validation.read_text(encoding="utf-8"))["packs"] if validation.exists() else {}
 ran, missing, failed = {}, [], False
 for fam, packs in families.items():
@@ -110,7 +110,7 @@ lines = ["# Spec v1 harm tests", "",
          "A rule is tested only on the gold sets of the packs it applies to: its entry in `SCOPE`, the table at the top of `clean.py`. "
          "`·` means the rule does not apply to that pack, so it was not run there.", "",
          "## 1. clean(), the whole cleaner, on each pack", "",
-         "| pack | family | gold docs (limit) | gold changed + dropped | result | whole pack fixed / dropped | rules that do not apply, acting on the whole pack | gold result as `results/specv1_validation.json` |",
+         "| pack | family | gold docs (limit) | gold changed + dropped | result | whole pack fixed / dropped | rules that do not apply, acting on the whole pack | gold result as `results/cleaner/specv1_validation.json` |",
          "|---|---|---:|---:|---|---:|---|---|"]
 for pack, d in ran.items():
     lines.append(f"| {pack} | {d['family']} | {d['gold_count']} ({d['limit_documents']}) | {cell(d['clean'])} | {d['clean']['result']} | "
@@ -137,7 +137,7 @@ lines += ["## 3. Each disease-code function, on the packs where one of its rules
           "| function | " + " | ".join(short(p) for p in ran) + " |", "|---|" + "---:|" * len(ran)]
 for code in c.RULES:
     lines.append(f"| {code} | " + " | ".join(cell(next((r for r in ran[p]["functions"] if r["rule"] == code), None)) for p in ran) + " |")
-lines += ["", "Affected gold IDs are in `results/specv1_<pack>_harm.json`. No document text is kept.", "",
+lines += ["", "Affected gold IDs are in `results/cleaner/specv1_<pack>_harm.json`. No document text is kept.", "",
           "## Not run", "", "| family | pack | why |", "|---|---|---|"] + [f"| {f} | {p} | {w} |" for f, p, w in missing]
 args.out.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 print("wrote", args.out, "| not run:", [m[1] for m in missing])

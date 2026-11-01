@@ -146,7 +146,7 @@ def main():
                 for rid, r in v['independent_gold_rules'].items() if r['result'] != 'PASS']
     lines += ['\nIndependent gold rules failing the repository minimum-one limit: ' +
               (', '.join(f'`{p}/{rid}` ({verdict})' for p, rid, verdict in failures) or 'none') + '.',
-              '\nAll other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/specv1_validation.json](results/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.',
+              '\nAll other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/cleaner/specv1_validation.json](../results/cleaner/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.',
               '\nReproduce from the repository root (Python requires `pyarrow` and `ftfy`):\n\n```bash\npython3 teams/01-data-a/spec_v1/scripts/validate_specv1.py \\\n  --packs /home/vijay/projects/erav5/erav5-lab-other-files/packs \\\n  --gold /home/vijay/projects/erav5/era-v5-lab-second-clone/teams/01-data-a/gold\n```']
     src = sheet.read_text()
     start = src.index('<!-- VALIDATION -->')
@@ -155,7 +155,7 @@ def main():
     src = add_card_evidence(src, report, rules, all_docs)
     sheet.write_text(src)
     report['spec_sha256'] = digest(sheet)
-    out = SPEC / 'results/specv1_validation.json'
+    out = SPEC / 'results/cleaner/specv1_validation.json'
     out.write_text(json.dumps(report, indent=2) + '\n')
 
 
