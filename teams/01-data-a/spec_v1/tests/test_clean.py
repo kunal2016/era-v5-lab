@@ -10,7 +10,6 @@ documents the reviewers named, so those cases use the doc_id the rule lists in s
   4  the English family: look-alikes, ZWJ and ZWNJ, DA-F1-005, clean() equal to the sheet
   5  the math family
   6  the shared F1 on the math and science packs: the prose path of spec_v1/tools/f1_rule.py (TSAI, 1 Nov)
-  7  spec_v1/tools/normalize.py: a standard copy of a text for comparing, which never changes a document
 """
 import re
 import subprocess
@@ -25,8 +24,6 @@ SPEC = Path(__file__).resolve().parents[1]
 BUILD = SPEC / "tools" / "build_clean.py"
 sys.path.insert(0, str(SPEC))
 import clean as c
-sys.path.insert(0, str(SPEC / "tools"))
-import normalize as nz
 
 AT = "@"  # the secret and email scans read added lines, so made-up values are joined at run time
 ZWJ, ZWNJ = chr(0x200D), chr(0x200C)  # written as numbers: a raw joiner in code is invisible
@@ -46,8 +43,8 @@ EN_TEXT = "The river rises in the hills and runs south to the sea.\nFarmers alon
 PARA = ("The river rises in the hills and runs south to the sea. "
         "Farmers along its banks grow rice and wheat in the dry months.")
 RUSSIAN = "Это строка на русском языке."
-HINDI_ZWJ = "क्‍ष"   # half ka + ssa: the joiner asks for the half form
-HINDI_ZWNJ = "क्‌ष"  # ka + virama + ssa: the joiner stops the conjunct
+HINDI_ZWJ = "क्\u200dष"   # half ka + ssa: the joiner asks for the half form
+HINDI_ZWNJ = "क्\u200cष"  # ka + virama + ssa: the joiner stops the conjunct
 OTHER_LANGS = ("hi", "mr", "fr", None)  # not English and not a code language: every rule keeps
 BODY = "Let x be a real number. Then x squared is never negative, so the sum of two squares is at least zero.\n"
 SCI = "We measured the reaction rate at 300 K. The rate constant was 2.5 per second, as Table 1 shows.\n"
@@ -74,7 +71,7 @@ def joiners(s):
 
 # (family, function, document, what the function does, the text after a fix: None checks only that the text changed)
 SICK = [
-    ("code", "A1", code("﻿" + GO_CODE), "fix", None),
+    ("code", "A1", code("\ufeff" + GO_CODE), "fix", None),
     ("code", "A2", code(GO_CODE.replace("\n", "\r\n")), "fix", None),
     ("code", "A6", code("package main // pаssword\n"), "fix", None),  # a Cyrillic a inside a Latin word
     ("code", "A4", code("package main\n// ��\n"), "fix", None),
@@ -89,7 +86,7 @@ SICK = [
     ("code", "E3", code('package main\nconst k = "AKIA' + "ABCDEFGHIJKLMNOP" + '"\n'), "fix", None),
     ("code", "F1", code("package main // by a" + AT + "mail.io\n"), "fix", None),  # the shared F1, tools/f1_rule.py
 
-    ("english", "A1", en("Hello​world﻿ and more."), "fix", "Helloworld and more."),
+    ("english", "A1", en("Hello\u200bworld\ufeff and more."), "fix", "Helloworld and more."),
     ("english", "A2", en("Bell\x07 here\r\nnext line"), "fix", "Bell here\nnext line"),
     ("english", "A3", en("The cafÃ© didnâ€™t open on Monday. " + PARA), "fix", "The café didn't open on Monday. " + PARA),  # mojibake
     ("english", "A5", en("Café au lait"), "fix", "Café au lait"),  # a decomposed accent
@@ -114,7 +111,7 @@ SICK = [
     ("english", "F1", en(PARA + "\nI live at 42 Elm Street, Springfield, IL 62704."), "fix", PARA + "\nI live at <ADDRESS>."),
 
     ("math", "A3", maths("Hereâ€™s the proof.\n" + BODY), "fix", None),  # mojibake of a right single quote
-    ("math", "A1", maths("Area​ of a circle is pi r squared.\n" + BODY), "fix", None),
+    ("math", "A1", maths("Area\u200b of a circle is pi r squared.\n" + BODY), "fix", None),
     ("math", "A5", maths("the ﬁrst term\n" + BODY), "fix", None),  # the fi ligature
     ("math", "B2", maths("x<br>y and <strong>z</strong>\n" + BODY), "fix", None),
     ("math", "B4", maths("{{ 'course-label' | message }}\n" + BODY), "fix", None),
@@ -125,14 +122,14 @@ SICK = [
     ("math", "C3", maths("This preview shows page 1 - 2 out of 4 pages.\n" + BODY), "drop", None),
     ("math", "C1", maths(BODY + "Share\nWrite a comment\n"), "fix", None),
     ("math", "C2", maths(BODY + "Introductory Physics Homework Help forum\n" * 6), "fix", None),
-    ("math", "A6", maths("x  y is the exclusive or.\n" + BODY), "fix", None),  # a Symbol-font glyph in the private use area
+    ("math", "A6", maths("x \uf0c5 y is the exclusive or.\n" + BODY), "fix", None),  # a Symbol-font glyph in the private use area
     ("math", "D3", maths(BODY + "Дивитися фільми онлайн\n" + BODY), "fix", None),  # a foreign-script spam line
     ("math", "F1", maths(BODY + "Home: 217-555-0123\n"), "fix", None),  # the shared F1, prose path: a private label on a made-up number
 
     ("sci", "B4", sci("Call FUN and <function name> in the text.\n" + SCI), "fix", None),
     ("sci", "B2", sci("The area is 4 m<sup>2</sup> at the start.\n" + SCI, "7ea84af3398cb3ed"), "fix", None),  # a reviewed ID
     ("sci", "B5", sci("Rates rose\\footnote{See the appendix.} in May.\n" + SCI, "80c340aef304a24c"), "fix", None),  # a reviewed ID
-    ("sci", "A1", sci("Rates​ rose.\n" + SCI), "fix", None),
+    ("sci", "A1", sci("Rates\u200b rose.\n" + SCI), "fix", None),
     ("sci", "A6", sci("A smooth抽吸 surface.\n" + SCI, "12e943fb710cab5b"), "fix", None),  # the one reviewed intrusion
     ("sci", "C1", sci("A Study of Rates\nMPRA Paper No. 12345, posted 1 May 2020 10:00 UTC\n" + SCI * 12), "fix", None),  # an archive cover
     ("sci", "C2", sci(OPENING + OPENING + "The end of the paper.\n"), "fix", None),  # the opening passage twice
@@ -214,9 +211,9 @@ def test_a_math_rule_takes_the_packs_of_its_origin():
 
 
 @pytest.mark.parametrize("rid, text, lang", [
-    ("DA-A1-001", "﻿package main\n", "go"),                           # code A1: a BOM
-    ("DA-A1-004", "The river​ rises in the hills.\n", "en"),          # English A1: a zero-width space
-    ("DA-A1-005", "Area​ of a circle is pi r squared.\n", "en"),       # math A1, finemath only
+    ("DA-A1-001", "\ufeffpackage main\n", "go"),                           # code A1: a BOM
+    ("DA-A1-004", "The river\u200b rises in the hills.\n", "en"),          # English A1: a zero-width space
+    ("DA-A1-005", "Area\u200b of a circle is pi r squared.\n", "en"),       # math A1, finemath only
     ("DA-B4-013", "Call FUN and <function name> in the text.\n", "en"),    # science B4: a converter label
 ])
 @pytest.mark.parametrize("pack", PACKS)
@@ -227,7 +224,7 @@ def test_a_rule_acts_only_on_the_packs_of_its_scope(rid, text, lang, pack):
 
 
 def test_the_scope_table_decides(monkeypatch):
-    text = "﻿package main\n"
+    text = "\ufeffpackage main\n"
     assert c.a1(doc("code-go", text, "go"))[0] == "fix"
     monkeypatch.setitem(c.SCOPE, "DA-A1-001", frozenset({"code-cpp"}))
     assert c.a1(doc("code-go", text, "go")) == ("keep", text)
@@ -235,7 +232,7 @@ def test_the_scope_table_decides(monkeypatch):
 
 @pytest.mark.parametrize("pack", [None, "en-unknown"])
 def test_no_rule_runs_without_a_known_pack(pack):
-    row = {k: v for k, v in doc(pack, "﻿Area​ of <b>a</b> circle.\n", "en").items() if v is not None}
+    row = {k: v for k, v in doc(pack, "\ufeffArea\u200b of <b>a</b> circle.\n", "en").items() if v is not None}
     assert c.clean(row) == ("keep", row["text"])
     assert all(c._run(row, make) == ("keep", row["text"]) for make in c._RULE.values())
 
@@ -290,7 +287,7 @@ def test_a_generated_file_with_its_banner_in_the_licence_is_dropped():
 
 
 def test_a_code_pack_row_of_another_language_passes_unchanged():
-    row = code("﻿<reponame>a\n" + GO_CODE, lang="fra")
+    row = code("\ufeff<reponame>a\n" + GO_CODE, lang="fra")
     assert c.a1(row)[0] == c.b3(row)[0] == c.e4(row)[0] == "keep"
 
 
@@ -350,7 +347,7 @@ def test_the_shared_f1_runs_on_code():
     assert c.f1(row) == c._shared_f1(row)
 
 
-@pytest.mark.parametrize("row", [code(LICENCE + GO_CODE), code("<reponame>a\n﻿" + GO_CODE), code(GO_CODE.replace("\n", "\r\n"))])
+@pytest.mark.parametrize("row", [code(LICENCE + GO_CODE), code("<reponame>a\n\ufeff" + GO_CODE), code(GO_CODE.replace("\n", "\r\n"))])
 def test_clean_twice_is_clean_once_on_code(row):
     a, once = c.clean(row)
     assert a != "drop"
@@ -393,17 +390,17 @@ JOINER_PROBES = dict(zip([
     "crlf-and-control", "mojibake", "decomposed-accent", "html", "phone", "address", "long-paragraph", "joiner-in-tags"], [
     "The word " + HINDI_ZWJ + " is written with a half ka.",
     "The word " + HINDI_ZWNJ + " keeps the virama visible.",
-    "Old Malayalam writes ന്‍ for the chillu n.",
-    "In Persian, می‌خواهم means I want.",
-    "Our family \U0001F468‍\U0001F469‍\U0001F467 went on a trip.",
-    "Pride month \U0001F3F3️‍\U0001F308 starts in June.",
-    "Mixed​‍﻿‌ junk­ and joiners here.",
-    "Line one ‍\r\nLine two\x07 ‌ here.\r\n",
+    "Old Malayalam writes ന്\u200d for the chillu n.",
+    "In Persian, می\u200cخواهم means I want.",
+    "Our family \U0001F468\u200d\U0001F469\u200d\U0001F467 went on a trip.",
+    "Pride month \U0001F3F3️\u200d\U0001F308 starts in June.",
+    "Mixed\u200b\u200d\ufeff\u200c junk\u00ad and joiners here.",
+    "Line one \u200d\r\nLine two\x07 \u200c here.\r\n",
     "The cafÃ© sells " + HINDI_ZWJ + " tea, didnâ€™t it?",
     "Café and " + HINDI_ZWNJ + " together.",
-    "Entities &amp; joiners ‍ inside <b>bold ‌</b> text.",
-    "Call Ravi ‍ on 555-867-5309 tonight ‌ please.",
-    "He lives at 42 Elm Street ‍, Springfield, IL 62704 ‌ now.",
+    "Entities &amp; joiners \u200d inside <b>bold \u200c</b> text.",
+    "Call Ravi \u200d on 555-867-5309 tonight \u200c please.",
+    "He lives at 42 Elm Street \u200d, Springfield, IL 62704 \u200c now.",
     ("Hindi text uses " + HINDI_ZWJ + " and " + HINDI_ZWNJ + ". ") * 30,
     PARA + "\n" + "Tags" + ZWJ + ": not a tag line, the joiner is inside the word\n" + PARA,
 ]))
@@ -463,8 +460,8 @@ def test_no_function_and_not_clean_deletes_a_joiner(text):
 
 
 def test_a1_takes_the_junk_and_leaves_the_joiners_beside_it():
-    a, new = c.a1(en("Mixed​‍﻿‌ junk­ here."))
-    assert (a, new) == ("fix", "Mixed‍‌ junk here.")
+    a, new = c.a1(en("Mixed\u200b\u200d\ufeff\u200c junk\u00ad here."))
+    assert (a, new) == ("fix", "Mixed\u200d\u200c junk here.")
 
 
 def test_d3_takes_a_joiner_only_with_a_whole_foreign_line():
@@ -499,7 +496,7 @@ def test_a_teaser_cut_is_trimmed_to_the_last_sentence():
     assert a == "fix" and new.rstrip().endswith("first.")
 
 
-@pytest.mark.parametrize("row", [maths("Hereâ€™s a​ <br>proof.\nShare\n" + BODY),
+@pytest.mark.parametrize("row", [maths("Hereâ€™s a\u200b <br>proof.\nShare\n" + BODY),
                                  maths("the ﬁrst <b>term</b>\n" + BODY, "math-megamath")])
 def test_clean_twice_is_clean_once_on_math(row):
     a, once = c.clean(row)
@@ -510,8 +507,8 @@ def test_clean_twice_is_clean_once_on_math(row):
 # Math v1.1: SomaKorada07's functions (A6 and D3 are new; A3, B5 and C2 follow her rules more closely)
 
 def test_a6_maps_a_symbol_font_glyph():
-    a, new = c.a6(maths("x  y is the exclusive or.\n" + BODY))
-    assert a == "fix" and "⊕" in new and "" not in new
+    a, new = c.a6(maths("x \uf0c5 y is the exclusive or.\n" + BODY))
+    assert a == "fix" and "⊕" in new and "\uf0c5" not in new
 
 
 def test_a3_repairs_utf8_read_as_cp866():
@@ -606,44 +603,3 @@ def test_clean_twice_is_clean_once_on_prose():
     a, once = c.clean(row)
     assert a == "fix"
     assert c.clean(dict(row, text=once)) == ("keep", once)
-
-
-# 7. spec_v1/tools/normalize.py: match_key and line_keys, a standard copy of a text for comparing. Never a document change.
-
-@pytest.mark.parametrize("a, b, disease", [
-    ("Fish &amp; chips&nbsp;today", "Fish & chips today", "B1"),            # HTML entities decoded
-    ("&#2361;", "ह", "B1"),                                            # a numeric entity: Devanagari ha
-    ("Bell\x07 here\r\nnext\x1b line", "Bell here\nnext line", "A2"),       # control characters gone, CRLF as LF
-    ("Hello​world﻿ soft­ware ‪left‬", "Helloworld software left", "A1"),  # invisible junk gone
-    ("Café au lait", "Café au lait", "A5"),                      # NFC: a decomposed accent
-    ("क़", "क़", "A5"),                                       # NFC: qa written two ways (nukta)
-    ("The River  Rises", "the river rises", "case"),                        # case and spacing
-])
-def test_match_key_evens_out_a_disease(a, b, disease):
-    assert nz.match_key(a) == nz.match_key(b)
-    assert disease in nz.explain(a) + nz.explain(b)
-
-
-@pytest.mark.parametrize("text", [
-    "क्‍ष and क्‌ष",               # G2: ZWJ and ZWNJ stay
-    "x² + y² and the ﬁrst term",                             # G4: no NFKC, superscripts and ligatures stay
-    "१२३ and ১২৩",                            # G4: Devanagari and Bengali digits stay
-    "किताब and দেশ",                # G1: vowel signs stay on their letters
-])
-def test_match_key_never_does_the_damage_of_section_g(text):
-    assert nz.match_key(text) == text
-    assert nz.explain(text) == []
-
-
-def test_line_keys_keep_the_lines():
-    assert nz.line_keys("Subscribe  NOW\nsubscribe now\n\nOther line") == ["subscribe now", "subscribe now", "", "other line"]
-    assert nz.match_key("Subscribe  NOW\nsubscribe now\n\nOther line") == "subscribe now subscribe now other line"
-
-
-def test_normalize_changes_no_document_and_clean_is_unaffected():
-    row = en("Fish &amp; chips​ today.\n" + PARA)
-    before = dict(row)
-    nz.match_key(row["text"]), nz.line_keys(row["text"]), nz.explain(row["text"])
-    assert row == before                                                     # the document is untouched
-    assert c.clean(row) == c.clean(before)                                   # and clean.py does not use it
-    assert not re.search(r"^\s*(import normalize|from normalize )", (SPEC / "clean.py").read_text(encoding="utf-8"), re.M)

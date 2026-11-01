@@ -1,11 +1,18 @@
-"""Tests for spec_v1/normalize.py, the matching normalize that Team 1 shares with G9. Every text is made up."""
+"""Tests for spec_v1/tools/normalize.py: normalize(), the word list Team 1 shares with G9, and the keys (match_key,
+line_keys, explain) for duplicates and repeated lines. Every text is made up.
+
+  python -m pytest spec_v1/tests/test_normalize.py
+"""
+import re
 import sys
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+SPEC = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SPEC))
 import clean as c
+sys.path.insert(0, str(SPEC / "tools"))
 import normalize as n
 
 KA, VIRAMA, SSA, ZWNJ, ZWJ = "\u0915", "\u094d", "\u0937", "\u200c", "\u200d"
@@ -107,3 +114,56 @@ def test_clean_character_fixes_do_not_change_the_words():
 
 def test_id_and_description():
     assert n.NORMALIZE_ID == "g1-spec-v1" and "NFC" in n.DESCRIPTION and "ZWJ/ZWNJ (kept)" in n.DESCRIPTION
+
+
+PARA = ("The river rises in the hills and runs south to the sea. "
+        "Farmers along its banks grow rice and wheat in the dry months.")
+
+
+def en(text): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": "en", "pack_id": "en-dclm"}
+
+# The keys: match_key, line_keys and explain, the same characters as normalize() but as text, with punctuation and lines kept.
+
+@pytest.mark.parametrize("a, b, disease", [
+    ("Fish &amp; chips&nbsp;today", "Fish & chips today", "B1"),            # HTML entities decoded
+    ("&#2361;", "ह", "B1"),                                            # a numeric entity: Devanagari ha
+    ("Bell\x07 here\r\nnext\x1b line", "Bell here\nnext line", "A2"),       # control characters gone, CRLF as LF
+    ("Hello\u200bworld\ufeff soft\u00adware \u202aleft\u202c", "Helloworld software left", "A1"),  # invisible junk gone
+    ("Cafe\u0301 au lait", "Caf\u00e9 au lait", "A5"),                    # NFC: a decomposed accent
+    ("\u0958", "\u0915\u093c", "A5"),                                     # NFC: qa written two ways (nukta)
+    ("The River  Rises", "the river rises", "case"),                        # case and spacing
+])
+def test_match_key_evens_out_a_disease(a, b, disease):
+    assert n.match_key(a) == n.match_key(b)
+    assert disease in n.explain(a) + n.explain(b)
+
+
+@pytest.mark.parametrize("text", [
+    "क्\u200dष and क्\u200cष",               # G2: ZWJ and ZWNJ stay
+    "x² + y²",                             # G4: no NFKC, superscripts stay; ligatures fold, as normalize() does
+    "१२३ and ১২৩",                            # G4: Devanagari and Bengali digits stay
+    "किताब and দেশ",                # G1: vowel signs stay on their letters
+])
+def test_match_key_never_does_the_damage_of_section_g(text):
+    assert n.match_key(text) == text
+    assert n.explain(text) == []
+
+
+def test_line_keys_keep_the_lines():
+    assert n.line_keys("Subscribe  NOW\nsubscribe now\n\nOther line") == ["subscribe now", "subscribe now", "", "other line"]
+    assert n.match_key("Subscribe  NOW\nsubscribe now\n\nOther line") == "subscribe now subscribe now other line"
+
+
+def test_normalize_changes_no_document_and_clean_is_unaffected():
+    row = en("Fish &amp; chips\u200b today.\n" + PARA)
+    before = dict(row)
+    n.match_key(row["text"]), n.line_keys(row["text"]), n.explain(row["text"])
+    assert row == before                                                     # the document is untouched
+    assert c.clean(row) == c.clean(before)                                   # and clean.py does not use it
+    assert not re.search(r"^\s*(import normalize|from normalize )", (SPEC / "clean.py").read_text(encoding="utf-8"), re.M)
+
+
+@pytest.mark.parametrize("text", ["Janet\u2019s DUCKS, lay 16-eggs!", "the \ufb01rst Stra\u00dfe \uff26\uff4f\uff4f",
+                                  "\u0d05\u0d35\u0d28\u0d4d\u200d and \u0915\u094d\u200c\u0937", "com\u200bpute x\u00b2 \u00bd"])
+def test_match_key_and_normalize_treat_characters_the_same(text):
+    assert n.normalize(n.match_key(text)) == n.normalize(text)    # one character policy, two shapes
