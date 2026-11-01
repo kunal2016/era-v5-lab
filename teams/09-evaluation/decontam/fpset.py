@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from canary import LAB_CANARY, LAB_CANARY_ID
 from normalize import DESCRIPTION, NORMALIZE_ID, normalize, words_with_offsets
 
 VERSION = "v1"
@@ -260,7 +261,7 @@ class Fingerprints:
         self.refs, self.size = [], []   # per item: ref and number of grams (all run lengths)
         index = {}                      # ref -> item index
         self.owner = {}                 # run length -> {hash (int) -> item index, or tuple of indexes}
-        self.canaries = {}              # canary string -> benchmark ID
+        self.canaries = {LAB_CANARY: LAB_CANARY_ID}  # canary string -> benchmark ID (or the lab canary)
         for bid in chosen:
             bm = json.loads((d / bid / "MANIFEST.json").read_text(encoding="utf-8"))
             if bm.get("canaries"):

@@ -47,6 +47,50 @@ The script checks the sha256 of every file before it starts. It needs about 1.1 
 Build and run on Linux (cluster, Colab, Kaggle). On Windows, `../fingerprints/.gitattributes` makes Git keep the
 fingerprint files byte for byte. Without it, Git with `core.autocrlf=true` checks them out as CRLF, and every sha256 check fails.
 
+## Canary scan (lab canary)
+
+Every file that holds eval items carries the **lab canary**, a plain-text line (not a special token,
+TSAI ruling of 29 Oct: a special token never comes out of normal tokenization, so leaked text would not contain it):
+
+```
+ERA V5 LAB EVALUATION DATA. IT MUST NEVER APPEAR IN TRAINING DATA. canary GUID era-v5-lab:eval:43c1a566-5d44-4c5b-96ae-b53b4188b0ec
+```
+
+The string is defined once, in `canary.py` (`LAB_CANARY`, `LAB_CANARY_LINE`, `stamp()`). Do not change it:
+files stamped with the old string would no longer be found. It is ASCII, so JSON written with
+`ensure_ascii=True` keeps it unchanged.
+
+Where it is written:
+
+| File | Writer | Where |
+|---|---|---|
+| `harness_code_indic/runs/eval_mini_v0_items.json` (gitignored) | `make_eval_mini_items.py` | top-level `"canary"` and in every item, so one copied item is found too |
+| `harness_code_indic/runs/<model>/<tag>/samples_<n>.jsonl` (gitignored, `--log-samples`) | `run_lm_eval.py` | `"canary"` in every sample line |
+
+A new script that writes eval items should call `canary.stamp()` on each record (JSON) or write
+`canary.MARKDOWN_LINE` (Markdown). Score files (`results/*.json`, `compare_*.md`) and `eval_mini_v0_spec.json`
+hold no item text and are not stamped (a change to the spec would also change the `spec_sha256` in the results).
+
+`canary_scan.py` looks for the lab canary and for every benchmark canary in the fingerprint set
+(`<benchmark>/canaries.txt`: GPQA, HLE). It does not load the fingerprints, so it needs no memory and runs in seconds.
+A match is exact; one occurrence is a leak.
+
+```
+python teams/09-evaluation/decontam/canary_scan.py shard.parquet          # columns doc_id, text
+python teams/09-evaluation/decontam/canary_scan.py docs.jsonl --id-field id --text-field text
+python teams/09-evaluation/decontam/canary_scan.py some/folder             # .parquet .jsonl .json .txt .md below it
+```
+
+One output line per occurrence, with only the canary, the document ID and the character offset (never document text):
+
+```
+{"canary": "era-v5-lab:eval:43c1a566-5d44-4c5b-96ae-b53b4188b0ec", "doc_id": "35eb8b91a98d3a41", "offset": 1204}
+```
+
+The summary goes to stderr (`docs N with_canary N hits N`). Exit code 0 means no canary, 1 means a canary was found,
+so a pipeline can stop on it. `decontam_check.py` also flags the lab canary (item `era-v5-lab:canary`), so the full
+check covers it too.
+
 ## The fingerprint set (v1)
 
 `../fingerprints/v1/`: `MANIFEST.json` (rules, benchmark revisions, item counts, `set_sha256`,
