@@ -10,23 +10,18 @@ items are hashed the same way the spec was built; if a hash differs (the hub dat
 The output contains benchmark questions and answers: keep it local. It is gitignored; never commit or redistribute it.
 
 Output schema: {"canary", "name", "spec_sha256", "counts", "items": [{"canary", "id", "question", "choices", "answer", "kind", "subset"}]}
-  "canary" is the lab canary line (../decontam/canary.py), in the file and in every item, so a copied item is found too.
+  "canary" is the lab canary line (../decontam/lab_canary.py), in the file and in every item, so a copied item is found too.
   kind "mcq": choices is a list and answer is a letter (A, B, ...); kind "numeric": answer is the final number (GSM8K).
 Code tasks (HumanEval+, MBPP+) are not included: they need execution, see run_codegen.py and code_eval_colab.ipynb.
 """
 import argparse
 import hashlib
 import json
-import sys
-from pathlib import Path
 
 from lm_eval.tasks import TaskManager, get_task_dict
 
 from make_eval_mini_spec import items_sha256
-from run_lm_eval import HERE, RUNS
-
-sys.path.append(str(Path(__file__).resolve().parent.parent / "decontam"))
-from canary import stamp  # noqa: E402  the lab canary, so a leaked item file is found by canary_scan.py
+from run_lm_eval import HERE, RUNS, stamp  # stamp: the lab canary (../decontam/lab_canary.py)
 
 LETTERS = "ABCDEFGHIJ"
 GATED = {"ai4bharat/MILU"}

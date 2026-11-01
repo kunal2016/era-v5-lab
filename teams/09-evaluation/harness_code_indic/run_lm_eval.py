@@ -21,7 +21,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.append(str(HERE.parent / "decontam"))  # append: decontam/registry.py must not shadow other modules
-from canary import stamp  # noqa: E402  the lab canary goes on every logged sample (they hold the items)
+from lab_canary import stamp  # noqa: E402  the lab canary goes on every logged sample (they hold the items)
 RUNS = HERE / "runs"  # gitignored (.gitignore in this folder); never commit run outputs, caches or samples
 
 
