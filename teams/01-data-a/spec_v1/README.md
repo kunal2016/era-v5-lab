@@ -16,11 +16,11 @@ teams/01-data-a/
     README_clean.md         how to build, test and run clean.py, step by step
     run_clean.py            runs the cleaner on one pack
     tests/                  unit tests on made-up values
-    harm_tests.md           each rule on the gold sets of its packs, each clean.py function, and clean()
-    results/specv1_<pack>_harm.json   the reports behind harm_tests.md: IDs and digests only
-    results/<pack>_harm.json   harm_test.py --report on the sheet: IDs and digests only
-    results/stress_<pack>_harm.json   the same, with disputed docs left in
-    results/evidence.json, inputs_manifest.json   every medicine on every pack; digest of every input
+    results/cleaner/harm_tests.md   each rule on the gold sets of its packs, each clean.py function, and clean()
+    results/cleaner/specv1_<pack>_harm.json   the reports behind harm_tests.md: IDs and digests only
+    results/sheets/<pack>_harm.json   harm_test.py --report on the sheet: IDs and digests only
+    results/sheets/stress_<pack>_harm.json   the same, with disputed docs left in
+    results/sheets/evidence.json, inputs_manifest.json   every medicine on every pack; digest of every input
     scripts/                what makes the sheet and results: see scripts/README.md
   tools/                    build, harm test run, F1 rule, checks
 ```
@@ -86,7 +86,7 @@ Gold size, limit, changed, dropped, affected IDs, pack fixed / dropped / untouch
 
 ```
 python -I teams/01-data-a/tools/harm_test.py --pack <pack>.parquet --gold teams/01-data-a/gold/<pack>_gold.csv \
-  --rules teams/01-data-a/spec_v1/sheets/medicine_code.md --rule all --report teams/01-data-a/spec_v1/results/<pack>_harm.json
+  --rules teams/01-data-a/spec_v1/sheets/medicine_code.md --rule all --report teams/01-data-a/spec_v1/results/sheets/<pack>_harm.json
 python -I teams/01-data-a/tools/medicine_conflicts.py --packs code- --sheet teams/01-data-a/spec_v1/sheets/medicine_code.md --out <file>
 ```
 
@@ -113,7 +113,7 @@ A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its b
 | `specv1.md` | The four sheets collated, with the packs of each rule | The pipeline owner |
 | `decisions_<family>.md` | Why each rule was picked or not | The same PR |
 | `../tools/f1_rule.py` | The shared F1 rule; `SCOPE` runs it on the code packs | A PR that names the family it adds |
-| `clean.py`, `harm_tests.md`, `results/specv1_*` | Generated | Only the rebuild step, after a merge |
+| `clean.py`, `results/cleaner/harm_tests.md`, `results/cleaner/specv1_*` | Generated | Only the rebuild step, after a merge |
 
 ## Run it
 
@@ -149,7 +149,7 @@ Paths start at `teams/01-data-a/`. Run `make_harm_tests.py` where all 13 packs a
    | It needs an answer from TSAI | Hold it as `BLOCKED`, with the question. |
 
 5. **Do not edit someone else's rule to change what it does.** Add a new block and say why in the decisions file.
-6. **In your PR, change only your sheet, your decisions file and your tests.** Leave `clean.py` and `results/clean_*` out: two PRs regenerating them will always conflict. Paste your harm results in the PR text.
+6. **In your PR, change only your sheet, your decisions file and your tests.** Leave `clean.py` and everything in `results/cleaner/` out: two PRs regenerating them will always conflict. Paste your harm results in the PR text.
 7. **After a merge,** whoever merges reruns the steps in "Run it" and commits the generated files.
 
 Each rule needs the fields in "What every rule must have" above, and has to meet the bar in "When a rule is APPROVED".
