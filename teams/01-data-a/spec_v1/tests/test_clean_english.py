@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-SHEET = ROOT / "specv1.md"
+SHEET = ROOT / "sheets" / "specv1.md"
 sys.path.insert(0, str(ROOT))
 import clean as c
 

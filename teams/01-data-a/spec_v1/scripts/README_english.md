@@ -4,10 +4,10 @@ What checks the English family of `clean.py` on the English packs. Paths start a
 
 | script | makes |
 |---|---|
-| `scripts/verify_clean_english.py` | `results/verify_clean_english.json`: `clean.py` gives the same action and text as the English rules of `specv1.md` on every English doc; a second run; ZWJ and ZWNJ. |
-| `scripts/f1_eval_english.py` | `results/f1_eval_english.json`: F1 on the English packs, real hits and made-up values, as `tools/f1_eval.py` checks code. |
-| `scripts/order_checks_english.py` | `results/order_checks_english.json`: the checks of the conflict ledger in `spec_v1_english.md`, on `medicine_english.md`. |
-| `scripts/make_harm_tests_english.py` | `harm_tests_english.md` and the `results/` reports of `clean.py` and `medicine_english.md`, official gold and with the disputed docs left in. |
+| `scripts/verify_clean_english.py` | `results/cleaner/verify_clean_english.json`: `clean.py` gives the same action and text as the English rules of `specv1.md` on every English doc; a second run; ZWJ and ZWNJ. |
+| `scripts/f1_eval_english.py` | `results/cleaner/f1_eval_english.json`: F1 on the English packs, real hits and made-up values, as `tools/f1_eval.py` checks code. |
+| `scripts/order_checks_english.py` | `results/cleaner/order_checks_english.json`: the checks of the conflict ledger in `spec_v1_english.md`, on `medicine_english.md`. |
+| `scripts/make_harm_tests_english.py` | `results/cleaner/harm_tests_english.md`, and the reports of `clean.py` (`results/cleaner/`) and `medicine_english.md` (`results/sheets/`), official gold and with the disputed docs left in. |
 
 ## Run it, in this order
 
@@ -27,4 +27,4 @@ python -I spec_v1/scripts/make_harm_tests_english.py <g1-harm-test checkout> <fo
 
 `spec_v1/clean_english.py`, `spec_v1/scripts/clean_english.py` and `spec_v1/scripts/build_clean_english.py` made the English cleaners before `specv1.md`. They are kept for the record. No script or test loads them, and `clean.py` runs the same English rules. `run_clean_english.py` is kept so the old command still works: it runs `run_clean.py`, which runs `clean.py`.
 
-The sheet itself (`medicine_english.md`), `decisions_english.md` and `results/evidence_english.json`, `results/equivalence_english.json` were compiled from the annotators' sheets by scripts that are not in this repo yet.
+The sheet itself (`medicine_english.md`), `decisions_english.md` and `results/sheets/evidence_english.json`, `results/sheets/equivalence_english.json` were compiled from the annotators' sheets by scripts that are not in this repo yet.

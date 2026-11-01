@@ -91,12 +91,12 @@ def main():
     ap.add_argument('--packs', required=True, type=Path)
     ap.add_argument('--gold', required=True, type=Path)
     args = ap.parse_args()
-    sheet = SPEC / 'specv1.md'
+    sheet = SPEC / 'sheets' / 'specv1.md'
     ns, code_digest = ht.load_rules(sheet)
     rules = list(ns['RULES_BY_ID'].items())
     packs = sorted({p for _, fn in rules for p in fn.__globals__['SPEC_PACKS']})
     report = {'rules_code_sha256': code_digest, 'sources': {
-        p.name: digest(p) for p in SPEC.glob('medicine_*.md')
+        p.name: digest(p) for p in (SPEC / 'sheets').glob('medicine_*.md')
         if p.name in {'medicine_code.md', 'medicine_english.md', 'medicine_math.md', 'medicine_sci.md'}},
         'execution': 'harm_test.load_rules/run_rule/run_sheet; repository 1% minimum-one comparison; 5s timeout per rule/document',
         'harm_runner_sha256': digest(Path(ht.__file__)),
@@ -146,7 +146,7 @@ def main():
                 for rid, r in v['independent_gold_rules'].items() if r['result'] != 'PASS']
     lines += ['\nIndependent gold rules failing the repository minimum-one limit: ' +
               (', '.join(f'`{p}/{rid}` ({verdict})' for p, rid, verdict in failures) or 'none') + '.',
-              '\nAll other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/specv1_validation.json](results/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.',
+              '\nAll other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/cleaner/specv1_validation.json](../results/cleaner/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.',
               '\nReproduce from the repository root (Python requires `pyarrow` and `ftfy`):\n\n```bash\npython3 teams/01-data-a/spec_v1/scripts/validate_specv1.py \\\n  --packs /home/vijay/projects/erav5/erav5-lab-other-files/packs \\\n  --gold /home/vijay/projects/erav5/era-v5-lab-second-clone/teams/01-data-a/gold\n```']
     src = sheet.read_text()
     start = src.index('<!-- VALIDATION -->')
@@ -155,7 +155,7 @@ def main():
     src = add_card_evidence(src, report, rules, all_docs)
     sheet.write_text(src)
     report['spec_sha256'] = digest(sheet)
-    out = SPEC / 'results/specv1_validation.json'
+    out = SPEC / 'results/cleaner/specv1_validation.json'
     out.write_text(json.dumps(report, indent=2) + '\n')
 
 

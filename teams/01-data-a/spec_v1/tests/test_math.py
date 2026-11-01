@@ -1,4 +1,4 @@
-"""Unit tests for the math family of clean.py (spec/medicine_math.md). Every text here is made up; none comes from a pack.
+"""Unit tests for the math family of clean.py (sheets/medicine_math.md). Every text here is made up; none comes from a pack.
 
   python -m pytest spec_v1/tests
 """

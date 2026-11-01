@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("ce", HERE / "compile_evidence.py")
 ce = importlib.util.module_from_spec(spec); sys.modules["ce"] = ce; spec.loader.exec_module(ce)
-SHEET = HERE.parent / "medicine_code.md"
+SHEET = HERE.parent / "sheets" / "medicine_code.md"
 data = ce.load_data()
 rules = []
 for b in re.findall(r"```python\n(.*?)```", SHEET.read_text(encoding="utf-8"), re.S):

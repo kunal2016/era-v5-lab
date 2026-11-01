@@ -77,10 +77,10 @@ python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder>
 python -I tools/build_clean.py
 ```
 
-This reads `spec_v1/specv1.md` and writes `spec_v1/clean.py`. Use `--sheet` and `--out` to read or write somewhere else:
+This reads `spec_v1/sheets/specv1.md` and writes `spec_v1/clean.py`. Use `--sheet` and `--out` to read or write somewhere else:
 
 ```bash
-python -I tools/build_clean.py --sheet spec_v1/specv1.md --out /tmp/clean.py
+python -I tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /tmp/clean.py
 ```
 
 **Rebuild after every change to `specv1.md` or `tools/f1_rule.py`.** The build gives the same file every time, and a unit test checks that `clean.py` matches a fresh build.
@@ -177,8 +177,8 @@ python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder> [<anot
 |---|---|
 | `<g1-harm-test checkout>` | A checkout that has `teams/01-data-a/tools/harm_test.py` and `teams/01-data-a/gold/<pack>_gold.csv`. `harm_test.py` is imported as it is, never changed. |
 | `<packs folder>` | One or more folders holding the packs; a pack is looked for in each. |
-| `--out` | The report (default `spec_v1/harm_tests.md`). |
-| `--results` | The folder for the per-pack JSON reports (default `spec_v1/results`). |
+| `--out` | The report (default `spec_v1/results/cleaner/harm_tests.md`). |
+| `--results` | The folder for the per-pack JSON reports (default `spec_v1/results/cleaner`). |
 
 ### What it tests on each pack
 
@@ -186,7 +186,7 @@ python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder> [<anot
 2. **Each disease-code function,** on the packs where one of its rules applies.
 3. **`clean()`,** on the gold set, and on the whole pack for the fixed and dropped counts.
 4. **The scope table holds:** every rule that does not apply to the pack is run on the whole pack, past the scope check. It must change nothing, drop nothing and raise nothing.
-5. **The cross-check:** the `clean()` gold result is compared with `results/specv1_validation.json` when both used the same gold and pack. The code packs may differ, because `clean.py` adds the shared F1 and the `DA-B4-009` change.
+5. **The cross-check:** the `clean()` gold result is compared with `results/cleaner/specv1_validation.json` when both used the same gold and pack. The code packs may differ, because `clean.py` adds the shared F1 and the `DA-B4-009` change.
 
 ### The limit
 
@@ -200,8 +200,8 @@ At most `max(1, floor(1% of gold))` gold documents changed or dropped, for each 
 
 | file | what is in it |
 |---|---|
-| `spec_v1/harm_tests.md` | Section 1: `clean()` per pack. Section 2: each rule alone, one table per family, with `·` where the rule does not apply. Section 3: each function per pack. Then the packs it could not run. |
-| `spec_v1/results/specv1_<pack>_harm.json` | The same per pack, with the affected gold doc_ids and the sha256 of the pack, the gold, `clean.py` and `harm_test.py`. No text. |
+| `spec_v1/results/cleaner/harm_tests.md` | Section 1: `clean()` per pack. Section 2: each rule alone, one table per family, with `·` where the rule does not apply. Section 3: each function per pack. Then the packs it could not run. |
+| `spec_v1/results/cleaner/specv1_<pack>_harm.json` | The same per pack, with the affected gold doc_ids and the sha256 of the pack, the gold, `clean.py` and `harm_test.py`. No text. |
 
 It exits with 0 when everything it ran passed. It exits with 1 when any result is not PASS, a gold set is empty, or a rule acted on a pack it does not apply to. A pack it cannot find is listed as not run and does not fail the run. So run it where all 13 packs and the current gold sets are, before you commit `harm_tests.md`.
 

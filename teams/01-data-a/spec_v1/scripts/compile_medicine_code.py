@@ -235,7 +235,7 @@ def run_sheet(rules, doc):
 
 def main():
     cands = {c["id"]: c for c in ce.load_candidates()}; data = ce.load_data()
-    ev = json.loads((HERE.parent / "results" / "evidence.json").read_text(encoding="utf-8"))
+    ev = json.loads((HERE.parent / "results" / "sheets" / "evidence.json").read_text(encoding="utf-8"))
     assert {n for n, *_ in PICKS} <= set(cands)
     def touched(name, p): return set(ev["rules"][name]["per"][p]["fix"]) | set(ev["rules"][name]["per"][p]["drop"])
     def cell(name, p, packs=None):
@@ -268,7 +268,7 @@ def main():
                  "4. **Harm test:** " + "; ".join(f"{SHORT[p]} {cell(name, p).split(' ·')[0]}" for p in packs) + ".",
                  f"5. **Side effects:** {side}",
                  f"6. **Spec v1:** status CANDIDATE, reviewer pending. Source: {c['pack']} sheet, {ORIGIN_PR[c['handle']]}. Idempotent on every doc of its packs. A rule that raises gives ERROR in `harm_test.py`, never PASS."]
-    sheet_path = OUT / "medicine_code.md"
+    sheet_path = OUT / "sheets" / "medicine_code.md"
     sheet_path.write_text("\n".join(head + body) + "\n", encoding="utf-8", newline="\n")
     # load it back the way harm_test.py does, and test the whole sheet
     rules = []
@@ -331,7 +331,7 @@ def main():
                 out.append(f"| `{rid_of(n)}` | {PACK_OF[r['handle']]} | {dec} | " + " | ".join(cells) + " |")
             out.append("")
     out += ["## Medicines that could not run", "", "| medicine | why |", "|---|---|"] + [f"| {a} | {b} |" for a, b in NOT_RUNNABLE]
-    (OUT / "decisions_code.md").write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
+    (OUT / "sheets" / "decisions_code.md").write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
     missing = [n for n in ev["rules"] if n not in picked and n not in NOT_PICKED and n not in BLOCKED]
     print("rules in sheet:", len(rules), "| copy vs source differences:", bad, "| not explained:", missing)
     for p in PACKS: print(SHORT[p], {k: v for k, v in res[p].items()})

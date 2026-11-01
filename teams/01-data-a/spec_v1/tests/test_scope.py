@@ -19,7 +19,7 @@ FAMILIES = {"code": {"code-cpp", "code-go", "code-java", "code-js-ts", "code-pyt
             "english": {"en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"},
             "math": {"math-finemath", "math-megamath"}, "sci": {"sci-finepdfs"}}
 PACKS = sorted(set().union(*FAMILIES.values()))
-SHEET = (SPEC / "specv1.md").read_text(encoding="utf-8")
+SHEET = (SPEC / "sheets" / "specv1.md").read_text(encoding="utf-8")
 SECTIONS = re.findall(r"^## Medicine \d+ — (\w+) / \w+ / `(DA-[A-H]\d-\d{3})`", SHEET, re.M)
 
 

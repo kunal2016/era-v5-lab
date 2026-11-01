@@ -11,7 +11,7 @@ alone decides), to show what switching it on would do. Neither file is changed.
               and nothing else changed; organisations and look-alikes kept
   3 again     a second clean() leaves every F1 tag as it is
 
-Writes ../results/f1_eval_english.json.
+Writes ../results/cleaner/f1_eval_english.json.
 """
 import csv
 import json
@@ -146,8 +146,8 @@ def main():
                 again.append(r["doc_id"])
         report["second_run"][pack] = dict(docs_with_new_tags=n, changed_again=again)
         print(f"  {pack:20} docs with an F1 tag {n} | a second clean() changes {len(again)} {again[:3]}")
-    (SPEC / "results" / "f1_eval_english.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print("\nwrote results/f1_eval_english.json")
+    (SPEC / "results" / "cleaner" / "f1_eval_english.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print("\nwrote results/cleaner/f1_eval_english.json")
 
 
 if __name__ == "__main__":

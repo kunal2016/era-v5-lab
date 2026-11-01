@@ -33,7 +33,7 @@ Each pack is tested with the team's `harm_test.py --rule all` on its own gold se
 | The instructor's F1 ruling, 31 Oct | ruling | **Met.** `DA-F1-005` is in the sheet and runs on the English packs in `clean.py`; the F1 rules that do not follow the ruling are out. |
 | Keep ZWJ and ZWNJ in all text | `DISEASES.md` A1 | **Met** for the characters (`tests/test_clean_english.py`); a joiner goes only with a whole line D3 removes. |
 | No secrets or personal data | `DISEASES.md` §2a, pr-guard | **Met.** IDs, offsets and made-up values only; the files are scanned with pr-guard's own patterns. |
-| Digests, owner, reviewer, commit | Spec v1 §1 and §2.9 | **Partly.** Gold and pack digests are in the sheet and in `results/inputs_manifest_english.json`. Reviewer and the sheet's commit come at review. |
+| Digests, owner, reviewer, commit | Spec v1 §1 and §2.9 | **Partly.** Gold and pack digests are in the sheet and in `results/sheets/inputs_manifest_english.json`. Reviewer and the sheet's commit come at review. |
 
 ### What changed in this round
 
@@ -46,7 +46,7 @@ Each pack is tested with the team's `harm_test.py --rule all` on its own gold se
 
 ### What was fixed
 
-Each block gives the same result as the author's own function, run from their full rules file, on all 2,000 English documents: 37 of 37 blocks differ on 0 documents (`results/equivalence_english.json`).
+Each block gives the same result as the author's own function, run from their full rules file, on all 2,000 English documents: 37 of 37 blocks differ on 0 documents (`results/sheets/equivalence_english.json`).
 
 | sheet | its rules | what was wrong | what the sheet adds |
 |---|---|---|---|
@@ -90,7 +90,7 @@ All the kept rules together went over the limit with disputed docs left in, alth
 
 ### F1 on the English packs
 
-`scripts/f1_eval_english.py`, the English counterpart of `tools/f1_eval.py`, with its made-up values (`results/f1_eval_english.json`). The shared rule is switched on for `en` and `eng` in memory only, to show what switching it on would do; no file is changed.
+`scripts/f1_eval_english.py`, the English counterpart of `tools/f1_eval.py`, with its made-up values (`results/cleaner/f1_eval_english.json`). The shared rule is switched on for `en` and `eng` in memory only, to show what switching it on would do; no file is changed.
 
 | pack | `DA-F1-005`: docs fixed · gold touched · tags | shared F1 on English: docs fixed · gold touched · tags |
 |---|---|---|
@@ -169,7 +169,7 @@ Made-up details on a line of their own at the end of up to 40 real gold docs per
 
 ## How rules were picked
 
-Every rule runs on every document of the four English packs (`results/evidence_english.json`). A rule is out (DROP) if it raises on any document, goes over the limit on any official gold set, or changes nothing. It is BLOCKED if it goes over the limit with disputed docs left in, or if a second run changes a document again. Of the rest, for each disease, the rule that treats the most labelled rows is kept, and another only if it treats labelled rows the kept ones do not (the advice of `rule_report.py`). Then the kept rules run together, in sheet order, on each pack's official gold and with disputed docs left in. While a pack is over the limit, one rule is held (BLOCKED): of the rules that alone touch a counted doc, the one that treats the fewest labelled rows no other kept rule of its disease treats. The pick is then made again without it. A rule written to an instructor's ruling (`DA-F1-005`) is never dropped, blocked or held.
+Every rule runs on every document of the four English packs (`results/sheets/evidence_english.json`). A rule is out (DROP) if it raises on any document, goes over the limit on any official gold set, or changes nothing. It is BLOCKED if it goes over the limit with disputed docs left in, or if a second run changes a document again. Of the rest, for each disease, the rule that treats the most labelled rows is kept, and another only if it treats labelled rows the kept ones do not (the advice of `rule_report.py`). Then the kept rules run together, in sheet order, on each pack's official gold and with disputed docs left in. While a pack is over the limit, one rule is held (BLOCKED): of the rules that alone touch a counted doc, the one that treats the fewest labelled rows no other kept rule of its disease treats. The pick is then made again without it. A rule written to an instructor's ruling (`DA-F1-005`) is never dropped, blocked or held.
 
 **Inputs:** the latest `medicine.md` of the 8 English sheets (`fetch_medicines.py --include-open-prs`), the latest labels of the 10 English label sheets in the open diagnosis PRs, the 11 rules of the 29 Oct sheet, and the official gold sets of `g1-harm-test` at `bae5163`.
 

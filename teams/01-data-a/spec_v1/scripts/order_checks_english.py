@@ -3,7 +3,7 @@ what changes when two stages or two rules swap. IDs and counts only, never text.
 
   python -I order_checks_english.py <packs dir>
 
-Writes ../results/order_checks_english.json.
+Writes ../results/cleaner/order_checks_english.json.
 """
 import json
 import re
@@ -15,7 +15,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 HERE = Path(__file__).resolve().parent
-SHEET = HERE.parent / "medicine_english.md"
+SHEET = HERE.parent / "sheets" / "medicine_english.md"
 PACKS_DIR = Path(sys.argv[1])
 PACKS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
 rules = []
@@ -73,7 +73,7 @@ def main():
         print(p, "acts in the sheet run:", {k[3:]: v for k, v in acts.items() if v})
         for name in VARIANTS:
             print(f"   {name:42} differ {res[name]['differ']:3} (drop decisions {res[name]['drop_decisions_differ']}) {res[name]['ids']}")
-    dest = HERE.parent / "results" / "order_checks_english.json"
+    dest = HERE.parent / "results" / "cleaner" / "order_checks_english.json"
     dest.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8", newline="\n")
     print("wrote", dest.name)
 

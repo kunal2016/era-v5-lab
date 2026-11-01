@@ -50,7 +50,7 @@ Fields of the template's rule card that are still open for every rule: independe
 | `DA-E3-003` | `DA-E3-004` | Known formats and shape-based search | 003 first | Each replaces what the other cannot; 5 real secrets replaced |
 | `DA-A4-002` | `DA-A4-003` | 003 changes an author-quoted U+FFFD on go (ruling 7) | 003 on java only | Scoped by `LANGS` |
 
-**Combined harm test** (`harm_test.py --rule all`; files in [results/](results/), made by [scripts/run_all.py](scripts/run_all.py)):
+**Combined harm test** (`harm_test.py --rule all`; files in [results/sheets/](../results/sheets/), made by [scripts/run_all.py](../scripts/run_all.py)):
 
 | pack | gold harm | limit | result | with disputed docs left in | fixed / dropped / untouched | labelled rows treated |
 |---|---|---:|---|---|---|---|

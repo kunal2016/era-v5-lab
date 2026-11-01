@@ -1,4 +1,4 @@
-"""Make every generated file in spec_v1/: results/evidence.json, medicine_code.md, decisions_code.md, results/*_harm.json, results/inputs_manifest.json.
+"""Make every generated file in spec_v1/: results/sheets/evidence.json, sheets/medicine_code.md, sheets/decisions_code.md, results/sheets/*_harm.json, results/sheets/inputs_manifest.json.
 
   python -I run_all.py <checkout> <packs dir> [--stress-gold <dir>]
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SPEC = HERE.parent
-RESULTS = SPEC / "results"
+RESULTS = SPEC / "results" / "sheets"
 PACKS = ["code-go", "code-rust", "code-js-ts", "code-java", "code-cpp", "code-python"]
 ap = argparse.ArgumentParser(description=__doc__)
 ap.add_argument("checkout", type=Path)
@@ -26,10 +26,10 @@ def run(*cmd, ok=(0,)):
 
 
 def harm(pack, gold, report, ok):
-    run(TEAM / "tools" / "harm_test.py", "--pack", args.packs / f"{pack}.parquet", "--gold", gold, "--rules", SPEC / "medicine_code.md",
+    run(TEAM / "tools" / "harm_test.py", "--pack", args.packs / f"{pack}.parquet", "--gold", gold, "--rules", SPEC / "sheets" / "medicine_code.md",
         "--rule", "all", "--report", report, ok=ok)
     d = json.loads(report.read_text(encoding="utf-8"))
-    d["rules"] = "teams/01-data-a/spec_v1/medicine_code.md"  # the tool writes the path it was given, which differs per machine
+    d["rules"] = "teams/01-data-a/spec_v1/sheets/medicine_code.md"  # the tool writes the path it was given, which differs per machine
     report.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 

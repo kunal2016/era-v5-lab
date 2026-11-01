@@ -1,16 +1,16 @@
 """Run each function of ../clean.py, and each English medicine, on each English gold set with the team's harm_test.py,
-and write ../harm_tests_english.md: the English packs in more detail than ../../tools/make_harm_tests.py, which writes
-../harm_tests.md for every pack.
+and write ../results/cleaner/harm_tests_english.md: the English packs in more detail than ../../tools/make_harm_tests.py,
+which writes ../results/cleaner/harm_tests.md for every pack.
 
   python -I make_harm_tests_english.py <g1-harm-test checkout> <packs dir> <gold dir with the disputed docs left in>
 
 harm_test.py is run as it is, never changed. Four runs per pack, reports in ../results/ (IDs and digests only):
-  clean_<pack>_harm.json           ../clean.py --rule all, official gold: each function, then ALL IN ORDER in RULES order
-  clean_stress_<pack>_harm.json    the same, with the disputed docs left in
-  <pack>_harm.json                 ../medicine_english.md --rule all, official gold: each medicine, then the sheet
-  stress_<pack>_harm.json          the same, with the disputed docs left in
+  cleaner/clean_<pack>_harm.json         ../clean.py --rule all, official gold: each function, then ALL IN ORDER in RULES order
+  cleaner/clean_stress_<pack>_harm.json  the same, with the disputed docs left in
+  sheets/<pack>_harm.json                ../sheets/medicine_english.md --rule all, official gold: each medicine, then the sheet
+  sheets/stress_<pack>_harm.json         the same, with the disputed docs left in
 The packs carry pack_id, which clean.py needs to pick the English rules. Section 4 of harm_tests_english.md comes from
-../results/verify_clean_english.json and section 5 from ../results/f1_eval_english.json: run those two scripts first.
+../results/cleaner/verify_clean_english.json and section 5 from ../results/cleaner/f1_eval_english.json: run those two scripts first.
 """
 import csv
 import hashlib
@@ -28,11 +28,11 @@ SPEC = HERE.parent
 CHECKOUT, PACKS_DIR, STRESS = (Path(a).resolve() for a in sys.argv[1:4])
 TEAM = CHECKOUT / "teams" / "01-data-a"
 HARM = TEAM / "tools" / "harm_test.py"
-CLEAN, SHEET = SPEC / "clean.py", SPEC / "medicine_english.md"
-OUT = SPEC / "results"
+CLEAN, SHEET = SPEC / "clean.py", SPEC / "sheets" / "medicine_english.md"
+CLEANER, SHEETS = SPEC / "results" / "cleaner", SPEC / "results" / "sheets"  # clean.py's reports; the sheet's reports
 PACKS = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
 SHORT = {"en-dclm": "dclm", "en-fineweb-edu": "fineweb-edu", "en-nemotroncc": "nemotroncc", "en-nemotroncc-synth": "synth"}
-IN_REPO = {CLEAN: "teams/01-data-a/spec_v1/clean.py", SHEET: "teams/01-data-a/spec_v1/medicine_english.md"}
+IN_REPO = {CLEAN: "teams/01-data-a/spec_v1/clean.py", SHEET: "teams/01-data-a/spec_v1/sheets/medicine_english.md"}
 sys.path.insert(0, str(SPEC))
 import clean as c
 
@@ -74,21 +74,21 @@ def ids(rep, name):
 
 def renamed():
     """English IDs that specv1.md (and so clean.py) renamed: {medicine_english.md ID: clean.py ID}."""
-    rows = re.findall(r"^\| \d+ \| english \| \w+ \| `(DA-[^`]+)` \| `(DA-[^`]+)` \|$", (SPEC / "specv1.md").read_text(encoding="utf-8"), re.M)
+    rows = re.findall(r"^\| \d+ \| english \| \w+ \| `(DA-[^`]+)` \| `(DA-[^`]+)` \|$", (SPEC / "sheets" / "specv1.md").read_text(encoding="utf-8"), re.M)
     return {a: b for a, b in rows if a != b}
 
 
 def main():
     for p in PACKS:  # clean.py picks the English rules by pack_id, and harm_test.py passes the pack's column on
         assert "pack_id" in pq.read_schema(PACKS_DIR / f"{p}.parquet").names, f"{p}: no pack_id column, so clean.py would keep every document"
-    ver = json.loads((OUT / "verify_clean_english.json").read_text(encoding="utf-8"))
+    ver = json.loads((CLEANER / "verify_clean_english.json").read_text(encoding="utf-8"))
     fn, fn_s, sh, sh_s = {}, {}, {}, {}
     for p in PACKS:
         gold, stress = TEAM / "gold" / f"{p}_gold.csv", STRESS / f"{p}_gold.csv"
-        fn[p] = harm(p, CLEAN, gold, OUT / f"clean_{p}_harm.json")
-        fn_s[p] = harm(p, CLEAN, stress, OUT / f"clean_stress_{p}_harm.json")
-        sh[p] = harm(p, SHEET, gold, OUT / f"{p}_harm.json")
-        sh_s[p] = harm(p, SHEET, stress, OUT / f"stress_{p}_harm.json")
+        fn[p] = harm(p, CLEAN, gold, CLEANER / f"clean_{p}_harm.json")
+        fn_s[p] = harm(p, CLEAN, stress, CLEANER / f"clean_stress_{p}_harm.json")
+        sh[p] = harm(p, SHEET, gold, SHEETS / f"{p}_harm.json")
+        sh_s[p] = harm(p, SHEET, stress, SHEETS / f"stress_{p}_harm.json")
         print(p, " ".join(f"{k} {v['status']}" for k, v in (("spec_v1/clean.py", fn[p]), ("stress", fn_s[p]), ("sheet", sh[p]), ("sheet-stress", sh_s[p]))))
     english_codes = list(dict.fromkeys(c._ID[f].split("-")[1] for f in c._PIPELINES["english"]))
     rule_ids = [r["rule"] for r in sh[PACKS[0]]["results"] if r["rule"] != "ALL IN ORDER"]
@@ -129,7 +129,7 @@ def main():
     pk = ver["packs"]
     vcell = lambda v: "0" if not v else f"**{len(v)}** ({', '.join(f'`{i}`' for i in v[:3])})"
     o += ["", "## 4. Checks on every document of the English packs", "",
-          "From `scripts/verify_clean_english.py` (`results/verify_clean_english.json`), which checks `clean.py` against the English rules of "
+          "From `scripts/verify_clean_english.py` (`results/cleaner/verify_clean_english.json`), which checks `clean.py` against the English rules of "
           "`specv1.md`. Each cell: documents where the check fails.", "",
           head.format("check"), rule,
           "| documents | " + " | ".join(str(pk[p]["docs"]) for p in PACKS) + " |",
@@ -140,11 +140,11 @@ def main():
           "| a second `clean()` changes the text again | " + " | ".join(vcell(pk[p]["second_run_changes"]) for p in PACKS) + " |",
           "| documents with a ZWJ or ZWNJ | " + " | ".join(str(pk[p]["docs_with_joiners"]) for p in PACKS) + " |",
           "| a ZWJ or ZWNJ deleted on its own | " + " | ".join(vcell(pk[p]["joiners_lost_in_kept_lines"]) for p in PACKS) + " |"]
-    f1_path = OUT / "f1_eval_english.json"
+    f1_path = CLEANER / "f1_eval_english.json"
     if f1_path.exists():  # made by f1_eval_english.py, the English counterpart of tools/f1_eval.py
         f1 = json.loads(f1_path.read_text(encoding="utf-8"))
         o += ["", "## 5. F1 on the English packs", "",
-              "From `scripts/f1_eval_english.py` (`results/f1_eval_english.json`). `DA-F1-005` is the F1 that `clean.py` runs on the English packs; the "
+              "From `scripts/f1_eval_english.py` (`results/cleaner/f1_eval_english.json`). `DA-F1-005` is the F1 that `clean.py` runs on the English packs; the "
               "shared `tools/f1_rule.py` is switched on for `en` and `eng` in memory only, to show what that would do. Each cell: docs F1 "
               "changes or drops after the other English rules, then the gold docs among them.", "",
               head.format("F1 rule"), rule]
@@ -160,15 +160,15 @@ def main():
           "| pack | official gold | with the disputed docs left in |", "|---|---|---|"]
     o += [f"| {SHORT[p]} | {', '.join(f'`{i}`' for i in touched[(p, 'official')]) or '-'} | "
           f"{', '.join(f'`{i}`' for i in touched[(p, 'stress')]) or '-'} |" for p in PACKS]
-    o += ["", "Affected gold IDs are in `results/clean_<pack>_harm.json`, `results/clean_stress_<pack>_harm.json` and "
-          "`results/<pack>_harm.json`. No document text is kept.", "",
+    o += ["", "Affected gold IDs are in `results/cleaner/clean_<pack>_harm.json`, `results/cleaner/clean_stress_<pack>_harm.json` and "
+          "`results/sheets/<pack>_harm.json`. No document text is kept.", "",
           "## Not run", "", "| family | pack | gold docs | why |", "|---|---|---:|---|"]
     not_run = [p for p in PACKS if fn[p] is None]
     o += [f"| English | {p} | 0 | gold set is empty: NOT TESTABLE |" for p in not_run] or ["| - | - | - | every English pack ran |"]
     runs = [r for d in (fn, fn_s, sh, sh_s) for r in d.values() if r]
     passed = sum(r["status"] == "PASS" for r in runs)
     o += ["", f"Overall: {passed} of {len(runs)} runs PASS" + ("." if passed == len(runs) else f", {len(runs) - passed} not.")]
-    (SPEC / "harm_tests_english.md").write_text("\n".join(o) + "\n", encoding="utf-8", newline="\n")
+    (CLEANER / "harm_tests_english.md").write_text("\n".join(o) + "\n", encoding="utf-8", newline="\n")
     print("wrote harm_tests_english.md |", f"{passed}/{len(runs)} PASS")
 
 

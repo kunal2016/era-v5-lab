@@ -22,7 +22,7 @@ import unicodedata
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SHEET = HERE.parent / "medicine_english.md"
+SHEET = HERE.parent / "sheets" / "medicine_english.md"
 DEST = HERE / "clean_english.py"
 FAMILY = "english"
 MUST_KEEP = {"DA-F1-005"}  # written to the instructor's F1 ruling of 31 Oct: never left out

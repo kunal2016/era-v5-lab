@@ -2,7 +2,7 @@
 
 > **Status:** DRAFT, not frozen. All 20 rules are `CANDIDATE`; 11 more are `BLOCKED`.
 > **Tested on:** `g1-harm-test` at `bae5163`, gold sets at that commit. `harm_test.py` there is the same file as PR 140's head.
-> **Sections follow `spec_v1_TEMPLATE.md`**, as [spec_v1_code.md](spec_v1_code.md). §3 and §4 are in [medicine_english.md](medicine_english.md); reasons are in [decisions_english.md](decisions_english.md); harm results in [harm_tests_english.md](harm_tests_english.md).
+> **Sections follow `spec_v1_TEMPLATE.md`**, as [spec_v1_code.md](spec_v1_code.md). §3 and §4 are in [medicine_english.md](medicine_english.md); reasons are in [decisions_english.md](decisions_english.md); harm results in [harm_tests_english.md](../results/cleaner/harm_tests_english.md).
 
 ## 1. Scope and inputs
 
@@ -13,7 +13,7 @@
 | `en-nemotroncc` | eng | 34 | 1 | `0175e5d0afa8d661` | `6eae1507bc689c79` |
 | `en-nemotroncc-synth` | eng | 96 | 1 | `72216094cbebbf7b` | `0f1c3a9866ada7fb` |
 
-**Inputs:** the latest `medicine.md` of the 8 English sheets (`fetch_medicines.py --include-open-prs`), the latest labels of the 10 English label sheets in the open diagnosis PRs, and the 11 rules of the 29 Oct sheet. No English pack reaches the gold target of about 200 documents. Digests of every input: [results/inputs_manifest_english.json](results/inputs_manifest_english.json).
+**Inputs:** the latest `medicine.md` of the 8 English sheets (`fetch_medicines.py --include-open-prs`), the latest labels of the 10 English label sheets in the open diagnosis PRs, and the 11 rules of the 29 Oct sheet. No English pack reaches the gold target of about 200 documents. Digests of every input: [results/sheets/inputs_manifest_english.json](../results/sheets/inputs_manifest_english.json).
 
 **Assumption:** the language tag on a row is correct. No detector runs.
 
@@ -35,7 +35,7 @@ Fields of the template's rule card that are still open for every rule: independe
 | 40 data safety | `DA-B4-007`, `DA-B4-008`, `DA-B4-009`, `DA-B4-010`, `DA-B4-011`, `DA-F1-005` | in the combined test. In `clean.py`, `DA-F1-005` is the last English rule `clean()` runs |
 | 90 post-clean | a test, not a rule | dclm 0, fineweb-edu 0, nemotroncc 0, synth 0 documents left empty |
 
-**Conflict ledger** (each check on every document of the four packs: `results/order_checks_english.json`, made by `scripts/order_checks_english.py`)
+**Conflict ledger** (each check on every document of the four packs: `results/cleaner/order_checks_english.json`, made by `scripts/order_checks_english.py`)
 
 | rule A | rule B | case | decision | check |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ Fields of the template's rule card that are still open for every rule: independe
 | `DA-F1-005` | shared `tools/f1_rule.py` | Two F1 rules | `DA-F1-005` on English; the shared rule does not run on `en`, `eng` | `clean.py` runs `DA-F1-005` on the English packs and the shared rule on the code packs only (`SCOPE`; `tests/test_clean_english.py`). **Open:** question 6 of the decisions |
 | `DA-D3-003` | ZWJ, ZWNJ | A Hindi line in an English doc goes, with its joiners | Kept: D3 removes the line, never the joiner | Unit test; 0 English docs have a joiner |
 
-**Combined harm test** (`harm_test.py --rule all`; files in [results/](results/), made by [scripts/make_harm_tests_english.py](scripts/make_harm_tests_english.py)):
+**Combined harm test** (`harm_test.py --rule all`; files in [results/cleaner/](../results/cleaner/) and [results/sheets/](../results/sheets/), made by [scripts/make_harm_tests_english.py](../scripts/make_harm_tests_english.py)):
 
 | pack | gold harm | limit | result | with disputed docs left in | fixed / dropped / untouched | labelled rows treated |
 |---|---|---:|---|---|---|---|
@@ -59,7 +59,7 @@ Fields of the template's rule card that are still open for every rule: independe
 | nemotroncc | 0 / 34 | 1 | PASS | 0 / 34 PASS | 62 / 17 / 421 | 75 / 296 |
 | synth | 0 / 96 | 1 | PASS | 0 / 96 PASS | 32 / 1 / 467 | 33 / 165 |
 
-`clean.py` gives the same action and text as the English rules of `specv1.md` run in order, on every English document (`results/verify_clean_english.json`).
+`clean.py` gives the same action and text as the English rules of `specv1.md` run in order, on every English document (`results/cleaner/verify_clean_english.json`).
 
 With 0 hits the harm rate is only shown to be below about 3/n: dclm 4.8%, fineweb-edu 1.9%, nemotroncc 8.8%, synth 3.1%.
 
@@ -133,4 +133,4 @@ Codes with fewer than 5 labelled rows on a pack are left out of this table.
 
 ## 9. Handoff
 
-Week 2 and later need the frozen sheet, its digests and `results/`. Cleaning at scale (15 Nov) runs `clean.py`, the one cleaner of every family, on the English packs (`run_clean.py --pack <pack>.parquet --out <dir>`; see `README_clean.md`). `clean_english.py` and `scripts/clean_english.py` are kept but not used: nothing loads them. The sheet itself was compiled from the annotators' sheets by scripts outside this repo (not committed yet); `results/evidence_english.json` and `results/equivalence_english.json` are what they found. `run_harm_suite.py` cannot test the sheet yet: it tests registry rules one at a time, never a combined sheet. Spec v1 has not been applied to the tokenizer sample yet.
+Week 2 and later need the frozen sheet, its digests and `results/`. Cleaning at scale (15 Nov) runs `clean.py`, the one cleaner of every family, on the English packs (`run_clean.py --pack <pack>.parquet --out <dir>`; see `README_clean.md`). `clean_english.py` and `scripts/clean_english.py` are kept but not used: nothing loads them. The sheet itself was compiled from the annotators' sheets by scripts outside this repo (not committed yet); `results/sheets/evidence_english.json` and `results/sheets/equivalence_english.json` are what they found. `run_harm_suite.py` cannot test the sheet yet: it tests registry rules one at a time, never a combined sheet. Spec v1 has not been applied to the tokenizer sample yet.
