@@ -19,7 +19,7 @@ from fractions import Fraction
 from pathlib import Path
 import pyarrow.parquet as pq
 
-HERE = Path(__file__).resolve().parents[1] / "spec_v1"
+HERE = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("checkout", type=Path)
 ap.add_argument("packs", type=Path, nargs="+")

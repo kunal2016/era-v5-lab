@@ -15,7 +15,7 @@ import argparse, ast, re, textwrap
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SPEC = HERE.parent / "spec_v1"
+SPEC = HERE.parent
 SECTION = re.compile(r"^## Medicine (\d+) — (\w+) / (\w+) / `(DA-[A-H]\d-\d{3})`\n(.*?)(?=^## Medicine \d+ — |\Z)", re.S | re.M)
 BLOCK = re.compile(r"^```python\n(.*?)^```", re.S | re.M)  # at line start: a rule can hold ``` inside a regex
 CODE_ORDER = ["A1", "A2", "A6", "A4", "A5", "A3", "B1", "B2", "B5", "B3", "E1", "E2", "C3", "C4", "C5", "D4", "E4", "C1", "C2", "D1", "D3", "B4", "E3", "F1"]  # RULES order; each family runs in its own sheet order
