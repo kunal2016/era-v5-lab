@@ -157,11 +157,12 @@ The rest of this guide is for people who change the rules, rebuild `clean.py`, o
 7. [Step 3: clean a pack](#step-3-clean-a-pack)
 8. [Step 4: run the harm tests](#step-4-run-the-harm-tests)
 9. [Other checks](#other-checks)
-10. [Use clean.py from Python](#use-cleanpy-from-python)
-11. [The 24 functions](#the-24-functions)
-12. [Run order in each family](#run-order-in-each-family)
-13. [The scope table](#the-scope-table)
-14. [Troubleshooting](#troubleshooting)
+10. [The normaliser](#the-normaliser-spec_v1toolsnormalizepy)
+11. [Use clean.py from Python](#use-cleanpy-from-python)
+12. [The 24 functions](#the-24-functions)
+13. [Run order in each family](#run-order-in-each-family)
+14. [The scope table](#the-scope-table)
+15. [Troubleshooting](#troubleshooting)
 
 ## Where everything is
 
@@ -180,6 +181,7 @@ spec_v1/
   tools/validate_specv1.py       checks specv1.md itself on every pack and writes its validation table
   tools/verify_clean.py          checks clean.py on the code packs
   tools/f1_eval.py               checks the shared F1 on the code packs
+  tools/normalize.py             a standard copy of a text for comparing; never changes a document
   tools/*_english.py             checks on the English packs: see tools/README_english.md
   tests/test_clean.py            every unit test
   results/cleaner/               harm_tests.md, specv1_<pack>_harm.json, specv1_validation.json and the English checks
@@ -199,6 +201,7 @@ Run every command from `teams/01-data-a/`. "Packages" are what `pip install` mus
 | `spec_v1/tools/validate_specv1.py` | `python -I spec_v1/tools/validate_specv1.py --packs <packs folder> --gold gold` | `pyarrow`, `ftfy` | `tools/harm_test.py`, `gold/`, the packs | the validation table and card evidence inside `spec_v1/sheets/specv1.md`, `spec_v1/results/cleaner/specv1_validation.json` |
 | `spec_v1/tools/verify_clean.py` | `python -I spec_v1/tools/verify_clean.py ../.. <packs folder> spec_v1/sheets/medicine_code.md` | `pyarrow`, `tree-sitter-language-pack` | `gold/`, the annotators' labels in `diagnosis/submissions/`, the six code packs | prints only |
 | `spec_v1/tools/f1_eval.py` | `python -I spec_v1/tools/f1_eval.py ../.. <packs folder> [docs per pack, default 40]` | `pyarrow`, `tree-sitter-language-pack` | `gold/`, the annotators' labels in `diagnosis/submissions/`, the six code packs | prints only |
+| `spec_v1/tools/normalize.py` | `python -I spec_v1/tools/normalize.py --pack <packs folder>/<pack_id>.parquet` | `pyarrow` (only for `--pack`) | the pack | prints only |
 | English checks | `spec_v1/tools/verify_clean_english.py`, `f1_eval_english.py`, `order_checks_english.py`, `make_harm_tests_english.py` | `pyarrow`, `ftfy` | see [tools/README_english.md](tools/README_english.md) | `spec_v1/results/cleaner/` |
 
 The pack files are not in the repo; get your link from the lab plan sheet. Each must be named `<pack_id>.parquet`.
@@ -307,7 +310,7 @@ It stops with an `AssertionError` that names the rule, and writes nothing, when:
 python -m pytest spec_v1/tests
 ```
 
-All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in six sections:
+All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in seven sections:
 
 | section | what it tests |
 |---|---|
@@ -317,8 +320,9 @@ All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in six sectio
 | 4. The English family | Look-alikes kept, other languages untouched, ZWJ and ZWNJ kept, F1 tags survive a second clean, and `clean()` equal to the English rules of `specv1.md`. |
 | 5. The math family | A teaser cut trimmed to its last sentence, a second clean changes nothing, a Symbol-font glyph mapped, cp866 mojibake repaired, BBCode maths converted, repeated answer options kept, foreign-script spam removed, Greek letters kept. |
 | 6. The shared F1 on math and science | The prose path of `spec_v1/tools/f1_rule.py`: private phones, emails and addresses get their tag, a listing of individuals is dropped, organisations and look-alikes are kept, and it runs only on the math and science packs with their own language tags. |
+| 7. The normaliser | `spec_v1/tools/normalize.py`: each disease it evens out (B1, A2, A1, A5, case, spacing), none of the section G damage (ZWJ and ZWNJ, NFKC, Indic digits, vowel signs), lines kept by `line_keys`, and no document or `clean()` result changed. |
 
-Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `461 passed` with `tree-sitter-language-pack` installed. Without it, 456 pass and 5 are skipped: the shared F1 on code (`pip install tree-sitter-language-pack`).
+Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `474 passed` with `tree-sitter-language-pack` installed. Without it, 469 pass and 5 are skipped: the shared F1 on code (`pip install tree-sitter-language-pack`).
 
 ## Step 3: clean a pack
 
@@ -448,6 +452,48 @@ python -I spec_v1/tools/f1_eval.py ../.. <packs folder>
 ### The English checks
 
 `spec_v1/tools/verify_clean_english.py`, `f1_eval_english.py`, `order_checks_english.py` and `make_harm_tests_english.py` check the English packs in more detail. Their commands and run order are in [tools/README_english.md](tools/README_english.md).
+
+## The normaliser: `spec_v1/tools/normalize.py`
+
+A standard copy of a text, for comparing and matching. **It never changes a document:** a rule compares the copies, and the document keeps its own text, so nothing is fixed or dropped by it. `clean.py` does not use it; it is there for rules and code that find a disease by comparing text.
+
+| function | returns | for |
+|---|---|---|
+| `match_key(text)` | one key for the whole text | comparing documents or passages: H1 exact and H2 near duplicates |
+| `line_keys(text)` | one key per line | comparing lines: C1 boilerplate phrases, C2 repeated lines, E4 licence headers |
+| `explain(text)` | the steps that change this text | logging which diseases a key evened out |
+
+The steps, in order, with the diseases of `diagnosis/DISEASES.md` they even out:
+
+| step | disease | what happens in the key |
+|---|---|---|
+| `B1` | HTML entities | `&amp;`, `&nbsp;`, `&#2361;` are decoded |
+| `A2` | control characters | `\r\n` and `\r` become `\n`; U+0000–001F (but tab and newline) and U+007F–009F go |
+| `A1` | invisible junk | zero-width space, BOM, soft hyphen and the bidi marks U+202A–202E, U+2066–2069 go. ZWJ and ZWNJ stay. |
+| `case` | (none) | lower case: Latin, Greek, Cyrillic. Indic scripts have no case. |
+| `A5` | wrong normal form | NFC, the form `DISEASES.md` names: a nukta written two ways gives one key |
+| `space` | (none) | runs of spaces and tabs become one space |
+
+What it never does, so it cannot cause the damage of `DISEASES.md` section G: no NFKC (`x²` and `ﬁ` stay as they are), no Indic digit turned Latin, no ZWJ or ZWNJ removed, no vowel sign or virama split from its letter. It lowers case with `lower()`, not `casefold()`, because `casefold()` also turns `ﬁ` into `fi` and `ß` into `ss`.
+
+From Python, run from `teams/01-data-a/`:
+
+```python
+import sys
+sys.path.insert(0, "spec_v1/tools")
+from normalize import match_key, line_keys, explain
+
+match_key("Fish &amp; chips") == match_key("fish & CHIPS")   # True
+explain("Café\u200b")                                        # ['A1', 'case']
+```
+
+To see how many documents of a pack each step would even out (IDs and counts only, never text):
+
+```bash
+python -I spec_v1/tools/normalize.py --pack <packs folder>/en-dclm.parquet
+```
+
+On `en-dclm`, for example: B1 1 document, A2 3, A1 10, A5 3, case 500, space 260. Its tests are section 7 of `spec_v1/tests/test_clean.py`.
 
 ## Use clean.py from Python
 
