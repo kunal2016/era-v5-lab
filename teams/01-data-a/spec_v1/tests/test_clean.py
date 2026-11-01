@@ -18,7 +18,7 @@ LICENCE = "// Licensed under the Apache License, Version 2.0 (the License);\n// 
 
 @pytest.fixture
 def prose(monkeypatch):
-    """The shared F1 (spec_v1/tools/f1_rule.py) on prose. clean.py runs it on the code packs only; English has its own F1, DA-F1-005."""
+    """The shared F1 (spec_v1/tools/f1_rule.py) on prose. clean.py runs it on the code, math and sci packs; English has its own F1, DA-F1-005."""
     monkeypatch.setattr(c, "_F1_LANGS", c._F1_LANGS | {"en"})
 
 

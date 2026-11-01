@@ -44,7 +44,8 @@ def test_each_family_runs_its_rules_in_sheet_order():
 def test_the_f1_rules_cover_their_whole_family():
     assert c.SCOPE["DA-F1-005"] == FAMILIES["english"]  # the instructor's F1 rule, never left out
     assert c.SCOPE["DA-F1-006"] == FAMILIES["sci"]
-    assert c.SCOPE["f1_rule.py"] == FAMILIES["code"]  # the shared F1
+    assert c.SCOPE["f1_rule.py"] == FAMILIES["code"] | FAMILIES["math"] | FAMILIES["sci"]  # the shared F1 (TSAI, 1 Nov)
+    assert not c.SCOPE["f1_rule.py"] & FAMILIES["english"]  # English keeps its own F1, DA-F1-005
 
 
 def test_a_math_rule_takes_the_packs_of_its_origin():
