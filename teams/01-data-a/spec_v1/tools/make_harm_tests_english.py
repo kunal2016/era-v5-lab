@@ -1,5 +1,5 @@
 """Run each function of ../clean.py, and each English medicine, on each English gold set with the team's harm_test.py,
-and write ../results/cleaner/harm_tests_english.md: the English packs in more detail than ../tools/make_harm_tests.py,
+and write ../results/cleaner/harm_tests_english.md: the English packs in more detail than make_harm_tests.py,
 which writes ../results/cleaner/harm_tests.md for every pack.
 
   python -I make_harm_tests_english.py <g1-harm-test checkout> <packs dir> <gold dir with the disputed docs left in>
@@ -102,7 +102,7 @@ def main():
          "DRAFT. Each cell: gold docs changed + dropped, for that function or medicine on that pack's gold set. Limit: "
          "`max(1, floor(1% of gold))`, that is `max(1 document, 1%)` (TSAI decision); each pack on its own gold set, never pooled; "
          "an empty gold set is NOT TESTABLE (exit code 2), never a PASS. A result other than PASS is shown after the count. "
-         f"Made by `scripts/make_harm_tests_english.py` on {date.today():%d %b %Y} with the team's `harm_test.py`, run as it is "
+         f"Made by `spec_v1/tools/make_harm_tests_english.py` on {date.today():%d %b %Y} with the team's `harm_test.py`, run as it is "
          f"(sha256 `{hashlib.sha256(HARM.read_bytes()).hexdigest()[:12]}`). "
          "Every pack, each rule on the gold sets of its own packs, is in `harm_tests.md`.", "",
          "## 1. Each function of clean.py on the English packs", "",
@@ -129,7 +129,7 @@ def main():
     pk = ver["packs"]
     vcell = lambda v: "0" if not v else f"**{len(v)}** ({', '.join(f'`{i}`' for i in v[:3])})"
     o += ["", "## 4. Checks on every document of the English packs", "",
-          "From `scripts/verify_clean_english.py` (`results/cleaner/verify_clean_english.json`), which checks `clean.py` against the English rules of "
+          "From `spec_v1/tools/verify_clean_english.py` (`results/cleaner/verify_clean_english.json`), which checks `clean.py` against the English rules of "
           "`specv1.md`. Each cell: documents where the check fails.", "",
           head.format("check"), rule,
           "| documents | " + " | ".join(str(pk[p]["docs"]) for p in PACKS) + " |",
@@ -144,7 +144,7 @@ def main():
     if f1_path.exists():  # made by f1_eval_english.py, the English counterpart of spec_v1/tools/f1_eval.py
         f1 = json.loads(f1_path.read_text(encoding="utf-8"))
         o += ["", "## 5. F1 on the English packs", "",
-              "From `scripts/f1_eval_english.py` (`results/cleaner/f1_eval_english.json`). `DA-F1-005` is the F1 that `clean.py` runs on the English packs; the "
+              "From `spec_v1/tools/f1_eval_english.py` (`results/cleaner/f1_eval_english.json`). `DA-F1-005` is the F1 that `clean.py` runs on the English packs; the "
               "shared `spec_v1/tools/f1_rule.py` is switched on for `en` and `eng` in memory only, to show what that would do. Each cell: docs F1 "
               "changes or drops after the other English rules, then the gold docs among them.", "",
               head.format("F1 rule"), rule]
