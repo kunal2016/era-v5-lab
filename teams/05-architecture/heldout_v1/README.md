@@ -30,7 +30,8 @@ must never be trained on.
 3. Not a benchmark: Team 9's fingerprint check
    ([`teams/09-evaluation/decontam/`](https://github.com/theschoolofai/era-v5-lab/blob/main/teams/09-evaluation/decontam/README.md)) flags 0 documents.
 4. Not Team 1 or Team 2 data: their data is V5's own training data.
-5. Close to one of V5's data packs, so the final model is scored on the kind of text it learns from.
+5. Matches the kinds of text in the lab's sample packs (the diagnosis packs listed below), so the score covers
+   the same ground. The V5 training mix itself is not set; the pack names show how this set was put together.
 
 ## Layout
 
@@ -72,13 +73,16 @@ To score a single slice, keep the lines whose id starts with its prefix.
 
 ### Why these sources
 
+The last column names the lab's sample packs each source matches, for transparency. These are the diagnosis
+packs, not a decided training mix: the V5 training mix is not set.
+
 | Slice | Source | Why |
 |---|---|---|
-| English | [C4](https://huggingface.co/datasets/allenai/c4) `en`, validation | A released split of a cleaned web crawl; close to V5's English packs (DCLM, FineWeb-Edu, Nemotron-CC); one of the most-reported language-model evaluation texts. |
-| Indic (11 languages) | [FineWeb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2), test | V5's Indic packs come from FineWeb-2's train side; its test split is the same kind of text, set aside by its makers. It covers all 11 G3 languages. |
-| Math | [OpenWebMath](https://huggingface.co/datasets/open-web-math/open-web-math) (in [Proof-Pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2)), test | Web math pages, close to V5's FineMath and MegaMath packs. ODC-By 1.0. |
-| Science | [peS2o](https://huggingface.co/datasets/allenai/peS2o) v2, validation | Academic papers, close to the FinePDFs science pack. |
-| Code | [The Vault](https://huggingface.co/datasets/Fsoft-AIC/the-vault-function) (function level), test | Built from permissively licensed GitHub code ([The Stack](https://huggingface.co/datasets/bigcode/the-stack)). Its test split covers all six languages of V5's code packs. Only functions whose repo licences are all permissive are kept. |
+| English | [C4](https://huggingface.co/datasets/allenai/c4) `en`, validation | A released split of a cleaned web crawl; one of the most-reported language-model evaluation texts. Matches the English sample packs `en-dclm`, `en-fineweb-edu`, `en-nemotroncc`. |
+| Indic (11 languages) | [FineWeb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2), test | A released test split of a large multilingual web crawl, set aside by its makers. It covers all 11 G3 languages. Matches the Indic sample packs `ind-*-fw2` (FineWeb-2). |
+| Math | [OpenWebMath](https://huggingface.co/datasets/open-web-math/open-web-math) (in [Proof-Pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2)), test | Web pages with mathematical content. ODC-By 1.0. Matches the math sample packs `math-finemath`, `math-megamath`. |
+| Science | [peS2o](https://huggingface.co/datasets/allenai/peS2o) v2, validation | Academic papers. Matches the science sample pack `sci-finepdfs`. |
+| Code | [The Vault](https://huggingface.co/datasets/Fsoft-AIC/the-vault-function) (function level), test | Built from permissively licensed GitHub code ([The Stack](https://huggingface.co/datasets/bigcode/the-stack)). Its test split covers Python, C++, Go, Java, JavaScript and Rust, the languages of the code sample packs `code-python`, `code-cpp`, `code-go`, `code-java`, `code-js-ts`, `code-rust`. Only functions whose repo licences are all permissive are kept. |
 
 Not used, with the reason: Team 1/2 data (it is V5's training data); benchmarks such as FLORES, IN22, MILU, MMLU,
 GSM8K, HumanEval and MBPP (lab rule); our own carve-out of FineWeb (not a released split); mC4 validation (no Odia
@@ -182,28 +186,37 @@ python teams/05-architecture/harness/train_week2.py ... --heldout-data teams/05-
 
 | When | What | Who |
 |---|---|---|
-| Now (this PR) | The sample: the harness owner tests loading, tokenization and bits per byte; the lead and TSAI review the approach and the open points below | Udit; Shivanshu, Rohan |
+| Now (this PR) | The sample, for harness testing only: loading, tokenization and bits per byte | Udit |
 | Mon 2 Nov | **The full set**: the same script with `--mb 0.25` (about 0.25 MB of text per slice, about 3.75 MB, over 1M tokens), same file names in `data/`; Team 9's check on the full fingerprint set; `results/heldout_v1.sha256` written, naming the scored file; this README's tables updated | Deepjyoti |
-| Tue 3 Nov onward | EXP-1 and every later arm scored on it; one bits per byte per slice (lines selected by id prefix) and pooled | Udit's harness, arm owners |
+| Tue 3 Nov onward | EXP-1 and every later arm scored on it: the winner by mean bits per byte over the whole file (plan v1), with per-slice numbers reported beside it (lines selected by id prefix) | Udit's harness, arm owners |
 | Wed 4 Nov | Re-check on Team 9's **fingerprints v2** (new cleaning rule `spec-v1`, plus Terminal-Bench 2 and BFCL v3); its `set_sha256` added next to v1's | Deepjyoti, Team 9 |
 | Being agreed | **Protection**: Team 9 fingerprints this set as a protected set, so every training shard is checked against it; the Data teams' dedup excludes copies, using `heldout_v1_sources.jsonl` | Team 9, Teams 1 and 2 |
-| When spec v1 code lands | **Cleaned copy** (`heldout_v1_clean`): Team 1 and Team 2's final cleaning run on the set, then Team 9's check; both scored from then on | Deepjyoti |
+| When spec v1 code lands | **Cleaned copy** (`heldout_v1_clean`): Team 1 and Team 2's final cleaning run on the set, then Team 9's check. A separate file; it is not the week-2 score unless the plan changes | Deepjyoti |
 | Later (v1.1, separate slices) | A whole-file code slice; possibly a Paloma slice to compare with outside models; possibly a "temporal" slice (text newer than any training crawl) | to be decided |
 
 The v1 bytes never change once the full set is built. Anything new is a separate, named slice or file.
 
-## Open points for the lead and TSAI to confirm
+## Decisions for v1
 
-1. **Permanent and protected.** This set also scores the dry runs and the final model, so it must stay out of all training.
-   Proposal: Team 9 fingerprints it as a protected set, so every training shard is checked against it, copies included.
-2. **Which slice decides week-2 winners.** The arms train on English text. Proposal: English decides, and every slice is
-   reported.
-3. **Size.** About 0.25 MB of text per slice in the full set (15 slices in one file of about 3.75 MB, over 1M tokens). Fixed before any
-   arm is scored.
-4. **Cleaning.** No cleaning spec is approved yet. Proposal: freeze the raw set now, and add a cleaned copy
-   (`heldout_v1_clean`) when Team 1 and Team 2's spec v1 code lands, then run Team 9's check on it.
-5. **Code is function level.** The Vault gives single functions with their docstrings, not whole files. A whole-file
-   code slice can follow in v1.1.
+These are the owner's decisions for the Monday delivery, made so the harness and the arm owners are not blocked.
+They stand unless the lead or TSAI overrides them; any feedback or override will be taken in.
+
+1. **Sources (frozen for v1):** C4 `en` validation; FineWeb-2 test (11 languages); OpenWebMath test; peS2o validation;
+   The Vault test. A change after the Monday file is built becomes a new, named set (v2), not an edit to v1's bytes.
+2. **Composition and size:** 15 slices, about 0.25 MB of text each, equal bytes per slice (`--mb 0.25`): one file of
+   about 3.75 MB, over 1M tokens. 11 of the 15 slices are Indic, so about 73% of the bytes are Indic.
+3. **Score (plan v1):** every held-out token is scored; the week-2 winner is the mean bits per byte over the whole file.
+   Per-slice numbers are reported beside it and decide nothing.
+4. **Permanent:** the Monday file also scores the dry runs and the final model, so it stays out of all training.
+   Team 9 protection is being set up so every training shard is checked against it, copies included.
+5. **Cleaning:** v1 is raw text. A cleaned copy would be a separate file (`heldout_v1_clean`) and is not the week-2 score
+   unless the plan changes.
+6. **Code** is function level in v1 (The Vault gives single functions with their docstrings). A whole-file code slice
+   would be a separate, later set.
+
+**This PR is a sample for harness testing only.** The scored file is the Monday file named by
+`results/heldout_v1.sha256`. The sample has 20 documents per slice, which is not equal text (English is 35,259 bytes,
+some Indic slices over 200,000), so a bits-per-byte total on it is not a result.
 
 ## Licences and attribution
 
