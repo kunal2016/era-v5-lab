@@ -86,8 +86,8 @@ Gold size, limit, changed, dropped, affected IDs, pack fixed / dropped / untouch
 
 ```
 python -I teams/01-data-a/tools/harm_test.py --pack <pack>.parquet --gold teams/01-data-a/gold/<pack>_gold.csv \
-  --rules teams/01-data-a/spec_v1/medicine_code.md --rule all --report teams/01-data-a/spec_v1/results/<pack>_harm.json
-python -I teams/01-data-a/tools/medicine_conflicts.py --packs code- --sheet teams/01-data-a/spec_v1/medicine_code.md --out <file>
+  --rules teams/01-data-a/spec_v1/sheets/medicine_code.md --rule all --report teams/01-data-a/spec_v1/results/<pack>_harm.json
+python -I teams/01-data-a/tools/medicine_conflicts.py --packs code- --sheet teams/01-data-a/spec_v1/sheets/medicine_code.md --out <file>
 ```
 
 These tools are on `g1-harm-test`, not on this base branch. Results here were made with them at `bae5163`. To remake the sheet and all results, see [scripts/README.md](scripts/README.md).

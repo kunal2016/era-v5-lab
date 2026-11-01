@@ -77,10 +77,10 @@ python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder>
 python -I tools/build_clean.py
 ```
 
-This reads `spec_v1/specv1.md` and writes `spec_v1/clean.py`. Use `--sheet` and `--out` to read or write somewhere else:
+This reads `spec_v1/sheets/specv1.md` and writes `spec_v1/clean.py`. Use `--sheet` and `--out` to read or write somewhere else:
 
 ```bash
-python -I tools/build_clean.py --sheet spec_v1/specv1.md --out /tmp/clean.py
+python -I tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /tmp/clean.py
 ```
 
 **Rebuild after every change to `specv1.md` or `tools/f1_rule.py`.** The build gives the same file every time, and a unit test checks that `clean.py` matches a fresh build.

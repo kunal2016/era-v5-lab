@@ -41,7 +41,7 @@ Then the sheet and its results, followed by the checks:
 ```
 python -I run_all.py <checkout> <packs> --stress-gold <stress gold>
 python -I audit_final.py <checkout> <packs>
-python -I post_clean.py ../medicine_code.md <packs>
+python -I post_clean.py ../sheets/medicine_code.md <packs>
 python -I stress_docs.py <checkout> <packs> <stress gold>
 python -I regex_on_issues.py <checkout> <packs>
 ```
