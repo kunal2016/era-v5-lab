@@ -16,6 +16,7 @@ model:
   n_head: 4
   n_kv_head: 2
   n_embd: 256
+  attn_impl: eager
   mlp_ratio: 2
   embedding: ke1
   ke_max_pos: 32
@@ -24,6 +25,7 @@ model:
   moe: {num_experts: 8, top_k: 2, num_shared: 1, dispatch: loop}
   reversible: false
   ce_impl: torch
+  mtp: false
 optim:
   name: adamw
   # 0.001 lets the loader step. It is not a chosen learning rate and is not copied into config v0.

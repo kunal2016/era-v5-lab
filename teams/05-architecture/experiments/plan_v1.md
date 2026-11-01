@@ -108,7 +108,7 @@ Their loader (`teams/06-performance/models/config.py`) accepts the files below. 
 
 T1 is exact on every loader field and may be timed as the T1 shape. EXP-1 changes only the learning rate, so one T1 step time covers all five learning-rate arms. `t1.yaml`, `t2.yaml`, and `t3.yaml` set `optim.lr` to 0.001 so the loader can take a step. That number is a timing placeholder. It is not a chosen learning rate, and config v0 keeps `optim.lr` null. The EXP-1 files set their own rates. `exp2_adamw.yaml` uses 0.001 until EXP-1 names a winner, and that comparison is not final. `exp2_muon.yaml` sets `optim.muon_lr` to null so base.yaml's 0.02 is not inherited. The T1 screen chooses that rate.
 
-Pull request 167 changes defaults in `base.yaml`. Every arm file sets `model.reversible` false, `model.ce_impl` torch, and `moe.dispatch` loop, so those three cannot move with that file. `model.attn_impl` eager and `model.mtp` false are the arm settings. The current loader rejects unknown model keys, so those two are not written under `model` until the loader has the fields. SwiGLU, RoPE, and a rope theta are not selected in these files.
+Pull request 167 is on main. Every arm file sets `model.reversible` false, `model.ce_impl` torch, and `moe.dispatch` loop, so those three cannot move with `base.yaml`. `t1.yaml`, `t2.yaml`, and `t3.yaml` also set `model.attn_impl` eager and `model.mtp` false. The loader's own default for attention is sdpa, so leaving attention unset would not keep eager. `run.dtype` is already bf16 on those three files. SwiGLU, RoPE, and a rope theta are not selected in these files.
 
 | File | Loadable shape | Official step time |
 |---|---|---|
