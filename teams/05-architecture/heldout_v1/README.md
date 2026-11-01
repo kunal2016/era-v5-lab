@@ -41,6 +41,7 @@ must never be trained on.
 | `data/SHA256SUMS` | The **sample's** checksums of both JSONL files (see "Checksums" below) |
 | `data/heldout_manifest.json` | Selection rule, pinned dataset revisions, excluded documents with the reason, the file's documents, text bytes and sha256; per slice: dataset, part, id prefix, documents, text bytes, documents skipped for personal data |
 | `heldout_decontam_v1.txt` | Output of Team 9's check on the file |
+| `heldout_report.json` | The same result in the form the G5 harness (PR #190) requires for `--heldout-report`: the file's sha256, the fingerprint set id, `scope: full`, `matches: 0`, `docs_checked`. **Sample: updated with the full set on Monday** |
 | `build_heldout.py` | Rebuilds `data/` byte for byte |
 | `.gitattributes` | Keeps the data files byte for byte on every operating system, so the sha256 values stay valid |
 
@@ -163,6 +164,19 @@ docs 300 flagged 0 (0.00%) by benchmark {}
 ```
 
 It is repeated on the full set, and again on fingerprints v2 (due Wed 4 Nov).
+
+`heldout_report.json` carries the same result for the harness, which refuses a quality run unless the report's
+`heldout_sha256` equals the held-out file's sha256, `matches` is 0, `scope` is `full`, a `fingerprint_set_id` is given
+and `docs_checked` equals the number of documents it reads. Checked with the harness's own reader from PR #190:
+300 documents read, the same 2,019,317 bytes, report accepted.
+
+> **Note: this report is for the sample.** It lets the harness run its checks now. On Mon 2 Nov it is regenerated for
+> the full set (new `heldout_sha256` and `docs_checked`, `status` changed from `SAMPLE` to `FINAL`), together with
+> `results/heldout_v1.sha256`. A report and a file from different builds will not match, so the harness rejects the pair.
+
+```
+python teams/05-architecture/harness/train_week2.py ... --heldout-data teams/05-architecture/heldout_v1/data/heldout_v1.jsonl --heldout-report teams/05-architecture/heldout_v1/heldout_report.json
+```
 
 ## What comes next
 
