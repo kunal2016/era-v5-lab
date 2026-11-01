@@ -45,7 +45,7 @@ Source code remains CANDIDATE even after a measured pass. Semantic side effects,
 |---|---|
 | [medicine_code.md](medicine_code.md) | `e096bea29f0634a76ae99600753527aa266a1d69ed06c4fd88e800b42c8bf13b` |
 | [medicine_english.md](medicine_english.md) | `904c63b621515fc07bdd07cfff3553b6cff49504c89f41c2ec1fce2d27b0652c` |
-| [medicine_math.md](medicine_math.md) | `11e8460a0f9b29cc606088b00d5cf57bd227b915989997ab869cd84bbd15dae3` |
+| [medicine_math.md](medicine_math.md) | `2ff54fc211fbd83e594a5d4ea290e36e774faf0451daf80fee5d0c93f24d72e9` |
 | [medicine_sci.md](medicine_sci.md) | `5f1e743253062fee2b91d3e04f13b2c302eddae4a9c02b0f54144d2252e1c411` |
 
 ## Identity mapping
@@ -98,28 +98,30 @@ Source code remains CANDIDATE even after a measured pass. Semantic side effects,
 | 44 | english | F1 | `DA-F1-005` | `DA-F1-005` |
 | 45 | math | A3 | `DA-A3-001` | `DA-A3-001` |
 | 46 | math | A1 | `DA-A1-001` | `DA-A1-005` |
-| 47 | math | A5 | `DA-A5-001` | `DA-A5-002` |
-| 48 | math | B2 | `DA-B2-001` | `DA-B2-001` |
-| 49 | math | B4 | `DA-B4-001` | `DA-B4-001` |
-| 50 | math | B5 | `DA-B5-001` | `DA-B5-001` |
-| 51 | math | C5 | `DA-C5-001` | `DA-C5-001` |
-| 52 | math | C3 | `DA-C3-001` | `DA-C3-004` |
-| 53 | math | C1 | `DA-C1-001` | `DA-C1-001` |
-| 54 | math | C2 | `DA-C2-001` | `DA-C2-001` |
-| 55 | math | C5 | `DA-C5-002` | `DA-C5-006` |
-| 56 | math | C3 | `DA-C3-002` | `DA-C3-005` |
-| 57 | sci | B4 | `cure_b4` | `DA-B4-013` |
-| 58 | sci | B2 | `cure_b2` | `DA-B2-003` |
-| 59 | sci | B5 | `cure_b5` | `DA-B5-002` |
-| 60 | sci | A1 | `cure_a1` | `DA-A1-006` |
-| 61 | sci | A6 | `cure_a6` | `DA-A6-002` |
-| 62 | sci | C1 | `cure_c1` | `DA-C1-007` |
-| 63 | sci | C2 | `cure_c2` | `DA-C2-004` |
-| 64 | sci | C3 | `cure_c3` | `DA-C3-006` |
-| 65 | sci | C4 | `cure_c4` | `DA-C4-003` |
-| 66 | sci | D1 | `cure_d1` | `DA-D1-001` |
-| 67 | sci | F1 | `cure_f1` | `DA-F1-006` |
-| 68 | sci | D3 | `cure_d3` | `DA-D3-004` |
+| 47 | math | A6 | `DA-A6-001` | `DA-A6-003` |
+| 48 | math | A5 | `DA-A5-001` | `DA-A5-002` |
+| 49 | math | B2 | `DA-B2-001` | `DA-B2-001` |
+| 50 | math | B4 | `DA-B4-001` | `DA-B4-001` |
+| 51 | math | B5 | `DA-B5-001` | `DA-B5-001` |
+| 52 | math | C5 | `DA-C5-001` | `DA-C5-001` |
+| 53 | math | D3 | `DA-D3-001` | `DA-D3-005` |
+| 54 | math | C3 | `DA-C3-001` | `DA-C3-004` |
+| 55 | math | C1 | `DA-C1-001` | `DA-C1-001` |
+| 56 | math | C2 | `DA-C2-001` | `DA-C2-001` |
+| 57 | math | C5 | `DA-C5-002` | `DA-C5-006` |
+| 58 | math | C3 | `DA-C3-002` | `DA-C3-005` |
+| 59 | sci | B4 | `cure_b4` | `DA-B4-013` |
+| 60 | sci | B2 | `cure_b2` | `DA-B2-003` |
+| 61 | sci | B5 | `cure_b5` | `DA-B5-002` |
+| 62 | sci | A1 | `cure_a1` | `DA-A1-006` |
+| 63 | sci | A6 | `cure_a6` | `DA-A6-002` |
+| 64 | sci | C1 | `cure_c1` | `DA-C1-007` |
+| 65 | sci | C2 | `cure_c2` | `DA-C2-004` |
+| 66 | sci | C3 | `cure_c3` | `DA-C3-006` |
+| 67 | sci | C4 | `cure_c4` | `DA-C4-003` |
+| 68 | sci | D1 | `cure_d1` | `DA-D1-001` |
+| 69 | sci | F1 | `cure_f1` | `DA-F1-006` |
+| 70 | sci | D3 | `cure_d3` | `DA-D3-004` |
 
 ## Fresh validation
 
@@ -139,7 +141,7 @@ Fresh local execution using the repository loader, mutation checks, timeouts and
 | en-fineweb-edu | 158 | 0 / 0 | PASS | 12 / 1 | 0 / 0 |
 | en-nemotroncc | 34 | 0 / 0 | PASS | 62 / 17 | 0 / 0 |
 | en-nemotroncc-synth | 326 | 0 / 0 | PASS | 32 / 1 | 0 / 0 |
-| math-finemath | 86 | 0 / 0 | PASS | 122 / 12 | 0 / 0 |
+| math-finemath | 86 | 0 / 0 | PASS | 176 / 13 | 0 / 0 |
 | math-megamath | 26 | 0 / 0 | PASS | 37 / 10 | 0 / 0 |
 | sci-finepdfs | 198 | 0 / 0 | PASS | 32 / 12 | 0 / 0 |
 
@@ -3714,7 +3716,8 @@ def medicine(doc):
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-A3-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** A3 mojibake. Labelled rows: finemath 11, megamath 21.
+1. **Disease:** A3, 11 documents. `c9e5d27233084b62` "â€™" @178 (x24; U+00E2 U+20AC U+2122); `ab295000bded241a` "ðŸ˜€" @118; `f79e6aeb5ebb6a5c` "тАЩ" @4628 (UTF-8 read as cp866).
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -3725,7 +3728,7 @@ def medicine(doc):
 - `4477acbfa8e1a6da` (math-finemath), original offset 1715: `"atistics\u00e2\u20ac\u00a6 I don't think I'm re"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** A short run starting with a UTF-8 lead byte read as cp1252 (`Â Ã â ð`) is re-encoded as cp1252 and decoded as UTF-8; the repair is kept only if it succeeds and is shorter.
+2. **Medicine:** a short run starting with a UTF-8 lead byte seen as cp1252 (`Â Ã â ð Ð Ñ à á ä`) is re-encoded as cp1252 and decoded as UTF-8; kept only if that succeeds and is shorter. Same for cp866 `т[АБ].`.
 
 ```python
 RULE_ID = "DA-A3-001"
@@ -3738,27 +3741,31 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-MOJI = re.compile("[\u00c2\u00c3\u00e2\u00f0][\u0080-\u00bf\u0152\u0153\u0160\u0161\u0178"
-                  "\u017d\u017e\u0192\u02c6\u02dc\u2013\u2014\u2018-\u201e\u2020-\u2022"
-                  "\u2026\u2030\u2039\u203a\u20ac\u2122]{1,3}")
+# cp1252 characters for the bytes 0x80-0x9F
+A3_CP1252_EXTRA = "\u20ac\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\u017d\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\u017e\u0178"
+# lead chars are the usual UTF-8 lead bytes seen as cp1252; not U+00D7 (x + no-break space is real maths)
+A3_MOJI = re.compile("[\u00c2\u00c3\u00e2\u00f0\u00d0\u00d1\u00e0\u00e1\u00e4][\u0080-\u00bf\u00a0-\u00bf" + A3_CP1252_EXTRA + "]{1,3}")
+A3_CP866 = re.compile("\u0442[\u0410\u0411][\u0400-\u04ff]")    # UTF-8 read as cp866: "\u0442\u0410\u0429" is a right quote
 
-def _fix(m):
-    s = m.group(0)
+def _a3_undo(m, enc):
+    s = m.group()
     try:
-        r = s.encode("cp1252").decode("utf-8")
+        out = s.encode(enc).decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         return s
-    return r if len(r) < len(s) else s
+    return out if len(out) < len(s) else s
 
-def cure_a3(text):
-    return MOJI.sub(_fix, text)
+def medicine_a3(text):
+    t = A3_MOJI.sub(lambda m: _a3_undo(m, "cp1252"), text)
+    return A3_CP866.sub(lambda m: _a3_undo(m, "cp866"), t)
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -3766,7 +3773,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_a3(doc["text"]), doc["text"])
+    return _std(medicine_a3(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -3781,14 +3788,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** real Latin-1 text that happens to decode as UTF-8 would be changed (rare).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** the first version accepted any Latin-1 lead and turned `×`+NBSP into Hebrew `נ` in 2 clean documents; the lead set is now restricted. Real Latin-1 text could still be "repaired" when the run happens to decode as UTF-8 (rare).
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
 ## Medicine 46 — math / A1 / `DA-A1-005`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-A1-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** A1 invisible junk characters. Labelled rows: finemath 15, megamath 0.
+1. **Disease:** A1, 15 documents. `064d8dd19536d1d8` U+200E LRM @9 (x2); `8f09ea36d06abaef` U+00AD soft hyphen @3180 (x4); `263a5308b96d2e4a` U+200B @6754.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -3799,7 +3807,7 @@ def medicine(doc):
 - `8f09ea36d06abaef` (math-finemath), original offset 3172: `"ath in \\\u00ad( ... \\\u00ad) or \\\u00ad[ ... \\\u00ad"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Delete U+200B, U+FEFF, U+00AD, U+200E, U+200F, U+2060, U+202A–U+202E, U+2066–U+2069. Never touch ZWJ/ZWNJ (U+200D, U+200C). U+00A0 no-break space is not A1 and is kept.
+2. **Medicine:** delete U+200B, U+FEFF, U+00AD, U+200E, U+200F, U+2060, U+202A–U+202E, U+2066–U+2069. ZWJ/ZWNJ are never touched (ruling 12).
 
 ```python
 RULE_ID = "DA-A1-005"
@@ -3812,17 +3820,19 @@ LANGS = {'en'}
 ORIGIN = "math-finemath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
+# ZWJ U+200D / ZWNJ U+200C are left alone on purpose (they are script, not junk)
 A1_RX = re.compile("[\u200b\ufeff\u00ad\u200e\u200f\u2060\u202a-\u202e\u2066-\u2069]")
 
-def cure_a1(text):
+def medicine_a1(text):
     return A1_RX.sub("", text)
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -3830,7 +3840,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_a1(doc["text"]), doc["text"])
+    return _std(medicine_a1(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -3845,14 +3855,87 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath.
 4. **Harm test:** finemath 0.00% (0/30) PASS.
-5. **Side effects:** a zero-width space used as the only word separator joins two words. LRM/RLM matter in right-to-left text: do not run on RTL packs.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** a ZWSP used as the only word separator joins two words. LRM/RLM matter in RTL text (safe in this English pack; do not run on RTL packs). U+2062 INVISIBLE TIMES in MathML text (1 document) is not removed.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 47 — math / A5 / `DA-A5-002`
+## Medicine 47 — math / A6 / `DA-A6-003`
+
+**Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-A6-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
+
+1. **Disease:** A6, 9 documents. `9be631b8d8a8b294` U+F0C5 @6107 (should be ⊕); `c46f9ecdfac73e93` U+F0D8 @875 (x9); `f2746fa01fbc3cf4` "fɑstidious" @4992 (U+0251 U+0455 U+0461).
+
+<!-- CARD EVIDENCE -->
+**Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
+
+**Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
+
+- `9be631b8d8a8b294` (math-finemath), original offset 6099: `"sum = A \uf0c5 B carry = AB Page 103\n"` (fix).
+- `c46f9ecdfac73e93` (math-finemath), original offset 867: `"ctions. \uf0d8 If internal loadings a"` (fix).
+- `0b5ddb126c89c2b3` (math-finemath), original offset 42: `"l 2012. \uf0a8 According to Newton, w"` (fix).
+<!-- END CARD EVIDENCE -->
+
+2. **Medicine:** map U+F000+code to the Symbol-font character for 46 codes (`(`, `)`, `=`, `⊕`, `∂`, Greek, brackets, …); leave other private-use characters.
+
+```python
+RULE_ID = "DA-A6-003"
+SOURCE_RULE_ID = "DA-A6-001"
+CODE = "A6"
+ACTION = "fix"
+STAGE = "10"
+STATUS = "CANDIDATE"
+LANGS = {'en'}
+ORIGIN = "math-finemath"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
+SOURCE = "math-finemath"  # pack whose medicine this came from
+AUTHOR = "SomaKorada07"
+# PDFs set in the Symbol font leak U+F0xx = U+F000 + Symbol code. Map the ones seen in the pack; leave the rest.
+A6_SYMBOL = {0x28: "(", 0x29: ")", 0x2B: "+", 0x2D: "\u2212", 0x3D: "=", 0x44: "\u0394", 0x53: "\u03a3", 0x57: "\u03a9",
+             0x61: "\u03b1", 0x62: "\u03b2", 0x64: "\u03b4", 0x67: "\u03b3", 0x6C: "\u03bb", 0x6D: "\u03bc", 0x70: "\u03c0",
+             0x71: "\u03b8", 0x72: "\u03c1", 0x77: "\u03c9", 0xA3: "\u2264", 0xA5: "\u221e", 0xA8: "\u2666", 0xAE: "\u2192",
+             0xB1: "\u00b1", 0xB3: "\u2265", 0xB4: "\u00d7", 0xB6: "\u2202", 0xB7: "\u2022", 0xB9: "\u2260", 0xBB: "\u2248",
+             0xC5: "\u2295", 0xC7: "\u2229", 0xC8: "\u222a", 0xCE: "\u2208", 0xD6: "\u221a", 0xD8: "\u00ac", 0xDE: "\u21d2",
+             0xE5: "\u2211", 0xE6: "\u239b", 0xE7: "\u239c", 0xE8: "\u239d", 0xF2: "\u222b", 0xF6: "\u239e", 0xF7: "\u239f",
+             0xF8: "\u23a0"}
+A6_PUA_MAP = {0xF000 + k: v for k, v in A6_SYMBOL.items()}
+
+def medicine_a6(text):
+    return text.translate(A6_PUA_MAP)
+
+
+def _std(out, text):
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
+    if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
+    return ("fix" if out != text else "keep", out)
+
+
+def medicine(doc):
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
+        return ("keep", doc["text"])
+    return _std(medicine_a6(doc["text"]), doc["text"])
+
+_spec_source_medicine = medicine
+
+SPEC_PACKS = {'math-megamath', 'math-finemath'}
+
+def medicine(doc):
+    if doc.get("pack_id") not in SPEC_PACKS:
+        return ("keep", doc["text"])
+    out = _spec_source_medicine(doc)
+    return out
+```
+
+3. **Action:** fix. **Runs on:** finemath.
+4. **Harm test:** finemath 0.00% (0/30) PASS.
+5. **Side effects:** Wingdings uses the same code points: U+F0D8 as an arrow bullet becomes `¬`. Look-alike letters in spam (`fɑstidious`) and the Armenian apostrophe in `Math՚s` are not fixed (recall 5 / 9).
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
+
+## Medicine 48 — math / A5 / `DA-A5-002`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-A5-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** A5 compatibility forms. Labelled rows: finemath 6, megamath 12.
+1. **Disease:** A5, 6 documents. `c16db13d63739369` "ﬀ" @313 (x91 ligatures: ﬀ ﬁ ﬂ ﬃ, U+FB00 U+FB01 U+FB02 U+FB03); `ce9b0d519779eba2` "ﬀ" @68 (x17); `addb07a0a886743c` fullwidth comma "，" @2666 (x2, U+FF0C) in English text translated from Chinese.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -3863,7 +3946,7 @@ def medicine(doc):
 - `addb07a0a886743c` (math-finemath), original offset 2658: `" / 2 = 5\uff0cThat is, elements with "` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Replace ligatures U+FB00–U+FB06 by their NFKC letters; replace fullwidth ASCII U+FF01–U+FF5E by ASCII only where CJK characters are under 1% of the letters. Never full NFKC (x² would become x2).
+2. **Medicine:** replace the ligatures U+FB00–U+FB06 by their NFKC letters (ﬁ → fi, ﬀ → ff); replace fullwidth ASCII punctuation U+FF01–U+FF5E by the ASCII character, but only in documents where CJK characters are under 1% of the letters (real Chinese/Japanese text keeps its punctuation).
 
 ```python
 RULE_ID = "DA-A5-002"
@@ -3876,24 +3959,25 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 import unicodedata
 
-LIG = re.compile("[\ufb00-\ufb06]")
-FULL = re.compile("[\uff01-\uff5e]")
-CJK = re.compile("[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
+A5_LIG = re.compile("[\ufb00-\ufb06]")
+A5_FULLWIDTH = re.compile("[\uff01-\uff5e]")
+A5_CJK = re.compile("[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]")
 
-def cure_a5(text):
-    t = LIG.sub(lambda m: unicodedata.normalize("NFKC", m.group()), text)
-    letters = sum(c.isalpha() for c in t) or 1
-    if len(CJK.findall(t)) / letters < 0.01:
-        t = FULL.sub(lambda m: chr(ord(m.group()) - 0xFEE0), t)
-    return t
+def medicine_a5(text):
+    out = A5_LIG.sub(lambda m: unicodedata.normalize("NFKC", m.group()), text)      # ligature to letters
+    letters = sum(c.isalpha() for c in out) or 1
+    if len(A5_CJK.findall(out)) / letters < 0.01:                                    # leave real CJK text alone
+        out = A5_FULLWIDTH.sub(lambda m: chr(ord(m.group()) - 0xFEE0), out)          # fullwidth to ASCII
+    return out
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -3901,7 +3985,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_a5(doc["text"]), doc["text"])
+    return _std(medicine_a5(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -3916,14 +4000,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** a typography page that quotes a ligature loses it.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** a document that quotes a ligature as a character (a typography page) would lose it. Fullwidth digits in English text become ASCII digits, which is wanted here. Full NFKC is not applied: it would also change superscripts (x² → x2) and other maths symbols.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 48 — math / B2 / `DA-B2-001`
+## Medicine 49 — math / B2 / `DA-B2-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-B2-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** B2 HTML tags. Labelled rows: finemath 8, megamath 112.
+1. **Disease:** B2, 8 documents. `bf73e54bda1aabdb` "<br />" @367 (x18); `addb07a0a886743c` "<ul>" @6030; `951a4c150e019bd5` "</Math>" @22663.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -3934,7 +4019,7 @@ def medicine(doc):
 - `ee971e5cfb53453e` (math-finemath), original offset 436: `":59:38Z <p>Let $$c_n = \\sum_{r=0"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** `<br>` becomes a newline; simple formatting tags are removed. Documents with a code fence or `<script>` are skipped.
+2. **Medicine:** `<br>` → newline; remove simple formatting tags (`p div span a ul ol li sup sub strong em font b i center`); skip documents with a code fence or `<script>`.
 
 ```python
 RULE_ID = "DA-B2-001"
@@ -3947,20 +4032,22 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-BR = re.compile(r"(?i)<br\s*/?>")
-TAGS = re.compile(r"(?i)</?(?:p|div|span|a|ul|ol|li|sup|sub|strong|em|font|b|i|center)(?:\s[^<>]*)?>")
+B2_BR = re.compile(r"<br\s*/?>", re.I)
+B2_TAG = re.compile(r"</?(?:div|span|p|a|ul|ol|li|sup|sub|strong|em|font|b|i|center)"
+                    r"(?:\s+[\w-]+=(?:\"[^\"]*\"|'[^']*'|[^\s>]+))*\s*/?>", re.I)
 
-def cure_b2(text):
-    if "```" in text or "<script" in text.lower():
+def medicine_b2(text):
+    if "```" in text or "<script" in text.lower():      # tags inside code are content
         return text
-    return TAGS.sub("", BR.sub("\n", text))
+    return B2_TAG.sub("", B2_BR.sub("\n", text))
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -3968,7 +4055,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_b2(doc["text"]), doc["text"])
+    return _std(medicine_b2(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -3983,14 +4070,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** `x<sup>2</sup>` becomes `x2`.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** `x<sup>2</sup>` becomes `x2`. Recall 3 / 8: tags inside documents that also contain code, and broken fragments like `strong> Option`, are left.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 49 — math / B4 / `DA-B4-001`
+## Medicine 50 — math / B4 / `DA-B4-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-B4-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** B4 template junk. Labelled rows: finemath 18, megamath 10.
+1. **Disease:** B4, 18 documents. `2d9c3add6852f806` "{{ 'ml-label-loading-course' | message }}" @0 (x14); `56027551326bb040` "{[ snackBarMessage ]}" @1482; `e967e3352605755f` "[TheoryMissing]" @102.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4001,7 +4089,7 @@ def medicine(doc):
 - `e967e3352605755f` (math-finemath), original offset 94: `"er 3\n\n\u2022 [TheoryMissing]\n\u2022 Consid"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Delete `{[ name ]}`, `{{ name | filter }}` with spaces inside (so LaTeX `{{x}}` is not hit), `{% … %}`, `[TheoryMissing]`, `document.write(…)`.
+2. **Medicine:** delete `{[ name ]}`, `{{ name.attr | filter }}` (spaces inside, so LaTeX `{{x}}` is not hit), `{% … %}`, `[TheoryMissing]`, `document.write(…)`.
 
 ```python
 RULE_ID = "DA-B4-001"
@@ -4014,18 +4102,20 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-B4_RX = re.compile(r"\{\[\s*\w+\s*\]\}|\{\{\s+['\w][\w'.| :-]*\s+\}\}|\{%.*?%\}|"
-                   r"\[TheoryMissing\]|document\.write\([^)]*\);?")
+B4_RX = re.compile(r"\{\[\s*\w+\s*\]\}|\{\{\s+['\w][\w'.| :-]*\s+\}\}|\{%.*?%\}|\[TheoryMissing\]|"
+                   r"document\.write\([^)]*\);?|^\s*\"?\s*%\}\s*$", re.M)
 
-def cure_b4(text):
-    return B4_RX.sub("", text)
+def medicine_b4(text):
+    out = B4_RX.sub("", text)
+    return re.sub(r"\n{3,}", "\n\n", out) if out != text else text
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4033,7 +4123,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_b4(doc["text"]), doc["text"])
+    return _std(medicine_b4(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4048,14 +4138,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** a tutorial teaching Angular or Jinja templates loses its examples.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** a tutorial that teaches Angular/Jinja templates would lose its examples. Recall 9 / 18: AsciiMath leftovers such as `color(blue)(` are not covered.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 50 — math / B5 / `DA-B5-001`
+## Medicine 51 — math / B5 / `DA-B5-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-B5-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** B5 broken LaTeX or markdown. Labelled rows: finemath 28, megamath 192.
+1. **Disease:** B5, 28 documents. `e73db44e20a89b36` "$$$where" @241 (x4); `951a4c150e019bd5` "[itex]" @23031; `3a2ccc88dfcd67c9` unclosed ``` fence @12634.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4066,7 +4157,7 @@ def medicine(doc):
 - `49ca36be92a6d8e8` (math-finemath), original offset 3268: `"ing the [math] key, then scrolli"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Exactly `$$$` becomes `$$` (`$$$$` is two display blocks and stays); forum BBCode `[itex]`, `[/itex]`, `[tex]`, `[/tex]`, `[math]`, `[/math]` becomes `$`; an odd number of ``` fences gets a closing fence at the end.
+2. **Medicine:** exactly `$$$` → `$$`; forum BBCode `[itex] [/itex] [tex] [/tex] [math]` → `$`; an odd number of ``` fences gets a closing fence at the end.
 
 ```python
 RULE_ID = "DA-B5-001"
@@ -4079,23 +4170,22 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-TRIPLE = re.compile(r"(?<!\$)\$\$\$(?!\$)")
-BBCODE = re.compile(r"\[/?(?:itex|tex|math)\]")
-FENCE = re.compile(r"```")  # count every fence mark: a fence can close mid-line
+B5_TRIPLE = re.compile(r"(?<!\$)\${3}(?!\$)")                  # exactly $$$ ($$$$ is two blocks, valid)
+B5_BBCODE = re.compile(r"\[/?(?:itex|tex|math)\]", re.I)       # forum BBCode math
 
-def cure_b5(text):
-    t = TRIPLE.sub("$$", text)
-    t = BBCODE.sub("$", t)
-    if len(FENCE.findall(t)) % 2:
-        t = t.rstrip("\n") + "\n```\n"
-    return t
+def medicine_b5(text):
+    out = B5_BBCODE.sub("$", B5_TRIPLE.sub("$$", text))
+    if out.count("```") % 2:                                    # unclosed code fence at the end
+        out = out.rstrip() + "\n```"
+    return out
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4103,7 +4193,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_b5(doc["text"]), doc["text"])
+    return _std(medicine_b5(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4118,14 +4208,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** a literal `[math]` in prose becomes `$`. LaTeX with stripped backslashes cannot be repaired by rule.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** found while testing: `$$$$` is two adjacent display blocks and is valid (`3e136806c369dfbc`), so only exactly three dollars are changed. A literal `[math]` in prose becomes `$`. Recall 5 / 28: stray `$$` inside inline math (`3f15fccd9f76020b`) and LaTeX with stripped backslashes (`$mathbb`) cannot be repaired by rule.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 51 — math / C5 / `DA-C5-001`
+## Medicine 52 — math / C5 / `DA-C5-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C5-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C5 SEO / link lists. Labelled rows: finemath 51, megamath 168.
+1. **Disease:** C5 SEO / link lists: answers.com "related questions" pages. Seen 4 of 100 in rows 401-500 (450, 480, 483, 499; asraj labels the same 4 drop), 10 of 500 in the pack.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4136,7 +4227,7 @@ def medicine(doc):
 - `537b9090fbe405c6` (math-megamath), original offset 0: `"Study guides\n\nQ: How man edges does a dodecahedron have?\n\nWrite "` (drop).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** **Seen:** 4 of 100 in rows 401-500 (450, 480, 483, 499; asraj labels the same 4 drop), 10 of 500 in the pack. Every one has the same layout: "Study guides", the question, "Write your answer... / Submit", then a list of snippets from other questions. The page's own question is never answered. Drop the document when it starts with exactly that header. Nothing else in the pack starts this way.
+2. **Medicine:** Every one has the same layout: "Study guides", the question, "Write your answer... / Submit", then a list of snippets from other questions. The page's own question is never answered. Drop the document when it starts with exactly that header. Nothing else in the pack starts this way.
 
 ```python
 RULE_ID = "DA-C5-001"
@@ -4161,7 +4252,8 @@ def cure_c5(text):
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4185,13 +4277,92 @@ def medicine(doc):
 3. **Action:** drop. **Runs on:** megamath.
 4. **Harm test:** megamath 0.00% (0/18) PASS.
 5. **Side effects:** an answers.com page that does carry an answer below "Related questions" is also dropped (none seen in this pack). Matching is anchored at the start of the text, so a quotation of the header inside another document is not touched.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: kunal2016, megamath sheet, PR 151. Idempotent on every doc of its packs.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: kunal2016, megamath sheet, PR 151. Idempotent on every doc of its packs.
 
-## Medicine 52 — math / C3 / `DA-C3-004`
+## Medicine 53 — math / D3 / `DA-D3-005`
+
+**Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-D3-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
+
+1. **Disease:** D3, 10 documents. `b605c8aa5c37f266` Japanese title "ベクトル…" @23; `f2746fa01fbc3cf4` Ukrainian ad lines "Дивитися фільми…" @10238 (x4); `8210e5fa65c2f665` Marathi intro "पाईये" @144.
+
+<!-- CARD EVIDENCE -->
+**Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
+
+**Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
+
+- `7de899c48fa1cb6b` (math-finemath), original offset 16459: `"______\n\n\u0644\u0627 \u0627\u0644\u0644\u0647 \u0627\u0644\u0627 \u0627\u0644\u0644\u0647, \u0645\u062d\u0645\u062f \u0631"` (fix).
+- `b605c8aa5c37f266` (math-finemath), original offset 0: `"Cody\n\n# Problem 44398. \u30d9\u30af\u30c8\u30eb\u306e\u5024\u304c"` (fix).
+- `ce878294b69f1b20` (math-finemath), original offset 0: `"\u3010\u6b27\u62c9\u731c\u60f3\u3011\u662f\u5426\u6709\u65e0\u7a77\u591a\u4e2a\u4e0d\u53ef\u7ea6\u5206\u7684\u6b63\u6574\u6570\u89e3\n\n\u0060\u0060\u0060a^3+b^3=c^3\na^4+b^4+c^4=d^4\na^5+b^5+c"` (drop).
+<!-- END CARD EVIDENCE -->
+
+2. **Medicine:** delete a line when more than half of its letters are Cyrillic, Indic, CJK, kana, Hangul or Arabic; if such lines hold more than 30% of the document's letters, drop the document (that is D1).
+
+```python
+RULE_ID = "DA-D3-005"
+SOURCE_RULE_ID = "DA-D3-001"
+CODE = "D3"
+ACTION = "fix+drop"
+STAGE = "30"
+STATUS = "CANDIDATE"
+LANGS = {'en'}
+ORIGIN = "math-finemath, math-megamath"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
+SOURCE = "math-finemath"  # pack whose medicine this came from
+AUTHOR = "SomaKorada07"
+import re
+
+# Cyrillic, Indic, kana, CJK, Hangul, Arabic (Greek is left out: Greek letters are maths)
+D3_FOREIGN = re.compile("[\u0400-\u04ff\u0900-\u0dff\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af\u0600-\u06ff]")
+
+def medicine_d3(text):
+    out, foreign = [], 0
+    for l in text.split("\n"):
+        letters = sum(c.isalpha() for c in l)
+        f = len(D3_FOREIGN.findall(l))
+        if letters and f / letters > 0.5:      # a line that is mostly foreign script is removed
+            foreign += f
+            continue
+        out.append(l)
+    total = sum(c.isalpha() for c in text)
+    if total and foreign / total > 0.3:        # mostly not English: that is D1, drop
+        return ("drop", text)
+    return "\n".join(out)
+
+
+def _std(out, text):
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
+    if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
+    return ("fix" if out != text else "keep", out)
+
+
+def medicine(doc):
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
+        return ("keep", doc["text"])
+    return _std(medicine_d3(doc["text"]), doc["text"])
+
+_spec_source_medicine = medicine
+
+SPEC_PACKS = {'math-megamath', 'math-finemath'}
+
+def medicine(doc):
+    if doc.get("pack_id") not in SPEC_PACKS:
+        return ("keep", doc["text"])
+    out = _spec_source_medicine(doc)
+    return out
+```
+
+3. **Action:** fix+drop. **Runs on:** finemath, megamath.
+4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+5. **Side effects:** a legitimate quotation or title in another language is removed (DISEASES.md says D3 can be natural). Greek is excluded on purpose, since Greek letters are maths.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
+
+## Medicine 54 — math / C3 / `DA-C3-004`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C3-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C3 truncated document. Labelled rows: finemath 50, megamath 74.
+1. **Disease:** C3, 49 documents. `de1b08a158de9ae9` Course Hero preview cut at "s[R2(Cgs" @3238; `9d26c83f14d2087f` "We hav" @772 (paywall); `4e1e6a7902a4435e` teaser ending "deeper unders..." @6566.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4202,7 +4373,7 @@ def medicine(doc):
 - `1d5964cc6cb37bf9` (math-finemath), original offset 0: `"New SAT Math Workbook\n\n# Wwwpetersonscom geometry 13 5 a rectang"` (drop).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Drop a document that carries a preview or paywall banner. If a document ends in a teaser cut (`word...` or `word…`), trim back to the last full sentence.
+2. **Medicine:** drop a document that carries a preview/paywall banner (`This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections`); if a document ends in a teaser cut (`word...` or `word…`), trim back to the last full sentence. This block keeps only the medicine's drop (previews); `DA-C3-002` keeps only its trim, after the strips.
 
 ```python
 RULE_ID = "DA-C3-004"
@@ -4215,26 +4386,25 @@ LANGS = {'en'}
 ORIGIN = "math-finemath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|"
-                     r"intentionally blurred sections|This is the end of the preview")
-TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
+C3_PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections")
+C3_TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
 
-def cure_c3(text):
-    if PREVIEW.search(text):
-        return ("drop", "")
-    t = text.rstrip()
-    if TEASER.search(t):
-        cut = max(t.rfind(". ", 0, len(t) - 3), t.rfind(".\n", 0, len(t) - 3))
-        if cut > 0:
-            return t[:cut + 1]
+def medicine_c3(text):
+    if C3_PREVIEW.search(text):                     # paywall / preview page: cut by design
+        return ("drop", text)
+    s = text.rstrip()
+    if C3_TEASER.search(s):                         # teaser cut: "...deeper unders..."
+        last_stop = max(s.rfind(". ", 0, len(s) - 3), s.rfind(".\n", 0, len(s) - 3))
+        return s[:last_stop + 1] if last_stop > 0 else text
     return text
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4242,8 +4412,8 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    out = cure_c3(doc["text"])
-    return ("drop", doc["text"]) if isinstance(out, tuple) else ("keep", doc["text"])
+    out = medicine_c3(doc["text"])
+    return ("drop", doc["text"]) if _std(out, doc["text"])[0] == "drop" else ("keep", doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4258,25 +4428,26 @@ def medicine(doc):
 
 3. **Action:** drop. **Runs on:** finemath.
 4. **Harm test:** finemath 0.00% (0/30) PASS.
-5. **Side effects:** a good document that quotes "View Full Document" is dropped. A document cut with no marker cannot be detected.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** a good document that merely quotes "View Full Document" would be dropped. Recall 15 / 49: a document that stops mid-solution with no marker (`b6a1ee1fa12a6d5e` code cut at @4908) cannot be detected by a rule. A first version that trimmed every last line without end punctuation changed 6 of 117 clean documents (headings, signatures, answer lists) and was replaced.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 53 — math / C1 / `DA-C1-001`
+## Medicine 55 — math / C1 / `DA-C1-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C1-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C1 boilerplate. Labelled rows: finemath 328, megamath 336.
+1. **Disease:** C1, 328 documents (most web pages keep some site chrome). `72f073c36305b095` "posted by gamer chick" @13; `de1b08a158de9ae9` "This preview shows page" @95; `92bef36fe0c0fc40` "Replies / Views" related-thread blocks @9487.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
-- `208e08ba378bbf9f` (math-finemath), original offset 97: `"ction\nSort by\nSolving Word Probl"` (fix).
+- `72f073c36305b095` (math-finemath), original offset 5: `"ebra 2\n\nposted by gamer chick\n\nS"` (fix).
+- `208e08ba378bbf9f` (math-finemath), original offset 0: `"# Search Our Content Lib"` (fix).
 - `de1b08a158de9ae9` (math-finemath), original offset 87: `"4\n\u2022 11\n\nThis preview shows page "` (fix).
-- `db5a45c39b512a02` (math-finemath), original offset 0: `"The OEIS Foundation is s"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Delete a line that is a known chrome line, or a short line (at most 120 characters) containing a site-chrome phrase seen in this pack (Course Hero, Bartleby, GMAT Club, OEIS, phpBB, YouTube footer). Never touches a line longer than 120 characters.
+2. **Medicine:** delete a line that is a known chrome phrase (`C1`), or that contains a site-chrome phrase (`C1_SITE`, ~70 phrases seen in this pack: GMAT Club headers, "View Full Document", OEIS footer, "My Personal Notes arrow_drop_up", …) and is at most 120 characters; delete `Replies\n<n>\nViews\n<n>` blocks.
 
 ```python
 RULE_ID = "DA-C1-001"
@@ -4286,40 +4457,50 @@ ACTION = "fix"
 STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'en'}
-ORIGIN = "math-finemath, math-megamath"  # packs it runs on
+ORIGIN = "math-finemath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
+# a whole line that is generic site chrome
 C1_LINE = re.compile(
-    r"(?i)^\s*(?:"
-    r"show tags|author message|kudos \[\?\].*|display posts from previous.*|"
-    r"subscribe to view the full document\.?|view full document|tagged in|"
-    r"see solution|want to see the full answer\??|want to see this answer and more\??|"
-    r"comments are closed\.?|write a comment|share|sort by|filter by:.*|"
-    r"this site is supported by donations to the oeis foundation\.?|"
-    r"the oeis foundation is supported by donations.*|"
-    r"hints \(greetings from the on-line encyclopedia of integer sequences!\)|"
-    r"lookup \| welcome \| wiki \| register.*|contribute new seq\. or comment.*|"
-    r"the oeis community \| maintained by the oeis foundation inc\.|"
-    r"last modified .* contains \d+ sequences\. \(running on oeis\d\.\)"
-    r")\s*$")
+    r"(?i)\s*(?:More Similar Questions|Similar Questions|Related (?:Questions|Posts|Articles)|Share (?:this|on \w+)|"
+    r"Sign ?up|Log ?in|Subscribe|Cookie|Accept (?:all )?cookies|Privacy Policy|Terms of (?:Use|Service)|"
+    r"All rights reserved|\u00a9.*|&copy;.*|Follow us|Skip to (?:main )?content|Show Tags|Replies|Views|"
+    r"Contact - Home.*|Report (?:abuse|post)|Upvote|Downvote|Like this:|Loading\.\.\.|Previous Post|Next Post|"
+    r"Recommended|Back to top|Quick Reply|Click here.*|Leave a (?:Reply|Comment)|Your email address will not be published.*|"
+    r"Posted by.*|Tags?:.*|Categories?:.*|Hide Tags|Join (?:now|us)|Download (?:the )?App.*|Course Hero.*)\s*")
+# site chrome seen in this pack (forums, homework sites, document hosts, OEIS, GMAT Club ...); only on lines <= 120 chars
 C1_SITE = re.compile(
-    r"(?i)this preview shows page|sign up to view the full|this is the end of the preview|"
-    r"check gmat club decision tracker|gmat club daily prep|powered by phpbb|"
-    r"our solutions are written by experts|ask a homework question - tutors are online|"
-    r"about press copyright contact us creators|this solution is locked")
+    r"(?i)Check GMAT Club Decision Tracker|It is currently \d+ \w+ \d{4}|GMAT Club Daily Prep|Display posts from previous|"
+    r"GMAT\u00ae test is a registered trademark|\[#permalink\]|Kudos \[\?\]|This preview shows page|Sign up to view the full|"
+    r"View Full Document|Ask a homework question|intentionally blurred sections|My Personal Notes arrow_drop_up|"
+    r"^Open in App$|^Last Updated :|All times are GMT|The time now is \d{1,2}:\d{2}|Privacy Statement|"
+    r"Remember Me\? Password|having trouble loading external resources|analy[sz]e our traffic|Want to see this answer and more|"
+    r"^See Solution$|^Subscribe now$|Upcoming SlideShare|Are you sure you want to|Report Content as Inappropriate|"
+    r"Open this post in threaded view|^Loading content$|The OEIS Community \| Maintained by|supported by donations|"
+    r"You are Here: Home|Registered Office:|CYBER MONDAY|^Wiki User$|^Buscar$|^Uncategorized$|Created with Sketch|"
+    r"best freelance writing portal|Comment sent successfully|Choose the classification system|Read More \u00bb|"
+    r"TUTORIALS HOME|Top of Page|Our sister site|Everything was clear\?|Hello Guest!|Free\s+Algebra Tutorials!|"
+    r"Teach yourself statistics|^Home >>|\u200e > \u200e|claim an answer you\u2019ll have 24 hours|Search Our Content Library|"
+    r"filtered results|^Sort by$|tutors are online|snackBarMessage|Go To Main Page|^Show/hide solution$|"
+    r"Correct! Wrong!|Tutorial is loading|^Filed Under:|^Exam Prep:|^Asked in:|Verified Answer \| Published|"
+    r"^Guided Lessons$|^Course Content$|Doorsteptutor|Mark Forums Read|^Recommended$|DocShare\.tips|^Hide$|"
+    r"Not now$|Write an Interview Experience|Your message has been successfully submitted|has the best spam protection|"
+    r"posting guide http|Questions are from the workbook|^Share$|^Children$|Go back to editing|try BYJU|We\u2018ve got your back")
+# phpBB "Replies / <n> / Views / <n>" block, one value per line
+C1_REPLIES = re.compile(r"(?m)^Replies\n\d+\nViews\n[\d.]+K?\n?")
 
-
-def cure_c1(text):
+def medicine_c1(text):
     keep = [l for l in text.split("\n")
-            if not (C1_LINE.match(l) or (C1_SITE.search(l) and len(l) <= 120))]
-    return "\n".join(keep)
+            if not (C1_LINE.fullmatch(l) or (C1_SITE.search(l) and len(l) <= 120))]
+    return C1_REPLIES.sub("", "\n".join(keep))
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4327,7 +4508,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_c1(doc["text"]), doc["text"])
+    return _std(medicine_c1(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4340,16 +4521,17 @@ def medicine(doc):
     return out
 ```
 
-3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** fitted to sites seen in this pack, so other sites' chrome is missed. A real line that is only "Share" or "Sort by" is removed.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+3. **Action:** fix. **Runs on:** finemath.
+4. **Harm test:** finemath 0.00% (0/30) PASS.
+5. **Side effects:** recall is only 109 / 328: the phrase list is fitted to sites seen here, so new sites' menus and footers are missed. A forum title ending in `[#permalink]` is removed (the question usually repeats in the post). A real line that is only "Share", "Views" or "Tags:" would be removed. Found and fixed while testing: "The time now is" deleted the problem statement "If the time now is 9 o'clock" (now needs hh:mm).
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 54 — math / C2 / `DA-C2-001`
+## Medicine 56 — math / C2 / `DA-C2-001`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C2-001`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C2 repeated lines or passages. Labelled rows: finemath 187, megamath 131.
+1. **Disease:** C2, 187 documents. `92bef36fe0c0fc40` "• Introductory Physics Homework Help" @9487 (x10); `98e5be6db6c1c81e` "Mathematical Practice 3: Construct viable…" @2979 (x2); `e9bc93d8821adcec` the same reading passage before each question (x4–5).
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4360,7 +4542,7 @@ def medicine(doc):
 - `f5f0ba81109f9e43` (math-finemath), original offset 1083: `"Sudoku\n\n##### Age 11 to 14 Chall"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** (a) A line of 15 or more characters that appears 5 or more times keeps only its first copy. (b) A blank-line passage of 150 or more characters that appears again keeps only its first copy. Lines inside code fences and list items are left alone.
+2. **Medicine:** (a) a non-code line of 15+ characters that appears 5+ times keeps only its first copy; (b) a passage (blank-line block, 150+ characters, not a bullet list, not answer options, not code) that appears more than once keeps only its first copy (ruling 13).
 
 ```python
 RULE_ID = "DA-C2-001"
@@ -4373,41 +4555,50 @@ LANGS = {'en'}
 ORIGIN = "math-finemath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
-from collections import Counter
 
-def cure_c2(text):
+C2_CODE = re.compile(r"[;{}]\s*$|^\s*(?:for|if|while|return|def|class)\b")
+C2_PARA_SPLIT = re.compile(r"(\n\s*\n)")
+C2_OPTION = re.compile(r"\s*(?:[A-E1-5][.)]|\(?[a-e]\))\s")
+
+def _c2_dedupe_passages(text):
+    # ruling 13: a passage (150+ chars) repeated even once loses its later copies; option lists and code are kept
+    parts, seen, out = C2_PARA_SPLIT.split(text), set(), []
+    for k, part in enumerate(parts):
+        q = part.strip()
+        if k % 2 == 0 and len(q) >= 150 and not re.match(r"\s*[\u2022*-] ", q):
+            ql = [x for x in q.splitlines() if x.strip()]
+            options = sum(bool(C2_OPTION.match(x)) for x in ql) >= max(2, len(ql) // 2)
+            code = sum(bool(re.search(r"[;{}]\s*$", x)) for x in ql) >= max(1, len(ql) // 3)
+            if not options and not code:
+                if q in seen:
+                    if out and k > 0:
+                        out.pop()          # drop the blank-line separator before the copy
+                    continue
+                seen.add(q)
+        out.append(part)
+    return "".join(out)
+
+def medicine_c2(text):
     lines = text.split("\n")
-    fence = False
-    countable = []
+    counts = {}
     for l in lines:
-        if l.lstrip().startswith("```"):
-            fence = not fence
-        countable.append(not fence and len(l.strip()) >= 15)
-    counts = Counter(l.strip() for l, c in zip(lines, countable) if c)
+        counts[l.strip()] = counts.get(l.strip(), 0) + 1
     seen, out = set(), []
-    for l, c in zip(lines, countable):
-        key = l.strip()
-        if c and counts[key] >= 5:
-            if key in seen:
+    for l in lines:
+        s = l.strip()
+        if len(s) >= 15 and counts[s] >= 5 and not C2_CODE.search(s):
+            if s in seen:
                 continue
-            seen.add(key)
+            seen.add(s)
         out.append(l)
-    blocks = re.split(r"(\n\s*\n)", "\n".join(out))
-    seen_b, res = set(), []
-    for b in blocks:
-        k = b.strip()
-        if len(k) >= 150 and not k.startswith(("-", "*", "\u2022", "```")):
-            if k in seen_b:
-                continue
-            seen_b.add(k)
-        res.append(b)
-    return "".join(res)
+    return _c2_dedupe_passages("\n".join(out))
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4415,7 +4606,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_c2(doc["text"]), doc["text"])
+    return _std(medicine_c2(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4430,14 +4621,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath.
 4. **Harm test:** finemath 0.00% (0/30) PASS.
-5. **Side effects:** an author who repeats a long passage on purpose loses the copy. Short repeated titles are kept.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** the proxy change is natural restatement: an author repeats a sentence on purpose (`5ee756dbf1307a6f`) and the copy is lost. Repeated per-question passages (`e9bc93d8821adcec`) lose their later copies, so later questions lose their context. Recall 40 / 187: short repeated titles and quoted questions under 150 characters are kept.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 55 — math / C5 / `DA-C5-006`
+## Medicine 57 — math / C5 / `DA-C5-006`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C5-002`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C5 SEO / link lists. Labelled rows: finemath 51, megamath 168.
+1. **Disease:** C5, 50 documents. `25901665fc855b35` "See more: What Did Greg Giraldo…" @3568; `b124803aff87e2d9` "Domain And Range Notes Teachers Pay Teachers…" @5708; `1eff00a48b3b10a0` SEO FAQ farm.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4448,7 +4640,7 @@ def medicine(doc):
 - `4d57615e33e7997e` (math-finemath), original offset 8879: `"ysis).\n\nCanon 24-105 Macro, Fh01"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Delete lines starting `See more:` and lines made of 5 or more comma-separated Title-Case phrases.
+2. **Medicine:** delete lines starting `See more:` and lines made of 5+ comma-separated Title-Case phrases of 2–8 words.
 
 ```python
 RULE_ID = "DA-C5-006"
@@ -4461,17 +4653,18 @@ LANGS = {'en'}
 ORIGIN = "math-finemath, math-megamath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-SEO = re.compile(r"(?m)^(?:See more: .*|(?:[A-Z][\w\u2019'&.-]*(?: [\w\u2019'&.-]+){1,7}, ){5,}.*)\n?")
+C5_SEO = re.compile(r"(?m)^(?:See more: .*|(?:[A-Z][\w\u2019'&.-]*(?: [\w\u2019'&.-]+){1,7}, ){5,}.*)$")
 
-def cure_c5(text):
-    return SEO.sub("", text)
+def medicine_c5(text):
+    return C5_SEO.sub("", text)
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4479,7 +4672,7 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    return _std(cure_c5(doc["text"]), doc["text"])
+    return _std(medicine_c5(doc["text"]), doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4494,14 +4687,15 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
 4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
-5. **Side effects:** most C5 in this pack is whole SEO pages, which only a drop verdict handles. A real comma list of Title-Case names (a bibliography) would be deleted.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** recall is 5 / 50: most C5 here is whole spun/SEO pages, which only a drop decision handles. A real comma list of Title-Case names (bibliography, theorem names) would be deleted.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 56 — math / C3 / `DA-C3-005`
+## Medicine 58 — math / C3 / `DA-C3-005`
 
 **Consolidation:** Source [medicine_math.md](medicine_math.md); original identity `DA-C3-002`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
-1. **Disease:** C3 truncated document. Labelled rows: finemath 50, megamath 74.
+1. **Disease:** C3, 49 documents. `de1b08a158de9ae9` Course Hero preview cut at "s[R2(Cgs" @3238; `9d26c83f14d2087f` "We hav" @772 (paywall); `4e1e6a7902a4435e` teaser ending "deeper unders..." @6566.
+
 <!-- CARD EVIDENCE -->
 **Current gold harm:** math-finemath: 0 changed / 0 dropped of 86 (PASS); math-megamath: 0 changed / 0 dropped of 26 (PASS).
 
@@ -4512,7 +4706,7 @@ def medicine(doc):
 - `3a7e3fa49e3e13c3` (math-finemath), original offset 5622: `"mailbox.\n\nPlease do not submit p"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** Drop a document that carries a preview or paywall banner. If a document ends in a teaser cut (`word...` or `word…`), trim back to the last full sentence.
+2. **Medicine:** drop a document that carries a preview/paywall banner (`This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections`); if a document ends in a teaser cut (`word...` or `word…`), trim back to the last full sentence. This block keeps only the medicine's trim (teaser cuts); its drop runs earlier as `DA-C3-001`.
 
 ```python
 RULE_ID = "DA-C3-005"
@@ -4525,26 +4719,25 @@ LANGS = {'en'}
 ORIGIN = "math-finemath"  # packs it runs on
 PACKS = set(ORIGIN.split(", "))  # the math packs share the "en" tag, so the pack is checked too
 SOURCE = "math-finemath"  # pack whose medicine this came from
-AUTHOR = "kunal2016"
+AUTHOR = "SomaKorada07"
 import re
 
-PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|"
-                     r"intentionally blurred sections|This is the end of the preview")
-TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
+C3_PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections")
+C3_TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
 
-def cure_c3(text):
-    if PREVIEW.search(text):
-        return ("drop", "")
-    t = text.rstrip()
-    if TEASER.search(t):
-        cut = max(t.rfind(". ", 0, len(t) - 3), t.rfind(".\n", 0, len(t) - 3))
-        if cut > 0:
-            return t[:cut + 1]
+def medicine_c3(text):
+    if C3_PREVIEW.search(text):                     # paywall / preview page: cut by design
+        return ("drop", text)
+    s = text.rstrip()
+    if C3_TEASER.search(s):                         # teaser cut: "...deeper unders..."
+        last_stop = max(s.rfind(". ", 0, len(s) - 3), s.rfind(".\n", 0, len(s) - 3))
+        return s[:last_stop + 1] if last_stop > 0 else text
     return text
 
 
 def _std(out, text):
-    # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+    # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+    if out is None or out is True: return ("drop", text)
     if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
     return ("fix" if out != text else "keep", out)
 
@@ -4552,8 +4745,8 @@ def _std(out, text):
 def medicine(doc):
     if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
-    out = cure_c3(doc["text"])
-    return ("keep", doc["text"]) if isinstance(out, tuple) else _std(out, doc["text"])
+    out = medicine_c3(doc["text"])
+    return ("keep", doc["text"]) if _std(out, doc["text"])[0] == "drop" else _std(out, doc["text"])
 
 _spec_source_medicine = medicine
 
@@ -4568,10 +4761,10 @@ def medicine(doc):
 
 3. **Action:** fix. **Runs on:** finemath.
 4. **Harm test:** finemath 0.00% (0/30) PASS.
-5. **Side effects:** a good document that quotes "View Full Document" is dropped. A document cut with no marker cannot be detected.
-6. **Spec v1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, PR 61 (written as code by kunal2016). Idempotent on every doc of its packs.
+5. **Side effects:** a good document that merely quotes "View Full Document" would be dropped. Recall 15 / 49: a document that stops mid-solution with no marker (`b6a1ee1fa12a6d5e` code cut at @4908) cannot be detected by a rule. A first version that trimmed every last line without end punctuation changed 6 of 117 clean documents (headings, signatures, answer lists) and was replaced.
+6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
-## Medicine 57 — sci / B4 / `DA-B4-013`
+## Medicine 59 — sci / B4 / `DA-B4-013`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_b4`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -4629,7 +4822,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 58 — sci / B2 / `DA-B2-003`
+## Medicine 60 — sci / B2 / `DA-B2-003`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_b2`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -4699,7 +4892,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 59 — sci / B5 / `DA-B5-002`
+## Medicine 61 — sci / B5 / `DA-B5-002`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_b5`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -4775,7 +4968,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 60 — sci / A1 / `DA-A1-006`
+## Medicine 62 — sci / A1 / `DA-A1-006`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_a1`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -4822,7 +5015,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 61 — sci / A6 / `DA-A6-002`
+## Medicine 63 — sci / A6 / `DA-A6-002`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_a6`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -4880,7 +5073,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 62 — sci / C1 / `DA-C1-007`
+## Medicine 64 — sci / C1 / `DA-C1-007`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_c1`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5009,7 +5202,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 63 — sci / C2 / `DA-C2-004`
+## Medicine 65 — sci / C2 / `DA-C2-004`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_c2`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5117,7 +5310,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 64 — sci / C3 / `DA-C3-006`
+## Medicine 66 — sci / C3 / `DA-C3-006`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_c3`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5270,7 +5463,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 65 — sci / C4 / `DA-C4-003`
+## Medicine 67 — sci / C4 / `DA-C4-003`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_c4`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5327,7 +5520,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 66 — sci / D1 / `DA-D1-001`
+## Medicine 68 — sci / D1 / `DA-D1-001`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_d1`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5378,7 +5571,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 67 — sci / F1 / `DA-F1-006`
+## Medicine 69 — sci / F1 / `DA-F1-006`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_f1`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 
@@ -5439,7 +5632,7 @@ def medicine(doc):
 
 ---
 
-## Medicine 68 — sci / D3 / `DA-D3-004`
+## Medicine 70 — sci / D3 / `DA-D3-004`
 
 **Consolidation:** Source [medicine_sci.md](medicine_sci.md); original identity `cure_d3`. Counts are source label counts, not additive across rules. Three verified `(doc_id, exact characters)` examples are required for template completeness; source examples below may be fewer than three or describe a span rather than quote it. See the per-card evidence gap below where present. All source test claims below are inherited; fresh results are in the validation table.
 

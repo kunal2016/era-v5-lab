@@ -68,11 +68,13 @@ SICK = [
 
     ("math", "A3", math("Hereâ€™s the proof.\n" + BODY), "fix"),
     ("math", "A1", math("Area​ of a circle is pi r squared.\n" + BODY), "fix"),
+    ("math", "A6", math("x  y is the exclusive or.\n" + BODY), "fix"),  # a Symbol-font glyph in the private use area
     ("math", "A5", math("the ﬁrst term\n" + BODY), "fix"),  # the fi ligature
     ("math", "B2", math("x<br>y and <strong>z</strong>\n" + BODY), "fix"),
     ("math", "B4", math("{{ 'course-label' | message }}\n" + BODY), "fix"),
     ("math", "B5", math("$$$x^2$$\n" + BODY), "fix"),
     ("math", "C5", math(BODY + "See more: Ten Fun Facts About Algebra\n"), "fix"),
+    ("math", "D3", math(BODY + "Дивитися фільми онлайн\n" + BODY), "fix"),  # a foreign-script spam line
     ("math", "C3", math("This preview shows page 1 - 2 out of 4 pages.\n" + BODY), "drop"),
     ("math", "C1", math(BODY + "Share\nWrite a comment\n"), "fix"),
     ("math", "C2", math(BODY + "Introductory Physics Homework Help forum\n" * 6), "fix"),
