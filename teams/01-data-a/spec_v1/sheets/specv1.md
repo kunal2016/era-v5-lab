@@ -45,7 +45,7 @@ Source code remains CANDIDATE even after a measured pass. Semantic side effects,
 |---|---|
 | [medicine_code.md](medicine_code.md) | `e096bea29f0634a76ae99600753527aa266a1d69ed06c4fd88e800b42c8bf13b` |
 | [medicine_english.md](medicine_english.md) | `904c63b621515fc07bdd07cfff3553b6cff49504c89f41c2ec1fce2d27b0652c` |
-| [medicine_math.md](medicine_math.md) | `2ff54fc211fbd83e594a5d4ea290e36e774faf0451daf80fee5d0c93f24d72e9` |
+| [medicine_math.md](medicine_math.md) | `d80f46be988242e92774802497e2d78360295e3c57c7e1a0a1a88f5c914a6224` |
 | [medicine_sci.md](medicine_sci.md) | `5f1e743253062fee2b91d3e04f13b2c302eddae4a9c02b0f54144d2252e1c411` |
 
 ## Identity mapping
@@ -3787,7 +3787,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** the first version accepted any Latin-1 lead and turned `×`+NBSP into Hebrew `נ` in 2 clean documents; the lead set is now restricted. Real Latin-1 text could still be "repaired" when the run happens to decode as UTF-8 (rare).
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -3854,7 +3854,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** a ZWSP used as the only word separator joins two words. LRM/RLM matter in RTL text (safe in this English pack; do not run on RTL packs). U+2062 INVISIBLE TIMES in MathML text (1 document) is not removed.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -3926,7 +3926,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** Wingdings uses the same code points: U+F0D8 as an arrow bullet becomes `¬`. Look-alike letters in spam (`fɑstidious`) and the Armenian apostrophe in `Math՚s` are not fixed (recall 5 / 9).
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -3999,7 +3999,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** a document that quotes a ligature as a character (a typography page) would lose it. Fullwidth digits in English text become ASCII digits, which is wanted here. Full NFKC is not applied: it would also change superscripts (x² → x2) and other maths symbols.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4069,7 +4069,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** `x<sup>2</sup>` becomes `x2`. Recall 3 / 8: tags inside documents that also contain code, and broken fragments like `strong> Option`, are left.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4137,7 +4137,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** a tutorial that teaches Angular/Jinja templates would lose its examples. Recall 9 / 18: AsciiMath leftovers such as `color(blue)(` are not covered.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4207,7 +4207,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** found while testing: `$$$$` is two adjacent display blocks and is valid (`3e136806c369dfbc`), so only exactly three dollars are changed. A literal `[math]` in prose becomes `$`. Recall 5 / 28: stray `$$` inside inline math (`3f15fccd9f76020b`) and LaTeX with stripped backslashes (`$mathbb`) cannot be repaired by rule.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4275,7 +4275,7 @@ def medicine(doc):
 ```
 
 3. **Action:** drop. **Runs on:** megamath.
-4. **Harm test:** megamath 0.00% (0/18) PASS.
+4. **Harm test:** megamath 0.00% (0/26) PASS.
 5. **Side effects:** an answers.com page that does carry an answer below "Related questions" is also dropped (none seen in this pack). Matching is anchored at the start of the text, so a quotation of the header inside another document is not touched.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: kunal2016, megamath sheet, PR 151. Idempotent on every doc of its packs.
 
@@ -4353,7 +4353,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix+drop. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** a legitimate quotation or title in another language is removed (DISEASES.md says D3 can be natural). Greek is excluded on purpose, since Greek letters are maths.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4427,7 +4427,7 @@ def medicine(doc):
 ```
 
 3. **Action:** drop. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** a good document that merely quotes "View Full Document" would be dropped. Recall 15 / 49: a document that stops mid-solution with no marker (`b6a1ee1fa12a6d5e` code cut at @4908) cannot be detected by a rule. A first version that trimmed every last line without end punctuation changed 6 of 117 clean documents (headings, signatures, answer lists) and was replaced.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4522,7 +4522,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** recall is only 109 / 328: the phrase list is fitted to sites seen here, so new sites' menus and footers are missed. A forum title ending in `[#permalink]` is removed (the question usually repeats in the post). A real line that is only "Share", "Views" or "Tags:" would be removed. Found and fixed while testing: "The time now is" deleted the problem statement "If the time now is 9 o'clock" (now needs hh:mm).
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4620,7 +4620,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** the proxy change is natural restatement: an author repeats a sentence on purpose (`5ee756dbf1307a6f`) and the copy is lost. Repeated per-question passages (`e9bc93d8821adcec`) lose their later copies, so later questions lose their context. Recall 40 / 187: short repeated titles and quoted questions under 150 characters are kept.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4686,7 +4686,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath, megamath.
-4. **Harm test:** finemath 0.00% (0/30) PASS; megamath 0.00% (0/18) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS; megamath 0.00% (0/26) PASS.
 5. **Side effects:** recall is 5 / 50: most C5 here is whole spun/SEO pages, which only a drop decision handles. A real comma list of Title-Case names (bibliography, theorem names) would be deleted.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
@@ -4760,7 +4760,7 @@ def medicine(doc):
 ```
 
 3. **Action:** fix. **Runs on:** finemath.
-4. **Harm test:** finemath 0.00% (0/30) PASS.
+4. **Harm test:** finemath 0.00% (0/86) PASS.
 5. **Side effects:** a good document that merely quotes "View Full Document" would be dropped. Recall 15 / 49: a document that stops mid-solution with no marker (`b6a1ee1fa12a6d5e` code cut at @4908) cannot be detected by a rule. A first version that trimmed every last line without end punctuation changed 6 of 117 clean documents (headings, signatures, answer lists) and was replaced.
 6. **Spec v1.1:** status CANDIDATE, reviewer pending. Source: SomaKorada07's finemath sheet, theschoolofai/era-v5-lab#61 (cc74c7e): her function, unchanged. Idempotent on every doc of its packs.
 
