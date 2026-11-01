@@ -3,7 +3,7 @@ spec_v1/sheets/specv1.md: change the sheet, not this file.
 
 doc is {doc_id, text, url, lang_label, pack_id}. Each function returns (action, text), action being keep, fix or drop.
 SCOPE says which packs each rule applies to; on any other pack, or without a pack_id, a rule does nothing.
-Families: code (6 packs, 24 rules), english (4 packs, 20 rules), math (2 packs, 12 rules), sci (1 packs, 12 rules).
+Families: code (6 packs, 24 rules), english (4 packs, 20 rules), math (2 packs, 14 rules), sci (1 packs, 12 rules).
 """
 import re
 from functools import cache
@@ -56,28 +56,30 @@ SCOPE = {
     "DA-F1-005": frozenset({"en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"}),  # english F1, medicine 44
     "DA-A3-001": frozenset({"math-finemath", "math-megamath"}),  # math A3, medicine 45
     "DA-A1-005": frozenset({"math-finemath"}),  # math A1, medicine 46
-    "DA-A5-002": frozenset({"math-finemath", "math-megamath"}),  # math A5, medicine 47
-    "DA-B2-001": frozenset({"math-finemath", "math-megamath"}),  # math B2, medicine 48
-    "DA-B4-001": frozenset({"math-finemath", "math-megamath"}),  # math B4, medicine 49
-    "DA-B5-001": frozenset({"math-finemath", "math-megamath"}),  # math B5, medicine 50
-    "DA-C5-001": frozenset({"math-megamath"}),  # math C5, medicine 51
-    "DA-C3-004": frozenset({"math-finemath"}),  # math C3, medicine 52
-    "DA-C1-001": frozenset({"math-finemath", "math-megamath"}),  # math C1, medicine 53
-    "DA-C2-001": frozenset({"math-finemath"}),  # math C2, medicine 54
-    "DA-C5-006": frozenset({"math-finemath", "math-megamath"}),  # math C5, medicine 55
-    "DA-C3-005": frozenset({"math-finemath"}),  # math C3, medicine 56
-    "DA-B4-013": frozenset({"sci-finepdfs"}),  # sci B4, medicine 57
-    "DA-B2-003": frozenset({"sci-finepdfs"}),  # sci B2, medicine 58
-    "DA-B5-002": frozenset({"sci-finepdfs"}),  # sci B5, medicine 59
-    "DA-A1-006": frozenset({"sci-finepdfs"}),  # sci A1, medicine 60
-    "DA-A6-002": frozenset({"sci-finepdfs"}),  # sci A6, medicine 61
-    "DA-C1-007": frozenset({"sci-finepdfs"}),  # sci C1, medicine 62
-    "DA-C2-004": frozenset({"sci-finepdfs"}),  # sci C2, medicine 63
-    "DA-C3-006": frozenset({"sci-finepdfs"}),  # sci C3, medicine 64
-    "DA-C4-003": frozenset({"sci-finepdfs"}),  # sci C4, medicine 65
-    "DA-D1-001": frozenset({"sci-finepdfs"}),  # sci D1, medicine 66
-    "DA-F1-006": frozenset({"sci-finepdfs"}),  # sci F1, medicine 67
-    "DA-D3-004": frozenset({"sci-finepdfs"}),  # sci D3, medicine 68
+    "DA-A6-003": frozenset({"math-finemath"}),  # math A6, medicine 47
+    "DA-A5-002": frozenset({"math-finemath", "math-megamath"}),  # math A5, medicine 48
+    "DA-B2-001": frozenset({"math-finemath", "math-megamath"}),  # math B2, medicine 49
+    "DA-B4-001": frozenset({"math-finemath", "math-megamath"}),  # math B4, medicine 50
+    "DA-B5-001": frozenset({"math-finemath", "math-megamath"}),  # math B5, medicine 51
+    "DA-C5-001": frozenset({"math-megamath"}),  # math C5, medicine 52
+    "DA-D3-005": frozenset({"math-finemath", "math-megamath"}),  # math D3, medicine 53
+    "DA-C3-004": frozenset({"math-finemath"}),  # math C3, medicine 54
+    "DA-C1-001": frozenset({"math-finemath"}),  # math C1, medicine 55
+    "DA-C2-001": frozenset({"math-finemath"}),  # math C2, medicine 56
+    "DA-C5-006": frozenset({"math-finemath", "math-megamath"}),  # math C5, medicine 57
+    "DA-C3-005": frozenset({"math-finemath"}),  # math C3, medicine 58
+    "DA-B4-013": frozenset({"sci-finepdfs"}),  # sci B4, medicine 59
+    "DA-B2-003": frozenset({"sci-finepdfs"}),  # sci B2, medicine 60
+    "DA-B5-002": frozenset({"sci-finepdfs"}),  # sci B5, medicine 61
+    "DA-A1-006": frozenset({"sci-finepdfs"}),  # sci A1, medicine 62
+    "DA-A6-002": frozenset({"sci-finepdfs"}),  # sci A6, medicine 63
+    "DA-C1-007": frozenset({"sci-finepdfs"}),  # sci C1, medicine 64
+    "DA-C2-004": frozenset({"sci-finepdfs"}),  # sci C2, medicine 65
+    "DA-C3-006": frozenset({"sci-finepdfs"}),  # sci C3, medicine 66
+    "DA-C4-003": frozenset({"sci-finepdfs"}),  # sci C4, medicine 67
+    "DA-D1-001": frozenset({"sci-finepdfs"}),  # sci D1, medicine 68
+    "DA-F1-006": frozenset({"sci-finepdfs"}),  # sci F1, medicine 69
+    "DA-D3-004": frozenset({"sci-finepdfs"}),  # sci D3, medicine 70
     "f1_rule.py": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # the shared F1, tools/f1_rule.py: code packs, last
 }
 
@@ -2733,24 +2735,28 @@ def _math_a3_001():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    MOJI = re.compile("[\u00c2\u00c3\u00e2\u00f0][\u0080-\u00bf\u0152\u0153\u0160\u0161\u0178"
-                      "\u017d\u017e\u0192\u02c6\u02dc\u2013\u2014\u2018-\u201e\u2020-\u2022"
-                      "\u2026\u2030\u2039\u203a\u20ac\u2122]{1,3}")
+    # cp1252 characters for the bytes 0x80-0x9F
+    A3_CP1252_EXTRA = "\u20ac\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\u017d\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\u017e\u0178"
+    # lead chars are the usual UTF-8 lead bytes seen as cp1252; not U+00D7 (x + no-break space is real maths)
+    A3_MOJI = re.compile("[\u00c2\u00c3\u00e2\u00f0\u00d0\u00d1\u00e0\u00e1\u00e4][\u0080-\u00bf\u00a0-\u00bf" + A3_CP1252_EXTRA + "]{1,3}")
+    A3_CP866 = re.compile("\u0442[\u0410\u0411][\u0400-\u04ff]")    # UTF-8 read as cp866: "\u0442\u0410\u0429" is a right quote
 
-    def _fix(m):
-        s = m.group(0)
+    def _a3_undo(m, enc):
+        s = m.group()
         try:
-            r = s.encode("cp1252").decode("utf-8")
+            out = s.encode(enc).decode("utf-8")
         except (UnicodeEncodeError, UnicodeDecodeError):
             return s
-        return r if len(r) < len(s) else s
+        return out if len(out) < len(s) else s
 
-    def cure_a3(text):
-        return MOJI.sub(_fix, text)
+    def medicine_a3(text):
+        t = A3_MOJI.sub(lambda m: _a3_undo(m, "cp1252"), text)
+        return A3_CP866.sub(lambda m: _a3_undo(m, "cp866"), t)
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2758,7 +2764,7 @@ def _math_a3_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_a3(doc["text"]), doc["text"])
+        return _std(medicine_a3(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -2786,14 +2792,16 @@ def _math_a1_005():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
+    # ZWJ U+200D / ZWNJ U+200C are left alone on purpose (they are script, not junk)
     A1_RX = re.compile("[\u200b\ufeff\u00ad\u200e\u200f\u2060\u202a-\u202e\u2066-\u2069]")
 
-    def cure_a1(text):
+    def medicine_a1(text):
         return A1_RX.sub("", text)
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2801,7 +2809,7 @@ def _math_a1_005():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_a1(doc["text"]), doc["text"])
+        return _std(medicine_a1(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -2815,8 +2823,58 @@ def _math_a1_005():
     return medicine
 
 @cache
+def _math_a6_003():
+    # DA-A6-003, specv1.md, medicine 47 (math)
+    RULE_ID = "DA-A6-003"
+    SOURCE_RULE_ID = "DA-A6-001"
+    CODE = "A6"
+    ACTION = "fix"
+    STAGE = "10"
+    STATUS = "CANDIDATE"
+    LANGS = {'en'}
+    ORIGIN = "math-finemath"  # packs it runs on
+    PACKS = SCOPE["DA-A6-003"]  # the math packs share the "en" tag, so the pack is checked too
+    SOURCE = "math-finemath"  # pack whose medicine this came from
+    # PDFs set in the Symbol font leak U+F0xx = U+F000 + Symbol code. Map the ones seen in the pack; leave the rest.
+    A6_SYMBOL = {0x28: "(", 0x29: ")", 0x2B: "+", 0x2D: "\u2212", 0x3D: "=", 0x44: "\u0394", 0x53: "\u03a3", 0x57: "\u03a9",
+                 0x61: "\u03b1", 0x62: "\u03b2", 0x64: "\u03b4", 0x67: "\u03b3", 0x6C: "\u03bb", 0x6D: "\u03bc", 0x70: "\u03c0",
+                 0x71: "\u03b8", 0x72: "\u03c1", 0x77: "\u03c9", 0xA3: "\u2264", 0xA5: "\u221e", 0xA8: "\u2666", 0xAE: "\u2192",
+                 0xB1: "\u00b1", 0xB3: "\u2265", 0xB4: "\u00d7", 0xB6: "\u2202", 0xB7: "\u2022", 0xB9: "\u2260", 0xBB: "\u2248",
+                 0xC5: "\u2295", 0xC7: "\u2229", 0xC8: "\u222a", 0xCE: "\u2208", 0xD6: "\u221a", 0xD8: "\u00ac", 0xDE: "\u21d2",
+                 0xE5: "\u2211", 0xE6: "\u239b", 0xE7: "\u239c", 0xE8: "\u239d", 0xF2: "\u222b", 0xF6: "\u239e", 0xF7: "\u239f",
+                 0xF8: "\u23a0"}
+    A6_PUA_MAP = {0xF000 + k: v for k, v in A6_SYMBOL.items()}
+
+    def medicine_a6(text):
+        return text.translate(A6_PUA_MAP)
+
+
+    def _std(out, text):
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
+        if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
+        return ("fix" if out != text else "keep", out)
+
+
+    def medicine(doc):
+        if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
+            return ("keep", doc["text"])
+        return _std(medicine_a6(doc["text"]), doc["text"])
+
+    _spec_source_medicine = medicine
+
+    SPEC_PACKS = SCOPE["DA-A6-003"]
+
+    def medicine(doc):
+        if doc.get("pack_id") not in SPEC_PACKS:
+            return ("keep", doc["text"])
+        out = _spec_source_medicine(doc)
+        return out
+    return medicine
+
+@cache
 def _math_a5_002():
-    # DA-A5-002, specv1.md, medicine 47 (math)
+    # DA-A5-002, specv1.md, medicine 48 (math)
     RULE_ID = "DA-A5-002"
     SOURCE_RULE_ID = "DA-A5-001"
     CODE = "A5"
@@ -2830,20 +2888,21 @@ def _math_a5_002():
     import re
     import unicodedata
 
-    LIG = re.compile("[\ufb00-\ufb06]")
-    FULL = re.compile("[\uff01-\uff5e]")
-    CJK = re.compile("[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
+    A5_LIG = re.compile("[\ufb00-\ufb06]")
+    A5_FULLWIDTH = re.compile("[\uff01-\uff5e]")
+    A5_CJK = re.compile("[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]")
 
-    def cure_a5(text):
-        t = LIG.sub(lambda m: unicodedata.normalize("NFKC", m.group()), text)
-        letters = sum(c.isalpha() for c in t) or 1
-        if len(CJK.findall(t)) / letters < 0.01:
-            t = FULL.sub(lambda m: chr(ord(m.group()) - 0xFEE0), t)
-        return t
+    def medicine_a5(text):
+        out = A5_LIG.sub(lambda m: unicodedata.normalize("NFKC", m.group()), text)      # ligature to letters
+        letters = sum(c.isalpha() for c in out) or 1
+        if len(A5_CJK.findall(out)) / letters < 0.01:                                    # leave real CJK text alone
+            out = A5_FULLWIDTH.sub(lambda m: chr(ord(m.group()) - 0xFEE0), out)          # fullwidth to ASCII
+        return out
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2851,7 +2910,7 @@ def _math_a5_002():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_a5(doc["text"]), doc["text"])
+        return _std(medicine_a5(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -2866,7 +2925,7 @@ def _math_a5_002():
 
 @cache
 def _math_b2_001():
-    # DA-B2-001, specv1.md, medicine 48 (math)
+    # DA-B2-001, specv1.md, medicine 49 (math)
     RULE_ID = "DA-B2-001"
     SOURCE_RULE_ID = "DA-B2-001"
     CODE = "B2"
@@ -2879,17 +2938,19 @@ def _math_b2_001():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    BR = re.compile(r"(?i)<br\s*/?>")
-    TAGS = re.compile(r"(?i)</?(?:p|div|span|a|ul|ol|li|sup|sub|strong|em|font|b|i|center)(?:\s[^<>]*)?>")
+    B2_BR = re.compile(r"<br\s*/?>", re.I)
+    B2_TAG = re.compile(r"</?(?:div|span|p|a|ul|ol|li|sup|sub|strong|em|font|b|i|center)"
+                        r"(?:\s+[\w-]+=(?:\"[^\"]*\"|'[^']*'|[^\s>]+))*\s*/?>", re.I)
 
-    def cure_b2(text):
-        if "```" in text or "<script" in text.lower():
+    def medicine_b2(text):
+        if "```" in text or "<script" in text.lower():      # tags inside code are content
             return text
-        return TAGS.sub("", BR.sub("\n", text))
+        return B2_TAG.sub("", B2_BR.sub("\n", text))
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2897,7 +2958,7 @@ def _math_b2_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_b2(doc["text"]), doc["text"])
+        return _std(medicine_b2(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -2912,7 +2973,7 @@ def _math_b2_001():
 
 @cache
 def _math_b4_001():
-    # DA-B4-001, specv1.md, medicine 49 (math)
+    # DA-B4-001, specv1.md, medicine 50 (math)
     RULE_ID = "DA-B4-001"
     SOURCE_RULE_ID = "DA-B4-001"
     CODE = "B4"
@@ -2925,15 +2986,17 @@ def _math_b4_001():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    B4_RX = re.compile(r"\{\[\s*\w+\s*\]\}|\{\{\s+['\w][\w'.| :-]*\s+\}\}|\{%.*?%\}|"
-                       r"\[TheoryMissing\]|document\.write\([^)]*\);?")
+    B4_RX = re.compile(r"\{\[\s*\w+\s*\]\}|\{\{\s+['\w][\w'.| :-]*\s+\}\}|\{%.*?%\}|\[TheoryMissing\]|"
+                       r"document\.write\([^)]*\);?|^\s*\"?\s*%\}\s*$", re.M)
 
-    def cure_b4(text):
-        return B4_RX.sub("", text)
+    def medicine_b4(text):
+        out = B4_RX.sub("", text)
+        return re.sub(r"\n{3,}", "\n\n", out) if out != text else text
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2941,7 +3004,7 @@ def _math_b4_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_b4(doc["text"]), doc["text"])
+        return _std(medicine_b4(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -2956,7 +3019,7 @@ def _math_b4_001():
 
 @cache
 def _math_b5_001():
-    # DA-B5-001, specv1.md, medicine 50 (math)
+    # DA-B5-001, specv1.md, medicine 51 (math)
     RULE_ID = "DA-B5-001"
     SOURCE_RULE_ID = "DA-B5-001"
     CODE = "B5"
@@ -2969,20 +3032,19 @@ def _math_b5_001():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    TRIPLE = re.compile(r"(?<!\$)\$\$\$(?!\$)")
-    BBCODE = re.compile(r"\[/?(?:itex|tex|math)\]")
-    FENCE = re.compile(r"```")  # count every fence mark: a fence can close mid-line
+    B5_TRIPLE = re.compile(r"(?<!\$)\${3}(?!\$)")                  # exactly $$$ ($$$$ is two blocks, valid)
+    B5_BBCODE = re.compile(r"\[/?(?:itex|tex|math)\]", re.I)       # forum BBCode math
 
-    def cure_b5(text):
-        t = TRIPLE.sub("$$", text)
-        t = BBCODE.sub("$", t)
-        if len(FENCE.findall(t)) % 2:
-            t = t.rstrip("\n") + "\n```\n"
-        return t
+    def medicine_b5(text):
+        out = B5_BBCODE.sub("$", B5_TRIPLE.sub("$$", text))
+        if out.count("```") % 2:                                    # unclosed code fence at the end
+            out = out.rstrip() + "\n```"
+        return out
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -2990,7 +3052,7 @@ def _math_b5_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_b5(doc["text"]), doc["text"])
+        return _std(medicine_b5(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3005,7 +3067,7 @@ def _math_b5_001():
 
 @cache
 def _math_c5_001():
-    # DA-C5-001, specv1.md, medicine 51 (math)
+    # DA-C5-001, specv1.md, medicine 52 (math)
     RULE_ID = "DA-C5-001"
     SOURCE_RULE_ID = "DA-C5-001"
     CODE = "C5"
@@ -3027,7 +3089,8 @@ def _math_c5_001():
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3049,8 +3112,64 @@ def _math_c5_001():
     return medicine
 
 @cache
+def _math_d3_005():
+    # DA-D3-005, specv1.md, medicine 53 (math)
+    RULE_ID = "DA-D3-005"
+    SOURCE_RULE_ID = "DA-D3-001"
+    CODE = "D3"
+    ACTION = "fix+drop"
+    STAGE = "30"
+    STATUS = "CANDIDATE"
+    LANGS = {'en'}
+    ORIGIN = "math-finemath, math-megamath"  # packs it runs on
+    PACKS = SCOPE["DA-D3-005"]  # the math packs share the "en" tag, so the pack is checked too
+    SOURCE = "math-finemath"  # pack whose medicine this came from
+    import re
+
+    # Cyrillic, Indic, kana, CJK, Hangul, Arabic (Greek is left out: Greek letters are maths)
+    D3_FOREIGN = re.compile("[\u0400-\u04ff\u0900-\u0dff\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af\u0600-\u06ff]")
+
+    def medicine_d3(text):
+        out, foreign = [], 0
+        for l in text.split("\n"):
+            letters = sum(c.isalpha() for c in l)
+            f = len(D3_FOREIGN.findall(l))
+            if letters and f / letters > 0.5:      # a line that is mostly foreign script is removed
+                foreign += f
+                continue
+            out.append(l)
+        total = sum(c.isalpha() for c in text)
+        if total and foreign / total > 0.3:        # mostly not English: that is D1, drop
+            return ("drop", text)
+        return "\n".join(out)
+
+
+    def _std(out, text):
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
+        if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
+        return ("fix" if out != text else "keep", out)
+
+
+    def medicine(doc):
+        if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
+            return ("keep", doc["text"])
+        return _std(medicine_d3(doc["text"]), doc["text"])
+
+    _spec_source_medicine = medicine
+
+    SPEC_PACKS = SCOPE["DA-D3-005"]
+
+    def medicine(doc):
+        if doc.get("pack_id") not in SPEC_PACKS:
+            return ("keep", doc["text"])
+        out = _spec_source_medicine(doc)
+        return out
+    return medicine
+
+@cache
 def _math_c3_004():
-    # DA-C3-004, specv1.md, medicine 52 (math)
+    # DA-C3-004, specv1.md, medicine 54 (math)
     RULE_ID = "DA-C3-004"
     SOURCE_RULE_ID = "DA-C3-001"
     CODE = "C3"
@@ -3063,23 +3182,22 @@ def _math_c3_004():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|"
-                         r"intentionally blurred sections|This is the end of the preview")
-    TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
+    C3_PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections")
+    C3_TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
 
-    def cure_c3(text):
-        if PREVIEW.search(text):
-            return ("drop", "")
-        t = text.rstrip()
-        if TEASER.search(t):
-            cut = max(t.rfind(". ", 0, len(t) - 3), t.rfind(".\n", 0, len(t) - 3))
-            if cut > 0:
-                return t[:cut + 1]
+    def medicine_c3(text):
+        if C3_PREVIEW.search(text):                     # paywall / preview page: cut by design
+            return ("drop", text)
+        s = text.rstrip()
+        if C3_TEASER.search(s):                         # teaser cut: "...deeper unders..."
+            last_stop = max(s.rfind(". ", 0, len(s) - 3), s.rfind(".\n", 0, len(s) - 3))
+            return s[:last_stop + 1] if last_stop > 0 else text
         return text
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3087,8 +3205,8 @@ def _math_c3_004():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        out = cure_c3(doc["text"])
-        return ("drop", doc["text"]) if isinstance(out, tuple) else ("keep", doc["text"])
+        out = medicine_c3(doc["text"])
+        return ("drop", doc["text"]) if _std(out, doc["text"])[0] == "drop" else ("keep", doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3103,7 +3221,7 @@ def _math_c3_004():
 
 @cache
 def _math_c1_001():
-    # DA-C1-001, specv1.md, medicine 53 (math)
+    # DA-C1-001, specv1.md, medicine 55 (math)
     RULE_ID = "DA-C1-001"
     SOURCE_RULE_ID = "DA-C1-001"
     CODE = "C1"
@@ -3111,39 +3229,49 @@ def _math_c1_001():
     STAGE = "30"
     STATUS = "CANDIDATE"
     LANGS = {'en'}
-    ORIGIN = "math-finemath, math-megamath"  # packs it runs on
+    ORIGIN = "math-finemath"  # packs it runs on
     PACKS = SCOPE["DA-C1-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
+    # a whole line that is generic site chrome
     C1_LINE = re.compile(
-        r"(?i)^\s*(?:"
-        r"show tags|author message|kudos \[\?\].*|display posts from previous.*|"
-        r"subscribe to view the full document\.?|view full document|tagged in|"
-        r"see solution|want to see the full answer\??|want to see this answer and more\??|"
-        r"comments are closed\.?|write a comment|share|sort by|filter by:.*|"
-        r"this site is supported by donations to the oeis foundation\.?|"
-        r"the oeis foundation is supported by donations.*|"
-        r"hints \(greetings from the on-line encyclopedia of integer sequences!\)|"
-        r"lookup \| welcome \| wiki \| register.*|contribute new seq\. or comment.*|"
-        r"the oeis community \| maintained by the oeis foundation inc\.|"
-        r"last modified .* contains \d+ sequences\. \(running on oeis\d\.\)"
-        r")\s*$")
+        r"(?i)\s*(?:More Similar Questions|Similar Questions|Related (?:Questions|Posts|Articles)|Share (?:this|on \w+)|"
+        r"Sign ?up|Log ?in|Subscribe|Cookie|Accept (?:all )?cookies|Privacy Policy|Terms of (?:Use|Service)|"
+        r"All rights reserved|\u00a9.*|&copy;.*|Follow us|Skip to (?:main )?content|Show Tags|Replies|Views|"
+        r"Contact - Home.*|Report (?:abuse|post)|Upvote|Downvote|Like this:|Loading\.\.\.|Previous Post|Next Post|"
+        r"Recommended|Back to top|Quick Reply|Click here.*|Leave a (?:Reply|Comment)|Your email address will not be published.*|"
+        r"Posted by.*|Tags?:.*|Categories?:.*|Hide Tags|Join (?:now|us)|Download (?:the )?App.*|Course Hero.*)\s*")
+    # site chrome seen in this pack (forums, homework sites, document hosts, OEIS, GMAT Club ...); only on lines <= 120 chars
     C1_SITE = re.compile(
-        r"(?i)this preview shows page|sign up to view the full|this is the end of the preview|"
-        r"check gmat club decision tracker|gmat club daily prep|powered by phpbb|"
-        r"our solutions are written by experts|ask a homework question - tutors are online|"
-        r"about press copyright contact us creators|this solution is locked")
+        r"(?i)Check GMAT Club Decision Tracker|It is currently \d+ \w+ \d{4}|GMAT Club Daily Prep|Display posts from previous|"
+        r"GMAT\u00ae test is a registered trademark|\[#permalink\]|Kudos \[\?\]|This preview shows page|Sign up to view the full|"
+        r"View Full Document|Ask a homework question|intentionally blurred sections|My Personal Notes arrow_drop_up|"
+        r"^Open in App$|^Last Updated :|All times are GMT|The time now is \d{1,2}:\d{2}|Privacy Statement|"
+        r"Remember Me\? Password|having trouble loading external resources|analy[sz]e our traffic|Want to see this answer and more|"
+        r"^See Solution$|^Subscribe now$|Upcoming SlideShare|Are you sure you want to|Report Content as Inappropriate|"
+        r"Open this post in threaded view|^Loading content$|The OEIS Community \| Maintained by|supported by donations|"
+        r"You are Here: Home|Registered Office:|CYBER MONDAY|^Wiki User$|^Buscar$|^Uncategorized$|Created with Sketch|"
+        r"best freelance writing portal|Comment sent successfully|Choose the classification system|Read More \u00bb|"
+        r"TUTORIALS HOME|Top of Page|Our sister site|Everything was clear\?|Hello Guest!|Free\s+Algebra Tutorials!|"
+        r"Teach yourself statistics|^Home >>|\u200e > \u200e|claim an answer you\u2019ll have 24 hours|Search Our Content Library|"
+        r"filtered results|^Sort by$|tutors are online|snackBarMessage|Go To Main Page|^Show/hide solution$|"
+        r"Correct! Wrong!|Tutorial is loading|^Filed Under:|^Exam Prep:|^Asked in:|Verified Answer \| Published|"
+        r"^Guided Lessons$|^Course Content$|Doorsteptutor|Mark Forums Read|^Recommended$|DocShare\.tips|^Hide$|"
+        r"Not now$|Write an Interview Experience|Your message has been successfully submitted|has the best spam protection|"
+        r"posting guide http|Questions are from the workbook|^Share$|^Children$|Go back to editing|try BYJU|We\u2018ve got your back")
+    # phpBB "Replies / <n> / Views / <n>" block, one value per line
+    C1_REPLIES = re.compile(r"(?m)^Replies\n\d+\nViews\n[\d.]+K?\n?")
 
-
-    def cure_c1(text):
+    def medicine_c1(text):
         keep = [l for l in text.split("\n")
-                if not (C1_LINE.match(l) or (C1_SITE.search(l) and len(l) <= 120))]
-        return "\n".join(keep)
+                if not (C1_LINE.fullmatch(l) or (C1_SITE.search(l) and len(l) <= 120))]
+        return C1_REPLIES.sub("", "\n".join(keep))
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3151,7 +3279,7 @@ def _math_c1_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_c1(doc["text"]), doc["text"])
+        return _std(medicine_c1(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3166,7 +3294,7 @@ def _math_c1_001():
 
 @cache
 def _math_c2_001():
-    # DA-C2-001, specv1.md, medicine 54 (math)
+    # DA-C2-001, specv1.md, medicine 56 (math)
     RULE_ID = "DA-C2-001"
     SOURCE_RULE_ID = "DA-C2-001"
     CODE = "C2"
@@ -3178,39 +3306,48 @@ def _math_c2_001():
     PACKS = SCOPE["DA-C2-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
-    from collections import Counter
 
-    def cure_c2(text):
+    C2_CODE = re.compile(r"[;{}]\s*$|^\s*(?:for|if|while|return|def|class)\b")
+    C2_PARA_SPLIT = re.compile(r"(\n\s*\n)")
+    C2_OPTION = re.compile(r"\s*(?:[A-E1-5][.)]|\(?[a-e]\))\s")
+
+    def _c2_dedupe_passages(text):
+        # ruling 13: a passage (150+ chars) repeated even once loses its later copies; option lists and code are kept
+        parts, seen, out = C2_PARA_SPLIT.split(text), set(), []
+        for k, part in enumerate(parts):
+            q = part.strip()
+            if k % 2 == 0 and len(q) >= 150 and not re.match(r"\s*[\u2022*-] ", q):
+                ql = [x for x in q.splitlines() if x.strip()]
+                options = sum(bool(C2_OPTION.match(x)) for x in ql) >= max(2, len(ql) // 2)
+                code = sum(bool(re.search(r"[;{}]\s*$", x)) for x in ql) >= max(1, len(ql) // 3)
+                if not options and not code:
+                    if q in seen:
+                        if out and k > 0:
+                            out.pop()          # drop the blank-line separator before the copy
+                        continue
+                    seen.add(q)
+            out.append(part)
+        return "".join(out)
+
+    def medicine_c2(text):
         lines = text.split("\n")
-        fence = False
-        countable = []
+        counts = {}
         for l in lines:
-            if l.lstrip().startswith("```"):
-                fence = not fence
-            countable.append(not fence and len(l.strip()) >= 15)
-        counts = Counter(l.strip() for l, c in zip(lines, countable) if c)
+            counts[l.strip()] = counts.get(l.strip(), 0) + 1
         seen, out = set(), []
-        for l, c in zip(lines, countable):
-            key = l.strip()
-            if c and counts[key] >= 5:
-                if key in seen:
+        for l in lines:
+            s = l.strip()
+            if len(s) >= 15 and counts[s] >= 5 and not C2_CODE.search(s):
+                if s in seen:
                     continue
-                seen.add(key)
+                seen.add(s)
             out.append(l)
-        blocks = re.split(r"(\n\s*\n)", "\n".join(out))
-        seen_b, res = set(), []
-        for b in blocks:
-            k = b.strip()
-            if len(k) >= 150 and not k.startswith(("-", "*", "\u2022", "```")):
-                if k in seen_b:
-                    continue
-                seen_b.add(k)
-            res.append(b)
-        return "".join(res)
+        return _c2_dedupe_passages("\n".join(out))
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3218,7 +3355,7 @@ def _math_c2_001():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_c2(doc["text"]), doc["text"])
+        return _std(medicine_c2(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3233,7 +3370,7 @@ def _math_c2_001():
 
 @cache
 def _math_c5_006():
-    # DA-C5-006, specv1.md, medicine 55 (math)
+    # DA-C5-006, specv1.md, medicine 57 (math)
     RULE_ID = "DA-C5-006"
     SOURCE_RULE_ID = "DA-C5-002"
     CODE = "C5"
@@ -3246,14 +3383,15 @@ def _math_c5_006():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    SEO = re.compile(r"(?m)^(?:See more: .*|(?:[A-Z][\w\u2019'&.-]*(?: [\w\u2019'&.-]+){1,7}, ){5,}.*)\n?")
+    C5_SEO = re.compile(r"(?m)^(?:See more: .*|(?:[A-Z][\w\u2019'&.-]*(?: [\w\u2019'&.-]+){1,7}, ){5,}.*)$")
 
-    def cure_c5(text):
-        return SEO.sub("", text)
+    def medicine_c5(text):
+        return C5_SEO.sub("", text)
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3261,7 +3399,7 @@ def _math_c5_006():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        return _std(cure_c5(doc["text"]), doc["text"])
+        return _std(medicine_c5(doc["text"]), doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3276,7 +3414,7 @@ def _math_c5_006():
 
 @cache
 def _math_c3_005():
-    # DA-C3-005, specv1.md, medicine 56 (math)
+    # DA-C3-005, specv1.md, medicine 58 (math)
     RULE_ID = "DA-C3-005"
     SOURCE_RULE_ID = "DA-C3-002"
     CODE = "C3"
@@ -3289,23 +3427,22 @@ def _math_c3_005():
     SOURCE = "math-finemath"  # pack whose medicine this came from
     import re
 
-    PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|"
-                         r"intentionally blurred sections|This is the end of the preview")
-    TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
+    C3_PREVIEW = re.compile(r"This preview shows|Sign up to view the full|View Full Document|intentionally blurred sections")
+    C3_TEASER = re.compile(r"\w(?:\.\.\.|\u2026)$")
 
-    def cure_c3(text):
-        if PREVIEW.search(text):
-            return ("drop", "")
-        t = text.rstrip()
-        if TEASER.search(t):
-            cut = max(t.rfind(". ", 0, len(t) - 3), t.rfind(".\n", 0, len(t) - 3))
-            if cut > 0:
-                return t[:cut + 1]
+    def medicine_c3(text):
+        if C3_PREVIEW.search(text):                     # paywall / preview page: cut by design
+            return ("drop", text)
+        s = text.rstrip()
+        if C3_TEASER.search(s):                         # teaser cut: "...deeper unders..."
+            last_stop = max(s.rfind(". ", 0, len(s) - 3), s.rfind(".\n", 0, len(s) - 3))
+            return s[:last_stop + 1] if last_stop > 0 else text
         return text
 
 
     def _std(out, text):
-        # the result in the shared form: str -> fix/keep, ("drop", ...) -> drop
+        # the author's result in the shared form: str -> fix/keep, ("drop", ...), None or True -> drop
+        if out is None or out is True: return ("drop", text)
         if isinstance(out, tuple) and out and out[0] == "drop": return ("drop", text)
         return ("fix" if out != text else "keep", out)
 
@@ -3313,8 +3450,8 @@ def _math_c3_005():
     def medicine(doc):
         if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
-        out = cure_c3(doc["text"])
-        return ("keep", doc["text"]) if isinstance(out, tuple) else _std(out, doc["text"])
+        out = medicine_c3(doc["text"])
+        return ("keep", doc["text"]) if _std(out, doc["text"])[0] == "drop" else _std(out, doc["text"])
 
     _spec_source_medicine = medicine
 
@@ -3329,7 +3466,7 @@ def _math_c3_005():
 
 @cache
 def _sci_b4_013():
-    # DA-B4-013, specv1.md, medicine 57 (sci)
+    # DA-B4-013, specv1.md, medicine 59 (sci)
     RULE_ID = "DA-B4-013"
     CODE = "B4"
     import re
@@ -3360,7 +3497,7 @@ def _sci_b4_013():
 
 @cache
 def _sci_b2_003():
-    # DA-B2-003, specv1.md, medicine 58 (sci)
+    # DA-B2-003, specv1.md, medicine 60 (sci)
     RULE_ID = "DA-B2-003"
     CODE = "B2"
     import re
@@ -3403,7 +3540,7 @@ def _sci_b2_003():
 
 @cache
 def _sci_b5_002():
-    # DA-B5-002, specv1.md, medicine 59 (sci)
+    # DA-B5-002, specv1.md, medicine 61 (sci)
     RULE_ID = "DA-B5-002"
     CODE = "B5"
     import re
@@ -3452,7 +3589,7 @@ def _sci_b5_002():
 
 @cache
 def _sci_a1_006():
-    # DA-A1-006, specv1.md, medicine 60 (sci)
+    # DA-A1-006, specv1.md, medicine 62 (sci)
     RULE_ID = "DA-A1-006"
     CODE = "A1"
     import re
@@ -3475,7 +3612,7 @@ def _sci_a1_006():
 
 @cache
 def _sci_a6_002():
-    # DA-A6-002, specv1.md, medicine 61 (sci)
+    # DA-A6-002, specv1.md, medicine 63 (sci)
     RULE_ID = "DA-A6-002"
     CODE = "A6"
     import re
@@ -3506,7 +3643,7 @@ def _sci_a6_002():
 
 @cache
 def _sci_c1_007():
-    # DA-C1-007, specv1.md, medicine 62 (sci)
+    # DA-C1-007, specv1.md, medicine 64 (sci)
     RULE_ID = "DA-C1-007"
     CODE = "C1"
     import re
@@ -3608,7 +3745,7 @@ def _sci_c1_007():
 
 @cache
 def _sci_c2_004():
-    # DA-C2-004, specv1.md, medicine 63 (sci)
+    # DA-C2-004, specv1.md, medicine 65 (sci)
     RULE_ID = "DA-C2-004"
     CODE = "C2"
     import re
@@ -3689,7 +3826,7 @@ def _sci_c2_004():
 
 @cache
 def _sci_c3_006():
-    # DA-C3-006, specv1.md, medicine 64 (sci)
+    # DA-C3-006, specv1.md, medicine 66 (sci)
     RULE_ID = "DA-C3-006"
     CODE = "C3"
     import re
@@ -3815,7 +3952,7 @@ def _sci_c3_006():
 
 @cache
 def _sci_c4_003():
-    # DA-C4-003, specv1.md, medicine 65 (sci)
+    # DA-C4-003, specv1.md, medicine 67 (sci)
     RULE_ID = "DA-C4-003"
     CODE = "C4"
     import re
@@ -3844,7 +3981,7 @@ def _sci_c4_003():
 
 @cache
 def _sci_d1_001():
-    # DA-D1-001, specv1.md, medicine 66 (sci)
+    # DA-D1-001, specv1.md, medicine 68 (sci)
     RULE_ID = "DA-D1-001"
     CODE = "D1"
     import re
@@ -3867,7 +4004,7 @@ def _sci_d1_001():
 
 @cache
 def _sci_f1_006():
-    # DA-F1-006, specv1.md, medicine 67 (sci)
+    # DA-F1-006, specv1.md, medicine 69 (sci)
     RULE_ID = "DA-F1-006"
     CODE = "F1"
     import re
@@ -3904,7 +4041,7 @@ def _sci_f1_006():
 
 @cache
 def _sci_d3_004():
-    # DA-D3-004, specv1.md, medicine 68 (sci)
+    # DA-D3-004, specv1.md, medicine 70 (sci)
     RULE_ID = "DA-D3-004"
     CODE = "D3"
     import re
@@ -4069,11 +4206,13 @@ _RULE = {  # rule ID -> its factory, in sheet order
     "DA-F1-005": _english_f1_005,
     "DA-A3-001": _math_a3_001,
     "DA-A1-005": _math_a1_005,
+    "DA-A6-003": _math_a6_003,
     "DA-A5-002": _math_a5_002,
     "DA-B2-001": _math_b2_001,
     "DA-B4-001": _math_b4_001,
     "DA-B5-001": _math_b5_001,
     "DA-C5-001": _math_c5_001,
+    "DA-D3-005": _math_d3_005,
     "DA-C3-004": _math_c3_004,
     "DA-C1-001": _math_c1_001,
     "DA-C2-001": _math_c2_001,
@@ -4118,7 +4257,7 @@ def a2(doc):
 
 
 def a6(doc):
-    return _run(doc, _code_a6_001, _sci_a6_002)
+    return _run(doc, _code_a6_001, _math_a6_003, _sci_a6_002)
 
 
 def a4(doc):
@@ -4190,7 +4329,7 @@ def d1(doc):
 
 
 def d3(doc):
-    return _run(doc, _english_d3_003, _sci_d3_004)
+    return _run(doc, _english_d3_003, _math_d3_005, _sci_d3_004)
 
 
 def b4(doc):
@@ -4210,7 +4349,7 @@ RULES = {"A1": a1, "A2": a2, "A6": a6, "A4": a4, "A5": a5, "A3": a3, "B1": b1, "
 _PIPELINES = {
     "code": (_code_a1_001, _code_a2_007, _code_a6_001, _code_a4_002, _code_a4_003, _code_b3_001, _code_e1_001, _code_e1_004, _code_e1_008, _code_e1_006, _code_e1_005, _code_e1_007, _code_e2_001, _code_c3_002, _code_c4_002, _code_e4_005, _code_e4_010, _code_e4_009, _code_e4_007, _code_c1_004, _code_c1_005, _code_b4_009, _code_e3_003, _code_e3_004,),
     "english": (_english_a1_004, _english_a2_008, _english_a5_001, _english_a3_002, _english_b1_002, _english_b2_002, _english_c3_001, _english_c3_003, _english_c5_002, _english_d4_001, _english_c1_006, _english_c2_003, _english_c5_005, _english_d3_003, _english_b4_007, _english_b4_008, _english_b4_012, _english_b4_010, _english_b4_011, _english_f1_005,),
-    "math": (_math_a3_001, _math_a1_005, _math_a5_002, _math_b2_001, _math_b4_001, _math_b5_001, _math_c5_001, _math_c3_004, _math_c1_001, _math_c2_001, _math_c5_006, _math_c3_005,),
+    "math": (_math_a3_001, _math_a1_005, _math_a6_003, _math_a5_002, _math_b2_001, _math_b4_001, _math_b5_001, _math_c5_001, _math_d3_005, _math_c3_004, _math_c1_001, _math_c2_001, _math_c5_006, _math_c3_005,),
     "sci": (_sci_b4_013, _sci_b2_003, _sci_b5_002, _sci_a1_006, _sci_a6_002, _sci_c1_007, _sci_c2_004, _sci_c3_006, _sci_c4_003, _sci_d1_001, _sci_f1_006, _sci_d3_004,),
 }
 _FAMILY = {pack: family for family, rules in _PIPELINES.items() for make in rules for pack in SCOPE[_ID[make]]}  # pack_id -> family
