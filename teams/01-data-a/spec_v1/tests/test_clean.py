@@ -1,20 +1,268 @@
-"""Unit tests for clean.py. Every value here is made up; none comes from a pack.
+"""Unit tests for clean.py, the Spec v1 cleaner: its one function per disease code, the scope table at its top, and the
+build that writes it from specv1.md. Every text here is made up; none comes from a pack. Some science rules act only on
+documents the reviewers named, so those cases use the doc_id the rule lists in specv1.md (an ID, never the document's text).
 
   python -m pytest spec_v1/tests
+
+  1  every disease-code function, on every family that has a rule for it
+  2  the scope table and the build
+  3  the code family: licences, generated files, the shared F1
+  4  the English family: look-alikes, ZWJ and ZWNJ, DA-F1-005, clean() equal to the sheet
+  5  the math family
 """
+import re
+import subprocess
 import sys
+import textwrap
+from functools import cache
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+SPEC = Path(__file__).resolve().parents[1]
+BUILD = SPEC.parent / "tools" / "build_clean.py"
+sys.path.insert(0, str(SPEC))
 import clean as c
 
 AT = "@"  # the secret and email scans read added lines, so made-up values are joined at run time
-GO_CODE = 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("hi")\n}\n'
-EN_TEXT = "The river rises in the hills and runs south to the sea.\nFarmers along its banks grow rice and wheat.\n"
-LICENCE = "// Licensed under the Apache License, Version 2.0 (the License);\n// you may not use this file except in compliance with the License.\n// You may obtain a copy of the License at\n//     the licence site\n// Unless required by applicable law or agreed to in writing, software\n// distributed under the License is distributed on an AS IS BASIS,\n// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.\n"
+ZWJ, ZWNJ = chr(0x200D), chr(0x200C)  # written as numbers: a raw joiner in code is invisible
+FAMILIES = {"code": {"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"},
+            "english": {"en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"},
+            "math": {"math-finemath", "math-megamath"}, "sci": {"sci-finepdfs"}}
+PACKS = sorted(set().union(*FAMILIES.values()))
+SHEET = (SPEC / "sheets" / "specv1.md").read_text(encoding="utf-8")
+SECTIONS = re.findall(r"^## Medicine \d+ — (\w+) / \w+ / `(DA-[A-H]\d-\d{3})`", SHEET, re.M)
 
+GO_CODE = 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("hi")\n}\n'
+JAVA_CODE = "class A {\n    int x = 1;\n}\n"
+LICENCE = ("// Licensed under the Apache License, Version 2.0 (the License);\n// you may not use this file except in compliance with the License.\n"
+           "// You may obtain a copy of the License at\n//     the licence site\n// Unless required by applicable law or agreed to in writing, software\n"
+           "// distributed under the License is distributed on an AS IS BASIS,\n// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.\n")
+EN_TEXT = "The river rises in the hills and runs south to the sea.\nFarmers along its banks grow rice and wheat.\n"
+PARA = ("The river rises in the hills and runs south to the sea. "
+        "Farmers along its banks grow rice and wheat in the dry months.")
+RUSSIAN = "Это строка на русском языке."
+HINDI_ZWJ = "क्‍ष"   # half ka + ssa: the joiner asks for the half form
+HINDI_ZWNJ = "क्‌ष"  # ka + virama + ssa: the joiner stops the conjunct
+OTHER_LANGS = ("hi", "mr", "fr", None)  # not English and not a code language: every rule keeps
+BODY = "Let x be a real number. Then x squared is never negative, so the sum of two squares is at least zero.\n"
+SCI = "We measured the reaction rate at 300 K. The rate constant was 2.5 per second, as Table 1 shows.\n"
+OPENING = ("Background. " + SCI + "The second sentence of the abstract explains the sample, the method and the error bars.\n"
+           "A third line names the funding body and the year of the survey, which was 2019.\n")  # 200+ characters, no repeat inside
+
+
+def doc(pack, text, lang): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": lang, "pack_id": pack}
+def code(text, lang="go", pack="code-go"): return {"doc_id": "x", "text": text, "url": "a/b", "lang_label": lang, "pack_id": pack}
+def maths(text, pack="math-finemath"): return doc(pack, text, "en")
+def sci(text, doc_id="x"): return dict(doc("sci-finepdfs", text, "en"), doc_id=doc_id)
+
+
+def en(text, lang="en"):
+    """A document of an English pack: en-dclm is tagged en, en-nemotroncc is tagged eng."""
+    return doc("en-nemotroncc" if lang == "eng" else "en-dclm", text, lang)
+
+
+def joiners(s):
+    return s.count(ZWJ), s.count(ZWNJ)
+
+
+# 1. Every disease-code function, on every family that has a rule for it
+
+# (family, function, document, what the function does, the text after a fix: None checks only that the text changed)
+SICK = [
+    ("code", "A1", code("﻿" + GO_CODE), "fix", None),
+    ("code", "A2", code(GO_CODE.replace("\n", "\r\n")), "fix", None),
+    ("code", "A6", code("package main // pаssword\n"), "fix", None),  # a Cyrillic a inside a Latin word
+    ("code", "A4", code("package main\n// ��\n"), "fix", None),
+    ("code", "B3", code("<reponame>a/b\n" + GO_CODE), "fix", None),
+    ("code", "E1", code("// Code generated by protoc-gen-go. DO NOT EDIT.\n" + GO_CODE), "drop", None),
+    ("code", "E2", code(GO_CODE + "var blob = []byte{" + "0x00, " * 40 + "}\n"), "drop", None),
+    ("code", "C3", code('package main\n\nfunc main() {\n\tfmt.Println("hi\n'), "drop", None),
+    ("code", "C4", code(JAVA_CODE + "_" * 25 + "\n" + JAVA_CODE, "java", "code-java"), "drop", None),  # two files joined
+    ("code", "E4", code(LICENCE + "\n" + GO_CODE), "fix", None),
+    ("code", "C1", code("package v1\n\n// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!\ntype A struct{}\n"), "fix", None),
+    ("code", "B4", code('package main\nconst a = "<NAME>"\n'), "fix", None),
+    ("code", "E3", code('package main\nconst k = "AKIA' + "ABCDEFGHIJKLMNOP" + '"\n'), "fix", None),
+    ("code", "F1", code("package main // by a" + AT + "mail.io\n"), "fix", None),  # the shared F1, tools/f1_rule.py
+
+    ("english", "A1", en("Hello​world﻿ and more."), "fix", "Helloworld and more."),
+    ("english", "A2", en("Bell\x07 here\r\nnext line"), "fix", "Bell here\nnext line"),
+    ("english", "A3", en("The cafÃ© didnâ€™t open on Monday. " + PARA), "fix", "The café didn't open on Monday. " + PARA),  # mojibake
+    ("english", "A5", en("Café au lait"), "fix", "Café au lait"),  # a decomposed accent
+    ("english", "B1", en("Fish &amp; chips&nbsp;today &mdash; fresh."), "fix", "Fish & chips today — fresh."),
+    ("english", "B2", en("<p>First paragraph.</p><div>Second paragraph.</div>"), "fix", " First paragraph. Second paragraph. "),
+    ("english", "C3", en("The council will meet on Monday to discuss the"), "drop", None),
+    ("english", "C3", en("Short teaser ending here [...]"), "drop", None),
+    ("english", "C5", en("Buy cheap nfl jerseys today and ray ban sunglasses outlet deals. " + PARA), "drop", None),
+    ("english", "C5", en(PARA + "\nTags: river, farming, rice"), "fix", PARA),
+    ("english", "D4", en("{Hello|Hi} there, {friend|buddy}. " + PARA), "drop", None),
+    ("english", "C1", en(PARA + "\nShare this:\n" + PARA), "fix", PARA + "\n" + PARA),
+    ("english", "C2", en("Subscribe to our newsletter\n" + PARA + "\nSubscribe to our newsletter\nMore text.\nSubscribe to our newsletter"),
+     "fix", "Subscribe to our newsletter\n" + PARA + "\n\nMore text.\n"),
+    ("english", "D3", en(PARA + "\n" + RUSSIAN + "\n" + PARA), "fix", PARA + "\n" + PARA),
+    ("english", "B4", en("Welcome {{ user.name }} to the shop. " + PARA), "fix", "Welcome  to the shop. " + PARA),
+    ("english", "B4", en("Total Due After -DATE-: 40 dollars. " + PARA), "fix", "Total Due After the Due Date: 40 dollars. " + PARA),
+    ("english", "B4", en("Price: NaN\n" + PARA), "fix", "Price:\n" + PARA),
+    ("english", "B4", en("She called it'smart work' today. " + PARA), "fix", "She called it 'smart work' today. " + PARA),
+    ("english", "B4", en(PARA + " The text does not mention the price. " + PARA), "fix", PARA + " " + PARA),
+    ("english", "F1", en(PARA + "\nCall me on 555-867-5309 or write to ravi.kumar" + AT + "gmail.com."), "fix",
+     PARA + "\nCall me on <PHONE> or write to <EMAIL>."),  # DA-F1-005
+    ("english", "F1", en(PARA + "\nI live at 42 Elm Street, Springfield, IL 62704."), "fix", PARA + "\nI live at <ADDRESS>."),
+
+    ("math", "A3", maths("Hereâ€™s the proof.\n" + BODY), "fix", None),  # mojibake of a right single quote
+    ("math", "A1", maths("Area​ of a circle is pi r squared.\n" + BODY), "fix", None),
+    ("math", "A5", maths("the ﬁrst term\n" + BODY), "fix", None),  # the fi ligature
+    ("math", "B2", maths("x<br>y and <strong>z</strong>\n" + BODY), "fix", None),
+    ("math", "B4", maths("{{ 'course-label' | message }}\n" + BODY), "fix", None),
+    ("math", "B5", maths("$$$x^2$$\n" + BODY), "fix", None),
+    ("math", "C5", maths(BODY + "See more: Ten Fun Facts About Algebra\n"), "fix", None),
+    ("math", "C5", maths("Study guides\n\nQ: What is 3 divided by 4?\n\nWrite your answer...\n\nSubmit\n\nRelated questions\n\nIt is 0.75.\n",
+                         "math-megamath"), "drop", None),
+    ("math", "C3", maths("This preview shows page 1 - 2 out of 4 pages.\n" + BODY), "drop", None),
+    ("math", "C1", maths(BODY + "Share\nWrite a comment\n"), "fix", None),
+    ("math", "C2", maths(BODY + "Introductory Physics Homework Help forum\n" * 6), "fix", None),
+
+    ("sci", "B4", sci("Call FUN and <function name> in the text.\n" + SCI), "fix", None),
+    ("sci", "B2", sci("The area is 4 m<sup>2</sup> at the start.\n" + SCI, "7ea84af3398cb3ed"), "fix", None),  # a reviewed ID
+    ("sci", "B5", sci("Rates rose\\footnote{See the appendix.} in May.\n" + SCI, "80c340aef304a24c"), "fix", None),  # a reviewed ID
+    ("sci", "A1", sci("Rates​ rose.\n" + SCI), "fix", None),
+    ("sci", "A6", sci("A smooth抽吸 surface.\n" + SCI, "12e943fb710cab5b"), "fix", None),  # the one reviewed intrusion
+    ("sci", "C1", sci("A Study of Rates\nMPRA Paper No. 12345, posted 1 May 2020 10:00 UTC\n" + SCI * 12), "fix", None),  # an archive cover
+    ("sci", "C2", sci(OPENING + OPENING + "The end of the paper.\n"), "fix", None),  # the opening passage twice
+    ("sci", "C3", sci(SCI, "26a07693d706218f"), "drop", None),  # reviewed: cut off beyond repair
+    ("sci", "C4", sci(SCI, "44f66c3734e3d5ca"), "drop", None),  # reviewed: two records joined
+    ("sci", "D1", sci(SCI, "44f66c3734e3d5ca"), "drop", None),  # reviewed: wrong language label
+    ("sci", "F1", sci(SCI, "b0d032fadb33dbf4"), "drop", None),  # DA-F1-006: a reviewed private-person record
+    ("sci", "D3", sci(SCI + "Le taux est élevé.\n"), "keep", None),  # DA-D3-004 keeps mixed language: it has no sick case
+]
+ENGLISH_SICK = [(fn, d["text"], action, after) for fam, fn, d, action, after in SICK if fam == "english"]
+CLEAN = {"code": code(GO_CODE), "english": en(PARA + "\n\n" + PARA), "english, tagged eng": en(PARA + "\n\n" + PARA, "eng"),
+         "math": maths(BODY * 3), "math, display maths": maths(BODY + "Display: $$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$ and $$a$$$$b$$ are two blocks.\n"),
+         "sci": sci(SCI * 2)}
+
+
+def test_every_function_is_tested_on_every_family_it_has_a_rule_for():
+    pairs = {(fam, c._ID[make].split("-")[1]) for fam, rules in c._PIPELINES.items() for make in rules} | {("code", "F1")}  # and the shared F1
+    assert {(fam, fn) for fam, fn, *_ in SICK} == pairs
+    assert set(c.RULES) == {fn for _, fn, *_ in SICK}  # one function per disease code
+    assert all(c.RULES[k].__name__ == k.lower() for k in c.RULES)
+
+
+@pytest.mark.parametrize("family, fn, row, action, after", SICK, ids=[f"{f}-{fn}-{i}" for i, (f, fn, *_) in enumerate(SICK)])
+def test_a_function_treats_a_sick_document(family, fn, row, action, after):
+    if (family, fn) == ("code", "F1"):
+        pytest.importorskip("tree_sitter_language_pack")  # the shared F1 reads comments and strings in code with tree-sitter
+    a, new = c.RULES[fn](row)
+    assert a == action
+    if action in ("drop", "keep"):
+        assert new == row["text"]  # a drop hands back the document as it was
+    elif after is not None:
+        assert new == after
+    else:
+        assert new != row["text"]
+
+
+@pytest.mark.parametrize("kind", CLEAN)
+@pytest.mark.parametrize("fn", list(c.RULES))
+def test_a_function_keeps_a_clean_document(kind, fn):
+    assert c.RULES[fn](CLEAN[kind]) == ("keep", CLEAN[kind]["text"])
+
+
+@pytest.mark.parametrize("kind", CLEAN)
+def test_clean_keeps_a_clean_document(kind):
+    assert c.clean(CLEAN[kind]) == ("keep", CLEAN[kind]["text"])
+
+
+# 2. The scope table (SCOPE) and tools/build_clean.py, which writes it from specv1.md
+
+def test_every_rule_has_one_scope_entry_in_sheet_order():
+    assert list(c.SCOPE) == list(c._RULE) == [rid for _, rid in SECTIONS] + ["f1_rule.py"]
+    assert all(isinstance(packs, frozenset) and packs for packs in c.SCOPE.values())
+
+
+def test_each_pack_is_in_exactly_one_family():
+    assert {f: {p for p, g in c._FAMILY.items() if g == f} for f in FAMILIES} == FAMILIES
+    for fam, rid in SECTIONS:
+        assert c.SCOPE[rid] <= FAMILIES[fam]
+
+
+def test_each_family_runs_its_rules_in_sheet_order():
+    assert {f: [c._ID[make] for make in rules] for f, rules in c._PIPELINES.items()} == {f: [rid for g, rid in SECTIONS if g == f] for f in FAMILIES}
+
+
+def test_the_f1_rules_cover_their_whole_family():
+    assert c.SCOPE["DA-F1-005"] == FAMILIES["english"]  # the instructor's F1 rule, never left out
+    assert c._PIPELINES["english"][-1] is c._english_f1_005  # and last in the English family
+    assert 'RULE_ID = "DA-F1-005"' in (SPEC / "clean.py").read_text(encoding="utf-8")
+    assert c.SCOPE["DA-F1-006"] == FAMILIES["sci"]
+    assert c.SCOPE["f1_rule.py"] == FAMILIES["code"]  # the shared F1
+    assert c.RULES["F1"] is c.f1
+
+
+def test_a_math_rule_takes_the_packs_of_its_origin():
+    assert c.SCOPE["DA-A1-005"] == {"math-finemath"} and c.SCOPE["DA-C5-001"] == {"math-megamath"}
+    assert c.SCOPE["DA-A3-001"] == FAMILIES["math"]
+
+
+@pytest.mark.parametrize("rid, text, lang", [
+    ("DA-A1-001", "﻿package main\n", "go"),                           # code A1: a BOM
+    ("DA-A1-004", "The river​ rises in the hills.\n", "en"),          # English A1: a zero-width space
+    ("DA-A1-005", "Area​ of a circle is pi r squared.\n", "en"),       # math A1, finemath only
+    ("DA-B4-013", "Call FUN and <function name> in the text.\n", "en"),    # science B4: a converter label
+])
+@pytest.mark.parametrize("pack", PACKS)
+def test_a_rule_acts_only_on_the_packs_of_its_scope(rid, text, lang, pack):
+    expect = "fix" if pack in c.SCOPE[rid] else "keep"
+    assert c._RULE[rid]()(doc(pack, text, lang))[0] == expect  # the rule's own guard, which reads SCOPE
+    assert c._run(doc(pack, text, lang), c._RULE[rid])[0] == expect  # and _run, which checks SCOPE before any rule
+
+
+def test_the_scope_table_decides(monkeypatch):
+    text = "﻿package main\n"
+    assert c.a1(doc("code-go", text, "go"))[0] == "fix"
+    monkeypatch.setitem(c.SCOPE, "DA-A1-001", frozenset({"code-cpp"}))
+    assert c.a1(doc("code-go", text, "go")) == ("keep", text)
+
+
+@pytest.mark.parametrize("pack", [None, "en-unknown"])
+def test_no_rule_runs_without_a_known_pack(pack):
+    row = {k: v for k, v in doc(pack, "﻿Area​ of <b>a</b> circle.\n", "en").items() if v is not None}
+    assert c.clean(row) == ("keep", row["text"])
+    assert all(c._run(row, make) == ("keep", row["text"]) for make in c._RULE.values())
+
+
+def build(tmp_path, sheet=SHEET):
+    (tmp_path / "specv1.md").write_text(sheet, encoding="utf-8", newline="\n")
+    return subprocess.run([sys.executable, "-I", str(BUILD), "--sheet", str(tmp_path / "specv1.md"), "--out", str(tmp_path / "clean.py")],
+                          capture_output=True, text=True)
+
+
+def with_packs(rid, packs):
+    """specv1.md with the SPEC_PACKS line of one rule changed."""
+    start = SHEET.index(f"/ `{rid}`")
+    end = SHEET.index("\n## Medicine ", start)
+    section = re.sub(r"^SPEC_PACKS = .*$", f"SPEC_PACKS = {packs!r}", SHEET[start:end], count=1, flags=re.M)
+    return SHEET[:start] + section + SHEET[end:]
+
+
+def test_the_build_writes_this_clean_py(tmp_path):
+    r = build(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert (tmp_path / "clean.py").read_bytes() == (SPEC / "clean.py").read_bytes()
+
+
+@pytest.mark.parametrize("rid, packs, error", [
+    ("DA-A1-004", set(), "applies to no pack"),
+    ("DA-A1-004", FAMILIES["english"] | {"math-finemath"}, "in two families"),
+    ("DA-F1-005", {"en-dclm"}, "DA-F1-005 must be in the sheet"),
+])
+def test_the_build_stops_on_a_bad_scope(tmp_path, rid, packs, error):
+    r = build(tmp_path, with_packs(rid, packs))
+    assert r.returncode != 0 and error in r.stderr
+    assert not (tmp_path / "clean.py").exists()
+
+
+# 3. The code family
 
 @pytest.fixture
 def prose(monkeypatch):
@@ -22,46 +270,18 @@ def prose(monkeypatch):
     monkeypatch.setattr(c, "_F1_LANGS", c._F1_LANGS | {"en"})
 
 
-def go(text): return {"doc_id": "x", "text": text, "url": "a/b.go", "lang_label": "go", "pack_id": "code-go"}
-def en(text): return {"doc_id": "x", "text": text, "url": "http://a/b", "lang_label": "en", "pack_id": "en-dclm"}
-
-
-@pytest.mark.parametrize("fn, text, action", [
-    (c.a1, "﻿" + GO_CODE, "fix"),
-    (c.a2, GO_CODE.replace("\n", "\r\n"), "fix"),
-    (c.a6, 'package main // pаssword\n', "fix"),  # a Cyrillic a inside a Latin word
-    (c.a4, "package main\n// ��\n", "fix"),
-    (c.b3, "<reponame>a/b\n" + GO_CODE, "fix"),
-    (c.e1, "// Code generated by protoc-gen-go. DO NOT EDIT.\n" + GO_CODE, "drop"),
-    (c.c3, 'package main\n\nfunc main() {\n\tfmt.Println("hi\n', "drop"),
-    (c.e4, LICENCE + "\n" + GO_CODE, "fix"),
-    (c.c1, "package v1\n\n// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!\ntype A struct{}\n", "fix"),
-    (c.b4, 'package main\nconst a = "<NAME>"\n', "fix"),
-    (c.e3, 'package main\nconst k = "AKIA' + "ABCDEFGHIJKLMNOP" + '"\n', "fix"),
-])
-def test_treats_a_sick_go_file(fn, text, action):
-    a, new = fn(go(text))
-    assert a == action
-    assert action == "drop" or new != text
-
-
-@pytest.mark.parametrize("fn", [c.a1, c.a2, c.a6, c.a4, c.b3, c.e1, c.e2, c.c3, c.c4, c.e4, c.c1, c.b4, c.e3, c.f1])
-def test_leaves_a_clean_go_file(fn):
-    assert fn(go(GO_CODE)) == ("keep", GO_CODE)
-
-
 def test_keeps_a_build_tag_when_a_licence_goes():
     text = "//go:build linux\n\n" + LICENCE + "\n" + GO_CODE
-    a, new = c.clean(go(text))
+    a, new = c.clean(code(text))
     assert a == "fix" and new.count("go:build linux") == 1 and "Apache" not in new
 
 
 def test_a_generated_file_with_its_banner_in_the_licence_is_dropped():
-    assert c.clean(go(LICENCE + "// Code generated by mockgen. DO NOT EDIT.\n" + GO_CODE))[0] == "drop"
+    assert c.clean(code(LICENCE + "// Code generated by mockgen. DO NOT EDIT.\n" + GO_CODE))[0] == "drop"
 
 
-def test_a_row_of_another_language_passes_unchanged():
-    row = {"doc_id": "x", "text": "﻿<reponame>a\n" + GO_CODE, "url": "", "lang_label": "fra"}
+def test_a_code_pack_row_of_another_language_passes_unchanged():
+    row = code("﻿<reponame>a\n" + GO_CODE, lang="fra")
     assert c.a1(row)[0] == c.b3(row)[0] == c.e4(row)[0] == "keep"
 
 
@@ -81,17 +301,28 @@ def test_a_row_of_another_language_passes_unchanged():
     ("She lives at 12 Elm Grove Road in the town.", "She lives at <ADDRESS> in the town."),
     ("The City Council is at 12 Elm Grove Road.", "The City Council is at 12 Elm Grove Road."),
 ])
-def test_f1_replaces_a_private_person_and_keeps_organisations(prose, line, expect):
+def test_shared_f1_replaces_a_private_person_and_keeps_organisations(prose, line, expect):
     assert c._shared_f1(en(line))[1] == expect
 
 
 @pytest.mark.parametrize("line", ["Released on 2021-03-14 at 10:30.", "Version 1.2.3.4 of the tool.", "Total 123 456 7890 units.", f"logo{AT}2x.png and {AT}types/node", 'x = [1000 2000 3000]'])
-def test_f1_leaves_numbers_and_code_that_look_alike(prose, line):
+def test_shared_f1_leaves_numbers_and_code_that_look_alike(prose, line):
     assert c._shared_f1(en(line)) == ("keep", line)
 
 
+def test_shared_f1_drops_a_personal_listing(prose):
+    listing = "\n".join(f"person{i}{AT}mail.io" for i in range(6))
+    assert c._shared_f1(en(listing))[0] == "drop"
+
+
+def test_shared_f1_keeps_a_long_article_with_one_address(prose):
+    text = EN_TEXT * 20 + f"Written by a{AT}mail.io\n"
+    a, new = c._shared_f1(en(text))
+    assert a == "fix" and "<EMAIL>" in new
+
+
 def test_b4_leaves_the_email_tag_and_fixes_the_others():
-    a, new = c.b4(go('package main\nconst a = "<EMAIL> <NAME> <KEY> <PASSWORD>"\n'))
+    a, new = c.b4(code('package main\nconst a = "<EMAIL> <NAME> <KEY> <PASSWORD>"\n'))
     assert a == "fix" and "<EMAIL>" in new and not any(t in new for t in ("<NAME>", "<KEY>", "<PASSWORD>"))
 
 
@@ -102,36 +333,166 @@ def test_b4_leaves_the_email_tag_and_fixes_the_others():
 ])
 def test_f1_in_code_touches_only_comments_and_strings(text, expect):
     pytest.importorskip("tree_sitter_language_pack")
-    assert c.f1(go(text))[1] == expect
+    assert c.f1(code(text))[1] == expect
 
 
-def test_f1_drops_a_personal_listing(prose):
-    listing = "\n".join(f"person{i}{AT}mail.io" for i in range(6))
-    assert c._shared_f1(en(listing))[0] == "drop"
+def test_the_shared_f1_runs_on_code():
+    row = code("package main\n")
+    assert c.f1(row) == c._shared_f1(row)
 
 
-def test_f1_keeps_a_long_article_with_one_address(prose):
-    text = EN_TEXT * 20 + f"Written by a{AT}mail.io\n"
-    a, new = c._shared_f1(en(text))
-    assert a == "fix" and "<EMAIL>" in new
-
-
-@pytest.mark.parametrize("row", [go(LICENCE + GO_CODE), go("<reponame>a\n﻿" + GO_CODE), go(GO_CODE.replace("\n", "\r\n")), en(EN_TEXT)])
-def test_clean_twice_is_clean_once(row):
+@pytest.mark.parametrize("row", [code(LICENCE + GO_CODE), code("<reponame>a\n﻿" + GO_CODE), code(GO_CODE.replace("\n", "\r\n"))])
+def test_clean_twice_is_clean_once_on_code(row):
     a, once = c.clean(row)
     assert a != "drop"
     assert c.clean(dict(row, text=once)) == ("keep", once)
 
 
-@pytest.mark.parametrize("row", [{"doc_id": "x", "text": "﻿<reponame>a\n" + GO_CODE, "url": "a/b.go", "lang_label": "go"},  # no pack_id
-                                 dict(go("﻿<reponame>a\n" + GO_CODE), pack_id="code-unknown")])
-def test_a_doc_without_a_known_pack_passes_unchanged(row):
-    assert c.clean(row) == ("keep", row["text"])
-
-
 def test_f1_tag_survives_a_second_clean():
     """This failed while B4 rewrote <EMAIL>: a second clean() turned the F1 tag into user@example.com."""
     pytest.importorskip("tree_sitter_language_pack")
-    a, once = c.clean(go(f"package main // by a{AT}mail.io\n"))
+    a, once = c.clean(code(f"package main // by a{AT}mail.io\n"))
     assert a == "fix" and "<EMAIL>" in once
-    assert c.clean(go(once)) == ("keep", once)
+    assert c.clean(code(once)) == ("keep", once)
+
+
+# 4. The English family
+
+# (code, a text that looks like the disease but is not: it must stay as it is)
+LOOK_ALIKE = [
+    ("A1", "A plain line with café and an em dash — here."),
+    ("A1", "Hindi keeps its joiners: " + HINDI_ZWJ + " and " + HINDI_ZWNJ + "."),
+    ("A2", "Tab\tseparated\nlines"),
+    ("A3", "A café in São Paulo opens at nine. " + PARA),
+    ("A5", "Café au lait"),
+    ("B1", "AT&T and R&D work together."),
+    ("B2", "Use the <p> tag to start a paragraph in HTML."),
+    ("C3", PARA),
+    ("C5", PARA + "\nThe tags on the bags were lost."),
+    ("D4", "Pipes like a|b and braces {x} are fine. " + PARA),
+    ("C1", PARA + "\nShare this story with your friends today.\n" + PARA),
+    ("C2", "Subscribe to our newsletter\n" + PARA + "\nSubscribe to our newsletter"),
+    ("D3", PARA + " He said спасибо to us."),
+    ("B4", PARA + " Sets use { and } braces."),
+    ("F1", PARA + "\nContact our office at info" + AT + "acme.com or call 1-800-555-0199."),
+    ("F1", PARA + "\nThe years 1990 to 2005 saw 3,000 new farms."),
+]
+
+# joiners in every context a rule could touch; no line here is one a rule removes
+JOINER_PROBES = dict(zip([
+    "hindi-zwj", "hindi-zwnj", "malayalam-chillu", "persian-zwnj", "emoji-family", "emoji-flag", "beside-a1-junk",
+    "crlf-and-control", "mojibake", "decomposed-accent", "html", "phone", "address", "long-paragraph", "joiner-in-tags"], [
+    "The word " + HINDI_ZWJ + " is written with a half ka.",
+    "The word " + HINDI_ZWNJ + " keeps the virama visible.",
+    "Old Malayalam writes ന്‍ for the chillu n.",
+    "In Persian, می‌خواهم means I want.",
+    "Our family \U0001F468‍\U0001F469‍\U0001F467 went on a trip.",
+    "Pride month \U0001F3F3️‍\U0001F308 starts in June.",
+    "Mixed​‍﻿‌ junk­ and joiners here.",
+    "Line one ‍\r\nLine two\x07 ‌ here.\r\n",
+    "The cafÃ© sells " + HINDI_ZWJ + " tea, didnâ€™t it?",
+    "Café and " + HINDI_ZWNJ + " together.",
+    "Entities &amp; joiners ‍ inside <b>bold ‌</b> text.",
+    "Call Ravi ‍ on 555-867-5309 tonight ‌ please.",
+    "He lives at 42 Elm Street ‍, Springfield, IL 62704 ‌ now.",
+    ("Hindi text uses " + HINDI_ZWJ + " and " + HINDI_ZWNJ + ". ") * 30,
+    PARA + "\n" + "Tags" + ZWJ + ": not a tag line, the joiner is inside the word\n" + PARA,
+]))
+
+
+@cache
+def sheet():
+    """The English blocks of specv1.md, in sheet order, each in its own namespace, as harm_test.py runs them."""
+    out = []
+    for rid, body in re.findall(r"^## Medicine \d+ — english / \w+ / `([^`]+)`\n(.*?)(?=^## Medicine |\Z)", SHEET, re.S | re.M):
+        ns = {"__name__": "rules"}
+        exec(textwrap.dedent(re.search(r"^```python\n(.*?)^```", body, re.S | re.M).group(1)), ns)
+        assert ns["RULE_ID"] == rid
+        out.append((rid, ns["medicine"]))
+    return out
+
+
+def run_sheet(row):
+    d = dict(row)
+    for _, m in sheet():
+        a, t = m(d)
+        if a == "drop":
+            return ("drop", row["text"])
+        d["text"] = t
+    return ("fix" if d["text"] != row["text"] else "keep", d["text"])
+
+
+@pytest.mark.parametrize("fn, text", LOOK_ALIKE, ids=[f"{x[0]}-{i}" for i, x in enumerate(LOOK_ALIKE)])
+def test_leaves_a_look_alike(fn, text):
+    assert c.RULES[fn](en(text)) == ("keep", text)
+
+
+@pytest.mark.parametrize("text", [t for _, t, _, _ in ENGLISH_SICK], ids=[f"{x[0]}-{i}" for i, x in enumerate(ENGLISH_SICK)])
+def test_a_row_of_another_language_passes_unchanged(text):
+    for lang in OTHER_LANGS:
+        row = en(text, lang)
+        assert all(fn(row) == ("keep", text) for fn in c.RULES.values())
+        assert c.clean(row) == ("keep", text)
+
+
+@pytest.mark.parametrize("text", [t for _, t, a, _ in ENGLISH_SICK if a == "fix"] + [PARA],
+                         ids=[f"{x[0]}-{i}" for i, x in enumerate(ENGLISH_SICK) if x[2] == "fix"] + ["plain"])
+def test_clean_twice_is_clean_once(text):
+    a, once = c.clean(en(text))
+    if a != "drop":
+        assert c.clean(en(once)) == ("keep", once)
+
+
+# Keep ZWJ and ZWNJ in all text (DISEASES.md, A1: "ZWJ U+200D and ZWNJ U+200C are NOT diseases in Indic text").
+
+@pytest.mark.parametrize("text", JOINER_PROBES.values(), ids=JOINER_PROBES.keys())
+def test_no_function_and_not_clean_deletes_a_joiner(text):
+    for fn in list(c.RULES.values()) + [c.clean]:
+        a, new = fn(en(text))
+        assert a != "drop", fn.__name__
+        assert joiners(new) == joiners(text), fn.__name__
+
+
+def test_a1_takes_the_junk_and_leaves_the_joiners_beside_it():
+    a, new = c.a1(en("Mixed​‍﻿‌ junk­ here."))
+    assert (a, new) == ("fix", "Mixed‍‌ junk here.")
+
+
+def test_d3_takes_a_joiner_only_with_a_whole_foreign_line():
+    """D3 deletes a line whose letters are mostly not Latin, so a Hindi line in an English document goes with its
+    joiners. That removes the line, not the joiner: a joiner in a line that stays is kept."""
+    hindi_line = "यह " + HINDI_ZWJ + "त्रिय है और " + HINDI_ZWNJ + " भी।"
+    english_line = "The half form " + HINDI_ZWJ + " appears in this English line."
+    a, new = c.d3(en(PARA + "\n" + hindi_line + "\n" + english_line))
+    assert (a, new) == ("fix", PARA + "\n" + english_line)
+    assert joiners(new) == joiners(english_line)
+
+
+@pytest.mark.parametrize("lang", ["en", "eng"])
+def test_f1_tags_survive_a_second_clean(lang):
+    text = PARA + "\nCall me on 555-867-5309 or write to ravi.kumar" + AT + "gmail.com.\nI live at 42 Elm Street, Springfield, IL 62704."
+    a, once = c.clean(en(text, lang))
+    assert a == "fix" and all(t in once for t in ("<PHONE>", "<EMAIL>", "<ADDRESS>"))
+    assert c.clean(en(once, lang)) == ("keep", once)
+
+
+@pytest.mark.parametrize("text", [t for _, t, _, _ in ENGLISH_SICK] + [t for _, t in LOOK_ALIKE] + list(JOINER_PROBES.values()),
+                         ids=[f"sick-{x[0]}-{i}" for i, x in enumerate(ENGLISH_SICK)] + [f"look-alike-{x[0]}-{i}" for i, x in enumerate(LOOK_ALIKE)]
+                         + [f"joiner-{k}" for k in JOINER_PROBES])
+def test_clean_gives_what_the_sheet_gives(text):
+    assert c.clean(en(text)) == run_sheet(en(text))
+
+
+# 5. The math family
+
+def test_a_teaser_cut_is_trimmed_to_the_last_sentence():
+    a, new = c.c3(maths(BODY + "The second claim follows from the first. A deeper unders..."))
+    assert a == "fix" and new.rstrip().endswith("first.")
+
+
+@pytest.mark.parametrize("row", [maths("Hereâ€™s a​ <br>proof.\nShare\n" + BODY),
+                                 maths("the ﬁrst <b>term</b>\n" + BODY, "math-megamath")])
+def test_clean_twice_is_clean_once_on_math(row):
+    a, once = c.clean(row)
+    assert a == "fix"
+    assert c.clean(dict(row, text=once)) == ("keep", once)

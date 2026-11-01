@@ -12,7 +12,7 @@ What checks the English family of `clean.py` on the English packs. Paths start a
 ## Run it, in this order
 
 ```
-pip install pyarrow pytest ftfy
+pip install pyarrow pytest ftfy tree-sitter-language-pack
 python -I tools/build_clean.py
 python -m pytest spec_v1/tests
 python -I spec_v1/scripts/verify_clean_english.py <folder with the packs>
@@ -25,6 +25,6 @@ python -I spec_v1/scripts/make_harm_tests_english.py <g1-harm-test checkout> <fo
 
 ## Kept, not used
 
-`spec_v1/clean_english.py`, `spec_v1/scripts/clean_english.py` and `spec_v1/scripts/build_clean_english.py` made the English cleaners before `specv1.md`. They are kept for the record. No script or test loads them, and `clean.py` runs the same English rules. `run_clean_english.py` is kept so the old command still works: it runs `run_clean.py`, which runs `clean.py`.
+`spec_v1/scripts/clean_english.py` and `spec_v1/scripts/build_clean_english.py` made the English-only cleaner before `specv1.md`. They are kept for the record: no script or test loads them, and `clean.py` runs the same English rules. `spec_v1/clean_english.py`, the code and English cleaner, has been removed. `run_clean_english.py` is kept so the old command still works: it runs `run_clean.py`, which runs `clean.py`.
 
 The sheet itself (`medicine_english.md`), `decisions_english.md` and `results/sheets/evidence_english.json`, `results/sheets/equivalence_english.json` were compiled from the annotators' sheets by scripts that are not in this repo yet.

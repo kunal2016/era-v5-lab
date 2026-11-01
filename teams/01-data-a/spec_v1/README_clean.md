@@ -6,7 +6,7 @@ How to build, test and run `clean.py`, the Spec v1 cleaner of Data A. Paths star
 
 `clean.py` is generated. Do not edit it: change `specv1.md` and rebuild (step 1).
 
-`clean.py` is the only cleaner to run. `clean_english.py` and `scripts/clean_english.py`, made for the English family before `specv1.md`, are kept but not used: no script or test loads them. `run_clean_english.py` is kept so the old command still works; it runs `run_clean.py`.
+`clean.py` is the only cleaner to run. `clean_english.py`, the English cleaner made before `specv1.md`, has been removed. `scripts/clean_english.py` is kept but not used: no script or test loads it. `run_clean_english.py` is kept so the old command still works; it runs `run_clean.py`.
 
 ## Contents
 
@@ -53,7 +53,11 @@ A pack file must be named after its pack ID, for example `en-dclm.parquet`. It n
 
 ## Quick start
 
-Run these from `teams/01-data-a/`:
+Run these from `teams/01-data-a/`. First install the packages, once. Include `tree-sitter-language-pack`: without it, the shared F1 cannot read code files and 5 unit tests are skipped.
+
+```bash
+pip install pyarrow ftfy tree-sitter-language-pack pytest
+```
 
 ```bash
 python -I tools/build_clean.py
@@ -122,15 +126,17 @@ It stops with an `AssertionError` that names the rule, and writes nothing, when:
 python -m pytest spec_v1/tests
 ```
 
-| file | what it tests |
-|---|---|
-| `test_functions.py` | Every one of the 24 functions, on every family that has a rule for it: a sick document it fixes or drops, and a clean document of each family that it keeps. It also checks that the table covers every function and family in `clean.py`, so a new rule cannot go untested. |
-| `test_scope.py` | The scope table, on all 13 packs:<br>• every rule has one entry, and each pack is in one family;<br>• each family runs in sheet order;<br>• a rule acts on its own packs only, and nothing runs without a known `pack_id`;<br>• the build reproduces `clean.py` and stops on a bad scope. |
-| `test_clean.py` | The code family in detail: a licence goes and the build tag stays, the shared F1 on prose and on code, and a second clean changes nothing. |
-| `test_math.py` | The math family in detail, including the rules that apply to one math pack only. |
-| `test_clean_english.py` | The English family in detail: sick documents and look-alikes for each code, ZWJ and ZWNJ kept, `DA-F1-005` on the English packs, and `clean()` equal to the English rules of `specv1.md`. |
+All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in five sections:
 
-Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `471 passed, 5 skipped` without `tree-sitter-language-pack`: the 5 skipped tests are the shared F1 on code.
+| section | what it tests |
+|---|---|
+| 1. Every disease-code function | Each of the 24 functions, on every family that has a rule for it: a sick document it fixes or drops (with the exact text after the fix for English), and clean documents of every family that it keeps. One test checks the table covers every function and family in `clean.py`, so a new rule cannot go untested. |
+| 2. The scope table and the build | The scope table, on all 13 packs:<br>• every rule has one entry, and each pack is in one family;<br>• each family runs in sheet order;<br>• the F1 rules cover their family, `DA-F1-005` on all four English packs;<br>• a rule acts on its own packs only, and nothing runs without a known `pack_id`;<br>• the build reproduces `clean.py` and stops on a bad scope. |
+| 3. The code family | A licence goes and the build tag stays, a generated file is dropped, the shared F1 on prose and in code, the code B4 rule keeps the `<EMAIL>` tag, and a second clean changes nothing. |
+| 4. The English family | Look-alikes kept, other languages untouched, ZWJ and ZWNJ kept, F1 tags survive a second clean, and `clean()` equal to the English rules of `specv1.md`. |
+| 5. The math family | A teaser cut trimmed to its last sentence, and a second clean changes nothing. |
+
+Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `435 passed` with `tree-sitter-language-pack` installed. Without it, 430 pass and 5 are skipped: the shared F1 on code (`pip install tree-sitter-language-pack`).
 
 ## Step 3: clean a pack
 
