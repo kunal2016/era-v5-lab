@@ -74,6 +74,16 @@ DESCRIPTION = ("words = runs of Unicode L/M/N characters plus ZWJ/ZWNJ (kept); D
                "Latin ligatures, fullwidth ASCII, vulgar fractions and Arabic presentation forms folded, then casefold(); "
                "everything else separates words")
 
+# These steps intentionally apply to the G1 line/document comparison keys,
+# not the G9 word-fingerprint API. They must not silently change normalize().
+KEY_ONLY_STEPS = ("B1", "A2", "space")
+
+# Each reported offset is the start of the original raw word span. A single
+# compatibility character such as 1/2 (U+00BD) can produce multiple normalized
+# words with the same source offset. Offsets refer to the text *passed in*,
+# which may already have been changed by clean.py.
+OFFSET_CONVENTION = "original_raw_word_start"
+
 A1_CHARS = "\u200b\ufeff\u00ad\u202a-\u202e\u2066-\u2069"   # DISEASES.md A1, removed
 JOINERS = "\u200c\u200d"                                    # ZWNJ, ZWJ: part of Indic script (A1, G2), kept
 _FOLD = re.compile("[\ufb00-\ufb06\uff01-\uff5e\u00bc-\u00be\u2150-\u215f\u2189\ufb50-\ufdff\ufe70-\ufeff]")   # the only compatibility folds
@@ -117,7 +127,13 @@ def _key(token):
 
 
 def words_with_offsets(text):
-    """Return [(word, char_offset)] for text. Offsets point into the original text, at the start of the word."""
+    """Return (normalized_word, original_raw_word_start) pairs.
+
+    The offsets are Python character indices in the *input* text, not in
+    text from an earlier cleaning stage. Several output words can share an
+    offset when one source token expands (e.g. U+00BD -> '1', '2'). They are
+    not end offsets or character-by-character alignment information.
+    """
     out = []
     for m in _RAW_WORD_RE.finditer(text):
         for w in WORD_RE.findall(_key(m.group())):
