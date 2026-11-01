@@ -1,4 +1,4 @@
-"""Unit tests for the English family of clean.py: its 20 rules, as tools/build_clean.py builds them from specv1.md, on the
+"""Unit tests for the English family of clean.py: its 20 rules, as spec_v1/tools/build_clean.py builds them from specv1.md, on the
 English packs. Every value here is made up; none comes from a pack.
 
   python -m pytest spec_v1/tests
@@ -215,7 +215,7 @@ def test_the_shared_f1_still_runs_on_code():
 # clean.py is the sheet, packaged
 
 def test_clean_runs_the_english_rules_in_the_sheet_order():
-    assert [c._ID[f] for f in c._PIPELINES["english"]] == [rid for rid, _ in sheet()], "rerun tools/build_clean.py"
+    assert [c._ID[f] for f in c._PIPELINES["english"]] == [rid for rid, _ in sheet()], "rerun spec_v1/tools/build_clean.py"
     assert all(c.SCOPE[rid] == ENGLISH_PACKS for rid, _ in sheet())
 
 

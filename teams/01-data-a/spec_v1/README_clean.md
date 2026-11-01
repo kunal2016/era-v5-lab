@@ -2,7 +2,7 @@
 
 How to build, test and run `clean.py`, the Spec v1 cleaner of Data A. Paths start at `teams/01-data-a/`.
 
-`clean.py` holds the 68 rules of `specv1.md` and the shared F1 rule, `../tools/f1_rule.py`. The rules come from four families, which together cover 13 packs. It has one function per disease code, 24 in all, and `clean(doc)`, which runs a document through every rule of its family in sheet order. At the top is `SCOPE`, a table of the packs each rule applies to. A rule runs only on its own packs, and its harm test uses only the gold sets of those packs.
+`clean.py` holds the 68 rules of `specv1.md` and the shared F1 rule, `tools/f1_rule.py`. The rules come from four families, which together cover 13 packs. It has one function per disease code, 24 in all, and `clean(doc)`, which runs a document through every rule of its family in sheet order. At the top is `SCOPE`, a table of the packs each rule applies to. A rule runs only on its own packs, and its harm test uses only the gold sets of those packs.
 
 `clean.py` is generated. Do not edit it: change `specv1.md` and rebuild (step 1).
 
@@ -56,7 +56,7 @@ A pack file must be named after its pack ID, for example `en-dclm.parquet`. It n
 Run these from `teams/01-data-a/`:
 
 ```bash
-python -I tools/build_clean.py
+python -I spec_v1/tools/build_clean.py
 ```
 
 ```bash
@@ -68,22 +68,22 @@ python -I spec_v1/run_clean.py --pack <packs folder>/en-dclm.parquet --out out
 ```
 
 ```bash
-python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder>
+python -I spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <packs folder>
 ```
 
 ## Step 1: build clean.py
 
 ```bash
-python -I tools/build_clean.py
+python -I spec_v1/tools/build_clean.py
 ```
 
 This reads `spec_v1/sheets/specv1.md` and writes `spec_v1/clean.py`. Use `--sheet` and `--out` to read or write somewhere else:
 
 ```bash
-python -I tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /tmp/clean.py
+python -I spec_v1/tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /tmp/clean.py
 ```
 
-**Rebuild after every change to `specv1.md` or `tools/f1_rule.py`.** The build gives the same file every time, and a unit test checks that `clean.py` matches a fresh build.
+**Rebuild after every change to `specv1.md` or `spec_v1/tools/f1_rule.py`.** The build gives the same file every time, and a unit test checks that `clean.py` matches a fresh build.
 
 ### What the build does
 
@@ -93,7 +93,7 @@ python -I tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /tmp/clean
 4. It puts each block in its own closure (`_<family>_<code>_<nnn>`), so helpers with the same name in two blocks do not clash. Two other changes are made to the blocks:
    - The `AUTHOR` line is dropped.
    - The code `DA-B4-009` rule no longer rewrites `<EMAIL>`, which is the F1 tag.
-5. It adds `tools/f1_rule.py` as the shared F1, in `SCOPE` under the name `f1_rule.py`, for the code packs.
+5. It adds `spec_v1/tools/f1_rule.py` as the shared F1, in `SCOPE` under the name `f1_rule.py`, for the code packs.
 6. It writes the 24 disease-code functions, `RULES`, `_PIPELINES` (each family's rules in sheet order), `_FAMILY` (pack to family) and `clean()`.
 
 ### What it prints
@@ -170,7 +170,7 @@ done
 ## Step 4: run the harm tests
 
 ```bash
-python -I tools/make_harm_tests.py <g1-harm-test checkout> <packs folder> [<another packs folder> ...]
+python -I spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <packs folder> [<another packs folder> ...]
 ```
 
 | argument | meaning |

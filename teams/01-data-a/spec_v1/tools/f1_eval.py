@@ -14,7 +14,7 @@ import pyarrow.parquet as pq
 from tree_sitter_language_pack import get_parser
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "spec_v1"))
+sys.path.insert(0, str(HERE.parent))
 import clean as c
 WT, PACKS = Path(sys.argv[1]), Path(sys.argv[2])
 N_PLANT = int(sys.argv[3]) if len(sys.argv) > 3 else 40

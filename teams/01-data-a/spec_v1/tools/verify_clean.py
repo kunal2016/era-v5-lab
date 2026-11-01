@@ -12,7 +12,7 @@ from pathlib import Path
 import pyarrow.parquet as pq
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "spec_v1"))
+sys.path.insert(0, str(HERE.parent))
 import clean as c
 WT, PACKS, SHEET = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 sheet = []

@@ -1,4 +1,4 @@
-"""Unit tests for the scope table at the top of clean.py (SCOPE) and for tools/build_clean.py, which writes it from specv1.md.
+"""Unit tests for the scope table at the top of clean.py (SCOPE) and for spec_v1/tools/build_clean.py, which writes it from specv1.md.
 Every text here is made up; none comes from a pack.
 
   python -m pytest spec_v1/tests
@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 SPEC = Path(__file__).resolve().parents[1]
-BUILD = SPEC.parent / "tools" / "build_clean.py"
+BUILD = SPEC / "tools" / "build_clean.py"
 sys.path.insert(0, str(SPEC))
 import clean as c
 

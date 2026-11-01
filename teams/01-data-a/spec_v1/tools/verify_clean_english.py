@@ -1,4 +1,4 @@
-"""Check ../clean.py against the English rules of ../specv1.md (the sheet it is built from) on every document of the English
+"""Check ../clean.py against the English rules of ../sheets/specv1.md (the sheet it is built from) on every document of the English
 packs. Prints IDs and counts only, never text.
 
   python -I verify_clean_english.py <packs dir>
