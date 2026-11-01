@@ -71,7 +71,7 @@ in the background:
 
 ## 1. Why this matters (the money view)
 
-- A run with 8 GPU nodes costs hundreds of dollars per hour (see `metrics/prices.yaml`; prices are still assumptions).
+- A run with 8 GPU nodes uses 8 node-hours every hour; every minute lost is paid on all of them (ADR 0004).
 - Interruptions are normal at this scale. The Session 15 reference run had one every ~13 hours; Llama 3 had 466
   in 54 days.
 - On each interruption we lose **the work since the last checkpoint** plus **the restart time**.
@@ -339,7 +339,7 @@ Full list with LOW / MEDIUM / HIGH thresholds: CK-01 … CK-20 in
 
 | ID | Metric | HIGH when | What to do |
 |---|---|---|---|
-| CK-01/02 | time / dollars since last commit | ≥ 2 × interval | saves are not committing: check S3 and CK-03 |
+| CK-01/02 | time / node-hours since last commit | ≥ 2 × interval | saves are not committing: check S3 and CK-03 |
 | CK-03 | failed saves in a row | ≥ 2 | look at `checkpoint.failed` cause (`nvme_full`, upload error) |
 | CK-04 | checksum mismatch | any | storage corruption: keep the checkpoint, investigate |
 | CK-05 | restore check failure | any | read both printed values; the job already fell back |

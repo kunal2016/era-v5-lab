@@ -1,16 +1,16 @@
 {
  "CK-01": {
   "name": "Time since last committed checkpoint",
-  "value": 1.1874,
+  "value": 1.3359,
   "unit": "x interval",
-  "severity": null,
+  "severity": "low",
   "computed": true
  },
  "CK-02": {
-  "name": "Compute dollars at risk (since last commit)",
-  "value": 0.6012,
-  "unit": "USD",
-  "severity": null,
+  "name": "Node-hours at risk (since last commit)",
+  "value": 0.0059,
+  "unit": "node-h",
+  "severity": "low",
   "computed": true
  },
  "CK-03": {
@@ -50,14 +50,14 @@
  },
  "CK-08": {
   "name": "Save stall as share of interval",
-  "value": 0.2872,
+  "value": 0.3008,
   "unit": "%",
   "severity": null,
   "computed": true
  },
  "CK-09": {
   "name": "Commit latency (stall end to committed)",
-  "value": 0.0635,
+  "value": 0.0662,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -85,14 +85,14 @@
  },
  "CK-13": {
   "name": "Restore time (job start to first productive step)",
-  "value": 92.6,
+  "value": 91.27,
   "unit": "s",
   "severity": null,
   "computed": true
  },
  "CK-14": {
   "name": "Work lost per incident",
-  "value": 0.9337,
+  "value": 0.9712,
   "unit": "x interval",
   "severity": "low",
   "computed": true
@@ -127,7 +127,7 @@
  },
  "CK-19": {
   "name": "Resharded resumes",
-  "value": 2,
+  "value": 1,
   "unit": "count",
   "severity": "low",
   "computed": true
@@ -141,7 +141,7 @@
  },
  "Q-01": {
   "name": "Main run not running (pending time)",
-  "value": 90.18,
+  "value": 90.15,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -155,7 +155,7 @@
  },
  "Q-03": {
   "name": "Reschedule latency (job end to running again)",
-  "value": 90.18,
+  "value": 90.15,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -169,7 +169,7 @@
  },
  "Q-05": {
   "name": "Main-run interruptions per day",
-  "value": 927.1357,
+  "value": 924.4969,
   "unit": "count/day",
   "severity": "high",
   "computed": true
@@ -183,7 +183,7 @@
  },
  "Q-07": {
   "name": "Allocated but not stepping",
-  "value": 92.599,
+  "value": 91.267,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -204,7 +204,7 @@
  },
  "Q-10": {
   "name": "Node replacement time (drain to spare running the job)",
-  "value": 422.224,
+  "value": 422.174,
   "unit": "s",
   "severity": "medium",
   "computed": true
@@ -232,7 +232,7 @@
  },
  "Q-14": {
   "name": "Team GPU-hours lost to preemption",
-  "value": 0.0922,
+  "value": 0.0,
   "unit": "node-h/week",
   "severity": null,
   "computed": true
@@ -267,14 +267,14 @@
  },
  "Q-19": {
   "name": "Goodput of the main run",
-  "value": 11.3053,
+  "value": 11.6275,
   "unit": "%",
   "severity": "high",
   "computed": true
  },
  "Q-20": {
   "name": "MTTR (fault to first productive step)",
-  "value": 81.6506,
+  "value": 81.9994,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -379,16 +379,16 @@
  },
  "H-14": {
   "name": "Step watchdog fired (hang)",
-  "value": 1.8396,
+  "value": 1.8343,
   "unit": "count/h",
   "severity": "medium",
   "computed": true
  },
  "H-15": {
   "name": "Straggler ratio (rank step time / median)",
-  "value": 1.1546,
+  "value": 1.0917,
   "unit": "ratio",
-  "severity": "medium",
+  "severity": "low",
   "computed": true
  },
  "H-16": {
@@ -400,7 +400,7 @@
  },
  "H-17": {
   "name": "Health check runtime (prolog)",
-  "value": 0.048,
+  "value": 0.058,
   "unit": "s",
   "severity": null,
   "computed": true
@@ -462,23 +462,23 @@
   "computed": false
  },
  "C-02": {
-  "name": "Cost per productive GPU-hour vs list price",
-  "value": 8.8454,
+  "name": "Node-hours per productive node-hour",
+  "value": 8.6003,
   "unit": "ratio",
   "severity": "high",
   "computed": true
  },
  "C-03": {
   "name": "Wasted share of main-run spend",
-  "value": 88.6947,
+  "value": 88.3725,
   "unit": "%",
   "severity": "high",
   "computed": true
  },
  "C-04": {
   "name": "Cost of one incident",
-  "value": 21.4587,
-  "unit": "x interval cost",
+  "value": 21.435,
+  "unit": "x interval node-hours",
   "severity": "high",
   "computed": true
  },
@@ -499,14 +499,14 @@
  "C-07": {
   "name": "Cross-zone / internet egress",
   "value": null,
-  "unit": "USD/day",
+  "unit": "GB/day",
   "severity": null,
   "computed": false
  },
  "C-08": {
   "name": "Unattached block volumes / old snapshots",
   "value": null,
-  "unit": "USD/month",
+  "unit": "GB",
   "severity": null,
   "computed": false
  },

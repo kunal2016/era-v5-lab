@@ -49,20 +49,17 @@ def main():
     ap.add_argument("--nodes", type=int, default=2)
     ap.add_argument("--interval-s", type=float, default=1800)
     ap.add_argument("--every", type=float, default=30)
-    ap.add_argument("--prices", default=os.path.join(HERE, "prices.yaml"))
     ap.add_argument("--sim", action="store_true")
     ap.add_argument("--once", action="store_true")
     a = ap.parse_args()
     cat = yaml.safe_load(open(CATALOG))
-    p = yaml.safe_load(open(a.prices))
-    price = p["instances"][p["main_instance"]]["on_demand_usd_h"] * a.nodes
-    interval_cost = price * a.interval_s / 3600
+    interval_cost = a.nodes * a.interval_s / 3600     # node-hours in one checkpoint interval
     hook = os.environ.get("V5_ALERT_WEBHOOK")
     state = {}          # metric id -> highest severity already raised
     while True:
         ev = read_all(a.events)
         if ev:
-            m, _ = compute(Run(ev, a.run, a.interval_s), price, a.sim)
+            m, _ = compute(Run(ev, a.run, a.interval_s), a.nodes, a.sim)
             for x in cat["metrics"]:
                 v = m.get(x["id"])
                 scale = interval_cost if x.get("scale") == "interval_cost" else 1.0

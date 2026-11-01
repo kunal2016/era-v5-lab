@@ -1,7 +1,7 @@
-# drill ctld_failover (2026-10-30 21:55:11 IST)
+# drill ctld_failover (2026-11-01 22:25:48 IST)
 
 ## results
-PASS {"drill": "controller_failover", "pass": true, "takeover_s": 81.9, "job_via_backup": "14", "main_run_state_after": "RUNNING"}
+PASS {"drill": "controller_failover", "pass": true, "takeover_s": 82.1, "job_via_backup": "14", "main_run_state_after": "RUNNING"}
 
 ## commands (polling commands not listed)
 $ [slurmctld] scontrol show hostnames c[1-2]
@@ -10,7 +10,7 @@ $ [slurmctld] scontrol show hostnames c[1-2]
   c2
 $ [slurmctld] RUN_ID=v5main V5_EVENTS_DIR=/s3/events /opt/venv/bin/python -c "import sys,json; sys.path.insert(0,'/opt/v5'); from common.events import emit; print(emit('drill.injected', **json.loads(sys.argv[1]))['time'])" '{"drill": "ctld_failover", "cause_class": "host"}'
   exit 0
-  2026-10-30T16:22:53.893Z
+  2026-11-01T16:53:31.039Z
 $ [slurmctld2] scontrol ping
   exit 0
   Slurmctld(primary) at slurmctld is DOWN
@@ -26,7 +26,7 @@ $ [slurmctld2] scontrol ping
   scontrol: error: xgetaddrinfo: getaddrinfo() failed: Name
 $ [slurmctld2] RUN_ID=v5main V5_EVENTS_DIR=/s3/events /opt/venv/bin/python -c "import sys,json; sys.path.insert(0,'/opt/v5'); from common.events import emit; print(emit('ctld.backup_in_control', **json.loads(sys.argv[1]))['time'])" '{"ctld": "slurmctld2"}'
   exit 0
-  2026-10-30T16:24:15.796Z
+  2026-11-01T16:54:53.095Z
 $ [slurmctld2] cd /tmp && runuser -u svc -- sbatch --parsable --export=ALL --account=arch -p debug --wrap hostname
   exit 0
   14

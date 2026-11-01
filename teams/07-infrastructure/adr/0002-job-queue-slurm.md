@@ -12,9 +12,8 @@
 
 ## Context
 
-V4 had **no scheduler**. GPUs were reached through many student cloud accounts and jobs were started by hand.
+V4 had **no scheduler**: jobs were started by hand.
 One cluster sat idle for 3 days; the only guard was a CPU-idle alarm. Restarts were typed by hand.
-V4 also ran two different software stacks (cu128 pins, and a cu130 nightly plus an S3 tarball).
 
 For V5 the instructor gives **no keys to students**, wants scheduling on **Slurm, validated in Docker Slurm**,
 and we will run on **cloud GPU nodes**. The cluster must:
@@ -24,7 +23,7 @@ and we will run on **cloud GPU nodes**. The cluster must:
   Team 12 quantization, Team 10 RL tests, Teams 01–03 CPU data jobs;
 - **restart the main run on its own** from the last committed checkpoint (ADR 0001);
 - keep sick nodes out of service (ADR 0003);
-- account for every GPU-hour and every dollar (ADR 0004).
+- account for every GPU-hour and node-hour (ADR 0004).
 
 Team 07 also runs the **two dry runs** (S15 team charter). The S15 reference run lost 9 of its 38 interruptions
 to slow storage reads.
@@ -103,7 +102,7 @@ the cloud; only the node lines differ (`support/simulation/slurm-docker/nodes.co
   NCCL versions and our kernels. At build time the image runs an import and version check (kept from V4).
 - Jobs run with `srun --container-image=<digest>`; the node image holds only the driver, the fast network, Enroot/Pyxis and Slurm.
 - The digest goes into every checkpoint manifest (ADR 0001); a different digest refuses to resume unless overridden.
-- **One stack only.** V4's second "nightly + tarball" path is not allowed. The Docker test image
+- **One stack only.** A second, hand-built software stack is not allowed. The Docker test image
   (`support/simulation/slurm-docker/Dockerfile`) pins torch 2.5.1 CPU the same way.
 
 ### 3. Storage
@@ -254,7 +253,7 @@ root
 ### 9. Goodput accounting
 
 > **In simple words.** We split every second of the main run into "trained the model" and named kinds of
-> waste, and put a dollar figure on each. Then we know where the money went.
+> waste, and count each in node-hours. Then we know where the GPU time went.
 
 | Bucket | Source |
 |---|---|
@@ -367,7 +366,7 @@ Good:
 - The main run cannot be starved, the rest is shared fairly and within budget, and idle nodes are stopped.
 - Restarts are automatic, use one script, and lose ≈ 0 work when there is a warning signal.
 - One pinned stack; training never reads from S3 directly.
-- Goodput, MTTR and dollars come from records, so the paper's failure table is factual.
+- Goodput, MTTR and node-hours come from records, so the paper's failure table is factual.
 
 Bad and accepted:
 

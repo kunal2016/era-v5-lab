@@ -34,7 +34,7 @@ docker run --rm -v "$PWD":/opt/v5:ro --entrypoint bash v5-slurm-sim:1 -c '
 # 3. the full Docker Slurm simulation, every drill (~25 min); ends with "N/N drills passed"
 python3 support/simulation/run_sim.py      # results in support/simulation/results/, summary in support/docs/sim_results.md
 
-# 4. cost model (prices are assumptions until metrics/prices.yaml is checked)
+# 4. cost model (results in node-hours; no price in the repo)
 docker run --rm -v "$PWD":/opt/v5 --entrypoint bash v5-slurm-sim:1 \
   -c 'cd /opt/v5 && python support/cost/cost_model.py --measured support/simulation/results/metrics.json'
 
@@ -56,5 +56,5 @@ the code can report a cause that has no plain-words explanation.
 - [ ] Each item in `docs/review_week1.md` is marked fixed / tested / open, with a reason.
 - [ ] Unit tests pass (steps 1–2); the simulation passes if you run it (step 3).
 - [ ] Every HIGH alert and every exit-78 cause says what to do (`metrics/README.md`, `docs/codes_and_actions.md`).
-- [ ] `metrics/prices.yaml` is checked against the provider's price list before any dollar figure is used.
+- [ ] the price of a node-hour is given at run time (`--price-per-node-h`) when a money figure is needed; the repo holds none.
 - [ ] Open points in each ADR have an owner and a date.

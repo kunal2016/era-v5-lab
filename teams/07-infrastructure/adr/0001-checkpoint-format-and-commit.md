@@ -42,7 +42,7 @@ Model sizes and precision are still open (TSAI fills them on 31 Oct).
 
 | Option | For | Against |
 |---|---|---|
-| A. `torch.save` of a gathered state dict on rank 0 | simple; one file | gathers 1–7 TB on one rank (V4's OOM-during-gather); no parallel write; slow |
+| A. `torch.save` of a gathered state dict on rank 0 | simple; one file | gathers several TB on one rank (V4's OOM-during-gather); no parallel write; slow |
 | B. DeepSpeed `save_checkpoint` (V4) | proven in V4; sharded | tied to DeepSpeed's engine and ZeRO stage; resharding needs `zero_to_fp32`; no integrity layer |
 | C. **`torch.distributed.checkpoint` (DCP) plus our own manifest and commit layer** | every rank writes in parallel; **reshards on load** to any world size, including 1 CPU; works with FSDP2 and DDP; no engine lock-in | newer API; the manifest/verify layer is our code |
 | D. Megatron distributed checkpoint | reshards; used at scale | brings in Megatron-Core, which we may not use |
@@ -262,7 +262,7 @@ and in [metrics_catalog.md](../support/docs/metrics_catalog.md). The ones that p
 
 | ID | Metric | HIGH when |
 |---|---|---|
-| CK-01/02 | Time / dollars at risk since the last commit | ≥ 2 × interval |
+| CK-01/02 | Time / node-hours at risk since the last commit | ≥ 2 × interval |
 | CK-03 | Consecutive failed saves | ≥ 2 |
 | CK-04 | Checksum mismatch | any |
 | CK-05 | Restore check failure | any |

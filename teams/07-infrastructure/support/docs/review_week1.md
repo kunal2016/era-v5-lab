@@ -45,7 +45,7 @@ fair share, GPU-minutes per account (main run 32.4 GPU-min in run 9), retention 
 "restart immediately" fix lost the main run in run 7 (see §2), so we use Slurm's supported setting
 `cred_expire`. Run 10 used 30 s (MTTR ≈ 55 s); the review showed that leaves no margin for a 30 s prolog, so
 run 11 uses 60 s (reschedule 90 s, MTTR 85 s). About 90 s per restart is the price of never losing the run; at
-8 nodes that is ≈ $23 per restart (assumed prices), small next to the work lost per failure.
+8 nodes that is ≈ 0.2 node-hours per restart, small next to the work lost per failure.
 
 Reporting gap found in run 8 and closed in run 9: GPU-minutes counted only the last segment of each requeued job
 (`sacct` without `-D`), so `mainrun` showed 0.2 GPU-minutes. With `-D`, run 9 shows 32.4.
@@ -123,7 +123,7 @@ test trainer uses DDP (every rank holds a full copy) and the Docker cluster shar
 |---|---|---|---|
 | C1 | How does a person get woken up? | `metrics/watch.py` raises `alert.fired` live and posts to a webhook (Team 08's pager). HIGH pages | FIXED + TESTED (fired live in the simulation) |
 | C2 | How is cost tracked per team? | Slurm GPU-minute budgets per account; cloud cost tags `v5:team/role/run/cluster` + the cloud's budget alerts at 50/75/90% | DECIDED; Budgets need the account |
-| C3 | What if an instance runs outside Slurm? | `support/cost/find_unmanaged.py`: C-05 HIGH with dollars per day; untagged instances listed | FIXED + TESTED (fixtures) |
+| C3 | What if an instance runs outside Slurm? | `support/cost/find_unmanaged.py`: C-05 HIGH with node-hours per day; untagged instances listed | FIXED + TESTED (fixtures) |
 | C4 | What if someone deletes the bucket? | versioning; only the retention role may delete; protected checkpoints replicated to a second region (deletes not replicated) | DECIDED (ADR 0001 §5) |
 | C5 | How do you upgrade image / driver / Slurm mid-run? | at a checkpoint: emergency save → roll nodes → requeue with `--allow-env-change` (logged); Slurm dbd → ctld → slurmd | DECIDED (ADR 0002 §11) |
 | C6 | Where are the logs? | node-local, shipped to S3 by Team 08's agent; 90 days, then the archive tier | DECIDED |
@@ -147,7 +147,7 @@ test trainer uses DDP (every rank holds a full copy) and the Docker cluster shar
 | D2 | A 1 MB checkpoint proves nothing about speed | `support/tools/bench_save.py` measures GPU-to-host and save speed; on Kaggle's GPUs now, on the GPU node in week 2 | OPEN (Kaggle run pending) |
 | D3 | Resharding is the easy DDP case | yes; FSDP/ZeRO-3 and expert-parallel resharding need Team 05's model | OPEN (week 2, ADR 0001 open points) |
 | D4 | The data loader is synthetic | `ckpt/loader_contract.py`: the test Teams 01/02's real loader must pass (save, resume, peek, skip); ours passes | FIXED; real loader OPEN (Teams 01/02) |
-| D5 | Prices are guesses | `metrics/prices.yaml` says so (`checked: null`); decisions rest on ratios | OPEN: check on the provider's price list |
+| D5 | Prices are guesses | results are in node-hours; the price is a run-time input with no value in the repo (TSAI review, 1 Nov); decisions rest on ratios | FIXED |
 
 ## 4. Still open, with owner
 

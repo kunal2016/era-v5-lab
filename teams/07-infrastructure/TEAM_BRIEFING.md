@@ -159,9 +159,9 @@ says what to do for each.
 - 74 measurements (catalogue in `metrics/catalog.yaml`), each with LOW / MEDIUM / HIGH thresholds and a first action.
 - **HIGH** pages a person now; **MEDIUM** is for today; **LOW** for the weekly review.
 - Every exit code, error and alert can be explained in plain words: `python metrics/explain.py <anything>`.
-- Cost: GPU-hours per team, the cost of a lost hour, and a check for paid machines that Slurm does not know
-  about (the "forgotten test box").
-- Prices in the repo are **assumptions** until checked against the real price list.
+- Cost in **node-hours**: GPU-hours per team, the node-hours a failure loses, and a check for running machines
+  that Slurm does not know about (the "forgotten test box").
+- The repo holds **no prices**: cost = node-hours × a price given at run time (`--price-per-node-h`).
 
 **Why.** An alert that only says "CK-05" at 3 a.m. wastes the first 20 minutes of an incident. Every alert names the
 next step.

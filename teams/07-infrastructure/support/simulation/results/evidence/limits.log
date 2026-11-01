@@ -1,4 +1,4 @@
-# drill limits (2026-10-30 20:49:53 IST)
+# drill limits (2026-11-01 22:29:28 IST)
 
 ## results
 PASS {"drill": "limit_wrong_account_refused", "pass": true, "message": "sbatch: error: Batch job submission failed: Invalid account or account/partition combination specified"}

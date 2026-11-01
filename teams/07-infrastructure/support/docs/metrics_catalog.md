@@ -13,7 +13,7 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | ID | Metric | Unit | Alert when | LOW | MEDIUM | HIGH | Why it matters (simple words) | Action | Sim |
 |---|---|---|---|---|---|---|---|---|---|
 | CK-01 | Time since last committed checkpoint | x interval | above | 1.2 | 1.5 | 2.0 | Everything trained since the last commit is lost if a node dies now. | Check checkpoint.failed events; if saves fail, fix storage before the next failure costs a full interval. | yes |
-| CK-02 | Compute dollars at risk (since last commit) | USD | above | 1.2 × interval cost | 1.5 × interval cost | 2.0 × interval cost | The same risk in money: cluster price x time since the last commit. | Same as CK-01. Thresholds are multiples of the cost of one interval. | yes |
+| CK-02 | Node-hours at risk (since last commit) | node-h | above | 1.2 × interval node-h | 1.5 × interval node-h | 2.0 × interval node-h | The same risk in node-hours: nodes x time since the last commit (cost = node-hours x price). | Same as CK-01. Thresholds are multiples of the node-hours in one interval. | yes |
 | CK-03 | Consecutive failed saves | count | above | — | 1 | 2 | One failed save doubles the work at risk; two in a row triples it. | Read the failure cause (nvme_full, IntegrityError, upload timeout) and fix it now. | yes |
 | CK-04 | Checksum mismatches (commit or restore) | count | above | — | — | 1 | A damaged checkpoint file. The restore skips it, but the cause (disk, network, S3) can damage the next one. | Find the hop that corrupts data (NVMe, network, S3). Pin the last good checkpoint. | yes |
 | CK-05 | Restore check failures (digest, probe, next batch, frozen) | count | above | — | — | 1 | The loaded state is not the saved state: a silent misload like V4's (loss 2.95 vs 2.55). | Stop the run; compare the printed saved/restored values; do not continue on that checkpoint. | yes |
@@ -93,11 +93,11 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | ID | Metric | Unit | Alert when | LOW | MEDIUM | HIGH | Why it matters (simple words) | Action | Sim |
 |---|---|---|---|---|---|---|---|---|---|
 | C-01 | Burn rate vs plan | ratio | above | 1.05 | 1.1 | 1.25 | Spending faster than the plan ends the budget before training ends. | Find what is running outside the capacity calendar; stop it. | no |
-| C-02 | Cost per productive GPU-hour vs list price | ratio | above | 1.08 | 1.11 | 1.25 | price / goodput: what one useful GPU-hour really costs. 1.11 = goodput 90%. | Fix the largest waste bucket (C-03). | yes |
-| C-03 | Wasted share of main-run spend | % | above | 8 | 10 | 20 | Stall + lost work + detection + reschedule + restore, in money. | The report lists each bucket in USD. | yes |
-| C-04 | Cost of one incident | x interval cost | above | 0.75 | 1.5 | 3.0 | (lost work + detect + reschedule + restore) x cluster price. | Large values: missing emergency save, slow restore, or no spare. | yes |
-| C-05 | Instances running that Slurm does not know | count | above | — | — | 1 | A forgotten GPU instance can cost thousands of dollars a day (V4: a cluster idle for 3 days). | Stop it now; find who started it. | no |
-| C-06 | Budget days left vs training days left | ratio | below | 1.2 | 1.0 | 0.8 | Below 1.0 the money runs out before training finishes. | Cut team allocations or the run length; decide early. | no |
-| C-07 | Cross-zone / internet egress | USD/day | above | 1 | 20 | — | Data transfer out of the region or across AZs is billed per GB; it should be near 0. | Keep nodes, bucket and eval in one region and zone; use a private storage endpoint. | no |
-| C-08 | Unattached block volumes / old snapshots | USD/month | above | 10 | 100 | — | Storage left behind keeps billing. | Delete or snapshot-and-delete. | no |
+| C-02 | Node-hours per productive node-hour | ratio | above | 1.08 | 1.11 | 1.25 | 1 / goodput: node-hours paid for one useful node-hour. 1.11 = goodput 90%. | Fix the largest waste bucket (C-03). | yes |
+| C-03 | Wasted share of main-run spend | % | above | 8 | 10 | 20 | Stall + lost work + detection + reschedule + restore, as a share of the run's node-hours. | The report lists each bucket in node-hours. | yes |
+| C-04 | Cost of one incident | x interval node-hours | above | 0.75 | 1.5 | 3.0 | (lost work + detect + reschedule + restore) x nodes, in node-hours. | Large values: missing emergency save, slow restore, or no spare. | yes |
+| C-05 | Instances running that Slurm does not know | count | above | — | — | 1 | A forgotten GPU node is billed for 24 node-hours a day and does no work. | Stop it now; find who started it. | no |
+| C-06 | Budget days left vs training days left | ratio | below | 1.2 | 1.0 | 0.8 | Below 1.0 the node-hour budget runs out before training finishes. | Cut team allocations or the run length; decide early. | no |
+| C-07 | Cross-zone / internet egress | GB/day | above | 10 | 100 | — | Data transfer out of the region or across AZs is billed per GB; it should be near 0. | Keep nodes, bucket and eval in one region and zone; use a private storage endpoint. | no |
+| C-08 | Unattached block volumes / old snapshots | GB | above | 100 | 1000 | — | Storage left behind keeps billing. | Delete or snapshot-and-delete. | no |
 | C-09 | Spare node cost share | % | above | 15 | 25 | — | One hot spare on a 2-node run is 33% extra; on 8 nodes 11%. Worth it only if it saves more restart time. | Let the spare run preemptible team work; revisit spare count vs MTBF. | no |

@@ -72,7 +72,7 @@ python metrics/explain.py 78          # or 137, loss_spike, CK-05, v5:xid, JobHe
 |---|---|---|
 | **Events** (`/var/log/v5/events/*.jsonl`, node-local) | every fact, with UTC time, host, run, job | ship the files (Team 08's agent → S3 / log store); one JSON per line, no free-text parsing |
 | **Live alerts** (`metrics/watch.py`) | `alert.fired` events + a webhook post when a metric reaches a new severity | set `V5_ALERT_WEBHOOK`; page on `severity: high` |
-| **Report** (`metrics/evaluate.py`) | goodput, incidents (MTTR per fault), dollars wasted, every metric with its level | after each dry run / daily; `metrics.json` for dashboards |
+| **Report** (`metrics/evaluate.py`) | goodput, incidents (MTTR per fault), node-hours wasted, every metric with its level | after each dry run / daily; `metrics.json` for dashboards |
 | **Slurm job Comment** | plain-words status of each job (`V5 HELD (78): loss spike at step 5880 …`) | `squeue -o "%.10i %.12T %.20r %k"` or `scontrol show job <id>` |
 | **Job log banner** | the same, longer: what happened / already done / what you do / detail | end of `/var/log/v5/logs/<job>-<id>.out` |
 | **Health report** | one JSON per check run, `verdict` + `drain_reason` | the `health.report` event; `/var/log/slurm/health-last.json` on the node |
@@ -221,7 +221,7 @@ nodes). The JSON report says which check; `explain.py <check name>` says what to
 | ID | Alert | HIGH when | First action |
 |---|---|---|---|
 | CK-01 | time since last commit | ≥ 2 × interval | check `checkpoint.failed`; fix storage before the next failure costs a full interval |
-| CK-02 | dollars at risk since last commit | ≥ 2 × interval cost | same as CK-01 |
+| CK-02 | node-hours at risk since last commit | ≥ 2 × interval node-hours | same as CK-01 |
 | CK-03 | failed saves in a row | ≥ 2 | read the cause (`nvme_full`, `IntegrityError`, `UploadTimeout`) and fix it now |
 | CK-04 | checksum mismatch | any | find the hop that corrupts data (NVMe, network, S3); pin the last good checkpoint |
 | CK-05 | restore check failure | any | stop; compare the printed saved/restored values; do not continue on that checkpoint |
@@ -277,8 +277,8 @@ nodes). The JSON report says which check; `explain.py <check name>` says what to
 | ID | Alert | HIGH when | First action |
 |---|---|---|---|
 | C-01 | burn rate vs plan | ≥ 1.25 × | find what runs outside the capacity calendar; stop it |
-| C-02 | cost per productive GPU-hour | ≥ 1.25 × list price | fix the largest waste bucket (C-03) |
-| C-03 | wasted share of main-run spend | ≥ 20% | the report lists each bucket in dollars |
+| C-02 | node-hours per productive node-hour | ≥ 1.25 | fix the largest waste bucket (C-03) |
+| C-03 | wasted share of main-run node-hours | ≥ 20% | the report lists each bucket in node-hours |
 | C-04 | cost of one incident | ≥ 3 × interval cost | missing emergency save, slow restore, or no spare |
 | C-05 | instance outside Slurm | any | stop it now; find who started it (`support/cost/find_unmanaged.py`) |
 | C-06 | budget days left vs training days left | ≤ 0.8 | cut allocations or run length; decide early |
@@ -308,8 +308,8 @@ Training still runs, but the last commit is getting old (CK-01 will follow). `ch
 
 | Panel | From |
 |---|---|
-| Main run: state + comment, step, last commit age (CK-01), dollars at risk (CK-02) | `squeue`, `train.step`, `checkpoint.committed` |
-| Goodput and waste buckets in dollars (Q-19, C-03) | `metrics.json` |
+| Main run: state + comment, step, last commit age (CK-01), node-hours at risk (CK-02) | `squeue`, `train.step`, `checkpoint.committed` |
+| Goodput and waste buckets in node-hours (Q-19, C-03) | `metrics.json` |
 | Incidents table: kind, cause, detect / reschedule / restore seconds, steps lost | `report.md` incidents |
 | Nodes: up / drained (with reason) / down / spare | `sinfo -R`, `node.drained` |
 | Alerts open by severity | `alert.fired` |
@@ -322,12 +322,12 @@ Training still runs, but the last commit is getting old (CK-01 will follow). `ch
 | File | What it does |
 |---|---|
 | `catalog.yaml` | **the single source**: every metric with LOW / MEDIUM / HIGH thresholds, why it matters, the action, owner |
-| `evaluate.py` | events → incidents, goodput, dollars, metric levels (`report.md`, `metrics.json`, `alerts.json`); `--render-md` writes the catalog page |
+| `evaluate.py` | events → incidents, goodput, node-hours, metric levels (`report.md`, `metrics.json`, `alerts.json`); `--render-md` writes the catalog page |
 | `watch.py` | live: recomputes every 30 s, emits `alert.fired`, posts to `V5_ALERT_WEBHOOK` |
 | `explain.py` | any code / cause / alert / reason → plain words + what to do; `--all` writes [codes_and_actions.md](../support/docs/codes_and_actions.md) |
 | `../common/reasons.py` | the table behind `explain.py`, the Slurm job comment and the job-log banner |
 | `../common/events.py` | the event format |
-| `prices.yaml` | instance prices (assumptions, `checked: null`) for the dollar metrics |
+| `prices.yaml` | cost inputs: GPUs per node, hardware speeds, checkpoint retention; the price is an input with no value (`--price-per-node-h`) |
 
 In `support/`: `tests/test_monitoring.py` fails if the code can report something that has no explanation.
 

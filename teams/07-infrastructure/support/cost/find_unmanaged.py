@@ -1,6 +1,6 @@
-"""Find cloud instances that cost money but are not Slurm nodes, and instances missing cost tags (ADR 0004).
+"""Find cloud instances that run (and are billed) but are not Slurm nodes, and instances missing cost tags (ADR 0004).
 
-In simple words: V4 lost money on a cluster that sat idle for 3 days. Here we list every running instance in
+In simple words: a forgotten node is billed every hour and does no work. Here we list every running instance in
 the account and compare it with the nodes Slurm knows. Anything running that Slurm does not know (a forgotten
 test box, a node Slurm thinks is powered off) is metric C-05, HIGH. Anything without the cost tags cannot be
 charged to a team in the cloud bill.
@@ -44,7 +44,7 @@ def slurm_nodes(path=None):
     return dict(line.split()[:2] for line in text.splitlines() if line.strip())
 
 
-def check(instances, nodes, prices):
+def check(instances, nodes, gpus_by_type):
     unmanaged, untagged, idle_powered = [], [], []
     for i in instances:
         name = i["tags"].get("Name", "")
@@ -52,18 +52,18 @@ def check(instances, nodes, prices):
         if missing:
             untagged.append({"id": i["id"], "name": name, "missing": missing})
         st = nodes.get(name)
-        cost = prices.get(i["type"], 0.0)
+        g = gpus_by_type.get(i["type"], 0)
         if i["tags"].get("v5:role") == "head":
             continue
         if st is None:
-            unmanaged.append({"id": i["id"], "name": name, "type": i["type"], "usd_h": cost,
+            unmanaged.append({"id": i["id"], "name": name, "type": i["type"], "gpus": g,
                               "why": "running, but not a Slurm node"})
         elif any(s in st for s in ("~", "powered_down", "power_down", "cloud")):
-            idle_powered.append({"id": i["id"], "name": name, "type": i["type"], "usd_h": cost,
+            idle_powered.append({"id": i["id"], "name": name, "type": i["type"], "gpus": g,
                                  "why": f"Slurm thinks it is powered down ({st})"})
     bad = unmanaged + idle_powered
     return {"unmanaged": bad, "untagged": untagged, "c05_count": len(bad),
-            "usd_per_day_at_risk": round(24 * sum(x["usd_h"] for x in bad), 2)}
+            "node_h_per_day_at_risk": 24 * len(bad), "gpu_h_per_day_at_risk": 24 * sum(x["gpus"] for x in bad)}
 
 
 def main():
@@ -76,9 +76,9 @@ def main():
     ap.add_argument("--prices", default=os.path.join(os.path.dirname(__file__), "..", "..", "metrics", "prices.yaml"))
     a = ap.parse_args()
     p = yaml.safe_load(open(a.prices))
-    prices = {k: v["on_demand_usd_h"] for k, v in p["instances"].items()}
+    gpus = {k: v["gpus"] for k, v in p["instances"].items()}
     inst = json.load(open(a.instances)) if a.instances else live_instances(a.instances_cmd)
-    res = check(inst, slurm_nodes(a.slurm_nodes), prices)
+    res = check(inst, slurm_nodes(a.slurm_nodes), gpus)
     emit("cost.unmanaged_check", **res)
     print(json.dumps(res, indent=1))
     return 4 if res["c05_count"] else (3 if res["untagged"] else 0)

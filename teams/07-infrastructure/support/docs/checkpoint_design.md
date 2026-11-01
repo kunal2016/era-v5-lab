@@ -64,7 +64,7 @@ weight.
 | Model (total params) | Checkpoint ≈ 14 B/param | Per GPU at 64 GPUs |
 |---|---|---|
 | 30B | 420 GB | 6.6 GB |
-| 500B (S16 worked example, 3% active) | 7.0 TB | 109 GB |
+| a frontier-size MoE | several TB | over 100 GB |
 
 The final V5 numbers wait for the model configuration, which freezes on 3 November.
 

@@ -76,7 +76,10 @@ def collectives(tmp_path, ranks, env=None):
                         "--master-port", port, f"--nproc_per_node={ranks}",
                         os.path.join(SUB, "health", "allreduce_test.py"), "--max-mb", "2", "--iters", "3",
                         "--out", str(out)],
-                       capture_output=True, text=True, timeout=180, env=dict(os.environ, **(env or {})))
+                       capture_output=True, text=True, timeout=180,
+                       # hide GPUs: these are the CPU (gloo) tests; on a 1-GPU machine two ranks would both pick
+                       # NCCL on the same GPU and fail (Team 08's cross-team run, #125)
+                       env=dict(os.environ, CUDA_VISIBLE_DEVICES="", **(env or {})))
     return p.returncode, json.load(open(out))
 
 

@@ -28,7 +28,7 @@ teams/07-infrastructure/
 ├── queue/           job queue       job_queue.py (job wrapper, exit codes, crash loop, spot watcher, drain, status)
 ├── slurm/           Slurm setup     slurm.conf, node files, job scripts, prolog/epilog/health hooks, accounts, DB backup, systemd units
 ├── health/          node health     health_check.py, xid_scan.py, allreduce_test.py (4 collectives), thresholds.yaml
-├── metrics/         monitoring      catalog.yaml (74 metrics), watch.py (live alerts), evaluate.py, explain.py, prices.yaml
+├── metrics/         monitoring      catalog.yaml (74 metrics), watch.py (live alerts), evaluate.py, explain.py, prices.yaml (cost inputs, no prices)
 ├── common/          shared          events.py (event format), reasons.py (every code → plain words + what to do)
 ├── ops/             operations      launch.sh (start everything in order, checked), cluster.env.example
 └── support/         optional: tests, the Docker Slurm simulation and its results, the test trainer, Kaggle GPU checks,
@@ -135,4 +135,4 @@ cluster this folder is mounted at `/opt/v5`, so `slurm.conf` and the job scripts
   `ckpt/loader_contract.py` (Teams 01/02).
 - Merging uz9ai's installer (`cluster.toml`) is phase B of [the merge plan](support/docs/merge_execution_plan.md).
 - The week-1 review findings and their fixes: [review_week1.md §2b](support/docs/review_week1.md).
-- Prices in `metrics/prices.yaml` are assumptions until checked; on-call rota and alert channel need people.
+- Cost results are in node-hours; the price of a node-hour is a run-time input (none in the repo). The on-call rota and alert channel need people.

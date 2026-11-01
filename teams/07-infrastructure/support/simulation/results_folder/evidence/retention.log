@@ -1,8 +1,8 @@
-# drill retention (2026-10-30 21:56:50 IST)
+# drill retention (2026-11-01 22:28:03 IST)
 
 ## results
-PASS {"drill": "retention", "pass": true, "deleted": 43, "protected": 11, "freed_bytes": 51190396, "store": "local"}
-PASS {"drill": "export_safetensors", "pass": true, "step": 6654}
+PASS {"drill": "retention", "pass": true, "deleted": 44, "protected": 12, "freed_bytes": 52377583, "store": "local"}
+PASS {"drill": "export_safetensors", "pass": true, "step": 6587}
 
 ## commands (polling commands not listed)
 $ [slurmctld] cd /tmp && runuser -u root -- sbatch --parsable --export=ALL --account=infra -p cpu --wrap '. /etc/v5/node.env; /opt/venv/bin/python /opt/v5/ckpt/ckpt.py retention --run /shared/ckpt/v5main --keep 3 --protect-every 5'

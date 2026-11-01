@@ -1,4 +1,4 @@
-# drill gpu_allocation (2026-10-30 21:27:26 IST)
+# drill gpu_allocation (2026-11-01 21:58:35 IST)
 
 ## results
 PASS {"drill": "gpu_allocation", "pass": true, "main_run_alloc": "cpu=8,node=2,billing=8,gres/gpu=4", "over_ask_rejected": "sbatch: error: Batch job submission failed: Requested node configuration is not available"}

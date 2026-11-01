@@ -188,8 +188,7 @@ so the review asked for margin: 60 s is twice the prolog budget.
 
 > **Lesson from simulation run 7.** We first forced an immediate restart (~4 s). Sometimes the job started
 > while the old credential was still valid; Slurm killed it ("Job credential revoked") and marked it
-> **FAILED**: the main run was lost. We removed that trick. ~90 s per restart (~$23 on 8 nodes at assumed
-> prices) is the price of never losing the run.
+> **FAILED**: the main run was lost. We removed that trick. ~90 s per restart (≈ 0.2 node-hours on 8 nodes) is the price of never losing the run.
 
 ### When there are not enough nodes
 
