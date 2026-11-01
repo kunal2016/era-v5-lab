@@ -1,5 +1,5 @@
 """Run each function of ../clean.py, and each English medicine, on each English gold set with the team's harm_test.py,
-and write ../results/cleaner/harm_tests_english.md: the English packs in more detail than ../../tools/make_harm_tests.py,
+and write ../results/cleaner/harm_tests_english.md: the English packs in more detail than ../tools/make_harm_tests.py,
 which writes ../results/cleaner/harm_tests.md for every pack.
 
   python -I make_harm_tests_english.py <g1-harm-test checkout> <packs dir> <gold dir with the disputed docs left in>
@@ -106,7 +106,7 @@ def main():
          f"(sha256 `{hashlib.sha256(HARM.read_bytes()).hexdigest()[:12]}`). "
          "Every pack, each rule on the gold sets of its own packs, is in `harm_tests.md`.", "",
          "## 1. Each function of clean.py on the English packs", "",
-         "`clean.py`: the one cleaner, built by `tools/build_clean.py` from `specv1.md`. A rule runs only on the packs of its `SCOPE` entry, "
+         "`clean.py`: the one cleaner, built by `spec_v1/tools/build_clean.py` from `specv1.md`. A rule runs only on the packs of its `SCOPE` entry, "
          f"so on these packs only the English rules act. The {len(english_codes)} functions with English rules; the other functions have "
          "no English rule and keep every English document (section 4).", "",
          head.format("function"), rule, goldrow(fn)]
@@ -141,11 +141,11 @@ def main():
           "| documents with a ZWJ or ZWNJ | " + " | ".join(str(pk[p]["docs_with_joiners"]) for p in PACKS) + " |",
           "| a ZWJ or ZWNJ deleted on its own | " + " | ".join(vcell(pk[p]["joiners_lost_in_kept_lines"]) for p in PACKS) + " |"]
     f1_path = CLEANER / "f1_eval_english.json"
-    if f1_path.exists():  # made by f1_eval_english.py, the English counterpart of tools/f1_eval.py
+    if f1_path.exists():  # made by f1_eval_english.py, the English counterpart of spec_v1/tools/f1_eval.py
         f1 = json.loads(f1_path.read_text(encoding="utf-8"))
         o += ["", "## 5. F1 on the English packs", "",
               "From `scripts/f1_eval_english.py` (`results/cleaner/f1_eval_english.json`). `DA-F1-005` is the F1 that `clean.py` runs on the English packs; the "
-              "shared `tools/f1_rule.py` is switched on for `en` and `eng` in memory only, to show what that would do. Each cell: docs F1 "
+              "shared `spec_v1/tools/f1_rule.py` is switched on for `en` and `eng` in memory only, to show what that would do. Each cell: docs F1 "
               "changes or drops after the other English rules, then the gold docs among them.", "",
               head.format("F1 rule"), rule]
         for name in ("DA-F1-005", "shared F1 (in memory)"):

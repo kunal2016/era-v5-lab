@@ -47,7 +47,7 @@ Fields of the template's rule card that are still open for every rule: independe
 | `DA-C1-006` | `DA-D3-003` | Both remove whole lines | C1 first | D3 first changes dclm 0, fineweb-edu 0, nemotroncc 1, synth 0 docs |
 | `DA-B4-007` to `DA-B4-011` | each other | Five B4 rules on different junk | Sheet order | Each acts after the ones before it: `DA-B4-007` dclm 0, fineweb-edu 0, nemotroncc 0, synth 8; `DA-B4-008` dclm 2, fineweb-edu 0, nemotroncc 0, synth 18; `DA-B4-009` dclm 5, fineweb-edu 0, nemotroncc 0, synth 0; `DA-B4-010` dclm 0, fineweb-edu 1, nemotroncc 0, synth 0; `DA-B4-011` dclm 0, fineweb-edu 0, nemotroncc 0, synth 1 |
 | B4 | `DA-F1-005` | B4 must not rewrite the F1 tags | F1 last | F1 before B4 changes dclm 0, fineweb-edu 0, nemotroncc 0, synth 0 docs; a second `clean()` leaves every F1 tag |
-| `DA-F1-005` | shared `tools/f1_rule.py` | Two F1 rules | `DA-F1-005` on English; the shared rule does not run on `en`, `eng` | `clean.py` runs `DA-F1-005` on the English packs and the shared rule on the code packs only (`SCOPE`; `tests/test_clean_english.py`). **Open:** question 6 of the decisions |
+| `DA-F1-005` | shared `spec_v1/tools/f1_rule.py` | Two F1 rules | `DA-F1-005` on English; the shared rule does not run on `en`, `eng` | `clean.py` runs `DA-F1-005` on the English packs and the shared rule on the code packs only (`SCOPE`; `tests/test_clean_english.py`). **Open:** question 6 of the decisions |
 | `DA-D3-003` | ZWJ, ZWNJ | A Hindi line in an English doc goes, with its joiners | Kept: D3 removes the line, never the joiner | Unit test; 0 English docs have a joiner |
 
 **Combined harm test** (`harm_test.py --rule all`; files in [results/cleaner/](../results/cleaner/) and [results/sheets/](../results/sheets/), made by [scripts/make_harm_tests_english.py](../scripts/make_harm_tests_english.py)):
@@ -66,7 +66,7 @@ With 0 hits the harm rate is only shown to be below about 3/n: dclm 4.8%, finewe
 ## 6. Dependencies
 
 - **Instructor ruling, F1, 31 Oct:** Replace each phone number, personal email address and street-level address of a private person with a typed placeholder: `<PHONE>`, `<EMAIL>`, `<ADDRESS>`. The rule written to it is `DA-F1-005`; it is never left out.
-- **Shared F1:** `tools/f1_rule.py` runs on the code packs only (`SCOPE` in `clean.py`). `clean.py` runs the English sheet's own F1, `DA-F1-005`, on the English packs.
+- **Shared F1:** `spec_v1/tools/f1_rule.py` runs on the code packs only (`SCOPE` in `clean.py`). `clean.py` runs the English sheet's own F1, `DA-F1-005`, on the English packs.
 - **TSAI decision, harm rule:** `max(1 document, 1%)` of each gold set; an empty gold set is NOT TESTABLE (exit code 2). In `harm_test.py` at `bae5163` with its tests.
 - **G2 Indic:** not part of this family. ZWJ and ZWNJ are kept in all text (`DISEASES.md` A1); `tests/test_clean_english.py` checks it.
 - **F2:** no English rule; waits on the G9 fingerprints.
@@ -111,7 +111,7 @@ Codes with fewer than 5 labelled rows on a pack are left out of this table.
 
 - `DA-D3-003` deletes whole lines that are mostly not Latin, so an Indic line in an English doc goes, with its joiners.
 - `DA-F1-005` reads an IP address and a group of digits as a phone on a private page, and leaves an organisation's page alone (`decisions_english.md`, F1).
-- `tools/build_clean.py` now keeps a family's own F1 where the shared rule does not run: the tool's owner should review it.
+- `spec_v1/tools/build_clean.py` now keeps a family's own F1 where the shared rule does not run: the tool's owner should review it.
 - 3 rules are held only so that the whole sheet fits with the disputed docs left in: question 1 of the decisions.
 
 ## 8. Freeze checklist

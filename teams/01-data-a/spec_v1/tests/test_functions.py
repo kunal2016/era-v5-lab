@@ -49,7 +49,7 @@ SICK = [
     ("code", "C1", code("package v1\n\n// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!\ntype A struct{}\n"), "fix"),
     ("code", "B4", code('package main\nconst a = "<NAME>"\n'), "fix"),
     ("code", "E3", code('package main\nconst k = "AKIA' + "ABCDEFGHIJKLMNOP" + '"\n'), "fix"),
-    ("code", "F1", code("package main // by a" + AT + "mail.io\n"), "fix"),  # the shared F1, tools/f1_rule.py
+    ("code", "F1", code("package main // by a" + AT + "mail.io\n"), "fix"),  # the shared F1, spec_v1/tools/f1_rule.py
 
     ("english", "A1", english("Hello​world﻿ and more."), "fix"),
     ("english", "A2", english("Bell\x07 here\r\nnext line"), "fix"),

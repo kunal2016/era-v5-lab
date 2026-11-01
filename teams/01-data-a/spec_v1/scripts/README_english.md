@@ -5,7 +5,7 @@ What checks the English family of `clean.py` on the English packs. Paths start a
 | script | makes |
 |---|---|
 | `scripts/verify_clean_english.py` | `results/cleaner/verify_clean_english.json`: `clean.py` gives the same action and text as the English rules of `specv1.md` on every English doc; a second run; ZWJ and ZWNJ. |
-| `scripts/f1_eval_english.py` | `results/cleaner/f1_eval_english.json`: F1 on the English packs, real hits and made-up values, as `tools/f1_eval.py` checks code. |
+| `scripts/f1_eval_english.py` | `results/cleaner/f1_eval_english.json`: F1 on the English packs, real hits and made-up values, as `spec_v1/tools/f1_eval.py` checks code. |
 | `scripts/order_checks_english.py` | `results/cleaner/order_checks_english.json`: the checks of the conflict ledger in `spec_v1_english.md`, on `medicine_english.md`. |
 | `scripts/make_harm_tests_english.py` | `results/cleaner/harm_tests_english.md`, and the reports of `clean.py` (`results/cleaner/`) and `medicine_english.md` (`results/sheets/`), official gold and with the disputed docs left in. |
 
@@ -13,7 +13,7 @@ What checks the English family of `clean.py` on the English packs. Paths start a
 
 ```
 pip install pyarrow pytest ftfy
-python -I tools/build_clean.py
+python -I spec_v1/tools/build_clean.py
 python -m pytest spec_v1/tests
 python -I spec_v1/scripts/verify_clean_english.py <folder with the packs>
 python -I spec_v1/scripts/f1_eval_english.py <g1-harm-test checkout> <folder with the packs>

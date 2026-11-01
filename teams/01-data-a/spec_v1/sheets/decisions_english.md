@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Ready for team review. Not approved or frozen.** 20 rules are `CANDIDATE` and in [medicine_english.md](medicine_english.md); 11 are `BLOCKED`. Every annotator rule that could not run now runs: the authors' code is unchanged, and what was missing is added from their own sheets (below). The whole sheet touches no official gold document on any English pack. `clean.py`, built by `tools/build_clean.py` from `specv1.md`, runs these rules and gives the same result as the sheet on all 2,000 English documents. It needs an independent reviewer, and the questions below need an answer.
+**Ready for team review. Not approved or frozen.** 20 rules are `CANDIDATE` and in [medicine_english.md](medicine_english.md); 11 are `BLOCKED`. Every annotator rule that could not run now runs: the authors' code is unchanged, and what was missing is added from their own sheets (below). The whole sheet touches no official gold document on any English pack. `clean.py`, built by `spec_v1/tools/build_clean.py` from `specv1.md`, runs these rules and gives the same result as the sheet on all 2,000 English documents. It needs an independent reviewer, and the questions below need an answer.
 
 ### Result per pack
 
@@ -38,11 +38,11 @@ Each pack is tested with the team's `harm_test.py --rule all` on its own gold se
 ### What changed in this round
 
 1. **Packaged as Spec v1.** The sheet is `medicine_english.md`, in the form of `medicine_code.md`: the gold and pack digests and the harm test of the whole sheet are added. Each code block is that of the earlier English sheet, unchanged; only the order in stage 10 changed (item 6).
-2. **`clean.py` is the one cleaner.** `tools/build_clean.py` builds it from `specv1.md`, which collates the four family sheets, with a `SCOPE` table of the packs each rule applies to; `run_clean.py` runs it on a pack. `clean_english.py` and `scripts/clean_english.py`, the English cleaners made before `specv1.md`, are kept but not used: no script or test loads them.
-3. **F1 on English is `DA-F1-005`.** `tools/build_clean.py` used to leave every sheet's F1 out for the shared `tools/f1_rule.py`, which does not run on `en` or `eng`. In `clean.py` each family runs its own sheet's F1 on its own packs: `DA-F1-005` on the English packs, and the shared rule on the code packs only (`SCOPE`).
+2. **`clean.py` is the one cleaner.** `spec_v1/tools/build_clean.py` builds it from `specv1.md`, which collates the four family sheets, with a `SCOPE` table of the packs each rule applies to; `run_clean.py` runs it on a pack. `clean_english.py` and `scripts/clean_english.py`, the English cleaners made before `specv1.md`, are kept but not used: no script or test loads them.
+3. **F1 on English is `DA-F1-005`.** `spec_v1/tools/build_clean.py` used to leave every sheet's F1 out for the shared `spec_v1/tools/f1_rule.py`, which does not run on `en` or `eng`. In `clean.py` each family runs its own sheet's F1 on its own packs: `DA-F1-005` on the English packs, and the shared rule on the code packs only (`SCOPE`).
 4. **Personal names are out of the text.** `AUTHOR` stays as a code field because the team's `medicine_conflicts.py` reads it.
-5. **F1 checked as `tools/f1_eval.py` checks it**, by `scripts/f1_eval_english.py`: see F1 below.
-6. **`DA-A5-001` runs before `DA-A3-002`** (decided 31 Oct). NFC composes the characters A3's signature looks for, so with A3 first, A3 repaired `68575a61a90990d5` (dclm) only on a second run. With A5 first it repairs it in one pass. No other English doc changes, and no harm number moves: that doc is in neither gold set. `tools/build_clean.py` lists the English codes in its `CODE_ORDER` in the sheet's order, so `harm_test.py`'s `ALL IN ORDER` on `clean.py` runs A5 before A3, as `clean()` does.
+5. **F1 checked as `spec_v1/tools/f1_eval.py` checks it**, by `scripts/f1_eval_english.py`: see F1 below.
+6. **`DA-A5-001` runs before `DA-A3-002`** (decided 31 Oct). NFC composes the characters A3's signature looks for, so with A3 first, A3 repaired `68575a61a90990d5` (dclm) only on a second run. With A5 first it repairs it in one pass. No other English doc changes, and no harm number moves: that doc is in neither gold set. `spec_v1/tools/build_clean.py` lists the English codes in its `CODE_ORDER` in the sheet's order, so `harm_test.py`'s `ALL IN ORDER` on `clean.py` runs A5 before A3, as `clean()` does.
 
 ### What was fixed
 
@@ -74,7 +74,7 @@ Not in the official gold: two readers said clean and the third did not, so the g
 
 **F1, 31 Oct:** Replace each phone number, personal email address and street-level address of a private person with a typed placeholder: `<PHONE>`, `<EMAIL>`, `<ADDRESS>`.
 
-- In the sheet: `DA-F1-005`, a new rule written to it, and never left out: `tools/build_clean.py` stops if it is missing or not on every English pack. It treats dclm 2/13, fineweb-edu 0/12, nemotroncc 1/13, synth 1/2 labelled F1 rows: most labelled rows are organisations' contacts, which readers labelled before the ruling and the ruling leaves alone, or hold no phone, email or street address.
+- In the sheet: `DA-F1-005`, a new rule written to it, and never left out: `spec_v1/tools/build_clean.py` stops if it is missing or not on every English pack. It treats dclm 2/13, fineweb-edu 0/12, nemotroncc 1/13, synth 1/2 labelled F1 rows: most labelled rows are organisations' contacts, which readers labelled before the ruling and the ruling leaves alone, or hold no phone, email or street address.
 - Out because they do not follow it: `DA-F1-002`, `DA-F1-003`, `DA-F1-004`.
 - Not in the ruling, so not treated: ID numbers (social security, card, Aadhaar, PAN) and names.
 
@@ -90,7 +90,7 @@ All the kept rules together went over the limit with disputed docs left in, alth
 
 ### F1 on the English packs
 
-`scripts/f1_eval_english.py`, the English counterpart of `tools/f1_eval.py`, with its made-up values (`results/cleaner/f1_eval_english.json`). The shared rule is switched on for `en` and `eng` in memory only, to show what switching it on would do; no file is changed.
+`scripts/f1_eval_english.py`, the English counterpart of `spec_v1/tools/f1_eval.py`, with its made-up values (`results/cleaner/f1_eval_english.json`). The shared rule is switched on for `en` and `eng` in memory only, to show what switching it on would do; no file is changed.
 
 | pack | `DA-F1-005`: docs fixed · gold touched · tags | shared F1 on English: docs fixed · gold touched · tags |
 |---|---|---|
@@ -149,15 +149,15 @@ Made-up details on a line of their own at the end of up to 40 real gold docs per
 | 3 | Do label sheets from open PRs count? None of the English sheets is merged. | Every "labelled rows" number |
 | 4 | C1: 3 C1 rules are BLOCKED (`DA-C1-003`, `DA-C1-004`, `DA-C1-007`), only by disputed docs; the sheet has `DA-C1-006`. | C1 coverage: 36 labelled rows treated by the sheet now |
 | 5 | F1: are ID numbers (social security, card, Aadhaar, PAN) of private persons also to be replaced, and with which placeholder? The 31 Oct ruling names phone, email and street address only. | F1 scope |
-| 6 | One F1 for every family: switch the shared `tools/f1_rule.py` on for English in place of `DA-F1-005`? | dclm: 1/62 gold (at the limit), and 2/170 with the disputed docs left in, over the limit |
+| 6 | One F1 for every family: switch the shared `spec_v1/tools/f1_rule.py` on for English in place of `DA-F1-005`? | dclm: 1/62 gold (at the limit), and 2/170 with the disputed docs left in, over the limit |
 | 7 | Widen `DA-F1-005` to Indian phone and address forms, and stop it reading IPs and digit groups as phones? It is the rule written to the instructor's ruling, so its behaviour changes only with the team's and the instructor's agreement. | F1 recall on English |
 
 ### Problems to report to the team
 
-- **`tools/build_clean.py` was changed.** The tool's owner should review it. It now writes one `clean.py` from `specv1.md`, with the `SCOPE` table at the top.
-- **`tools/make_harm_tests.py` rewrites `harm_tests.md` for every family at once**, and lists a family whose packs are not on the machine as NOT RUN. Run where the code packs are missing, it would drop the code results, so the English results are in `harm_tests_english.md`, made by `scripts/make_harm_tests_english.py`.
+- **`spec_v1/tools/build_clean.py` was changed.** The tool's owner should review it. It now writes one `clean.py` from `specv1.md`, with the `SCOPE` table at the top.
+- **`spec_v1/tools/make_harm_tests.py` rewrites `harm_tests.md` for every family at once**, and lists a family whose packs are not on the machine as NOT RUN. Run where the code packs are missing, it would drop the code results, so the English results are in `harm_tests_english.md`, made by `scripts/make_harm_tests_english.py`.
 - **`clean_english.py` and `scripts/clean_english.py` are not used.** They are kept for the record; `clean.py` is the one cleaner, and no script or test loads them.
-- **`tools/f1_eval.py` covers the code packs only** (tree-sitter, `code-*`). English has `scripts/f1_eval_english.py`.
+- **`spec_v1/tools/f1_eval.py` covers the code packs only** (tree-sitter, `code-*`). English has `scripts/f1_eval_english.py`.
 - **`README.md` names the English sheet `medicine_en.md`.** It is `medicine_english.md` here, so the family in `clean.py` is `english` and its rules are `_english_*`.
 
 ### Limits
