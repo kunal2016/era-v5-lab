@@ -175,7 +175,8 @@ def test_normalize_keeps_zwj_zwnj_and_indic_words(nid):
 def test_build_records_the_normalizer(toy):
     out, _, fp = toy
     assert fp.norm.id == fp.manifest["normalize_id"] == "g9-v1"
-    assert json.loads((out / "toy" / "MANIFEST.json").read_text(encoding="utf-8"))["normalize_id"] == "g9-v1"
+    # A g9-v1 benchmark MANIFEST.json has no normalize_id, the same as the v1 files, so v1 rebuilds byte for byte.
+    assert "normalize_id" not in json.loads((out / "toy" / "MANIFEST.json").read_text(encoding="utf-8"))
 
 
 def test_set_is_read_with_its_own_normalizer(tmp_path, toy, monkeypatch):
@@ -183,6 +184,7 @@ def test_set_is_read_with_its_own_normalizer(tmp_path, toy, monkeypatch):
     out, _ = build_toy(tmp_path, norms.get("test-no-z"))
     fp = Fingerprints(out)
     assert fp.norm.id == fp.manifest["normalize_id"] == "test-no-z"
+    assert json.loads((out / "toy" / "MANIFEST.json").read_text(encoding="utf-8"))["normalize_id"] == "test-no-z"
     leak = " ".join(w + "z" for w in TOY[1]["question"].split())  # "Whichz gasz doz ..."
     assert fp.check(leak)[0]           # the set built without z finds it
     assert not toy[2].check(leak)[0]   # the g9-v1 set does not

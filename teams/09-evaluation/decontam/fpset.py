@@ -172,6 +172,9 @@ def write_benchmark(set_dir, bid, items, n, meta=None, gram_filters=DEFAULT_GRAM
                 "items": n_items, "items_without_ngram": n_empty, "item_grams": n_grams,
                 "canaries": len(canaries or ()),
                 "shards": {str(k): v for k, v in sorted(shards.items())}}
+    if norm.id == UNSTATED_NORMALIZE_ID:
+        # v1 files do not name their normalizer. Leave the key out, so a v1 rebuild gives the v1 bytes.
+        del manifest["normalize_id"]
     (out / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     return manifest
 
