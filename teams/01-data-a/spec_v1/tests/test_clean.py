@@ -10,6 +10,7 @@ documents the reviewers named, so those cases use the doc_id the rule lists in s
   4  the English family: look-alikes, ZWJ and ZWNJ, DA-F1-005, clean() equal to the sheet
   5  the math family
   6  the shared F1 on the math and science packs: the prose path of spec_v1/tools/f1_rule.py (TSAI, 1 Nov)
+  7  spec_v1/tools/normalize.py: a standard copy of a text for comparing, which never changes a document
 """
 import re
 import subprocess
@@ -24,6 +25,8 @@ SPEC = Path(__file__).resolve().parents[1]
 BUILD = SPEC / "tools" / "build_clean.py"
 sys.path.insert(0, str(SPEC))
 import clean as c
+sys.path.insert(0, str(SPEC / "tools"))
+import normalize as nz
 
 AT = "@"  # the secret and email scans read added lines, so made-up values are joined at run time
 ZWJ, ZWNJ = chr(0x200D), chr(0x200C)  # written as numbers: a raw joiner in code is invisible
@@ -603,3 +606,44 @@ def test_clean_twice_is_clean_once_on_prose():
     a, once = c.clean(row)
     assert a == "fix"
     assert c.clean(dict(row, text=once)) == ("keep", once)
+
+
+# 7. spec_v1/tools/normalize.py: match_key and line_keys, a standard copy of a text for comparing. Never a document change.
+
+@pytest.mark.parametrize("a, b, disease", [
+    ("Fish &amp; chips&nbsp;today", "Fish & chips today", "B1"),            # HTML entities decoded
+    ("&#2361;", "ह", "B1"),                                            # a numeric entity: Devanagari ha
+    ("Bell\x07 here\r\nnext\x1b line", "Bell here\nnext line", "A2"),       # control characters gone, CRLF as LF
+    ("Hello​world﻿ soft­ware ‪left‬", "Helloworld software left", "A1"),  # invisible junk gone
+    ("Café au lait", "Café au lait", "A5"),                      # NFC: a decomposed accent
+    ("क़", "क़", "A5"),                                       # NFC: qa written two ways (nukta)
+    ("The River  Rises", "the river rises", "case"),                        # case and spacing
+])
+def test_match_key_evens_out_a_disease(a, b, disease):
+    assert nz.match_key(a) == nz.match_key(b)
+    assert disease in nz.explain(a) + nz.explain(b)
+
+
+@pytest.mark.parametrize("text", [
+    "क्‍ष and क्‌ष",               # G2: ZWJ and ZWNJ stay
+    "x² + y² and the ﬁrst term",                             # G4: no NFKC, superscripts and ligatures stay
+    "१२३ and ১২৩",                            # G4: Devanagari and Bengali digits stay
+    "किताब and দেশ",                # G1: vowel signs stay on their letters
+])
+def test_match_key_never_does_the_damage_of_section_g(text):
+    assert nz.match_key(text) == text
+    assert nz.explain(text) == []
+
+
+def test_line_keys_keep_the_lines():
+    assert nz.line_keys("Subscribe  NOW\nsubscribe now\n\nOther line") == ["subscribe now", "subscribe now", "", "other line"]
+    assert nz.match_key("Subscribe  NOW\nsubscribe now\n\nOther line") == "subscribe now subscribe now other line"
+
+
+def test_normalize_changes_no_document_and_clean_is_unaffected():
+    row = en("Fish &amp; chips​ today.\n" + PARA)
+    before = dict(row)
+    nz.match_key(row["text"]), nz.line_keys(row["text"]), nz.explain(row["text"])
+    assert row == before                                                     # the document is untouched
+    assert c.clean(row) == c.clean(before)                                   # and clean.py does not use it
+    assert not re.search(r"^\s*(import normalize|from normalize )", (SPEC / "clean.py").read_text(encoding="utf-8"), re.M)

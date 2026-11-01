@@ -1,14 +1,152 @@
-# Running clean.py
+# Cleaning packs with clean.py
 
-How to build, test and run `clean.py`, the Spec v1 cleaner of Data A. Paths start at `teams/01-data-a/`.
+This guide has two parts.
+
+- **[Part 1: Clean your packs](#part-1-clean-your-packs)** is for anyone with packs to clean. You don't need to know Python: you copy a few commands into a terminal and change the folder names to yours.
+- **[Part 2: For developers](#part-2-for-developers)** is for the people who change the rules, rebuild `clean.py`, or run the tests and harm tests. You don't need it to clean packs.
+
+# Part 1: Clean your packs
+
+## What the cleaner does
+
+A pack is a Parquet file of documents. The cleaner reads every document and does one of three things with it:
+
+| result | what it means |
+|---|---|
+| keep | nothing wrong was found: the document is unchanged |
+| fix | something inside it was repaired or removed, for example broken characters, leftover web-page text, template junk, or a private person's phone number, email or address, which is replaced with `<PHONE>`, `<EMAIL>` or `<ADDRESS>` |
+| drop | the document is left out, for example because it is cut off, spam, mostly in the wrong language, or a known private record |
+
+It knows 13 packs, in four families. Each pack gets only its own family's rules.
+
+| family | packs |
+|---|---|
+| code | `code-cpp`, `code-go`, `code-java`, `code-js-ts`, `code-python`, `code-rust` |
+| English | `en-dclm`, `en-fineweb-edu`, `en-nemotroncc`, `en-nemotroncc-synth` |
+| math | `math-finemath`, `math-megamath` |
+| science | `sci-finepdfs` |
+
+A pack it doesn't know, for example an Indic pack, comes out unchanged: nothing in it is cleaned.
+
+## Before you start (once)
+
+You need a terminal. On a Mac, open **Terminal** (in Applications, then Utilities). The commands below are for Mac and Linux.
+
+**1. Check that Python is installed.** Type this and press Enter:
+
+```bash
+python3 --version
+```
+
+You need `Python 3.9` or higher. If you see `command not found`, install Python from https://www.python.org/downloads/, then open a new terminal window.
+
+**2. Install the three packages the cleaner needs:**
+
+```bash
+python3 -m pip install pyarrow ftfy tree-sitter-language-pack
+```
+
+**3. Get the code**, if you don't already have the `era-v5-lab` folder. This command downloads it into the folder your terminal is in:
+
+```bash
+git clone --branch g1-specv1 https://github.com/patilvijay23/era-v5-lab.git
+```
+
+Without git: open https://github.com/patilvijay23/era-v5-lab/tree/g1-specv1, click **Code**, then **Download ZIP**, and unzip it.
+
+**4. Put your packs in one folder**, for example a folder called `packs` in your home folder. Each file must be named exactly after its pack, for example `en-dclm.parquet`: the cleaner uses the name to choose the rules. Ask your team lead for the link to the packs.
+
+## Clean one pack
+
+**1. Go to the team folder.** Replace `<path to>` with where the `era-v5-lab` folder is on your computer:
+
+```bash
+cd <path to>/era-v5-lab/teams/01-data-a
+```
+
+For example, if it is in your home folder: `cd ~/era-v5-lab/teams/01-data-a`.
+
+**2. Run the cleaner.** This example cleans `en-dclm.parquet` from the `packs` folder and writes the results to a folder called `clean_out`, both in your home folder:
+
+```bash
+python3 spec_v1/run_clean.py --pack ~/packs/en-dclm.parquet --out ~/clean_out
+```
+
+Change the pack name and the two folders to yours. `--out` is where the results go; the folder is made if it doesn't exist. Choose a folder outside `era-v5-lab` (see [Keep the results private](#keep-the-results-private)).
+
+**3. Read the line it prints.** After a few seconds you see one line like this:
+
+```
+{'pack': 'en-dclm.parquet', 'family': 'english', 'rows': 500, 'actions': {'keep': 437, 'fix': 54, 'drop': 9}, 'errors': [], 'seconds': 12.2, 'docs_per_second': 41.1} dropped: 9
+```
+
+| part | what it means |
+|---|---|
+| `family` | the family whose rules ran. `None` means the cleaner didn't recognise the pack: see [If something goes wrong](#if-something-goes-wrong). |
+| `rows` | how many documents the pack has |
+| `keep`, `fix`, `drop` | how many documents were kept unchanged, cleaned, or left out |
+| `errors` | should be `[]`. Anything else means some documents could not be cleaned. |
+
+**4. Find the results** in your `--out` folder. For `en-dclm` they are:
+
+| file | what it is |
+|---|---|
+| `en-dclm_clean.parquet` | the cleaned pack: every kept and fixed document, with its cleaned text. Dropped documents are not in it. |
+| `en-dclm_summary.json` | the counts above, the IDs of the dropped documents and any errors. It holds no document text. |
+
+## Clean all your packs in one go
+
+From the team folder, set your two folders on the first two lines, then run the whole block. It cleans each of the 13 packs it finds in your packs folder and says which ones it skipped:
+
+```bash
+PACKS=~/packs
+OUT=~/clean_out
+for p in code-cpp code-go code-java code-js-ts code-python code-rust en-dclm en-fineweb-edu en-nemotroncc en-nemotroncc-synth math-finemath math-megamath sci-finepdfs; do
+  if [ -f "$PACKS/$p.parquet" ]; then python3 spec_v1/run_clean.py --pack "$PACKS/$p.parquet" --out "$OUT" || echo "$p: had errors, see $OUT/${p}_summary.json"; else echo "$p: not in $PACKS, skipped"; fi
+done
+```
+
+## How to tell it worked
+
+- Every pack printed `'errors': []`.
+- `family` is `code`, `english`, `math` or `sci`, never `None`.
+- The numbers are close to these, from a test run on 1 Nov (500 documents per pack):
+
+| pack | kept | fixed | dropped |
+|---|---:|---:|---:|
+| `en-dclm` | 437 | 54 | 9 |
+| `en-fineweb-edu` | 487 | 12 | 1 |
+| `en-nemotroncc` | 421 | 62 | 17 |
+| `en-nemotroncc-synth` | 467 | 32 | 1 |
+| `sci-finepdfs` | 442 | 45 | 13 |
+
+## If something goes wrong
+
+| what you see | what to do |
+|---|---|
+| `python3: command not found` | Install Python (step 1 of [Before you start](#before-you-start-once)) and open a new terminal window. |
+| `No module named 'pyarrow'`, `'ftfy'` or `'tree_sitter_language_pack'` | Run the install command in step 2 of [Before you start](#before-you-start-once). |
+| `can't open file ... spec_v1/run_clean.py` | You are not in the team folder. Run the `cd` command in step 1 of [Clean one pack](#clean-one-pack). |
+| `FileNotFoundError` with your pack's path | The folder or the file name is wrong. Check both, and that the file name ends in `.parquet`. |
+| `'family': None`, and every document kept | The file name is not one of the 13 pack names. Rename the file, for example to `en-dclm.parquet`. |
+| `doc_id ... has pack_id '...'` | The file name doesn't match the pack inside it. Rename the file to the name shown in quotes, plus `.parquet`. |
+| `errors` is not `[]` | Those documents could not be cleaned and are left out of the cleaned pack. Send the `_summary.json` file to the Data A team: it holds only IDs and error types. |
+
+## Keep the results private
+
+The cleaned packs contain the documents' text. Keep them outside the `era-v5-lab` folder, don't upload or share them, and never commit them to GitHub. The `_summary.json` files hold only IDs and counts, so they are safe to share with the team.
+
+# Part 2: For developers
+
+The rest of this guide is for people who change the rules, rebuild `clean.py`, or run the tests and harm tests. Paths start at `teams/01-data-a/`.
 
 `spec_v1/clean.py` holds the 70 rules of `spec_v1/sheets/specv1.md` and the shared F1 rule, `spec_v1/tools/f1_rule.py`. The rules come from four families, which together cover 13 packs. It has one function per disease code, 24 in all, and `clean(doc)`, which runs a document through every rule of its family in sheet order. At the top is `SCOPE`, a table of the packs each rule applies to. A rule runs only on its own packs, and its harm test uses only the gold sets of those packs.
 
 `clean.py` is generated. Do not edit it: change `specv1.md` and rebuild (step 1).
 
-`clean.py` is the only cleaner to run. `clean_english.py`, the English cleaner made before `specv1.md`, has been removed. `spec_v1/scripts/clean_english.py` is kept but not used: no script or test loads it. `run_clean_english.py` has been removed too: `run_clean.py` cleans a pack of any family.
+`clean.py` is the only cleaner, and `run_clean.py` cleans a pack of any family with it.
 
-## Contents
+## Contents of Part 2
 
 1. [Where everything is](#where-everything-is)
 2. [Every script: command, what it needs, what it writes](#every-script-command-what-it-needs-what-it-writes)
@@ -19,15 +157,16 @@ How to build, test and run `clean.py`, the Spec v1 cleaner of Data A. Paths star
 7. [Step 3: clean a pack](#step-3-clean-a-pack)
 8. [Step 4: run the harm tests](#step-4-run-the-harm-tests)
 9. [Other checks](#other-checks)
-10. [Use clean.py from Python](#use-cleanpy-from-python)
-11. [The 24 functions](#the-24-functions)
-12. [Run order in each family](#run-order-in-each-family)
-13. [The scope table](#the-scope-table)
-14. [Troubleshooting](#troubleshooting)
+10. [The normaliser](#the-normaliser-spec_v1toolsnormalizepy)
+11. [Use clean.py from Python](#use-cleanpy-from-python)
+12. [The 24 functions](#the-24-functions)
+13. [Run order in each family](#run-order-in-each-family)
+14. [The scope table](#the-scope-table)
+15. [Troubleshooting](#troubleshooting)
 
 ## Where everything is
 
-Paths start at `teams/01-data-a/`. Since 1 Nov (PRs #21 and #23), the sheets are in `spec_v1/sheets/`, the tools in `spec_v1/tools/` and the results in `spec_v1/results/cleaner/` (checks of `clean.py`) and `spec_v1/results/sheets/` (checks of the family sheets). `teams/01-data-a/tools/` now holds only `regex_check.py`.
+Paths start at `teams/01-data-a/`. The sheets are in `spec_v1/sheets/`, the tools in `spec_v1/tools/` and the results in `spec_v1/results/cleaner/` (checks of `clean.py`) and `spec_v1/results/sheets/` (checks of the family sheets). The team's shared tools, `harm_test.py` among them, are in `tools/`, and the gold sets in `gold/`.
 
 ```
 spec_v1/
@@ -42,6 +181,7 @@ spec_v1/
   tools/validate_specv1.py       checks specv1.md itself on every pack and writes its validation table
   tools/verify_clean.py          checks clean.py on the code packs
   tools/f1_eval.py               checks the shared F1 on the code packs
+  tools/normalize.py             a standard copy of a text for comparing; never changes a document
   tools/*_english.py             checks on the English packs: see tools/README_english.md
   tests/test_clean.py            every unit test
   results/cleaner/               harm_tests.md, specv1_<pack>_harm.json, specv1_validation.json and the English checks
@@ -50,17 +190,18 @@ spec_v1/
 
 ## Every script: command, what it needs, what it writes
 
-Run every command from `teams/01-data-a/`. "Packages" are what `pip install` must have added; "checkout" is a `g1-harm-test` checkout (it has `teams/01-data-a/tools/harm_test.py`, `medicine_extract.py` and `teams/01-data-a/gold/<pack>_gold.csv` until PR 140 merges).
+Run every command from `teams/01-data-a/`. "Packages" are what `pip install` must have added. `../..` is the `era-v5-lab` folder: the harm tests read `harm_test.py` from its `teams/01-data-a/tools/` and the gold sets from its `teams/01-data-a/gold/`.
 
 | script | command | packages | also needs | writes |
 |---|---|---|---|---|
 | `spec_v1/tools/build_clean.py` | `python -I spec_v1/tools/build_clean.py` | none (Python 3.9+) | `spec_v1/sheets/specv1.md`, `spec_v1/tools/f1_rule.py` | `spec_v1/clean.py` |
 | `spec_v1/tests/test_clean.py` | `python -m pytest spec_v1/tests` | `pytest`, `ftfy`, `tree-sitter-language-pack` | `spec_v1/clean.py`, `spec_v1/sheets/specv1.md`, `spec_v1/tools/build_clean.py` | nothing |
-| `spec_v1/run_clean.py` | `python -I spec_v1/run_clean.py --pack <packs folder>/<pack_id>.parquet --out <results folder>` | `pyarrow`, `ftfy`, `tree-sitter-language-pack` | the pack | `<results folder>/<pack>_clean.parquet`, `out/<pack>_summary.json` |
-| `spec_v1/tools/make_harm_tests.py` | `python -I spec_v1/tools/make_harm_tests.py <checkout> <packs folder> [<more packs folders>]` | `pyarrow`, `ftfy`, `tree-sitter-language-pack` | checkout (harm test and gold), the packs | `spec_v1/results/cleaner/harm_tests.md`, `spec_v1/results/cleaner/specv1_<pack>_harm.json` |
-| `spec_v1/tools/validate_specv1.py` | see [Other checks](#other-checks) | `pyarrow`, `ftfy` | `harm_test.py` on the Python path, the packs, a gold folder | the validation table and card evidence inside `spec_v1/sheets/specv1.md`, `spec_v1/results/cleaner/specv1_validation.json` |
-| `spec_v1/tools/verify_clean.py` | `python -I spec_v1/tools/verify_clean.py <checkout> <packs folder> spec_v1/sheets/medicine_code.md` | `pyarrow`, `tree-sitter-language-pack` | checkout (gold and `diagnosis/submissions/`), the six code packs | prints only |
-| `spec_v1/tools/f1_eval.py` | `python -I spec_v1/tools/f1_eval.py <checkout> <packs folder> [docs per pack, default 40]` | `pyarrow`, `tree-sitter-language-pack` | checkout (gold and `diagnosis/submissions/`), the six code packs | prints only |
+| `spec_v1/run_clean.py` | `python -I spec_v1/run_clean.py --pack <packs folder>/<pack_id>.parquet --out <results folder>` | `pyarrow`, `ftfy`, `tree-sitter-language-pack` | the pack | `<results folder>/<pack>_clean.parquet`, `<results folder>/<pack>_summary.json` |
+| `spec_v1/tools/make_harm_tests.py` | `python -I spec_v1/tools/make_harm_tests.py ../.. <packs folder> [<more packs folders>]` | `pyarrow`, `ftfy`, `tree-sitter-language-pack` | `tools/harm_test.py`, `gold/`, the packs | `spec_v1/results/cleaner/harm_tests.md`, `spec_v1/results/cleaner/specv1_<pack>_harm.json` |
+| `spec_v1/tools/validate_specv1.py` | `python -I spec_v1/tools/validate_specv1.py --packs <packs folder> --gold gold` | `pyarrow`, `ftfy` | `tools/harm_test.py`, `gold/`, the packs | the validation table and card evidence inside `spec_v1/sheets/specv1.md`, `spec_v1/results/cleaner/specv1_validation.json` |
+| `spec_v1/tools/verify_clean.py` | `python -I spec_v1/tools/verify_clean.py ../.. <packs folder> spec_v1/sheets/medicine_code.md` | `pyarrow`, `tree-sitter-language-pack` | `gold/`, the annotators' labels in `diagnosis/submissions/`, the six code packs | prints only |
+| `spec_v1/tools/f1_eval.py` | `python -I spec_v1/tools/f1_eval.py ../.. <packs folder> [docs per pack, default 40]` | `pyarrow`, `tree-sitter-language-pack` | `gold/`, the annotators' labels in `diagnosis/submissions/`, the six code packs | prints only |
+| `spec_v1/tools/normalize.py` | `python -I spec_v1/tools/normalize.py --pack <packs folder>/<pack_id>.parquet` | `pyarrow` (only for `--pack`) | the pack | prints only |
 | English checks | `spec_v1/tools/verify_clean_english.py`, `f1_eval_english.py`, `order_checks_english.py`, `make_harm_tests_english.py` | `pyarrow`, `ftfy` | see [tools/README_english.md](tools/README_english.md) | `spec_v1/results/cleaner/` |
 
 The pack files are not in the repo; get your link from the lab plan sheet. Each must be named `<pack_id>.parquet`.
@@ -75,7 +216,7 @@ The pack files are not in the repo; get your link from the lab plan sheet. Each 
 | `tree-sitter-language-pack` | the shared F1 on code: it looks for private details only inside comments and strings |
 | `pytest` | the unit tests |
 | the packs, `<pack_id>.parquet` | not in the repo; get your link from the lab plan sheet |
-| a `g1-harm-test` checkout | only for step 4 and the [other checks](#other-checks): it has `harm_test.py` (until PR 140 merges) and the gold sets |
+| the gold sets, `gold/<pack>_gold.csv` | in the repo; only for step 4 and the [other checks](#other-checks) |
 
 ```bash
 pip install pyarrow ftfy tree-sitter-language-pack pytest
@@ -115,7 +256,7 @@ python -I spec_v1/run_clean.py --pack <packs folder>/en-dclm.parquet --out <resu
 ```
 
 ```bash
-python -I spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <packs folder>
+python -I spec_v1/tools/make_harm_tests.py ../.. <packs folder>
 ```
 
 ## Step 1: build clean.py
@@ -169,7 +310,7 @@ It stops with an `AssertionError` that names the rule, and writes nothing, when:
 python -m pytest spec_v1/tests
 ```
 
-All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in six sections:
+All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in seven sections:
 
 | section | what it tests |
 |---|---|
@@ -177,10 +318,11 @@ All the unit tests are in one file, `spec_v1/tests/test_clean.py`, in six sectio
 | 2. The scope table and the build | The scope table, on all 13 packs:<br>• every rule has one entry, and each pack is in one family;<br>• each family runs in sheet order;<br>• the F1 rules cover their family, `DA-F1-005` on all four English packs;<br>• a rule acts on its own packs only, and nothing runs without a known `pack_id`;<br>• the build reproduces `clean.py` and stops on a bad scope. |
 | 3. The code family | A licence goes and the build tag stays, a generated file is dropped, the shared F1 on prose and in code, the code B4 rule keeps the `<EMAIL>` tag, and a second clean changes nothing. |
 | 4. The English family | Look-alikes kept, other languages untouched, ZWJ and ZWNJ kept, F1 tags survive a second clean, and `clean()` equal to the English rules of `specv1.md`. |
-| 5. The math family | A teaser cut trimmed to its last sentence, a second clean changes nothing, and the v1.1 rules: a Symbol-font glyph mapped, cp866 mojibake repaired, BBCode maths converted, repeated answer options kept, foreign-script spam removed, Greek letters kept. |
-| 6. The shared F1 on math and science | The prose path of `spec_v1/tools/f1_rule.py` (TSAI, 1 Nov): private phones, emails and addresses get their tag, a listing of individuals is dropped, organisations and look-alikes are kept, and it runs only on the math and science packs with their own language tags. |
+| 5. The math family | A teaser cut trimmed to its last sentence, a second clean changes nothing, a Symbol-font glyph mapped, cp866 mojibake repaired, BBCode maths converted, repeated answer options kept, foreign-script spam removed, Greek letters kept. |
+| 6. The shared F1 on math and science | The prose path of `spec_v1/tools/f1_rule.py`: private phones, emails and addresses get their tag, a listing of individuals is dropped, organisations and look-alikes are kept, and it runs only on the math and science packs with their own language tags. |
+| 7. The normaliser | `spec_v1/tools/normalize.py`: each disease it evens out (B1, A2, A1, A5, case, spacing), none of the section G damage (ZWJ and ZWNJ, NFKC, Indic digits, vowel signs), lines kept by `line_keys`, and no document or `clean()` result changed. |
 
-Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `461 passed` with `tree-sitter-language-pack` installed. Without it, 456 pass and 5 are skipped: the shared F1 on code (`pip install tree-sitter-language-pack`).
+Every text in the tests is made up. Some science rules act only on documents the reviewers listed, so those tests use the doc_ids named in `specv1.md`. Expect `474 passed` with `tree-sitter-language-pack` installed. Without it, 469 pass and 5 are skipped: the shared F1 on code (`pip install tree-sitter-language-pack`).
 
 ## Step 3: clean a pack
 
@@ -227,7 +369,7 @@ A test run on the English packs (1 Nov, 500 documents each, 0 errors):
 | `en-nemotroncc` | 421 | 62 | 17 | 5.9 s |
 | `en-nemotroncc-synth` | 467 | 32 | 1 | 3.6 s |
 
-`sci-finepdfs` took under a second.
+`sci-finepdfs`: 442 kept, 45 fixed, 13 dropped, in about 4 seconds.
 
 `run_clean.py` exits with 0 when no rule raised and 1 when one did. A document whose rule raised is left out of `_clean.parquet`, and its doc_id is listed under `errors`. It also exits with 1 if the pack's `pack_id` column does not match its file name.
 
@@ -244,12 +386,12 @@ done
 ## Step 4: run the harm tests
 
 ```bash
-python -I spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <packs folder> [<another packs folder> ...]
+python -I spec_v1/tools/make_harm_tests.py ../.. <packs folder> [<another packs folder> ...]
 ```
 
 | argument | meaning |
 |---|---|
-| `<g1-harm-test checkout>` | A checkout that has `teams/01-data-a/tools/harm_test.py` and `teams/01-data-a/gold/<pack>_gold.csv`. `harm_test.py` is imported as it is, never changed. |
+| `../..` | The `era-v5-lab` folder, seen from `teams/01-data-a/`. The script reads `teams/01-data-a/tools/harm_test.py` and `teams/01-data-a/gold/<pack>_gold.csv` from it. `harm_test.py` is imported as it is, never changed. |
 | `<packs folder>` | One or more folders holding the packs; a pack is looked for in each. |
 | `--out` | The report (default `spec_v1/results/cleaner/harm_tests.md`). |
 | `--results` | The folder for the per-pack JSON reports (default `spec_v1/results/cleaner`). |
@@ -277,7 +419,7 @@ At most `max(1, floor(1% of gold))` gold documents changed or dropped, for each 
 | `spec_v1/results/cleaner/harm_tests.md` | Section 1: `clean()` per pack. Section 2: each rule alone, one table per family, with `·` where the rule does not apply. Section 3: each function per pack. Then the packs it could not run. |
 | `spec_v1/results/cleaner/specv1_<pack>_harm.json` | The same per pack, with the affected gold doc_ids and the sha256 of the pack, the gold, `clean.py` and `harm_test.py`. No text. |
 
-It exits with 0 when everything it ran passed. It exits with 1 when any result is not PASS, a gold set is empty, or a rule acted on a pack it does not apply to. A pack it cannot find is listed as not run and does not fail the run. So run it where all 13 packs and the current gold sets are, before you commit `harm_tests.md`.
+It exits with 0 when everything it ran passed. It exits with 1 when any result is not PASS, a gold set is empty, or a rule acted on a pack it does not apply to. A pack it cannot find is listed as not run and does not fail the run. So run it where all 13 packs are before you commit `harm_tests.md`.
 
 ## Other checks
 
@@ -287,29 +429,71 @@ These are not needed to build or run `clean.py`, but they are how the numbers in
 
 It runs every block of `spec_v1/sheets/specv1.md` (the sheet, not `clean.py`) on each pack's gold set and whole pack, then rewrites the validation table and the "Current gold harm" lines inside `specv1.md`, and writes `spec_v1/results/cleaner/specv1_validation.json`.
 
-It imports `harm_test` from `teams/01-data-a/tools/`, which on this branch holds only `regex_check.py`, so `python -I` stops with `ModuleNotFoundError: No module named 'harm_test'`. Until PR 140 merges, point Python at the checkout's copy. `-I` would ignore `PYTHONPATH`, so leave it out here:
+It uses `harm_test.py` from `tools/` and the gold sets in `gold/`:
 
 ```bash
-PYTHONPATH=<g1-harm-test checkout>/teams/01-data-a/tools python spec_v1/tools/validate_specv1.py --packs <packs folder> --gold <gold folder>
+python -I spec_v1/tools/validate_specv1.py --packs <packs folder> --gold gold
 ```
 
 It changes `specv1.md`, but only the text around the code: `clean.py` does not need a rebuild. Run the unit tests after it.
 
 ### `spec_v1/tools/verify_clean.py` and `spec_v1/tools/f1_eval.py`: the code packs
 
-Both run on the six code packs only and print IDs, counts and masked shapes, never a private value. `verify_clean.py` checks that `clean.py` gives what `spec_v1/sheets/medicine_code.md` gives, what the shared F1 does per pack, and that a second clean changes nothing. `f1_eval.py` checks the shared F1 with made-up values planted in real gold docs, and what B4 does to its tags.
+Both run on the six code packs only and print IDs, counts and masked shapes, never a private value. They also count the rows the annotators labelled, from `diagnosis/submissions/<pack>/<reader>/labels.csv` in the `era-v5-lab` folder; on this branch that folder holds only a README, so those counts come out as 0 until the label files are there. `verify_clean.py` checks that `clean.py` gives what `spec_v1/sheets/medicine_code.md` gives, what the shared F1 does per pack, and that a second clean changes nothing. `f1_eval.py` checks the shared F1 with made-up values planted in real gold docs, and what B4 does to its tags.
 
 ```bash
-python -I spec_v1/tools/verify_clean.py <g1-harm-test checkout> <packs folder> spec_v1/sheets/medicine_code.md
+python -I spec_v1/tools/verify_clean.py ../.. <packs folder> spec_v1/sheets/medicine_code.md
 ```
 
 ```bash
-python -I spec_v1/tools/f1_eval.py <g1-harm-test checkout> <packs folder>
+python -I spec_v1/tools/f1_eval.py ../.. <packs folder>
 ```
 
 ### The English checks
 
 `spec_v1/tools/verify_clean_english.py`, `f1_eval_english.py`, `order_checks_english.py` and `make_harm_tests_english.py` check the English packs in more detail. Their commands and run order are in [tools/README_english.md](tools/README_english.md).
+
+## The normaliser: `spec_v1/tools/normalize.py`
+
+A standard copy of a text, for comparing and matching. **It never changes a document:** a rule compares the copies, and the document keeps its own text, so nothing is fixed or dropped by it. `clean.py` does not use it; it is there for rules and code that find a disease by comparing text.
+
+| function | returns | for |
+|---|---|---|
+| `match_key(text)` | one key for the whole text | comparing documents or passages: H1 exact and H2 near duplicates |
+| `line_keys(text)` | one key per line | comparing lines: C1 boilerplate phrases, C2 repeated lines, E4 licence headers |
+| `explain(text)` | the steps that change this text | logging which diseases a key evened out |
+
+The steps, in order, with the diseases of `diagnosis/DISEASES.md` they even out:
+
+| step | disease | what happens in the key |
+|---|---|---|
+| `B1` | HTML entities | `&amp;`, `&nbsp;`, `&#2361;` are decoded |
+| `A2` | control characters | `\r\n` and `\r` become `\n`; U+0000–001F (but tab and newline) and U+007F–009F go |
+| `A1` | invisible junk | zero-width space, BOM, soft hyphen and the bidi marks U+202A–202E, U+2066–2069 go. ZWJ and ZWNJ stay. |
+| `case` | (none) | lower case: Latin, Greek, Cyrillic. Indic scripts have no case. |
+| `A5` | wrong normal form | NFC, the form `DISEASES.md` names: a nukta written two ways gives one key |
+| `space` | (none) | runs of spaces and tabs become one space |
+
+What it never does, so it cannot cause the damage of `DISEASES.md` section G: no NFKC (`x²` and `ﬁ` stay as they are), no Indic digit turned Latin, no ZWJ or ZWNJ removed, no vowel sign or virama split from its letter. It lowers case with `lower()`, not `casefold()`, because `casefold()` also turns `ﬁ` into `fi` and `ß` into `ss`.
+
+From Python, run from `teams/01-data-a/`:
+
+```python
+import sys
+sys.path.insert(0, "spec_v1/tools")
+from normalize import match_key, line_keys, explain
+
+match_key("Fish &amp; chips") == match_key("fish & CHIPS")   # True
+explain("Café\u200b")                                        # ['A1', 'case']
+```
+
+To see how many documents of a pack each step would even out (IDs and counts only, never text):
+
+```bash
+python -I spec_v1/tools/normalize.py --pack <packs folder>/en-dclm.parquet
+```
+
+On `en-dclm`, for example: B1 1 document, A2 3, A1 10, A5 3, case 500, space 260. Its tests are section 7 of `spec_v1/tests/test_clean.py`.
 
 ## Use clean.py from Python
 
@@ -413,10 +597,9 @@ The scope is checked twice, and both checks read `SCOPE`:
 | `<file>: doc_id ... has pack_id '...'` and exit code 1 | The pack's `pack_id` column does not match its file name. | Rename the file to the pack ID in the column. |
 | `errors` lists `ModuleNotFoundError` on English documents | `ftfy` is not installed (`DA-A3-002`). | `pip install ftfy` |
 | `errors` lists `ModuleNotFoundError` on code documents | `tree-sitter-language-pack` is not installed. The shared F1 needs it when it finds an email, phone or address in code. | `pip install tree-sitter-language-pack` |
-| `validate_specv1.py` stops with `ModuleNotFoundError: No module named 'harm_test'` | `harm_test.py` is not in `teams/01-data-a/tools/` on this branch. | Run it with `PYTHONPATH=<g1-harm-test checkout>/teams/01-data-a/tools` and without `-I` (see [Other checks](#other-checks)). |
-| `make_harm_tests.py` stops with `ModuleNotFoundError: No module named 'harm_test'` | The first argument of `make_harm_tests.py` is not a `g1-harm-test` checkout. | Pass the checkout's root folder. |
+| `make_harm_tests.py` stops with `ModuleNotFoundError: No module named 'harm_test'` | Its first argument is not the `era-v5-lab` folder. | Run it from `teams/01-data-a/` and pass `../..`. |
 | `harm_tests.md` lists packs as "pack not on this machine" | The pack is in none of the folders you passed. | Pass every folder that holds packs. |
-| `harm_tests.md` says "other snapshot" | Your gold set or pack is not the one `specv1_validation.json` used, so the two are not compared. | Use the current gold sets. |
+| `harm_tests.md` says "other snapshot" | Your gold set or pack is not the one `specv1_validation.json` used, so the two are not compared. | Use the gold sets in `gold/` and the current packs. |
 | `AssertionError` from `build_clean.py` | The sheet breaks one of the checks under [When the build stops](#when-the-build-stops). | Fix the rule the message names, and rebuild. |
 | `test_the_build_writes_this_clean_py` fails | `specv1.md` or `f1_rule.py` changed after the last build. | Rebuild (step 1). |
 
