@@ -67,7 +67,7 @@ V4's repository has **no GPU health check at all**. The scripts must run on a la
   count (kept for a trend); hardware-slowdown throttle; PCIe link width against max.
 - Row remapping: pending (warn: reset needed) and failure (fail: replace the GPU).
 - **NVLink:** any link `<inactive>` in `nvidia-smi nvlink -s` fails the node. A down link raises no error; it only
-  halves all-reduce speed for the whole run, and without DCGM nothing else would see it (Mallik's check, team 07).
+  halves all-reduce speed for the whole run, and without DCGM nothing else would see it (millermuttu's check, team 07).
 - `dcgmi diag -r 1` in prolog mode only (the GPUs are idle before a job) and level 2 in `--mode full`. Periodic
   mode, which runs while training uses the GPUs, reads `dcgmi health -c` instead: DCGM's background watches,
   no extra load. NVIDIA advises against `diag` on busy GPUs, and a false diag "fail" would drain the node and
@@ -85,7 +85,7 @@ V4's repository has **no GPU health check at all**. The scripts must run on a la
   repaired node again.
 - Clock offset (chrony), free NVMe (ADR 0001 §2), available host memory.
 - **Collective test** (`health/allreduce_test.py`, `--mode full`): the four collectives training uses
-  (Mallik's set, team 07): **all-reduce** (data-parallel gradients), **reduce-scatter** (ZeRO-2/3, FSDP gradients),
+  (millermuttu's set, team 07): **all-reduce** (data-parallel gradients), **reduce-scatter** (ZeRO-2/3, FSDP gradients),
   **all-gather** (ZeRO-3, FSDP weights) and **all-to-all** (MoE experts). Every value is a small whole number in
   fp32 (all-reduce: `rank + 1`, sum `n(n+1)/2`; all-to-all: chunk `j` of rank `r` holds `r·n + j`), so the result
   is exact in any reduction order; a wrong value means a fault, not rounding. 5 warm-up and 20 timed iterations,
@@ -105,12 +105,23 @@ V4's repository has **no GPU health check at all**. The scripts must run on a la
 
 ```json
 {
-  "schema": "v5-health/1", "time": "UTC ISO-8601", "host": "...", "mode": "prolog|periodic|full",
+  "schema": "v5-health/1", "timestamp_utc": "UTC ISO-8601", "time": "(same)", "host": "...",
+  "mode": "prolog|periodic|full", "expected_gpus": 8,
   "checks": [{"name": "ecc_uncorrectable", "status": "pass|warn|fail|skipped",
-              "required": true, "detail": "...", "metrics": {}, "gpu": 0, "seconds": 0.0}],
-  "verdict": "pass|warn|fail", "drain_reason": null, "runtime_seconds": 0.0
+              "required": true, "detail": "...", "metrics": {"values": [0, 0, 0, 0, 0, 0, 0, 0]},
+              "gpu": null, "seconds": 0.0}],
+  "verdict": "pass|warn|fail", "admit_training": true, "drain_reason": null, "runtime_seconds": 0.0
 }
 ```
+
+- **Team 08's contract (31 Oct).** `v5-health/1` is the format Team 08 validates and loads into ClickHouse
+  (lab PR #125). We follow it: check names `gpu_inventory`, `ecc_uncorrectable` (one value per GPU), `xid`
+  (`counts` + `events`), collective metrics (`backend`, `world_size`, `status`, `max_error`,
+  `all_ranks_correct` per size), and the report fields `timestamp_utc`, `expected_gpus`, `admit_training`.
+  *Why:* one format means their dashboards need no Team 07 special case. Two points are open with them:
+  `admit_training` stays true on `warn` (a warn is shown, not a stop: a missing optional tool on every node
+  would otherwise block the whole run), and a CPU `gloo` collective may pass when the node has no real GPU
+  (Docker and CPU test hosts), never on a GPU node.
 
 - A missing tool gives `skipped` with the reason. `skipped` never turns into `pass` or `fail`.
 - **Verdict:** any `fail` → `fail`. Otherwise any `warn`, or any `skipped` check marked `required` (GPU checks
@@ -182,7 +193,7 @@ All health metrics with LOW / MEDIUM / HIGH thresholds are H-01 … H-24 in `met
 | H-06 | Row remap failure | any |
 | H-07 | GPU missing | any |
 | H-08 | GPU at its slowdown temperature | 0 °C margin |
-| H-11 | NVLink / EFA link down | any |
+| H-11 | NVLink / fast network link down | any |
 | H-12 | All-reduce busbw | ≤ 0.7 × baseline |
 | H-13 | Collective wrong value (any of the four) | any |
 | H-14 | Step watchdog | ≥ 2 per hour |
@@ -224,12 +235,12 @@ Bad and accepted:
 | same | four collectives on gloo with 2 and 3 ranks: exact values, busbw > 0; a corrupted all-to-all fails only `nccl_all_to_all` | pass |
 | same | Xid 94 once → warn; again on the same GPU within 24 h → fail; after 25 h → warn; Xid 61 → fail | pass |
 | same | NVLink: one `<inactive>` link → fail; all up → pass; no NVLink (PCIe card) → skipped | pass |
-| Docker Slurm, fake `nvidia-smi`/`dmesg` (Mallik's fakes) | GPU checks run on every GPU node and pass; planted hot GPU, ECC, row-remap failure, NVLink down, Xid 79 → fail on the right check; Xid 94 → warn; NVLink down is drained by the periodic check (`v5:nvlink`) | pass (drills `health_gpu_checks_run`, `health_planted_faults`, `health_nvlink_drains_node`) |
+| Docker Slurm, fake `nvidia-smi`/`dmesg` (millermuttu's fakes) | GPU checks run on every GPU node and pass; planted hot GPU, ECC, row-remap failure, NVLink down, Xid 79 → fail on the right check; Xid 94 → warn; NVLink down is drained by the periodic check (`v5:nvlink`) | pass (drills `health_gpu_checks_run`, `health_planted_faults`, `health_nvlink_drains_node`) |
 | `launch.sh` against Docker | NVLink down on one node: full check fails, node drained `health: nvlink`, launch goes on with 2 of 3 | pass |
 | Docker Slurm (`support/simulation/run_sim.py`) | forced `fail` on a main-run node: periodic check drains it, job saves, exits 75 and moves to the spare | pass: detect 26 s, 0 steps lost, MTTR 31 s ([sim_results.md](../support/docs/sim_results.md)) |
 | Docker Slurm | forced `fail` on **both** main-run nodes with one spare: both drained, main run waits (no crash loop), recovers when they return | see [sim_results.md](../support/docs/sim_results.md) |
 | Docker Slurm | `SIGSTOP` on one rank: the watchdog on the other ranks exits 75 with a stack dump; job restarts | pass: watchdog at 20 s, MTTR 24 s ([sim_results.md](../support/docs/sim_results.md)) |
-| Kaggle 2×T4 (`support/kaggle/run_gpu_checks.py`) | real nvidia-smi values; 2-rank NCCL all-reduce with exact sums and measured busbw; a stuck rank fails cleanly after the NCCL timeout with a flight-recorder trace (`support/kaggle/nccl_timeout_test.py`) | ready, to run (results go in `support/kaggle/results/`) |
+| Kaggle (2 GPUs) (`support/kaggle/run_gpu_checks.py`) | real nvidia-smi values; 2-rank NCCL all-reduce with exact sums and measured busbw; a stuck rank fails cleanly after the NCCL timeout with a flight-recorder trace (`support/kaggle/nccl_timeout_test.py`) | ready, to run (results go in `support/kaggle/results/`) |
 | Week-2 node | `--mode full` five times gives the baseline thresholds | week 2 |
 
 ## Open points
@@ -238,4 +249,4 @@ Bad and accepted:
 - Should a `warn` node stay in the main-run pool?
 - `HealthCheckInterval` during the main run, and its measured cost in step time.
 - Whether V5 adds step replay for silent data corruption after dry run 2.
-- Kaggle results (`support/kaggle/run_gpu_checks.py`): real nvidia-smi parsing on T4 and the NCCL timeout test.
+- Kaggle results (`support/kaggle/run_gpu_checks.py`): real nvidia-smi parsing on Kaggle's GPUs and the NCCL timeout test.

@@ -1,4 +1,4 @@
-"""GPU validation on Kaggle 2 x T4 (ADR 0001 §Validation, ADR 0003 §Validation).
+"""GPU validation on Kaggle (2 GPUs) (ADR 0001 §Validation, ADR 0003 §Validation).
 
 In simple words: the Docker Slurm test proved the logic on CPU. This script runs the parts that need a real
 NVIDIA GPU, on Kaggle's free 2-GPU machine, and writes one results file to bring back:
@@ -10,7 +10,7 @@ NVIDIA GPU, on Kaggle's free 2-GPU machine, and writes one results file to bring
                      fp16 included (T18-T23) when DeepSpeed installs (needs Internet on; skipped otherwise)
   6. save speed    : GPU -> host copy and DCP save time, to replace the cost model's assumptions
 
-Run in a Kaggle notebook (Accelerator: GPU T4 x2, Internet: on), from the repo root:
+Run in a Kaggle notebook (Accelerator: the 2-GPU accelerator, Internet: on), from the repo root:
     !python teams/07-infrastructure/support/kaggle/run_gpu_checks.py
 Results: /kaggle/working/gpu_results/summary.md (+ summary.json and raw files). Download summary.md.
 """
@@ -89,7 +89,7 @@ def main():
     r["result"] = env
     steps.append(r)
     if ngpu < 1:
-        print("No GPU found. In Kaggle: Settings -> Accelerator -> GPU T4 x2.")
+        print("No GPU found. In Kaggle: Settings -> Accelerator -> the 2-GPU accelerator.")
 
     # 2. health check: prolog (quick) and full (adds DCGM if present and the all-reduce sweep)
     for mode in ("prolog", "full"):

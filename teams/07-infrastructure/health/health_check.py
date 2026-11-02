@@ -78,7 +78,7 @@ def num(v):
 def gpu_checks(th, expect, fixture=None) -> list:
     req = expect > 0
     if fixture is None and not shutil.which("nvidia-smi"):
-        return [check("gpu", "skipped", "nvidia-smi not found", required=req)]
+        return [check("gpu_inventory", "skipped", "nvidia-smi not found", required=req)]
     if fixture:
         out = open(fixture).read()
     else:
@@ -88,13 +88,17 @@ def gpu_checks(th, expect, fixture=None) -> list:
             alt = [f.replace("clocks_throttle_reasons", "clocks_event_reasons") for f in GPU_FIELDS]
             p = run(["nvidia-smi", f"--query-gpu={','.join(alt)}", "--format=csv,noheader,nounits"])
             if p.returncode != 0:
-                return [check("gpu", "fail" if req else "skipped", f"nvidia-smi failed: {p.stderr[:200]}",
-                              required=req)]
+                return [check("gpu_inventory", "fail" if req else "skipped",
+                              f"nvidia-smi failed: {p.stderr[:200]}", required=req)]
         out = p.stdout
-    rows = [dict(zip(GPU_FIELDS, [x.strip() for x in line.split(",")])) for line in out.strip().splitlines()]
+    lines = out.strip().splitlines()
+    rows = [dict(zip(GPU_FIELDS, [x.strip() for x in line.split(",")])) for line in lines]
     g = th["gpu"]
-    res = [check("gpu_count", "pass" if len(rows) == expect or not req else "fail",
-                 f"{len(rows)} GPUs, expected {expect}", required=req, metrics={"count": len(rows)})]
+    # Names and metrics follow Team 08's v5-health/1 contract (gpu_inventory: count + one line per GPU)
+    res = [check("gpu_inventory", "pass" if len(rows) == expect or not req else "fail",
+                 f"{len(rows)} GPUs, expected {expect}", required=req,
+                 metrics={"count": len(rows), "gpus": [l.strip() for l in lines]})]
+    unc_all, cor_all = [], []
     for r in rows:
         i = int(r["index"])
         t = num(r["temperature.gpu"])
@@ -103,16 +107,21 @@ def gpu_checks(th, expect, fixture=None) -> list:
             res.append(check("gpu_temperature", st, f"{t} C", required=req, gpu=i, metrics={"temp_c": t}))
         unc = max(num(r["ecc.errors.uncorrected.volatile.total"]) or 0,
                   num(r["ecc.errors.uncorrected.aggregate.total"]) or 0)
-        res.append(check("ecc_uncorrectable", "fail" if unc >= g["ecc_uncorrectable_fail"] else "pass",
-                         f"{int(unc)} uncorrectable", required=req, gpu=i,
-                         metrics={"uncorrectable": unc,
-                                  "correctable": num(r["ecc.errors.corrected.volatile.total"])}))
+        unc_all.append(int(unc))
+        cor_all.append(num(r["ecc.errors.corrected.volatile.total"]))
         if r.get("clocks_throttle_reasons.hw_slowdown", "").lower() == "active":
             res.append(check("gpu_throttle", "warn", "hardware slowdown active", gpu=i))
         cur, mx = num(r["pcie.link.width.current"]), num(r["pcie.link.width.max"])
         if cur and mx:
             res.append(check("pcie_link", "warn" if cur / mx < g["pcie_width_min_ratio"] else "pass",
                              f"x{int(cur)} of x{int(mx)}", gpu=i))
+    if rows:
+        # one check for the node, one value per GPU (Team 08's contract); the detail names the bad GPUs
+        bad = [i for i, u in enumerate(unc_all) if u >= g["ecc_uncorrectable_fail"]]
+        res.append(check("ecc_uncorrectable", "fail" if bad else "pass",
+                         f"uncorrectable on GPU {', '.join(f'{i} ({unc_all[i]})' for i in bad)}" if bad
+                         else "0 uncorrectable", required=req, gpu=bad[0] if len(bad) == 1 else None,
+                         metrics={"values": unc_all, "correctable": cor_all}))
     return res
 
 
@@ -136,7 +145,7 @@ def remap_checks(th, expect) -> list:
 
 
 def nvlink_checks(th, expect, fixture=None) -> list:
-    """Inactive NVLink links (Mallik's check, team 07). A down link does not raise an error: all-reduce just
+    """Inactive NVLink links (millermuttu's check, team 07). A down link does not raise an error: all-reduce just
     runs at half speed for the whole run. Without DCGM nothing else would see it."""
     if expect == 0 and fixture is None:
         return []
@@ -187,7 +196,8 @@ def xid_check(th, log=None) -> list:
     r = xid_scan.scan(lines, th["xid"], os.path.join(STATE_DIR, "xid_seen.json"))
     codes = sorted({x["xid"] for x in r["new"]})
     return [check("xid", r["status"], f"new Xid codes {codes}" if codes else "no new Xid",
-                  metrics={"new": r["new"], "already_seen": r["already_seen"]})]
+                  metrics={"counts": r["counts"], "events": r["events"], "new": r["new"],
+                           "already_seen": r["already_seen"]})]
 
 
 def clock_check(th) -> list:
@@ -248,10 +258,14 @@ def allreduce_check(th, expect) -> list:
     # wrote its JSON) from a hang or crash (no JSON). The JSON decides; the old one is removed first.
     if not os.path.exists(out):
         return [check("nccl_collectives", "fail", f"test did not finish (exit {p.returncode})", required=True)]
-    r = json.load(open(out))
-    # one check per collective: all-reduce (DDP), reduce-scatter / all-gather (ZeRO, FSDP), all-to-all (MoE)
+    return collective_checks(json.load(open(out)))
+
+
+def collective_checks(r) -> list:
+    """One check per collective: all-reduce (DDP), reduce-scatter / all-gather (ZeRO, FSDP), all-to-all (MoE)."""
     return [check(o["name"], o["status"], f"{r['backend']} x{r['ranks']}: {o['detail']}", required=True,
-                  metrics=o["metrics"]) for o in r["ops"]]
+                  metrics=dict(o["metrics"], backend=r["backend"], world_size=r["ranks"], status=o["status"]))
+            for o in r["ops"]]
 
 
 def verdict(checks) -> str:
@@ -296,8 +310,14 @@ def main(argv=None):
     v = verdict(checks)
     failed = [c for c in checks if c["status"] == "fail"]
     reason = ",".join(sorted({c["name"] for c in failed})) or None
-    report = {"schema": "v5-health/1", "time": utc_now(), "host": socket.gethostname(), "mode": a.mode,
-              "checks": checks, "verdict": v, "drain_reason": reason,
+    inv = next((c for c in checks if c["name"] == "gpu_inventory"), None)
+    # admit_training says what the prolog does: a job starts unless the verdict is fail (a warn is visible, not a
+    # stop), and on a GPU node only when the GPUs were counted
+    admit = v != "fail" and (expect == 0 or (inv is not None and inv["status"] == "pass"))
+    now = utc_now()
+    report = {"schema": "v5-health/1", "timestamp_utc": now, "time": now, "host": socket.gethostname(),
+              "mode": a.mode, "expected_gpus": expect, "checks": checks, "verdict": v,
+              "admit_training": admit, "drain_reason": reason,
               "runtime_seconds": round(time.monotonic() - t0, 3)}
     emit("health.report", mode=a.mode, verdict=v, drain_reason=reason, runtime_seconds=report["runtime_seconds"],
          failed=[c["name"] for c in failed], warned=[c["name"] for c in checks if c["status"] == "warn"],

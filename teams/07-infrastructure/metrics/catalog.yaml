@@ -7,7 +7,7 @@
 #   medium : act TODAY, within 4 working hours. Things still run, but cost grows if nobody acts.
 #   low    : look at it in the weekly ops review. A trend or a small inefficiency.
 # direction: "above" alerts when value >= threshold, "below" when value <= threshold.
-# sim: true when evaluate.py computes it in the Docker test; false needs real GPUs or AWS.
+# sim: true when evaluate.py computes it in the Docker test; false needs real GPUs or the cloud.
 
 severity:
   high:   {response: "page now, 24x7, ack <= 15 min", who: "Team 07 on-call (Team 08 delivers the page)"}
@@ -20,10 +20,10 @@ metrics:
    low: 1.2, medium: 1.5, high: 2.0, sim: true, owner: "07",
    why: "Everything trained since the last commit is lost if a node dies now.",
    action: "Check checkpoint.failed events; if saves fail, fix storage before the next failure costs a full interval."}
-- {id: CK-02, area: checkpoint, name: Compute dollars at risk (since last commit), unit: USD, direction: above,
+- {id: CK-02, area: checkpoint, name: Node-hours at risk (since last commit), unit: node-h, direction: above,
    low: 1.2, medium: 1.5, high: 2.0, scale: interval_cost, sim: true, owner: "07",
-   why: "The same risk in money: cluster price x time since the last commit.",
-   action: "Same as CK-01. Thresholds are multiples of the cost of one interval."}
+   why: "The same risk in node-hours: nodes x time since the last commit (cost = node-hours x price).",
+   action: "Same as CK-01. Thresholds are multiples of the node-hours in one interval."}
 - {id: CK-03, area: checkpoint, name: Consecutive failed saves, unit: count, direction: above,
    low: null, medium: 1, high: 2, sim: true, owner: "07",
    why: "One failed save doubles the work at risk; two in a row triples it.",
@@ -75,7 +75,7 @@ metrics:
 - {id: CK-15, area: checkpoint, name: Protected checkpoint missing or deleted, unit: count, direction: above,
    low: null, medium: null, high: 1, sim: true, owner: "07",
    why: "Protected checkpoints (every N-th, final, pinned) are the money we can never re-buy.",
-   action: "Restore from S3 versioning; check the retention job's IAM role."}
+   action: "Restore from S3 versioning; check the retention job's cloud role."}
 - {id: CK-16, area: checkpoint, name: Orphan uncommitted objects in S3, unit: GB, direction: above,
    low: 1, medium: 100, high: null, sim: true, owner: "07",
    why: "Half-uploaded checkpoints are never used but are billed every month.",
@@ -83,7 +83,7 @@ metrics:
 - {id: CK-17, area: checkpoint, name: Checkpoint storage cost per day vs plan, unit: ratio, direction: above,
    low: 1.0, medium: 1.5, high: null, sim: false, owner: "07",
    why: "S3 cost grows with every kept checkpoint.",
-   action: "Move protected checkpoints older than X days to Glacier; check keep counts."}
+   action: "Move protected checkpoints older than X days to the archive tier; check keep counts."}
 - {id: CK-18, area: checkpoint, name: Export parity failures (safetensors), unit: count, direction: above,
    low: null, medium: 1, high: null, sim: true, owner: "07",
    why: "Teams 09/11/12 would evaluate or ship weights that are not the trained ones.",
@@ -165,7 +165,7 @@ metrics:
 - {id: Q-17, area: queue, name: Clock offset between nodes, unit: ms, direction: above,
    low: 50, medium: 100, high: 500, sim: false, owner: "07",
    why: "Wrong clocks break event ordering, MTTR numbers and incident timelines.",
-   action: "Restart chrony; check the Amazon Time Sync endpoint."}
+   action: "Restart chrony; check the cloud's time service."}
 - {id: Q-18, area: queue, name: Container image pull time, unit: s, direction: above,
    low: 300, medium: 900, high: null, sim: false, owner: "07",
    why: "A slow first pull adds to every restart on a new node.",
@@ -215,7 +215,7 @@ metrics:
 - {id: H-08, area: health, name: GPU temperature vs slowdown limit, unit: C below limit, direction: below,
    low: 10, medium: 5, high: 0, sim: false, owner: "07",
    why: "A hot GPU slows down and then the whole job runs at its speed.",
-   action: "Check the instance; AWS ticket for cooling."}
+   action: "Check the instance; provider support ticket for cooling."}
 - {id: H-09, area: health, name: Hardware slowdown / power brake active, unit: count, direction: above,
    low: null, medium: 1, high: null, sim: false, owner: "07",
    why: "One throttled GPU slows every GPU in the job.",
@@ -224,7 +224,7 @@ metrics:
    low: null, medium: 1, high: null, sim: false, owner: "07",
    why: "Slow host-GPU copies: slower checkpoints and data loading.",
    action: "Reboot; replace if it persists."}
-- {id: H-11, area: health, name: NVLink / EFA link down, unit: count, direction: above,
+- {id: H-11, area: health, name: NVLink / fast network link down, unit: count, direction: above,
    low: null, medium: null, high: 1, sim: false, owner: "07",
    why: "Collectives fall back to slow paths or fail.",
    action: "Drain now."}
@@ -281,37 +281,37 @@ metrics:
    why: "Async staging needs pinned host RAM; without it saves fail or the node swaps.",
    action: "Find the memory leak (data loader workers); restart at next checkpoint."}
 
-# ------------------------------------------------------------------ cost: every dollar accounted for
+# ------------------------------------------------------------------ cost: every node-hour accounted for
 - {id: C-01, area: cost, name: Burn rate vs plan, unit: ratio, direction: above,
    low: 1.05, medium: 1.1, high: 1.25, sim: false, owner: "07 + lead",
    why: "Spending faster than the plan ends the budget before training ends.",
    action: "Find what is running outside the capacity calendar; stop it."}
-- {id: C-02, area: cost, name: Cost per productive GPU-hour vs list price, unit: ratio, direction: above,
+- {id: C-02, area: cost, name: Node-hours per productive node-hour, unit: ratio, direction: above,
    low: 1.08, medium: 1.11, high: 1.25, sim: true, owner: "07",
-   why: "price / goodput: what one useful GPU-hour really costs. 1.11 = goodput 90%.",
+   why: "1 / goodput: node-hours paid for one useful node-hour. 1.11 = goodput 90%.",
    action: "Fix the largest waste bucket (C-03)."}
 - {id: C-03, area: cost, name: Wasted share of main-run spend, unit: "%", direction: above,
    low: 8, medium: 10, high: 20, sim: true, owner: "07",
-   why: "Stall + lost work + detection + reschedule + restore, in money.",
-   action: "The report lists each bucket in USD."}
-- {id: C-04, area: cost, name: Cost of one incident, unit: x interval cost, direction: above,
+   why: "Stall + lost work + detection + reschedule + restore, as a share of the run's node-hours.",
+   action: "The report lists each bucket in node-hours."}
+- {id: C-04, area: cost, name: Cost of one incident, unit: x interval node-hours, direction: above,
    low: 0.75, medium: 1.5, high: 3.0, sim: true, owner: "07",
-   why: "(lost work + detect + reschedule + restore) x cluster price.",
+   why: "(lost work + detect + reschedule + restore) x nodes, in node-hours.",
    action: "Large values: missing emergency save, slow restore, or no spare."}
 - {id: C-05, area: cost, name: Instances running that Slurm does not know, unit: count, direction: above,
    low: null, medium: null, high: 1, sim: false, owner: "07",
-   why: "A forgotten GPU instance can cost thousands of dollars a day (V4: a cluster idle for 3 days).",
+   why: "A forgotten GPU node is billed for 24 node-hours a day and does no work.",
    action: "Stop it now; find who started it."}
 - {id: C-06, area: cost, name: Budget days left vs training days left, unit: ratio, direction: below,
    low: 1.2, medium: 1.0, high: 0.8, sim: false, owner: "lead",
-   why: "Below 1.0 the money runs out before training finishes.",
+   why: "Below 1.0 the node-hour budget runs out before training finishes.",
    action: "Cut team allocations or the run length; decide early."}
-- {id: C-07, area: cost, name: Cross-AZ / internet egress, unit: USD/day, direction: above,
-   low: 1, medium: 20, high: null, sim: false, owner: "07",
-   why: "Data transfer out of the region or across AZs is billed per GB; it should be near 0.",
-   action: "Keep nodes, bucket and eval in one region and AZ; use S3 gateway endpoints."}
-- {id: C-08, area: cost, name: Unattached EBS volumes / old snapshots, unit: USD/month, direction: above,
+- {id: C-07, area: cost, name: Cross-zone / internet egress, unit: GB/day, direction: above,
    low: 10, medium: 100, high: null, sim: false, owner: "07",
+   why: "Data transfer out of the region or across AZs is billed per GB; it should be near 0.",
+   action: "Keep nodes, bucket and eval in one region and zone; use a private storage endpoint."}
+- {id: C-08, area: cost, name: Unattached block volumes / old snapshots, unit: GB, direction: above,
+   low: 100, medium: 1000, high: null, sim: false, owner: "07",
    why: "Storage left behind keeps billing.",
    action: "Delete or snapshot-and-delete."}
 - {id: C-09, area: cost, name: Spare node cost share, unit: "%", direction: above,

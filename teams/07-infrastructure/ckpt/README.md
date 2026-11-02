@@ -11,9 +11,67 @@ Health side: [../health/README.md](../health/README.md).
 
 ---
 
+## How it works, step by step
+
+Plain-words overview and the reasons behind each choice: [team briefing §3.1](../TEAM_BRIEFING.md#31-checkpoints-save-commit-prove-adr-0001).
+Every step names the function that does it (`ckpt/ckpt.py` unless noted), so you can follow it in the code.
+DeepSpeed runs the same steps through `ckpt/ds_ckpt.py` (`DSCheckpointer`), with DeepSpeed writing the tensors.
+
+**A. Start of every attempt: claim and restore** (`Checkpointer.restore`)
+
+```text
+1. claim()            write latest.json with epoch+1, only if nobody changed it since we read it
+                      → from now on an older copy of this run cannot commit (fencing)
+2. candidates()       latest.json first, then commits.jsonl newest → oldest (never "list folders")
+3. for each candidate (_restore_one):
+   a. checksums       every file in MANIFEST.json against its sha256            ✗ → try the previous commit
+   b. environment     image, torch/CUDA/NCCL, config, tokenizer, embedding policy, threads (+ DeepSpeed config)
+                                                                                 ✗ → stop, exit 78 (EnvMismatchError)
+   c. download        to node-local NVMe, each copy re-checked                   ✗ → try the previous commit
+   d. strict keys     every name, shape and dtype matches the model             ✗ → stop, exit 78 (StrictLoadError)
+   e. load            tensors (resharded if the number of GPUs changed), data position, random generators
+                      other data list → exit 78 (DataManifestError); other GPU count with per-rank data → 78 (ReshardError)
+   f. 4 proofs        state digest · probe-loss bits · next-batch hash · frozen fingerprints
+                                                                                 ✗ → try the previous commit
+4. nothing committed yet → fresh start at step 0;   every candidate failed → exit 78 (CheckpointError)
+```
+
+**B. Every save** (`Checkpointer.save`, then a background thread `_upload_and_commit`)
+
+```text
+in the training loop (training waits only for this part, "the stall"):
+1. NaN/Inf anywhere in the state?                      yes → nothing saved, exit 78 (NonFiniteError)
+2. enough free local disk?                             no  → save skipped, alert CK-03, training continues
+3. fingerprints of the state and of frozen tensors; a frozen tensor changed?  yes → exit 78 (FrozenChangedError)
+4. probe loss on the fixed batch; data position (must be the same on every rank)
+5. copy the state to host memory (own copy of CPU tensors), start the write; training continues
+in the background:
+6. every rank: wait for its write, upload its files to the shared store (sha256 each), write sums_rank<r>.json
+7. rank 0: wait for every rank's sums → re-check every stored file → write MANIFEST.json LAST
+8. rank 0: move latest.json, only if this attempt still owns the run   another attempt owns it → FencedError,
+                                                                       the job stops with 78, nothing moved
+9. append the commit to commits.jsonl; event checkpoint.committed; keep the newest 2 local copies
+```
+
+**C. On a stop signal** (preemption, spot notice, health drain, time limit): the trainer finishes its step, saves
+(B), waits for the commit, exits **75**; Slurm restarts it and it continues at A.
+
+**D. Around the run**
+
+| When | What | Command / function |
+|---|---|---|
+| before the run | the store refuses a stale write (else fencing cannot work) | `ckpt.py probe-store --run <run>` (run by `ops/launch.sh`) |
+| after a NaN or loss spike | restore an older step, skip some batches, continue on a new branch | `TRAIN_EXTRA="--from-step K --skip 5 --branch b1"` |
+| daily, as its own job | delete old checkpoints, never protected / pinned / latest ones | `ckpt.py retention`, `run_retention()` |
+| for Teams 09/11/12 | export one checked `safetensors` file | `export_safetensors()`, DeepSpeed: `ds_ckpt.export_ds()` |
+| any time | list commits, verify files, pin a step | `ckpt.py list / verify / pin` |
+
+---
+
+
 ## 1. Why this matters (the money view)
 
-- A run with 8 GPU nodes costs hundreds of dollars per hour (see `metrics/prices.yaml`; prices are still assumptions).
+- A run with 8 GPU nodes uses 8 node-hours every hour; every minute lost is paid on all of them (ADR 0004).
 - Interruptions are normal at this scale. The Session 15 reference run had one every ~13 hours; Llama 3 had 466
   in 54 days.
 - On each interruption we lose **the work since the last checkpoint** plus **the restart time**.
@@ -94,9 +152,11 @@ Not saved: gradients, activations, NCCL state. They are rebuilt on the next step
 <remote_root>/<run_id>/<branch>/step_<N>-e<E>/ DCP shard files, extra_rank<r>.json, sums_rank<r>.json, MANIFEST.json
 ```
 
-`remote_root` is `s3://bucket/prefix` on AWS (and in the Docker test, through an S3 emulator), or a plain
-folder in unit tests. The node's local NVMe holds a **cache** copy only: on p6 instances it is *instance
-store* and is wiped when the instance stops. **The S3 copy is the only one that counts.**
+`remote_root` is either a folder on a **shared file system** every node mounts (the default, `/shared/ckpt`:
+NFS, Lustre, GPFS or CephFS, so it works on bare metal) or `s3://bucket/prefix` on any **S3-compatible object
+store** (self-hosted or a cloud's; the Docker test also runs it through an S3 emulator). Nothing else in the
+code depends on which one. The node's local NVMe holds a **cache** copy only: it can be wiped when a node stops
+or is replaced. **The copy in the shared store is the only one that counts.**
 
 ---
 
@@ -183,9 +243,9 @@ old branch stays, so the run can be replayed exactly later. You can also restart
 |---|---|
 | Node NVMe | last 2 committed (fast restore on the same node) |
 | S3 Standard | last 3 committed + **protected** ones: every N-th (Team 09 sets N), the final one, any pinned |
-| S3 Glacier | protected checkpoints older than X days (~6× cheaper) |
+| Archive tier | protected checkpoints older than X days (~6× cheaper) |
 
-- Only the **retention job** may delete (its own IAM role). A bug in training can never wipe checkpoints.
+- Only the **retention job** may delete (its own cloud role). A bug in training can never wipe checkpoints.
 - It never deletes a protected checkpoint or the one `latest.json` points to.
 - Orphans (uploads with no manifest, from a crash) are deleted after 1 hour.
 - Protected checkpoints are replicated to a second region; deletes are not replicated.
@@ -279,7 +339,7 @@ Full list with LOW / MEDIUM / HIGH thresholds: CK-01 … CK-20 in
 
 | ID | Metric | HIGH when | What to do |
 |---|---|---|---|
-| CK-01/02 | time / dollars since last commit | ≥ 2 × interval | saves are not committing: check S3 and CK-03 |
+| CK-01/02 | time / node-hours since last commit | ≥ 2 × interval | saves are not committing: check S3 and CK-03 |
 | CK-03 | failed saves in a row | ≥ 2 | look at `checkpoint.failed` cause (`nvme_full`, upload error) |
 | CK-04 | checksum mismatch | any | storage corruption: keep the checkpoint, investigate |
 | CK-05 | restore check failure | any | read both printed values; the job already fell back |
@@ -309,7 +369,7 @@ Full list with LOW / MEDIUM / HIGH thresholds: CK-01 … CK-20 in
 - **Truly sharded state** (FSDP/ZeRO-3, expert parallel). The test trainer uses DDP, where every rank holds a
   full copy, so "4 ranks → 1" is the easy case. Needs Team 05's model (week 2).
 - **Real S3 speed** on a multi-GB checkpoint (the emulator is in memory).
-- **Real GPU stall**: `support/tools/bench_save.py` on Kaggle T4 now, B200 in week 2.
+- **Real GPU stall**: `support/tools/bench_save.py` on Kaggle's GPUs now, the GPU node in week 2.
 - Protected cadence N (Team 09), the RPO cap (instructor), model size (config due 31 Oct).
 
 ---

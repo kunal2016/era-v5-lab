@@ -1,4 +1,4 @@
-# ADR 0002: Job queue and cluster operations on self-managed Slurm (EC2), validated in Docker Slurm
+# ADR 0002: Job queue and cluster operations on self-managed Slurm on cloud GPU nodes, validated in Docker Slurm
 
 - Status: Proposed
 - Date: 2026-10-27 (revised from 2026-10-25; second revision after the week-1 review, see [review_week1.md](../support/docs/review_week1.md))
@@ -12,19 +12,18 @@
 
 ## Context
 
-V4 had **no scheduler**. GPUs were reached through many student AWS accounts and jobs were started by hand.
-One cluster sat idle for 3 days; the only guard was a CloudWatch CPU-idle alarm. Restarts were typed by hand.
-V4 also ran two different software stacks (cu128 pins, and a cu130 nightly plus an S3 tarball).
+V4 had **no scheduler**: jobs were started by hand.
+One cluster sat idle for 3 days; the only guard was a CPU-idle alarm. Restarts were typed by hand.
 
 For V5 the instructor gives **no keys to students**, wants scheduling on **Slurm, validated in Docker Slurm**,
-and we will run on **AWS EC2 GPU instances**. The cluster must:
+and we will run on **cloud GPU nodes**. The cluster must:
 
 - run the **main run** without letting anything else take its GPUs;
 - share the remaining capacity fairly: Team 05's scaling ladder (5–8 runs), Team 06 benchmarks, Team 09 evals,
   Team 12 quantization, Team 10 RL tests, Teams 01–03 CPU data jobs;
 - **restart the main run on its own** from the last committed checkpoint (ADR 0001);
 - keep sick nodes out of service (ADR 0003);
-- account for every GPU-hour and every dollar (ADR 0004).
+- account for every GPU-hour and node-hour (ADR 0004).
 
 Team 07 also runs the **two dry runs** (S15 team charter). The S15 reference run lost 9 of its 38 interruptions
 to slow storage reads.
@@ -43,33 +42,33 @@ to slow storage reads.
 | Option | For | Against |
 |---|---|---|
 | A. No scheduler, as in V4 (SSH + scripts) | nothing to run | no queue, no fairness, no automatic restart |
-| B. Kubernetes (EKS) + Kueue or Volcano | strong for services | gang scheduling and topology for multi-node NCCL jobs are add-ons; extra layers (CNI, device and EFA plugins) |
-| C. AWS ParallelCluster (managed Slurm) | AWS-built autoscaling, FSx and EFA wiring | its config layer and update cycle sit between us and Slurm; harder to mirror in Docker |
-| D. AWS Batch | managed | weak multi-node gang jobs; no fair-share like Slurm's |
-| E. **Self-managed Slurm on EC2** | full control of `slurm.conf`, versions and AMI; the norm for LLM training; `slurmdbd` gives accounting and fair-share; **the Docker test runs the same file** | we operate the control plane ourselves |
+| B. managed Kubernetes + Kueue or Volcano | strong for services | gang scheduling and topology for multi-node NCCL jobs are add-ons; extra layers (CNI, device and fast-network plugins) |
+| C. the provider's managed Slurm service (managed Slurm) | provider-built autoscaling, managed Lustre and fast-network wiring | its config layer and update cycle sit between us and Slurm; harder to mirror in Docker |
+| D. A managed cloud batch service | managed | weak multi-node gang jobs; no fair-share like Slurm's |
+| E. **Self-managed Slurm on cloud nodes** | full control of `slurm.conf`, versions and node image; the norm for LLM training; `slurmdbd` gives accounting and fair-share; **the Docker test runs the same file** | we operate the control plane ourselves |
 
-Runtime options: (i) bare AMI + venv; (ii) **container image run by Slurm through Pyxis/Enroot**; (iii) Apptainer.
+Runtime options: (i) bare node image + venv; (ii) **container image run by Slurm through Pyxis/Enroot**; (iii) Apptainer.
 
-> **In simple words.** We run Slurm ourselves on EC2 (E), because then the Docker copy and the real cluster
-> use the same configuration file, and what we test is what we run. ParallelCluster (C) would be a sensible
+> **In simple words.** We run Slurm ourselves on cloud nodes (E), because then the Docker copy and the real cluster
+> use the same configuration file, and what we test is what we run. The provider's managed Slurm (C) would be a sensible
 > fallback if operating Slurm ourselves becomes too much work.
 
 ## Decision
 
-**E. Self-managed Slurm on EC2, with containers through Pyxis/Enroot. One `slurm/slurm.conf` for Docker and
-EC2; only the node lines differ (`support/simulation/slurm-docker/nodes.conf` vs `slurm/nodes.ec2.conf`).**
+**E. Self-managed Slurm on cloud nodes, with containers through Pyxis/Enroot. One `slurm/slurm.conf` for Docker and
+the cloud; only the node lines differ (`support/simulation/slurm-docker/nodes.conf` vs `slurm/nodes.cloud.conf`).**
 
 ### 1. Cluster shape
 
-- **Head instance** (small, CPU): `slurmctld`, `slurmdbd` and MariaDB on an EBS volume with daily snapshots.
+- **Head instance** (small, CPU): `slurmctld`, `slurmdbd` and MariaDB on a block volume with daily snapshots.
   A **backup `slurmctld`** on a second small instance (`SlurmctldHost=slurmctld2`), sharing
-  `StateSaveLocation` on EFS. Tested in Docker: the backup takes over, running jobs keep training, new jobs are
+  `StateSaveLocation` on a shared file system. Tested in Docker: the backup takes over, running jobs keep training, new jobs are
   accepted, and the primary takes back control when it returns.
 - **Accounting database backup:** `slurm/backup_db.sh` dumps `slurm_acct_db` daily to S3; a backup only counts
   after `--verify-latest` has restored it into a scratch database with the same tables (tested in Docker).
-- **GPU nodes:** proposed `p6-b200.48xlarge` (8 × B200, EFA). The instructor said V5 will "handle B200 end to
-  end". All nodes in **one cluster placement group**, one AZ, with EFA.
-- **Main run on on-demand or an EC2 Capacity Block**, never spot (ADR 0004 §3), plus **one hot spare**.
+- **GPU nodes:** a generic 8-GPU node with a fast node-to-node network. All nodes in **one placement group** in
+  one zone, so the network between them is the fast one.
+- **Main run on on-demand or a reserved capacity booking**, never spot (ADR 0004 §3), plus **one hot spare**.
 - **The hot spare is not idle:** it runs preemptible team jobs, which the main run preempts when it needs the node.
 - **Idle nodes are stopped:** `State=CLOUD` nodes with `SuspendProgram` / `ResumeProgram` and `SuspendTime=600`;
   the spare is kept up by **name**: `job_queue.py keep-spare` (systemd timer on the controller, every minute,
@@ -77,13 +76,13 @@ EC2; only the node lines differ (`support/simulation/slurm-docker/nodes.conf` vs
   form `gpu-[1-9]:1` was dropped: the man page says it keeps N "powered up" nodes and does not say whether busy
   main-run nodes count, and if they do, no spare is kept (review finding, week 1). This replaces V4's idle alarm.
 
-- **GPUs are a Slurm resource (gres).** `GresTypes=gpu`; on EC2 `gres.conf` uses `AutoDetect=nvml` and
+- **GPUs are a Slurm resource (gres).** `GresTypes=gpu`; on cloud nodes `gres.conf` uses `AutoDetect=nvml` and
   `cgroup.conf` sets `ConstrainDevices=yes`, so a job sees only its own GPUs (`CUDA_VISIBLE_DEVICES`). Job
   scripts ask `--gpus-per-node=8 --ntasks-per-node=8` (one rank per GPU). `AccountingStorageTRES=gres/gpu`
   records GPU-hours per account, so budgets and reports are in GPU-hours. Docker uses 2 placeholder GPUs per
   node (no computation) to test allocation and accounting.
-- **The only Docker/EC2 differences** are four small files: `site.conf` (process tracking and cgroups),
-  `nodes.conf`, `gres.conf`, `cgroup.conf` (`support/simulation/slurm-docker/` vs `slurm/*.ec2.conf`). `slurm.conf` is shared.
+- **The only Docker/the cloud differences** are four small files: `site.conf` (process tracking and cgroups),
+  `nodes.conf`, `gres.conf`, `cgroup.conf` (`support/simulation/slurm-docker/` vs `slurm/*.cloud.conf`). `slurm.conf` is shared.
 - **When nodes run out:** if more nodes fail than there are spares, the main run **waits** (pending) and
   Q-01 pages at 10 min. It does **not** shrink by itself: a smaller world changes speed, is not bit-equal, and
   needs a person to agree. The operator may restart it on fewer nodes (`sbatch --nodes=1`), which the
@@ -92,39 +91,46 @@ EC2; only the node lines differ (`support/simulation/slurm-docker/nodes.conf` vs
 | Partition | For |
 |---|---|
 | `gpu` | training, whole nodes (`OverSubscribe=EXCLUSIVE`) |
-| `eval` | separate, cheaper GPU nodes (g6e); the training node is never used for evaluation (S6, S15) |
+| `eval` | separate, cheaper GPU nodes; the training node is never used for evaluation (S6, S15) |
 | `debug` | 30-min limit |
 | `cpu` | data, tokenizer, retention and export jobs |
 
 ### 2. Runtime image
 
 - One image per release, **built in CI** from a lock file, pinned by **digest**. Base: the NVIDIA CUDA image
-  matching the AMI driver's major version, plus `aws-ofi-nccl` and the EFA libraries; exact torch, triton and
+  matching the node image's driver major version, plus `the cloud's NCCL network plugin` and the fast-network libraries; exact torch, triton and
   NCCL versions and our kernels. At build time the image runs an import and version check (kept from V4).
-- Jobs run with `srun --container-image=<digest>`; the AMI holds only the driver, EFA, Enroot/Pyxis and Slurm.
+- Jobs run with `srun --container-image=<digest>`; the node image holds only the driver, the fast network, Enroot/Pyxis and Slurm.
 - The digest goes into every checkpoint manifest (ADR 0001); a different digest refuses to resume unless overridden.
-- **One stack only.** V4's second "nightly + tarball" path is not allowed. The Docker test image
+- **One stack only.** A second, hand-built software stack is not allowed. The Docker test image
   (`support/simulation/slurm-docker/Dockerfile`) pins torch 2.5.1 CPU the same way.
 
 ### 3. Storage
 
+> **In simple words.** Nothing here assumes a cloud. "The shared store" is whatever the site has that every node
+> can reach: a shared file system on bare metal (NFS, Lustre, GPFS, CephFS), or an S3-compatible object store
+> (self-hosted, or a cloud's). The code picks it from one setting, `V5_REMOTE_ROOT`, and the drills run on both.
+
 | Data | Where | Rule |
 |---|---|---|
-| Training shards | S3 → **local NVMe**, prefetched ahead of use | the next shard downloads while the current one trains (S6). No training read goes to S3 |
-| Checkpoints | local NVMe → S3 | ADR 0001 |
-| Code, configs, small shared files | the image (or EFS) | never on the training read path |
-| Job logs, events, exit notes | node-local `/var/log/v5/{logs,events,runs}` → shipped by Team 08's agent to S3 | in Docker `/var/log/v5` is a link to the shared volume, which plays the shipped copy |
-| Crash-loop count | one object `crashes.json` in the run's S3 folder, read and rewritten whole | not a file on a node |
+| Training shards | the shared store → **local NVMe**, prefetched ahead of use | the next shard is copied while the current one trains (S6). No training read goes to the shared store |
+| Checkpoints | local NVMe → the shared store | ADR 0001 |
+| Code, configs, small shared files | the image (or the shared file system) | never on the training read path |
+| Job logs, events, exit notes | node-local `/var/log/v5/{logs,events,runs}` → shipped by Team 08's agent to the shared store | in Docker `/var/log/v5` is a link to the shared volume, which plays the shipped copy |
+| Crash-loop count | one file `crashes.json` in the run's folder of the shared store, read and rewritten whole | not a file on a node |
 
-**No shared file system at all on EC2** (no EFS/FSx/Mountpoint for job data): one less component that can be
-the slow-storage failure, and one less monthly bill. Nothing a job needs on its next node may live on a node:
-state that must survive a move goes to S3 through `ckpt/store.py` (checkpoints, `latest.json`, `commits.jsonl`,
-`crashes.json`), everything else is a node-local file the log agent ships. Week 1 review found the first draft
-broke this rule: the crash counter was an appended file under `/s3/runs`, which on a node-local disk restarts from
-zero on every new node (so the cap never fires), and on Mountpoint-S3 fails because S3 cannot append. The job log
-used `--open-mode=append` on `/s3/logs` for the same reason. Both moved. The only EFS is slurmctld's
-`StateSaveLocation` (§1), which Slurm needs for controller failover and no job touches. FSx for Lustre is revisited only if prefetch cannot keep data wait below target (Q-M9).
-S3 is reached through a **gateway VPC endpoint** (no NAT data charges, no internet path).
+**The shared store** (`V5_REMOTE_ROOT`):
+- **a folder on a shared file system** (`/shared/ckpt`, the default): the bare-metal case. Writes go to a
+  temporary name and are renamed; fencing uses an exclusive-create lock file (ADR 0001 §2).
+- **an S3-compatible object store** (`s3://bucket/prefix`): optional, for sites without a shared file system.
+
+Nothing a job needs on its next node may live on a node: state that must survive a move goes to the shared store
+through `ckpt/store.py` (checkpoints, `latest.json`, `commits.jsonl`, `crashes.json`), everything else is a
+node-local file the log agent ships. Week 1 review found the first draft broke this rule: the crash counter was an
+appended file on a node-local disk, which restarts from zero on every new node (so the cap never fires), and an
+object store cannot append at all. The job log used `--open-mode=append` for the same reason. Both moved.
+slurmctld's `StateSaveLocation` (§1) also needs a folder both controllers see; no job touches it. Keep the shared
+store close to the nodes (same site or zone), so copies do not cross a paid or slow network link.
 
 ### 4. Accounts, QOS and budgets (`slurmdbd`, `slurm/setup_accounts.sh`)
 
@@ -145,26 +151,27 @@ root
 - `PreemptType=preempt/qos`, `PreemptMode=REQUEUE`: a preempted team job gets SIGTERM, has `GraceTime` to
   save, and goes back to the queue.
 - `AccountingStorageEnforce=associations,limits,qos`: a job with no valid account is rejected.
-- `GrpTRES=node=<cap>,gres/gpu=<share>` per team account (`V5_NODE_CAP`, `V5_TEAM_GPUS`): on EC2 2 nodes and
-  16 GPUs; on the shared node, TSAI's GPU share per team (Mallik's GPU shares, team 07). A job over the share
+- `GrpTRES=node=<cap>,gres/gpu=<share>` per team account (`V5_NODE_CAP`, `V5_TEAM_GPUS`): on cloud nodes 2 nodes and
+  16 GPUs; on the shared node, TSAI's GPU share per team (millermuttu's GPU shares, team 07). A job over the share
   waits with `AssocGrpGRES`.
-- **Per-job limits** on the team QOS (Max's queue design, team 07): `MaxWall`, `MaxTRESPerJob`, a cap on queued
+- **Per-job limits** on the team QOS (uz9ai's queue design, team 07): `MaxWall`, `MaxTRESPerJob`, a cap on queued
   jobs per team. `Flags=DenyOnLimit`: a job that breaks a per-job limit is **refused at submit** with the reason
   (`QOSMaxGRESPerJob`, `QOSMaxWallDurationPerJobLimit`, `QOSMaxSubmitJobPerUserLimit`), instead of pending forever.
-- **`debug` QOS** instead of a debug partition (Max's ADR-09): one quick 1-GPU job per user ahead of the queue,
+- **`debug` QOS** instead of a debug partition (uz9ai's ADR-09): one quick 1-GPU job per user ahead of the queue,
   on the team's own nodes; the main run may preempt it.
-- **Time limit with self-requeue** for team jobs (Max's ADR-05): `--time` + `--signal=B:USR1@<lead>`, lead ≥
+- **Time limit with self-requeue** for team jobs (uz9ai's ADR-05): `--time` + `--signal=B:USR1@<lead>`, lead ≥
   2 × the save time + 60 s. The warning reaches only the batch shell (`B:`); the wrapper passes it to the
   trainers through `srun`; they save and exit 75; Slurm requeues the job with the same id. Long work runs in
   segments and loses nothing. The main run keeps no time limit.
-- **Launch shape:** `srun` starts one trainer per GPU directly, with no launcher in between (Max's ADR-10
-  "alternative b"). Max checked in DeepSpeed's source that the `deepspeed` launcher dies on SIGUSR1 and kills all
+- **Launch shape:** `srun` starts one trainer per GPU directly, with no launcher in between (uz9ai's ADR-10
+  "alternative b"). uz9ai checked in DeepSpeed's source that the `deepspeed` launcher dies on SIGUSR1 and kills all
   ranks when one exits non-zero, which would break both the save-on-signal and the exit-75 contract. Our
-  DeepSpeed drills (`sim_results_deepspeed.md`) run `deepspeed.initialize` from Slurm's variables, no launcher.
+  DeepSpeed test trainer (`train.py --deepspeed`, tests T18–T22) runs `deepspeed.initialize` from Slurm's
+  variables, no launcher.
 - **`GrpTRESMins` budget** per account, alerts at 50 / 75 / 90% (Q-15), hard stop at 100%.
   `AccountingStorageEnforce=associations,limits,qos,safe`: with **`safe`** a job starts only if it can finish
   inside what is left of the budget (its CPUs/GPUs × `--time`). Without it Slurm only stops a team once the
-  budget is already used, so the last job overspends (found by the budget drill in run 16; `safe` is in Max's
+  budget is already used, so the last job overspends (found by the budget drill in run 16; `safe` is in uz9ai's
   design). A job that could never fit is refused at submit (`DenyOnLimit`, `AssocGrpCPUMinutesLimit`).
 - **Default time per partition:** `eval` 1 h, `debug` 10 min, `cpu` 1 h. A job without `--time` otherwise gets the
   QOS `MaxWall` (24 h), above those partitions' `MaxTime`, and pends forever (`PartitionTimeLimit`, run 15).
@@ -215,12 +222,12 @@ root
   itself on `fail` (`scontrol update state=drain`) and sends its jobs SIGUSR1.
 - `Prolog=slurm/prolog.sh` runs the quick checks at allocation (`PrologFlags=Alloc`). It exits non-zero only on
   `fail`; Slurm then drains the node and requeues the job (`SchedulerParameters=nohold_on_prolog_fail`).
-- `queue/job_queue.py spot-watch` on every node polls IMDSv2 for a spot notice (a file in Docker).
+- `queue/job_queue.py spot-watch` on every node polls the instance metadata service for a spot notice (a file in Docker).
 
 ### 7. Access and secrets
 
-- **No static AWS keys anywhere**, and none in git (gitleaks before every push; pr-guard also checks).
-- Nodes use **IAM instance profiles**:
+- **No static cloud keys anywhere**, and none in git (gitleaks before every push; pr-guard also checks).
+- Nodes use **instance roles**:
 
 | Role | Can |
 |---|---|
@@ -228,9 +235,9 @@ root
 | eval | read checkpoints only |
 | retention job | delete non-protected checkpoints (the only delete permission) |
 
-- Students never get SSH or AWS keys. The instructor's submit system calls `sbatch` with a team account through
+- Students never get SSH or cloud keys. The instructor's submit system calls `sbatch` with a team account through
   one service user (`svc` in Docker).
-- Admin access uses SSM Session Manager, not an open port 22. The database password lives in Secrets Manager
+- Admin access uses the cloud session manager, not an open port 22. The database password lives in the cloud secrets store
   (the Docker file's `simonly` value is for the local container only).
 
 ### 8. Event schema and time (shared by all ADRs)
@@ -241,12 +248,12 @@ root
   `export.done / failed`, `train.started / step / stop_requested / watchdog / nonfinite / exit`,
   `job.started / ended / requeued / held / signal / signalled / rejected`, `node.drained / resumed / spot_notice`,
   `health.report`, and in the test `drill.injected`.
-- chrony runs on every node (Amazon Time Sync); the health check reports the offset (Q-17).
+- chrony runs on every node (the cloud's time service); the health check reports the offset (Q-17).
 
 ### 9. Goodput accounting
 
 > **In simple words.** We split every second of the main run into "trained the model" and named kinds of
-> waste, and put a dollar figure on each. Then we know where the money went.
+> waste, and count each in node-hours. Then we know where the GPU time went.
 
 | Bucket | Source |
 |---|---|
@@ -284,7 +291,7 @@ Each dry run, and the Docker simulation, runs these drills, timed and recorded a
 | rollback + smaller world | `--from-step --skip 5 --branch b1` on 1 node instead of 2 | restored, resharded, branch b1; run completes |
 | crash loop | a job that crashes at step 3 | requeued twice, then held |
 | budget | 2 CPU-minute budget: a job asking 240 CPU-minutes; then one that fits; then another | the big one refused at submit (`AssocGrpCPUMinutesLimit`); the next waits with `AssocGrpCPUMinutesLimit` |
-| limits (Max's T05–T11) | users alice (arch), bob (perf), carol (none) | wrong account and no account refused; third job of a full GPU share waits `AssocGrpGRES`; another user's `scancel` refused; 6 GPUs per job and `--time=25:00:00` refused at submit (`QOSMaxGRESPerJob`, `QOSMaxWallDurationPerJobLimit`); debug QOS: second job `QOSMaxJobsPerUserLimit`, third refused, 2 GPUs refused |
+| limits (uz9ai's T05–T11) | users alice (arch), bob (perf), carol (none) | wrong account and no account refused; third job of a full GPU share waits `AssocGrpGRES`; another user's `scancel` refused; 6 GPUs per job and `--time=25:00:00` refused at submit (`QOSMaxGRESPerJob`, `QOSMaxWallDurationPerJobLimit`); debug QOS: second job `QOSMaxJobsPerUserLimit`, third refused, 2 GPUs refused |
 | time limit | team job `--time=00:02:00 --signal=B:USR1@60` | warning → save → exit 75 → requeued with the same id (`Restarts=1`) → resumed at the saved step, 0 lost |
 | health fakes (ADR 0003) | fake `nvidia-smi`/`dmesg`; planted hot GPU, ECC, row-remap failure, NVLink down, Xid 79, Xid 94 | GPU checks run and pass when healthy; each fault fails the right check; 94 only warns; NVLink down drained by the periodic check |
 | split brain (ADR 0001) | a second attempt claims the run while the main run trains | the old attempt's commit is refused, it is held (`FencedError`), the pointer does not move; resubmit resumes |
@@ -311,7 +318,7 @@ Each dry run, and the Docker simulation, runs these drills, timed and recorded a
   `TRAIN_EXTRA=--allow-env-change`, which is logged in the restore event. Slurm itself: `slurmdbd` first, then
   `slurmctld`, then `slurmd`, as Slurm's upgrade guide requires.
 - **Logs:** job stdout/stderr (`/var/log/v5/logs`) and events (`/var/log/v5/events`) are node-local files,
-  shipped by Team 08's agent to S3 (`s3://…/logs/`, 90 days Standard, then Glacier). A requeue on another node
+  shipped by Team 08's agent to S3 (`s3://…/logs/`, 90 days Standard, then the archive tier). A requeue on another node
   starts a new file there; the agent's S3 copy holds them all. In Docker `/var/log/v5` links to the shared volume.
 - **Paging path:** `metrics/watch.py` runs on the head node, recomputes the catalog every 30 s, and on a new
   severity writes `alert.fired` and posts to `V5_ALERT_WEBHOOK` (Team 08's pager or a chat webhook). HIGH pages
@@ -322,11 +329,11 @@ Each dry run, and the Docker simulation, runs these drills, timed and recorded a
   failure (`--from <step>` continues). Tested against the Docker cluster; the `services` step and the SSH
   transport need real hosts.
 - **Evidence:** every drill writes `support/simulation/results/evidence/<drill>.log` (each command, its exit code
-  and output, and the recorded result), so a reviewer can check a claim without rerunning it (Max's evidence
+  and output, and the recorded result), so a reviewer can check a claim without rerunning it (uz9ai's evidence
   folders). `run_sim.py --smoke` runs accounts, limits, health fakes, preemption and one kill + restore in about
-  3 minutes (Mallik's quick test idea).
-- **Security, designed but not yet tested on AWS:** munge key from Secrets Manager at boot; IAM roles per job type
-  (§7); the submit service; SSM-only admin access. These need the AWS account (week 2).
+  3 minutes (millermuttu's quick test idea).
+- **Security, designed but not yet tested in the cloud:** munge key from the cloud secrets store at boot; cloud roles per job type
+  (§7); the submit service; session-manager-only admin access. These need the cloud account (week 2).
 
 ### 12. Metrics
 
@@ -359,7 +366,7 @@ Good:
 - The main run cannot be starved, the rest is shared fairly and within budget, and idle nodes are stopped.
 - Restarts are automatic, use one script, and lose ≈ 0 work when there is a warning signal.
 - One pinned stack; training never reads from S3 directly.
-- Goodput, MTTR and dollars come from records, so the paper's failure table is factual.
+- Goodput, MTTR and node-hours come from records, so the paper's failure table is factual.
 
 Bad and accepted:
 
@@ -368,7 +375,7 @@ Bad and accepted:
 - **Preemption cost:** preempted team jobs lose the work since their last save (Q-14).
 - **Spare node cost:** a hot spare costs one node of GPU-hours; it runs preemptible work to recover some of that.
 - **Local disk only:** with no shared FS, a node's local checkpoint copy is lost with the node; S3 is the copy that counts.
-- **Docker is not EC2:** no GPUs, EFA, Pyxis, power saving or cgroup enforcement in the test (§Validation).
+- **Docker is not the cloud nodes:** no GPUs, no fast network, no Pyxis, power saving or cgroup enforcement in the test (§Validation).
 
 ## Validation
 
@@ -393,8 +400,10 @@ tiny model, checkpoints on the S3 emulator):
 
 Most of each MTTR is Slurm's requeue wait (`cred_expire=60`, §5; run 11: MTTR 85 s, 31 of 31 drills; run 14: 33 of 33, adding the split-brain drills).
 
-**Latest: run 19 (2026-10-30, flattened folder layout): 44 of 44 drills pass in 33 minutes** (run 17: the same on the old layout), adding the limit, health-fake and time-limit
-drills of the merge with Mallik's and Max's work; smoke run 13 of 13 in 193 s. Runs 15 and 16 found three
+**Latest (2026-10-30, after the cloud-agnostic changes): 44 of 44 drills pass with checkpoints on a shared folder
+(the bare-metal case, [sim_results_folder.md](../support/docs/sim_results_folder.md)) and 44 of 44 on an
+S3-compatible store ([sim_results.md](../support/docs/sim_results.md)), about 34 minutes each** (runs 17 and 19: the same before), adding the limit, health-fake and time-limit
+drills of the merge with millermuttu's and uz9ai's work; smoke run 13 of 13 in 193 s. Runs 15 and 16 found three
 problems the merge itself had introduced, all fixed above: `mainrun` no longer preempting (QOS order), jobs without
 `--time` pending forever (default times), and budgets that overspend by one job (`safe`).
 The table above is run 9 (`cred_expire=30`); with 60 s each restart is about 30 s longer. Run 3 measured 3–57 s with an
@@ -402,16 +411,16 @@ immediate-restart hack, but run 7 showed that hack can lose the main run, so it 
 simulation is low only because a fault is injected about every minute; ADR 0004 projects the measured
 durations onto real failure rates.
 
-Differences from EC2, by design: CPU instead of GPU (gloo instead of NCCL), `proctrack/linuxproc` and
+Differences from the cloud, by design: CPU instead of GPU (gloo instead of NCCL), `proctrack/linuxproc` and
 `task/none` instead of cgroup enforcement (`cgroup.conf` uses `IgnoreSystemd=yes` because there is no
 systemd), no Pyxis (the image already holds the code), no `State=CLOUD` power saving, one controller.
 
 ## Open points
 
-- GPU type and count; Capacity Block or on-demand.
-- The AWS account, IAM roles and S3 bucket names.
+- GPU type and count; reserved capacity booking or on-demand.
+- The cloud account, cloud roles and S3 bucket names.
 - The submit system's contract: does it call `sbatch` with an account?
 - The on-call rota (who acts on a HIGH alert at 4 a.m.).
 - The capacity calendar for weeks 2–4.
 - Automatic shrink to fewer nodes (decided against for now, §1); revisit if spares prove too expensive.
-- Security items in §11, which need the AWS account.
+- Security items in §11, which need the cloud account.

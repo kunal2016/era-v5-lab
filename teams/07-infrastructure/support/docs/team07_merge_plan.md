@@ -1,23 +1,23 @@
-# Team 07 merged submission plan: Pradeep, Mallik, Max
+# Team 07 merged submission plan: pradeep-kumar-gs, millermuttu, uz9ai
 
 One page to decide what goes into the single Team 07 submission. Sources:
 
 | Who | Repo | State reviewed | Built for |
 |---|---|---|---|
-| **P** Pradeep | `pradeep-kumar-gs/era-v5-lab`, branch `infrastructure` | `7b722f2` (30 Oct) | Docker Slurm sim of an EC2 fleet; checkpoint + queue + health + monitoring |
-| **M** Mallik | `millermuttu/era-v5-lab`, branch `07-infrastructure` | `c6e38a3` (28 Oct) | Docker Slurm + the shared GPU node; checkpoint, health, queue |
-| **X** Max | `uz9ai/queue`, branch `main` | 28 Oct | real EC2 (controller + train + eval nodes); queue, installer, trainer |
+| **P** pradeep-kumar-gs | `pradeep-kumar-gs/era-v5-lab`, branch `infrastructure` | `7b722f2` (30 Oct) | Docker Slurm sim of an cloud fleet; checkpoint + queue + health + monitoring |
+| **M** millermuttu | `millermuttu/era-v5-lab`, branch `07-infrastructure` | `c6e38a3` (28 Oct) | Docker Slurm + the shared GPU node; checkpoint, health, queue |
+| **X** uz9ai | `uz9ai/queue`, branch `main` | 28 Oct | real cloud (controller + train + eval nodes); queue, installer, trainer |
 
 **Target agreed: the TSAI shared GPU node(s)** from 1 Nov (every Slurm daemon on the node, S3 keys held by
-TSAI). The detailed reviews behind this page: [merge_plan_pradeep_mallik.md](merge_plan_pradeep_mallik.md)
+TSAI). The detailed reviews behind this page: [merge_plan.md](merge_plan.md)
 (P vs M, all areas) and [queue_review_max.md](queue_review_max.md) (X, queue in depth). Where they differ,
 **this page wins**.
 
-> **In simple words.** Each of us is strongest in a different place. Pradeep: the checkpoint, what happens
-> after a failure, and monitoring, all proven in a Docker cluster. Mallik: a small, clear setup for the one
-> shared node we will actually get, and the best network test. Max: the most careful real-machine install, with
+> **In simple words.** Each of us is strongest in a different place. pradeep-kumar-gs: the checkpoint, what happens
+> after a failure, and monitoring, all proven in a Docker cluster. millermuttu: a small, clear setup for the one
+> shared node we will actually get, and the best network test. uz9ai: the most careful real-machine install, with
 > one checked config file, tight limits and test evidence, and the only one run on real GPUs. The merged
-> submission takes the best part of each and leaves EC2-fleet extras for later.
+> submission takes the best part of each and leaves cloud-fleet extras for later.
 
 ## Evidence behind each source
 
@@ -25,7 +25,7 @@ TSAI). The detailed reviews behind this page: [merge_plan_pradeep_mallik.md](mer
 |---|---|---|
 | P | laptop + Docker Slurm (CPU) | 56 unit tests pass (2 GPU-only skipped); **33/33** Docker drills (run 14); Kaggle GPU package ready, not run |
 | M | Docker Slurm (CPU), one GPU by hand | his `test.sh` (13 checks, ~90 s) and `ckpt.py` self-test; **not re-run here** (running downloaded code is blocked on this machine) |
-| X | **real EC2, 1×T4 per node** | screenshot: T12/T12b self-requeue PASS on `train-01` (3 requeues each); training/eval on T4; T01–T11 result not in repo; **not re-run here** |
+| X | **real cloud nodes, 1 GPU per node** | screenshot: T12/T12b self-requeue PASS on `train-01` (3 requeues each); training/eval on a 1-GPU node; T01–T11 result not in repo; **not re-run here** |
 
 ## What to keep, area by area
 
@@ -61,11 +61,11 @@ TSAI). The detailed reviews behind this page: [merge_plan_pradeep_mallik.md](mer
 | Main-run protection | **P**'s `mainrun` QoS with requeue preemption, **if the main run shares the node with team jobs** | X's no-preemption fits only separate nodes |
 | Exit-code contract | **P**: 0 done, 75 requeue, 78 hold, 3 crashes in 30 min → hold, job comment in plain words | X: any crash = `FAILED`, no hold path; M: requeue on node loss only |
 | Time limits | **X**: `--signal=B:USR1@<lead>` before `MaxWall`, self-requeue, `lead ≥ 2 × save + 60 s` | P runs the main run with no time limit |
-| Launch shape | **P**: `srun` one task per GPU, trainer called directly (X's ADR-10 "alternative b"; P's DeepSpeed drills prove it) **+ X's ADR-10 text** as the reason **+ M's rendezvous id per restart** if torchrun is ever used | no launcher that dies on SIGUSR1, no PID files |
+| Launch shape | **P**: `srun` one task per GPU, trainer called directly (X's ADR-10 "alternative b"; P's DeepSpeed trainer runs this way) **+ X's ADR-10 text** as the reason **+ M's rendezvous id per restart** if torchrun is ever used | no launcher that dies on SIGUSR1, no PID files |
 | Prolog / epilog / periodic health hooks | **P** (`PrologFlags=Alloc`, `nohold_on_prolog_fail`, scripts drain via `scontrol`) | X designed the same rules but left health off (`health/launch.sh --quick` does not exist) |
-| Accounting DB backup | **P** (dump + **test restore**) + X's daily EBS/state snapshot note | |
-| Hot spare, spot watcher, controller failover, EC2 cost | **park in `support/ec2/`** | no spare, spot or second host on one shared node |
-| Secrets | **X**: munge key by hand or SSM SecureString, DB password generated on host, nothing secret in git | |
+| Accounting DB backup | **P** (dump + **test restore**) + X's daily block-volume/state snapshot note | |
+| Hot spare, spot watcher, controller failover, cloud cost | **park in `support/cloud/`** | no spare, spot or second host on one shared node |
+| Secrets | **X**: munge key by hand or the cloud parameter store (encrypted), DB password generated on host, nothing secret in git | |
 | Pinned training environment | **X**: `pyenv/pyproject.toml` + `uv.lock`, built before `slurmd` starts | P pins only the Docker image |
 | Starting the stack | **P**: `launch.sh` (12 checked steps, store probe, submit), calling X's installer steps | X has `verify`; P adds order, health, store probe and main-run start |
 
@@ -85,7 +85,7 @@ TSAI). The detailed reviews behind this page: [merge_plan_pradeep_mallik.md](mer
 ### 4. Monitoring and cost
 
 **P only** (ADR 0004, 74 metrics, live alert watcher, `explain.py`, GPU-hours per team). Trim for one node:
-EC2 prices and the unmanaged-instance finder move to `support/ec2/`.
+cloud prices and the unmanaged-instance finder move to `support/cloud/`.
 
 ### 5. Tests and evidence
 
@@ -97,7 +97,7 @@ EC2 prices and the unmanaged-instance finder move to `support/ec2/`.
 | Fast smoke test | **M**: `test.sh`, ~90 s, incl. chained 2-node FSDP2 restart with bit-equal losses and weights | P's suites take 17–30 min |
 | FSDP2 without GPUs | **M's finding**: torch 2.9+ runs FSDP2 on CPU; move the Docker image to the torch in X's `uv.lock` | P's T16 then runs in every drill, not only on Kaggle |
 | Unit tests | **P** (T1–T27 and the store/health/cost/queue suites) | |
-| GPU evidence | P's Kaggle package now; X's T4 runs; then the shared node | |
+| GPU evidence | P's Kaggle package now; X's 1-GPU cloud runs; then the shared node | |
 
 ### 6. Design documents
 
@@ -127,7 +127,7 @@ teams/07-infrastructure/
     ├── slurm-docker/             one Docker cluster: P's drills + M's test.sh + M's fake nvidia-smi/dmesg
     ├── tests/                    P's unit tests + X's T01–T18 runners (on real hosts and in Docker)
     ├── kaggle/                   GPU checks
-    ├── ec2/                      parked: EC2 site/nodes/gres files, keep-spare, spot-watch, failover, EC2 cost
+    ├── cloud/                      parked: cloud site/nodes/gres files, keep-spare, spot-watch, failover, cloud cost
     └── docs/                     this plan, the two detailed reviews, sim results, G7 review response
 ```
 
@@ -135,14 +135,14 @@ teams/07-infrastructure/
 
 | # | Task | Takes | Owner (suggested) | Size |
 |---|---|---|---|---|
-| W1 | Bring X's `cluster/` in; add a **single-host mode** (controller + node on the shared node) | X + M | Max | M |
-| W2 | Render M's `node/` files and M's team accounts with GPU shares from `cluster.toml`; configless | M → X | Mallik + Max | M |
-| W3 | X's QOS limits and `--signal=B:USR1@<lead>` in P's job scripts; job templates call `job_queue.py` (0/75/78) | X ↔ P | Max + Pradeep | S |
-| W4 | `[health]` points at `health_check.py --mode prolog/periodic`; M's 4 collectives, NVLink check, Xid merge (94 → restart) | M → P | Mallik | M |
-| W5 | Checkpoint additions: M's frozen check at save, `embedding_policy_id`, shard `manifest`; X's `fsync` | M, X → P | Pradeep | S |
-| W6 | Docker cluster: M's fake `nvidia-smi`/`dmesg`, M's `test.sh` as smoke test, image on X's `uv.lock` torch (FSDP2 on CPU) | M, X → P | Pradeep + Mallik | M |
-| W7 | Evidence folders for drills and smoke tests; port X's T01–T11 to the Docker cluster | X → P | Max + Pradeep | M |
-| W8 | Move EC2-only parts to `support/ec2/`; `launch.sh` defaults for one host | P | Pradeep | S |
+| W1 | Bring X's `cluster/` in; add a **single-host mode** (controller + node on the shared node) | X + M | uz9ai | M |
+| W2 | Render M's `node/` files and M's team accounts with GPU shares from `cluster.toml`; configless | M → X | millermuttu + uz9ai | M |
+| W3 | X's QOS limits and `--signal=B:USR1@<lead>` in P's job scripts; job templates call `job_queue.py` (0/75/78) | X ↔ P | uz9ai + pradeep-kumar-gs | S |
+| W4 | `[health]` points at `health_check.py --mode prolog/periodic`; M's 4 collectives, NVLink check, Xid merge (94 → restart) | M → P | millermuttu | M |
+| W5 | Checkpoint additions: M's frozen check at save, `embedding_policy_id`, shard `manifest`; X's `fsync` | M, X → P | pradeep-kumar-gs | S |
+| W6 | Docker cluster: M's fake `nvidia-smi`/`dmesg`, M's `test.sh` as smoke test, image on X's `uv.lock` torch (FSDP2 on CPU) | M, X → P | pradeep-kumar-gs + millermuttu | M |
+| W7 | Evidence folders for drills and smoke tests; port X's T01–T11 to the Docker cluster | X → P | uz9ai + pradeep-kumar-gs | M |
+| W8 | Move cloud-only parts to `support/cloud/`; `launch.sh` defaults for one host | P | pradeep-kumar-gs | S |
 | W9 | ADRs merged as in §6; one README with provenance; one PR under `teams/07-infrastructure/` | all | all | S |
 | W10 | On the node (1 Nov): `install.sh` single-host, `launch.sh`, M's TESTING.md level 3, X's T01–T18 with evidence; Kaggle run for GPU checkpoint numbers | all | all | — |
 

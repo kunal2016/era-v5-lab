@@ -20,7 +20,7 @@ code or papers and must be checked against the DeepSpeed version we pin, before 
 | # | Decision | Recommendation | Why, in simple words |
 |---|---|---|---|
 | DS-1 | Checkpoint format | **DeepSpeed's own** (`engine.save_checkpoint`), wrapped in our commit protocol; drop `dcp.save` | DeepSpeed's ZeRO state cannot be read out cleanly for PyTorch DCP. Fighting the engine costs more than wrapping it |
-| DS-2 | ZeRO stage | chosen from the model size with the formula in §1.2 (stage 1 if it fits, else stage 3); **never** CPU/NVMe offload on B200 | offload shares the NVMe and the PCIe link with checkpoints and data prefetch, and slows every save |
+| DS-2 | ZeRO stage | chosen from the model size with the formula in §1.2 (stage 1 if it fits, else stage 3); **never** CPU/NVMe offload on the GPU node | offload shares the NVMe and the PCIe link with checkpoints and data prefetch, and slows every save |
 | DS-3 | Launcher | **`srun` starts every rank**; never the `deepspeed` launcher (hostfile + passwordless SSH) | SSH between nodes is a security hole; it also hides exit codes and escapes Slurm's cgroups and accounting |
 | DS-4 | Save speed (stall) | measure the **synchronous** DeepSpeed save first; async engines only after their test passes | the async engines are new and limited (DataStates: tested on ZeRO-1 only, no universal) **[docs]** |
 | DS-5 | Changing the world size | still **wait for the spare** (no automatic shrink); a resize is an **operator job**: `ds_to_universal.py` conversion, then `load_universal` | a normal ZeRO checkpoint is tied to its data-parallel size; converting a TB checkpoint takes time and memory |
@@ -53,7 +53,7 @@ N = data-parallel GPUs.
 |---|---|---|---|
 | ZeRO-1 (optimizer split) | 2Ψ + 2Ψ + 12Ψ/N | 33 GB | 333 GB: **does not fit** |
 | ZeRO-2 (+ gradients split) | 2Ψ + 14Ψ/N | 20 GB | 201 GB: **does not fit** |
-| ZeRO-3 (+ weights split) | 16Ψ/N | 7 GB | 70 GB: fits on a B200 |
+| ZeRO-3 (+ weights split) | 16Ψ/N | 7 GB | 70 GB: fits on a the GPU node |
 
 **Checkpoint size ≈ 14 B × Ψ:** bf16 weights plus the 12 B of optimizer state. Gradients are not saved.
 
@@ -176,7 +176,7 @@ holds, its **offset in the logical tensor**. ZeRO has that:
   so fingerprinting the master is enough.
 - This keeps "equal at any world size" true. ZeRO's partitioning padding changes with N, but padding is masked
   and the logical offsets do not change.
-- Test T18 (new): fingerprint on 2 GPUs = fingerprint on 1 GPU of the same state (Kaggle 2×T4).
+- Test T18 (new): fingerprint on 2 GPUs = fingerprint on 1 GPU of the same state (Kaggle (2 GPUs)).
 
 **Bit-equal continuation (T1, T6):** at the same world size it should still hold, but only with every reduce
 setting pinned:
@@ -222,7 +222,7 @@ an integrity check:
 ### 1.9 Export for Teams 09/11/12
 
 `ckpt.py export` changes from "DCP → safetensors" to "DeepSpeed → `zero_to_fp32` → safetensors". The script
-builds the full fp32 model in CPU memory (4 B × Ψ): 28 GB for 7B, **280 GB for 70B**. `nodes.ec2.conf` has
+builds the full fp32 model in CPU memory (4 B × Ψ): 28 GB for 7B, **280 GB for 70B**. `nodes.cloud.conf` has
 `cpu-[1-4]` with 250 GB, which is too small for 70B. Either run export on a GPU node with ≥ 2 TB RAM, or use the
 script's sharded output **[verify]** flags (`--safe_serialization`, `--max_shard_size`). The probe-loss check
 after export stays: the exported weights must give the same bits.
@@ -254,8 +254,8 @@ after export stays: the exported weights must give the same bits.
 | new T20 | every file in the folder owned by exactly one rank |
 
 **Where they run:** DeepSpeed on CPU needs its CPU accelerator and oneCCL, not gloo **[verify]**. So the Docker
-cluster keeps the DDP trainer for queue and health drills. The DeepSpeed tests run on Kaggle 2×T4. T4 has no
-bf16, so they run fp16 with loss scaling there and bf16 on the B200 node in week 2. fp16 adds one more reason
+cluster keeps the DDP trainer for queue and health drills. The DeepSpeed tests run on Kaggle (2 GPUs). Those GPUs have no
+bf16, so they run fp16 with loss scaling there and bf16 on the GPU node in week 2. fp16 adds one more reason
 to hold: `engine.skipped_steps` grows on overflow. Track it (§4).
 
 ### 1.12 Built and measured (29 Oct)
@@ -263,12 +263,12 @@ to hold: `engine.skipped_steps` grows on overflow. Track it (§4).
 The plan above is now code: `ckpt/ds_ckpt.py` (`DSCheckpointer`, `export_ds`), `train.py --deepspeed
 --zero-stage {0,1,2,3} --ds-precision {fp32,fp16,bf16}`, and tests T18–T23 in `support/tests/test_ckpt.py`.
 The [verify] above about CPU is **answered: wrong.** DeepSpeed's CPU accelerator works with plain gloo (0.18.0 in
-the cluster image, 0.19.8 on a Mac), so the Docker cluster runs every drill with the DeepSpeed trainer too:
-`run_sim.py --deepspeed` writes `support/docs/sim_results_deepspeed.md`: **31/31 drills passed (1779 s)** with every
-training job on DeepSpeed ZeRO-1. The one drill whose answer changes, `restore_smaller_world`, now passes by being
-*held* (exit 78, `ReshardError`, names `ds_to_universal.py`); the rollback then runs at the saved world size. Two
-earlier runs failed first and found findings 6 (bucket memory, OOM) and 7 (below); one more lost 5 drills to
-timeouts on a busy laptop and passed on the rerun.
+the cluster image, 0.19.8 on a Mac), so the Docker cluster can run every drill with the DeepSpeed trainer too
+(`run_sim.py --deepspeed`). On 29 Oct that run passed every drill; `restore_smaller_world` passes by being *held*
+(exit 78, `ReshardError`, names `ds_to_universal.py`). Earlier runs found findings 6 (bucket memory, OOM) and 7
+(below). **That run was before the merge and the folder changes, so its results are not part of the submission;**
+the evidence for DeepSpeed is the unit tests below (T18–T22, re-run on the current code). DeepSpeed is an
+**optional** backend: off unless the trainer runs with `--deepspeed`, and imported only by `ckpt/ds_ckpt.py`.
 
 Test numbers below are the built ones; they replace the planned list in §1.11.
 
@@ -279,7 +279,7 @@ Test numbers below are the built ones; they replace the planned list in §1.11.
 | T20 | world 2 → 1 is held (exit 78, `ReshardError`, names `ds_to_universal.py`) even with `--allow-env-change` | laptop CPU |
 | T21 | ZeRO-3 weights digest from the pieces = ZeRO-1 digest from full weights (no gather) | laptop CPU |
 | T22 ×2 | `zero_to_fp32` export (ZeRO-1 and 3): rebuilt weights give the saved weights digest bit for bit | laptop CPU |
-| T23 | fp16 with dynamic loss scale: resume bit-equal | Kaggle 2×T4 only (pending) |
+| T23 | fp16 with dynamic loss scale: resume bit-equal | Kaggle (2 GPUs) only (pending) |
 
 Five things we only learned by running it:
 
@@ -295,7 +295,7 @@ Five things we only learned by running it:
 4. **DeepSpeed compiles ops at job start unless told not to** (DS-3 confirmed): in the cluster image the CPU
    accelerator tried to build its shared-memory all-reduce on the first job and failed (no compiler on the node).
    Its kernels are x86-only (AVX), so on ARM (Apple-silicon Docker) it cannot build at all: the test trainer marks
-   it unavailable on non-x86 CPUs and gloo does the work. On EC2 the CUDA ops are built into the image.
+   it unavailable on non-x86 CPUs and gloo does the work. On the cloud, the CUDA ops are built into the image.
 5. **The stall is the whole synchronous write** (§1.4): `stall_s` in `checkpoint.committed` now includes
    `engine.save_checkpoint`'s write; `ds_write_s` in the manifest shows that part alone.
 6. **Default bucket sizes are a memory bill, whatever the model size.** The first DeepSpeed cluster run lost its
@@ -303,7 +303,7 @@ Five things we only learned by running it:
    because ZeRO's default `reduce_bucket_size` / `allgather_bucket_size` are 5e8 values (2 GB in fp32). Set to
    2^20 for the tiny model, peak RSS is 343 MB and ZeRO-1/2/3 still resume bit-equal. For V5 these buckets (and
    ZeRO-3's prefetch and live-parameter limits) are memory we must budget per GPU next to the §1.2 numbers,
-   tune once on the B200 node, and pin in ds_config (DS-7): a default left in place is 2 GB per bucket per rank.
+   tune once on the GPU node, and pin in ds_config (DS-7): a default left in place is 2 GB per bucket per rank.
 7. **Check the world size before the environment.** ds_config holds the per-GPU batch size, so a smaller world
    also changes `ds_config_sha256`. Checked first, the environment error hid the real cause (and its fix,
    `ds_to_universal.py`). Now `ReshardError` comes first; T20 runs without `--allow-env-change` to prove it.
@@ -360,7 +360,7 @@ the job hangs until the watchdog fires and loses the emergency save.
 - plus the rank-0 hotspot under ZeRO-1/2,
 - plus the data prefetch cache.
 
-For 70B on 2 nodes: 2 × 490 GB + headroom ≈ 1.2 TB for checkpoints, against 30 TB of local NVMe on a p5/p6.
+For 70B on 2 nodes: 2 × 490 GB + headroom ≈ 1.2 TB for checkpoints, against the tens of TB of local NVMe a generic 8-GPU node has.
 That is fine. But **never put ZeRO-Infinity NVMe offload on the same disk** (DS-2).
 
 ---
@@ -369,7 +369,7 @@ That is fine. But **never put ZeRO-Infinity NVMe offload on the same disk** (DS-
 
 | Change | Why |
 |---|---|
-| `allreduce_test.py` also tests **reduce-scatter and all-gather** bandwidth | ZeRO-2/3 spend most of their communication on these, not on all-reduce; a slow EFA link shows there first |
+| `allreduce_test.py` also tests **reduce-scatter and all-gather** bandwidth | ZeRO-2/3 spend most of their communication on these, not on all-reduce; a slow the fast network link shows there first |
 | new prolog check: `ds_report` ops compatible + `python -c "import deepspeed"` | a node with a broken CUDA toolkit or a missing op fails in the prolog (seconds), not after 8 ranks start |
 | hang runbook: "ZeRO-3 all-gather mismatch" | ZeRO-3 hangs if ranks call modules in different orders (MoE routing, a rank skipping a layer). The NCCL flight recorder shows one rank in a different all-gather; the watchdog still catches it |
 | stall drill: emergency save must finish inside the 120 s spot warning at the chosen ZeRO stage | the save is now synchronous (§1.4) |
@@ -395,7 +395,7 @@ Unchanged: nvidia-smi, Xid, DCGM (diag in prolog only, `health -c` periodic), dr
 | CK-12 | DeepSpeed save time (sync) | ≥ 2% of interval | Team 06: FastPersist / async engine trial; check the rank-0 hotspot |
 | CK-13 | `load_checkpoint` returned no path | any | HIGH: never a fresh start; the restore fell back. Check the missing file in the manifest |
 | T-xx | `engine.skipped_steps` growth (fp16 only) | > 0.1% of steps | loss-scale problem; lower LR or move to bf16 |
-| H-xx | reduce-scatter / all-gather bus bandwidth | < 80% of node baseline | drain; EFA or NVLink problem |
+| H-xx | reduce-scatter / all-gather bus bandwidth | < 80% of node baseline | drain; the fast network or NVLink problem |
 
 DeepSpeed's own `monitor` (TensorBoard / W&B / `csv_monitor`), `wall_clock_breakdown` and `comms_logger` can
 supply step time and communication numbers. Map them into our `emit()` events, so `watch.py` stays the one
@@ -409,9 +409,9 @@ place alerts come from.
 |---|---|---|
 | now | agree on DS-1…DS-7 with Team 05 (model, ZeRO stage, MoE type) and Team 06 (stall budget) | 07 lead |
 | week 1 ✅ | `train.py --deepspeed --zero-stage {1,2,3}` in the tiny trainer; `ds_ckpt.py` behind the same `Checkpointer` API; T18–T23; Docker drills with `--deepspeed` (§1.12) | 07 |
-| week 1 | run T1–T23 on Kaggle 2×T4 (fp16): `support/kaggle/`, Internet on | 07 |
+| week 1 | run T1–T23 on Kaggle (2 GPUs) (fp16): `support/kaggle/`, Internet on | 07 |
 | week 1 | `bench_save.py --deepspeed`: sync stall per ZeRO stage on T4 | 07 |
-| week 2 | B200 node: bf16, real Ψ, real stall, `ds_to_universal` timing on a real-size checkpoint, export memory | 07 + 05 |
+| week 2 | GPU node: bf16, real Ψ, real stall, `ds_to_universal` timing on a real-size checkpoint, export memory | 07 + 05 |
 | then | update ADR 0001 §2/§5/§8/§10, ADR 0002 §3/§5/§7, ADR 0003 §1, ADR 0004 §1 from the measured numbers | 07 |
 
 **What not to do:** no `deepspeed` launcher; no ZeRO-Infinity NVMe offload; no automatic resize; no async engine

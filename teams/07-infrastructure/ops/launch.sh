@@ -14,7 +14,7 @@
 #   launch.sh --list             the steps, in order
 #
 # Settings come from /etc/v5/cluster.env (or $V5_CLUSTER_ENV); see cluster.env.example next to this file.
-# Commands reach each host through $V5_EXEC, "%h" is the host: `ssh -o BatchMode=yes %h` on EC2 (default),
+# Commands reach each host through $V5_EXEC, "%h" is the host: `ssh -o BatchMode=yes %h` on cloud nodes (default),
 # `docker exec slurm-docker-%h-1` against the Docker test cluster (support/simulation).
 set -uo pipefail
 
@@ -144,7 +144,7 @@ step_slurmdbd() {
 
 step_dbbackup() {
   # Before anything writes new accounting rows: today's dump, then a test restore (ADR 0002 §1).
-  # /etc/v5/db.env holds DB_ROOT_PASSWORD, written at boot from AWS Secrets Manager (never in the repo).
+  # /etc/v5/db.env holds DB_ROOT_PASSWORD, written at boot from the cloud secrets store (never in the repo).
   on "$V5_DBD_HOST" "set -a; source /etc/v5/db.env; set +a; bash $SUB/slurm/backup_db.sh ${V5_BACKUP_DIR:-/var/backups/slurm} && \
     bash $SUB/slurm/backup_db.sh --verify-latest ${V5_BACKUP_DIR:-/var/backups/slurm}" >>"$LOG" 2>&1 \
     || fail "accounting DB backup or its test restore failed (see $LOG)"

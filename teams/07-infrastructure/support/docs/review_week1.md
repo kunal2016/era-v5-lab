@@ -4,7 +4,7 @@ Team 07, 27 Oct 2026. Companion to ADR 0001–0004. Every item below is marked:
 
 - **FIXED + TESTED**: changed, and a test or drill proves it;
 - **DECIDED**: a written decision in an ADR, nothing to run yet;
-- **OPEN**: needs something we do not have yet (GPUs, the AWS account, another team), with the reason.
+- **OPEN**: needs something we do not have yet (GPUs, the cloud account, another team), with the reason.
 
 > **In simple words.** We broke a small copy of the cluster on purpose, many times, and wrote down what
 > happened. Then we listed the basic questions an instructor would ask about running a paid GPU training job,
@@ -45,7 +45,7 @@ fair share, GPU-minutes per account (main run 32.4 GPU-min in run 9), retention 
 "restart immediately" fix lost the main run in run 7 (see §2), so we use Slurm's supported setting
 `cred_expire`. Run 10 used 30 s (MTTR ≈ 55 s); the review showed that leaves no margin for a 30 s prolog, so
 run 11 uses 60 s (reschedule 90 s, MTTR 85 s). About 90 s per restart is the price of never losing the run; at
-8 nodes that is ≈ $23 per restart (assumed prices), small next to the work lost per failure.
+8 nodes that is ≈ 0.2 node-hours per restart, small next to the work lost per failure.
 
 Reporting gap found in run 8 and closed in run 9: GPU-minutes counted only the last segment of each requeued job
 (`sacct` without `-D`), so `mainrun` showed 0.2 GPU-minutes. With `-D`, run 9 shows 32.4.
@@ -82,24 +82,24 @@ test trainer uses DDP (every rank holds a full copy) and the Docker cluster shar
 |---|---|---|---|---|
 | R1 | Save deadlocks under FSDP: the probe forward and the digest ran on rank 0 only | every rank runs the probe, the fingerprint and the loader check together, before the async copy (`ckpt.py` `save`) | T16: FSDP2 save + restore on 2 GPUs (Kaggle); T17: sharded digest on gloo | **FIXED**; T17 tested, T16 runs on Kaggle |
 | R2 | Digest covered only rank 0's shard, so it would fail after any reshard | logical fingerprint: each rank adds its shard weighted by position in the full tensor, one all-reduce; the same at any world size (ADR 0001 §8) | T14 (uneven rows, columns, 5 dtypes, swapped row, one bit), T17 (real DTensors, 2 and 3 ranks) | **FIXED + TESTED** |
-| R3 | Async save claimed, blocking `dcp.save` used; sha256 of the whole state on the stall path | `dcp.async_save` on its own gloo group; the stall ends at the host copy; integer fingerprint on the GPU replaces sha256 (`V5_ASYNC_SAVE=0` for the old path) | all checkpoint tests and every drill run with it; stall on T4 from `bench_save.py` on Kaggle | **FIXED + TESTED** (GPU stall number: Kaggle) |
+| R3 | Async save claimed, blocking `dcp.save` used; sha256 of the whole state on the stall path | `dcp.async_save` on its own gloo group; the stall ends at the host copy; integer fingerprint on the GPU replaces sha256 (`V5_ASYNC_SAVE=0` for the old path) | all checkpoint tests and every drill run with it; stall on Kaggle's GPUs from `bench_save.py` | **FIXED + TESTED** (GPU stall number: Kaggle) |
 | R4 | "No shared FS" but logs, events and the crash counter needed `/s3` | crash count → `crashes.json` in the run's S3 folder, rewritten whole (no append); logs/events/exit notes → node-local `/var/log/v5`, shipped by the log agent | `test_queue.py` (count survives 3 different nodes, no append, S3 down → retry + event); crash-loop drill in run 11 against the S3 emulator | **FIXED + TESTED** |
 | R5 | `dcgmi diag -r 1` ran every 30 s on busy GPUs: a false fail requeues the main run in a loop | periodic mode reads `dcgmi health -c` (DCGM's watches, no load); diag only in prolog (idle GPUs) and full mode | `test_health.py`: periodic calls only `health -s a` / `health -c -j`, prolog calls `diag -r 1` | **FIXED + TESTED** (real DCGM: week-2 node) |
 | R6 | A resharded restore gives every rank rank 0's loader state: wrong for per-rank loaders | contract now requires one global ledger offset, identical on every rank, and tests a resume at another world size; every save records `loader_global`; a resharded restore without it stops with `ReshardError` (78) and says what to do | T13 (our loader passes, also resharded), T15 (a per-rank loader fails) | **FIXED + TESTED** |
-| C1 | `SuspendExcNodes=gpu-[1-9]:1` may count busy nodes, so no spare is kept | not depending on it: `job_queue.py keep-spare` every minute names the spare node (`SuspendExcNodes=<node>`) and boots one if none is free; `ReconfigFlags=KeepPowerSaveSettings` | `test_queue.py` (busy main-run nodes are never the spare; nothing free → power up); man page checked: says "powered up", silent on busy | **FIXED**; unit-tested, real power saving needs EC2 |
+| C1 | `SuspendExcNodes=gpu-[1-9]:1` may count busy nodes, so no spare is kept | not depending on it: `job_queue.py keep-spare` every minute names the spare node (`SuspendExcNodes=<node>`) and boots one if none is free; `ReconfigFlags=KeepPowerSaveSettings` | `test_queue.py` (busy main-run nodes are never the spare; nothing free → power up); man page checked: says "powered up", silent on busy | **FIXED**; unit-tested, real power saving needs the cloud |
 | C2 | `cred_expire=30` with a 30 s prolog budget leaves no margin | `cred_expire=60` (2 × prolog budget); man page: the lifetime must cover "run prolog" | run 11: 31 of 31, every requeue succeeds; reschedule 57 → 90 s, MTTR 55 → 85 s; Q-03 LOW raised 60 → 120 s so a normal restart does not alert | **FIXED + TESTED** |
 
 ## 3. Questions the instructor may ask, and our answer
 
-### A. Would it work on day 1 on EC2?
+### A. Would it work on day 1 on cloud nodes?
 
 | # | Question | Answer | Status |
 |---|---|---|---|
-| A1 | How does a job get its GPUs, and only its GPUs? | `GresTypes=gpu`; EC2 `gres.conf` `AutoDetect=nvml`; `cgroup.conf` `ConstrainDevices=yes`; job scripts ask `--gpus-per-node=8`; GPU-hours recorded per account (`AccountingStorageTRES=gres/gpu`). Drill: main run allocated `gres/gpu=4`; over-asking refused | FIXED + TESTED (Docker placeholders) |
+| A1 | How does a job get its GPUs, and only its GPUs? | `GresTypes=gpu`; the cloud `gres.conf` `AutoDetect=nvml`; `cgroup.conf` `ConstrainDevices=yes`; job scripts ask `--gpus-per-node=8`; GPU-hours recorded per account (`AccountingStorageTRES=gres/gpu`). Drill: main run allocated `gres/gpu=4`; over-asking refused | FIXED + TESTED (Docker placeholders) |
 | A2 | Where is the S3 code? | `ckpt/store.py` `S3Store` (boto3, multipart, retries, SHA256 checksums). All checkpoint tests also pass against the S3 emulator, and every drill saves to it | FIXED + TESTED (emulator) |
-| A3 | Is the node's disk persistent? | No: p6 NVMe is instance store, wiped on stop. It is a cache only; restores always work from S3 | DECIDED (ADR 0001 §2) |
-| A4 | Does the same config run in Docker and on EC2? | yes: one `slurm.conf`; four small files differ (`site`, `nodes`, `gres`, `cgroup`) | FIXED |
-| A5 | What runs on EC2 that the Docker test cannot show? | real GPUs and NCCL, EFA, Pyxis/Enroot, power saving, IAM | OPEN: Kaggle kit for GPUs; AWS account for the rest |
+| A3 | Is the node's disk persistent? | Not always: a node's local NVMe can be wiped when it stops or is replaced. It is a cache only; restores always work from the shared store | DECIDED (ADR 0001 §2) |
+| A4 | Does the same config run in Docker and on cloud nodes? | yes: one `slurm.conf`; four small files differ (`site`, `nodes`, `gres`, `cgroup`) | FIXED |
+| A5 | What runs on cloud nodes that the Docker test cannot show? | real GPUs and NCCL, the fast network, Pyxis/Enroot, power saving, cloud identity | OPEN: Kaggle kit for GPUs; cloud account for the rest |
 
 ### B. What happens when things fail?
 
@@ -122,12 +122,12 @@ test trainer uses DDP (every rank holds a full copy) and the Docker cluster shar
 | # | Question | Answer | Status |
 |---|---|---|---|
 | C1 | How does a person get woken up? | `metrics/watch.py` raises `alert.fired` live and posts to a webhook (Team 08's pager). HIGH pages | FIXED + TESTED (fired live in the simulation) |
-| C2 | How is cost tracked per team? | Slurm GPU-minute budgets per account; AWS cost tags `v5:team/role/run/cluster` + AWS Budgets at 50/75/90% | DECIDED; Budgets need the account |
-| C3 | What if an instance runs outside Slurm? | `support/cost/find_unmanaged.py`: C-05 HIGH with dollars per day; untagged instances listed | FIXED + TESTED (fixtures) |
+| C2 | How is cost tracked per team? | Slurm GPU-minute budgets per account; cloud cost tags `v5:team/role/run/cluster` + the cloud's budget alerts at 50/75/90% | DECIDED; Budgets need the account |
+| C3 | What if an instance runs outside Slurm? | `support/cost/find_unmanaged.py`: C-05 HIGH with node-hours per day; untagged instances listed | FIXED + TESTED (fixtures) |
 | C4 | What if someone deletes the bucket? | versioning; only the retention role may delete; protected checkpoints replicated to a second region (deletes not replicated) | DECIDED (ADR 0001 §5) |
 | C5 | How do you upgrade image / driver / Slurm mid-run? | at a checkpoint: emergency save → roll nodes → requeue with `--allow-env-change` (logged); Slurm dbd → ctld → slurmd | DECIDED (ADR 0002 §11) |
-| C6 | Where are the logs? | node-local, shipped to S3 by Team 08's agent; 90 days, then Glacier | DECIDED |
-| C7 | Security | IAM role per job type, no keys, SSM only, munge key from Secrets Manager, pr-guard + gitleaks | DECIDED; needs the AWS account |
+| C6 | Where are the logs? | node-local, shipped to S3 by Team 08's agent; 90 days, then the archive tier | DECIDED |
+| C7 | Security | cloud role per job type, no keys, session manager only, munge key from the cloud secrets store, pr-guard + gitleaks | DECIDED; needs the cloud account |
 
 ### E. Monitoring: can people act on what they see?
 
@@ -144,19 +144,19 @@ test trainer uses DDP (every rank holds a full copy) and the Docker cluster shar
 | # | Question | Answer | Status |
 |---|---|---|---|
 | D1 | Each drill ran once? | kill and SIGUSR1 run 3 times each; the report gives MTTR p50 / p95 / max per fault type | FIXED + TESTED |
-| D2 | A 1 MB checkpoint proves nothing about speed | `support/tools/bench_save.py` measures GPU-to-host and save speed; on Kaggle T4 now, on B200 in week 2 | OPEN (Kaggle run pending) |
+| D2 | A 1 MB checkpoint proves nothing about speed | `support/tools/bench_save.py` measures GPU-to-host and save speed; on Kaggle's GPUs now, on the GPU node in week 2 | OPEN (Kaggle run pending) |
 | D3 | Resharding is the easy DDP case | yes; FSDP/ZeRO-3 and expert-parallel resharding need Team 05's model | OPEN (week 2, ADR 0001 open points) |
 | D4 | The data loader is synthetic | `ckpt/loader_contract.py`: the test Teams 01/02's real loader must pass (save, resume, peek, skip); ours passes | FIXED; real loader OPEN (Teams 01/02) |
-| D5 | Prices are guesses | `metrics/prices.yaml` says so (`checked: null`); decisions rest on ratios | OPEN: check on the AWS pricing page |
+| D5 | Prices are guesses | results are in node-hours; the price is a run-time input with no value in the repo (TSAI review, 1 Nov); decisions rest on ratios | FIXED |
 
 ## 4. Still open, with owner
 
 | Item | Needs | Owner |
 |---|---|---|
 | GPU behaviour (NCCL, nvidia-smi, CUDA bit-equal, save speed) | Kaggle run (`support/kaggle/run_gpu_checks.py`) | Team 07 |
-| EFA, Pyxis/Enroot, power saving, IAM, AWS Budgets, real S3 throughput | the AWS account and the week-2 node | Team 07 + instructor |
+| the fast network, Pyxis/Enroot, power saving, cloud identity, the cloud's budget alerts, real S3 throughput | the cloud account and the week-2 node | Team 07 + instructor |
 | Sharded-state resharding (FSDP/EP) | Team 05's model and parallel layout | Team 05 + 07 |
 | Real data-loader state | the loader passing `ckpt/loader_contract.py` | Teams 01/02 |
 | Slow-S3 drill, silent data corruption | after dry run 1 | Team 07 |
-| Real prices, Capacity Block | AWS pricing page, booking | Team 07 + lead |
+| Real prices, reserved capacity booking | the provider's price list, booking | Team 07 + lead |
 | On-call rota and alert channel | people | lead + Team 08 |

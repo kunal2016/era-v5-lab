@@ -7,7 +7,7 @@
 #
 #   backup_db.sh <dir>                    write <dir>/slurm_acct_db-<UTC time>.sql.gz
 #   backup_db.sh --verify-latest <dir>    restore the newest dump into a scratch DB, compare, print JSON
-# Needs DB_ROOT_PASSWORD (EC2: from AWS Secrets Manager; Docker test: the test-only value).
+# Needs DB_ROOT_PASSWORD (Cloud nodes: from the cloud secrets store; Docker test: the test-only value).
 set -euo pipefail
 HOST="${DB_HOST:-mariadb}"
 DB="${DB_NAME:-slurm_acct_db}"

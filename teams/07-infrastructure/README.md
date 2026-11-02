@@ -1,9 +1,9 @@
 # Team 07-infrastructure: checkpoint, job queue and node health for the V5 main run
 
-What we deliver: the infrastructure that runs the V5 main run on **GPU nodes scheduled by Slurm** (the TSAI
-shared GPU node, or a self-managed EC2 fleet). It is designed so that **money already spent on training is never
+What we deliver: the infrastructure that runs the V5 main run on **GPU nodes scheduled by Slurm**, on bare metal
+or any cloud: nothing in it depends on a provider (the TSAI shared GPU node, or a self-managed fleet). It is designed so that **money already spent on training is never
 lost**. It comes with LOW / MEDIUM / HIGH metrics that tell people what to do. Every decision is explained in
-simple words. Everything here was proven in a Docker copy of the Slurm cluster (**44 of 44 drills**, run 19, on this folder layout); that
+simple words. Everything here was proven in a Docker copy of the Slurm cluster (**44 of 44 drills**, both with checkpoints on a shared folder, as on bare metal, and on an S3-compatible store); that
 evidence is in the optional [`support/`](support/README.md) folder.
 
 > **In simple words.** Training costs money every hour, and at this scale machines break every few hours.
@@ -11,7 +11,8 @@ evidence is in the optional [`support/`](support/README.md) folder.
 > job from that copy by itself (queue). We take **broken GPUs** out before they waste paid hours (health). And
 > we tell a person **what to do** only when the system stopped on purpose (monitoring).
 
-**New here? Start with the [user guide](USER_GUIDE.md)**: how the system works, and what each team does with it.
+**New here?** Read the [team briefing](TEAM_BRIEFING.md) (every decision and why, in plain words), then the
+[user guide](USER_GUIDE.md) (how the system works, and what each team does with it).
 
 ## What is here
 
@@ -20,13 +21,14 @@ Every folder is a topic folder (`teams/07-infrastructure/<topic>/<file>`), as th
 ```text
 teams/07-infrastructure/
 ├── README.md        ← you are here
+├── TEAM_BRIEFING.md every decision and why, in plain words (start here)
 ├── USER_GUIDE.md    how the system works and how each team uses it
 ├── adr/             the 4 decisions, each with an "In simple words" box
-├── ckpt/            checkpoint      ckpt.py (save, commit, fencing, restore checks, retention, export), ds_ckpt.py (DeepSpeed), store.py (folder or S3)
+├── ckpt/            checkpoint      ckpt.py (save, commit, fencing, restore checks, retention, export), ds_ckpt.py (DeepSpeed), store.py (shared file system or S3-compatible store)
 ├── queue/           job queue       job_queue.py (job wrapper, exit codes, crash loop, spot watcher, drain, status)
 ├── slurm/           Slurm setup     slurm.conf, node files, job scripts, prolog/epilog/health hooks, accounts, DB backup, systemd units
 ├── health/          node health     health_check.py, xid_scan.py, allreduce_test.py (4 collectives), thresholds.yaml
-├── metrics/         monitoring      catalog.yaml (74 metrics), watch.py (live alerts), evaluate.py, explain.py, prices.yaml
+├── metrics/         monitoring      catalog.yaml (74 metrics), watch.py (live alerts), evaluate.py, explain.py, prices.yaml (cost inputs, no prices)
 ├── common/          shared          events.py (event format), reasons.py (every code → plain words + what to do)
 ├── ops/             operations      launch.sh (start everything in order, checked), cluster.env.example
 └── support/         optional: tests, the Docker Slurm simulation and its results, the test trainer, Kaggle GPU checks,
@@ -87,7 +89,7 @@ ops/launch.sh --from health                        # continue after fixing a fai
 | slurmd | every GPU node registered (a node drained on purpose stays drained) |
 | health | `health_check.py --mode full` on every node at once (GPUs, ECC, row remap, NVLink, Xid, NVMe, the four collectives); launch drains a failing node with reason `health: <checks>`; fewer healthy nodes than `V5_MIN_NODES` stops the launch |
 | services | hot-spare timer and alert watcher on the controllers, spot watcher on every node (systemd units in `slurm/`) |
-| store | `ckpt.py probe-store`: write, read, and **a stale write refused**. Fencing (ADR 0001 §3) depends on it; an S3 endpoint that ignores `If-Match` stops the launch here |
+| store | `ckpt.py probe-store`: write, read, and **a stale write refused**. Fencing (ADR 0001 §3) depends on it; a store that does not refuse a stale write stops the launch here |
 | submit | main run submitted unless already queued; it claimed its epoch, restored and started |
 | status | `job_queue.py status` |
 
@@ -125,11 +127,12 @@ cluster this folder is mounted at `/opt/v5`, so `slurm.conf` and the job scripts
 
 ## Not done yet (honest list)
 
-- Real GPUs: the Kaggle 2×T4 run is ready, not yet run; the shared node arrives on 1 Nov.
-- S3 is tested on an emulator (moto 5.1.10); `ckpt.py probe-store` runs on the real bucket at every launch.
+- Real GPUs: the Kaggle (2 GPUs) run is ready, not yet run; the shared node arrives on 1 Nov.
+- The checkpoint store is a shared file system (bare metal, the default) or any S3-compatible store; both run the
+  full drill set in Docker. Neither has met the real store yet: `ckpt.py probe-store` checks it at every launch.
 - Sharded state: the digest is tested on real DTensor shards (CPU) and FSDP2 save/reshard/restore runs on
-  Kaggle 2×T4 (T16); expert parallel needs Team 05's model; the real data loader must pass
+  Kaggle (2 GPUs) (T16); expert parallel needs Team 05's model; the real data loader must pass
   `ckpt/loader_contract.py` (Teams 01/02).
-- Merging Max's installer (`cluster.toml`) is phase B of [the merge plan](support/docs/merge_execution_plan.md).
+- Merging uz9ai's installer (`cluster.toml`) is phase B of [the merge plan](support/docs/merge_execution_plan.md).
 - The week-1 review findings and their fixes: [review_week1.md §2b](support/docs/review_week1.md).
-- Prices in `metrics/prices.yaml` are assumptions until checked; on-call rota and alert channel need people.
+- Cost results are in node-hours; the price of a node-hour is a run-time input (none in the repo). The on-call rota and alert channel need people.

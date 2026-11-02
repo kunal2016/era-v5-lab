@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Stands in for nvidia-smi on the Docker test's GPU nodes (Docker test only), so health_check.py runs its real
-GPU, row-remap and NVLink checks. Idea from Mallik's docker/fake-nvidia-smi (team 07).
+GPU, row-remap and NVLink checks. Idea from millermuttu's docker/fake-nvidia-smi (team 07).
 
 Healthy unless a fault file in /run/fake/ says otherwise (the drills plant and remove them):
   /run/fake/gpus    one line per change: "<gpu index> <field>=<value> ...", e.g. "1 temperature.gpu=92"

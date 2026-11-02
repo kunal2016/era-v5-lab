@@ -80,7 +80,14 @@ def scan(lines, table: dict, state_path: str = None, now: float = None) -> dict:
         worst = "warn"     # an unknown code is reported as warn, never ignored
     if any(r["class"] == "fatal" or r.get("repeats_in_window", 0) >= 2 for r in new):
         worst = "fail"
-    return {"status": worst, "new": new, "already_seen": len(old)}
+    # Team 08's v5-health/1 view of the same events: severity is warn or fail, counts match the events
+    events = [{"pci_bdf": r["pci"], "code": r["xid"],
+               "severity": "fail" if r["class"] == "fatal" or r.get("repeats_in_window", 0) >= 2 else "warn",
+               "reason": f"{r['class']}: {r['text']}".rstrip(": ")} for r in new]
+    counts = {}
+    for e in events:
+        counts[str(e["code"])] = counts.get(str(e["code"]), 0) + 1
+    return {"status": worst, "counts": counts, "events": events, "new": new, "already_seen": len(old)}
 
 
 def main():
@@ -92,7 +99,11 @@ def main():
     a = ap.parse_args()
     table = yaml.safe_load(open(a.thresholds))["xid"]
     lines, source = read_kernel_log(a.log)
-    out = scan(lines, table, a.state) if source else {"status": "skipped", "reason": "no kernel log readable"}
+    if source:
+        out = dict(scan(lines, table, a.state), source=source.split()[0] if not a.log else "file")
+    else:
+        out = {"status": "skipped", "reason": "no kernel log readable", "counts": {}, "events": []}
+    out = {"name": "xid", **out}    # Team 08's standalone xid shape
     print(json.dumps(out, indent=1))
     return {"pass": 0, "warn": 3, "fail": 4, "skipped": 0}[out["status"]]
 

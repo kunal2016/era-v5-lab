@@ -95,7 +95,7 @@ class UploadTimeout(CheckpointError):
 
 class FrozenChangedError(CheckpointError):
     """A frozen tensor (e.g. the KE2 Kronecker tables) changed since the last checkpoint: training touched a part
-    that must never change. Never saved; hold the job (Mallik's rule, team 07: check at save, not only at restore)."""
+    that must never change. Never saved; hold the job (millermuttu's rule, team 07: check at save, not only at restore)."""
 
 
 class DataManifestError(CheckpointError):
@@ -342,7 +342,7 @@ def env_manifest(config_path: str = None) -> dict:
         # torch.set_num_threads(1). Thread count is part of the environment for a bit-equal resume.
         "omp_num_threads": os.environ.get("OMP_NUM_THREADS", "unset"),
         # Team 04's embedding policy (KE2 Kronecker tables or plain): weights mean something else under another
-        # policy even with the same shapes (Mallik's meta field, team 07).
+        # policy even with the same shapes (millermuttu's meta field, team 07).
         "embedding_policy_id": os.environ.get("V5_EMBEDDING_POLICY_ID", "none"),
     }
     return env
@@ -833,7 +833,7 @@ class Checkpointer:
                 "restore_s": t.s()}
 
 
-# ----------------------------------------------------------------------------- retention (own IAM role)
+# ----------------------------------------------------------------------------- retention (own cloud role)
 
 def run_retention(remote_run: str, keep: int = 3, protect_every: int = 0, dry_run: bool = False,
                   orphan_age_s: float = 3600.0) -> dict:
@@ -841,7 +841,7 @@ def run_retention(remote_run: str, keep: int = 3, protect_every: int = 0, dry_ru
 
     In simple words: S3 storage costs money every month, so we keep only the newest few checkpoints,
     plus the ones that must never be lost (every N-th for evaluation, the final one, pinned ones, and
-    whatever `latest.json` points to). On AWS this runs as its own job with the only IAM role that may
+    whatever `latest.json` points to). On the cloud this runs as its own job with the only cloud role that may
     delete; the training job cannot delete anything.
     """
     st = open_store(remote_run)

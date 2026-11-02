@@ -1,7 +1,7 @@
 # Response to the G7 multi-repo review: checkpoint topic
 
 Reply to `G7_ERA_V5_DeepSpeed_ADR_and_Code_Gap_Reports` (sureshmantha/erav5, 29 Oct 2026), for the
-checkpoint rows only. Written by Pradeep (P) for the team.
+checkpoint rows only. Written by pradeep-kumar-gs (P) for the team.
 
 **In simple words.** The review read a copy of this repo from before the DeepSpeed work (its file list has no
 `ckpt/ds_ckpt.py` and no tests after T17). Since then the checkpoint path runs on a real DeepSpeed engine, and
@@ -24,7 +24,7 @@ that proves it. Everything here is CPU or Docker evidence unless it says GPU.
 | 26 | Topology-changing restart | Design/proofs | plain/FSDP: restore 4 → 1 ranks, digest equal, branch marked resharded. DeepSpeed: refused with exit 78 `ReshardError` naming `ds_to_universal.py` | T2, T16 (GPU), T20; drill `restore_smaller_world` |
 | 27 | Strict restore, no silent misload | Probe+key checks | strict keys + 4 proofs (digest, probe loss bits, next batch, frozen hashes); DeepSpeed "could not load" → fallback, never a fresh start | T5, T19 |
 | 28 | Data ledger | Ledger | one global offset on every rank, checked at every save; loader contract test for Teams 01/02 | T13, T15 |
-| 29 | DeepSpeed at the checkpoint boundary | **Not verified** (all four repos) | real all-rank DeepSpeed save/load with optimizer state, ZeRO-1/2/3; whole Docker drill set on DeepSpeed | T18–T22; `support/docs/sim_results_deepspeed.md` (31/31) |
+| 29 | DeepSpeed at the checkpoint boundary | **Not verified** (all four repos) | real all-rank DeepSpeed save/load with optimizer state, ZeRO-1/2/3 (optional backend, off by default) | T18–T22 |
 | 33 | Export for eval/quant | Docs | DCP → safetensors and DeepSpeed `zero_to_fp32` → safetensors, digest-checked against the saved weights | T8, T22 |
 
 From `03_VALIDATION_AND_HANDOFF.md`: "DeepSpeed ZeRO save/restart: **NOT RUN**, DeepSpeed not installed".
@@ -64,9 +64,9 @@ few healthy nodes and a second launch. See `README.md` "Starting production".
 ## Where the review is right, and what stays open
 
 - **No GPU evidence yet** for the DeepSpeed path. T16 (FSDP2) and T23 (fp16 bit-equal resume) run only on
-  Kaggle 2×T4; that run is pending.
+  Kaggle (2 GPUs); that run is pending.
 - **No real S3 bucket yet.** Every S3 test runs against the moto emulator. To do on the week-2 bucket: the
-  whole suite with `V5_TEST_REMOTE=s3://…`, T26 first (does AWS answer 412 as the emulator does).
+  whole suite with `V5_TEST_REMOTE=s3://…`, T26 first (does the cloud answer 412 as the emulator does).
 - **Simulated numbers are not GPU goodput.** Stall and commit times from the Docker cluster are CPU numbers.
 - **DeepSpeed world-size change** is refused, not done: converting with `ds_to_universal.py` is an operator
   step, not automatic.

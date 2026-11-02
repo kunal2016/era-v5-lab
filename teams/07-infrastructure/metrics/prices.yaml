@@ -1,37 +1,23 @@
-# Prices and hardware assumptions for the cost model (ADR 0004).
-# EVERY PRICE HERE IS AN ASSUMPTION until checked on the AWS pricing page for our region and date.
-# Replace the values (and the `checked` date) before using any number in a decision.
-checked: null                     # e.g. "2026-11-02, us-east-1, AWS pricing page"
-region: us-east-1
+# Inputs for the cost model (ADR 0004). Results are in node-hours: waste, risk and spend are counted as time
+# on the GPU nodes, which does not depend on a price. The price is an input with no value in the repo:
+# give it at run time (--price-per-node-h or V5_PRICE_PER_NODE_H) to add a cost column in your own currency.
+price_per_node_h: null            # input: price of one GPU node for one hour; no value in the repo
+spot_price_ratio: null            # input: spot price / on-demand price; the report gives the break-even ratio
 
 instances:
-  p6-b200.48xlarge:               # 8 x B200, the proposed main-run node (ADR 0002 §1)
+  gpu-node-8:                     # a generic 8-GPU node, the proposed main-run node (ADR 0002 §1)
     gpus: 8
-    on_demand_usd_h: 113.93       # assumption
-    spot_discount: 0.40           # assumption: spot = 60% of on-demand; spot prices change hourly
-    capacity_block_usd_h: null    # EC2 Capacity Blocks for ML: price set per booking
-  p5.48xlarge:                    # 8 x H100, fallback
+  gpu-node-8-prev:                # a generic 8-GPU node of the previous generation, fallback
     gpus: 8
-    on_demand_usd_h: 55.04        # assumption
-    spot_discount: 0.40
-  g6e.12xlarge:                   # 4 x L40S, eval partition
+  gpu-node-4-eval:                # a generic 4-GPU node, eval partition
     gpus: 4
-    on_demand_usd_h: 10.49        # assumption
-    spot_discount: 0.50
-
-main_instance: p6-b200.48xlarge
-
-s3:                               # USD per GB-month (assumption, standard list prices)
-  standard: 0.023
-  glacier_flexible: 0.0036
-  deep_archive: 0.00099
-  put_per_1000: 0.005
+main_instance: gpu-node-8
 
 hardware:                         # per node, assumptions until measured on the week-2 node (ADR 0001 M9)
   gpu_to_host_gbytes_s: 50        # staging the checkpoint shard into pinned host RAM
-  upload_gbytes_s: 10             # NVMe -> S3
-  download_gbytes_s: 10           # S3 -> NVMe on restore
-  instance_launch_s: 900          # no spare: start a new instance and join Slurm (ResumeTimeout)
+  upload_gbytes_s: 10             # NVMe -> remote store
+  download_gbytes_s: 10           # remote store -> NVMe on restore
+  instance_launch_s: 900          # no spare: start a new node and join Slurm (ResumeTimeout)
 
 checkpoint:
   bytes_per_param: 12             # fp32 master weights 4 + AdamW m 4 + v 4 (bf16 weights are rebuilt)

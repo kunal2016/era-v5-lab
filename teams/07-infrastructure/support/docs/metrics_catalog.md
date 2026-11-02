@@ -13,7 +13,7 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | ID | Metric | Unit | Alert when | LOW | MEDIUM | HIGH | Why it matters (simple words) | Action | Sim |
 |---|---|---|---|---|---|---|---|---|---|
 | CK-01 | Time since last committed checkpoint | x interval | above | 1.2 | 1.5 | 2.0 | Everything trained since the last commit is lost if a node dies now. | Check checkpoint.failed events; if saves fail, fix storage before the next failure costs a full interval. | yes |
-| CK-02 | Compute dollars at risk (since last commit) | USD | above | 1.2 × interval cost | 1.5 × interval cost | 2.0 × interval cost | The same risk in money: cluster price x time since the last commit. | Same as CK-01. Thresholds are multiples of the cost of one interval. | yes |
+| CK-02 | Node-hours at risk (since last commit) | node-h | above | 1.2 × interval node-h | 1.5 × interval node-h | 2.0 × interval node-h | The same risk in node-hours: nodes x time since the last commit (cost = node-hours x price). | Same as CK-01. Thresholds are multiples of the node-hours in one interval. | yes |
 | CK-03 | Consecutive failed saves | count | above | — | 1 | 2 | One failed save doubles the work at risk; two in a row triples it. | Read the failure cause (nvme_full, IntegrityError, upload timeout) and fix it now. | yes |
 | CK-04 | Checksum mismatches (commit or restore) | count | above | — | — | 1 | A damaged checkpoint file. The restore skips it, but the cause (disk, network, S3) can damage the next one. | Find the hop that corrupts data (NVMe, network, S3). Pin the last good checkpoint. | yes |
 | CK-05 | Restore check failures (digest, probe, next batch, frozen) | count | above | — | — | 1 | The loaded state is not the saved state: a silent misload like V4's (loss 2.95 vs 2.55). | Stop the run; compare the printed saved/restored values; do not continue on that checkpoint. | yes |
@@ -26,9 +26,9 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | CK-12 | NVMe headroom (free / per-node checkpoint share) | ratio | below | 3.0 | 2.0 | 1.2 | Below 1.2x the next save is skipped (nvme_full). | Clean the node's NVMe, lower keep_local, or replace the node. | no |
 | CK-13 | Restore time (job start to first productive step) | s | above | 600 | 900 | 1800 | Every restore minute is a full-cluster minute paid for with no training. | Use the node-local copy when valid; prefetch from S3 in parallel; check S3 throughput. | yes |
 | CK-14 | Work lost per incident | x interval | above | 0.6 | 1.0 | 2.0 | Expected loss is half an interval; more means saves failed or the emergency save did not happen. | Check that SIGUSR1/SIGTERM reached the trainer and the emergency save committed. | yes |
-| CK-15 | Protected checkpoint missing or deleted | count | above | — | — | 1 | Protected checkpoints (every N-th, final, pinned) are the money we can never re-buy. | Restore from S3 versioning; check the retention job's IAM role. | yes |
+| CK-15 | Protected checkpoint missing or deleted | count | above | — | — | 1 | Protected checkpoints (every N-th, final, pinned) are the money we can never re-buy. | Restore from S3 versioning; check the retention job's cloud role. | yes |
 | CK-16 | Orphan uncommitted objects in S3 | GB | above | 1 | 100 | — | Half-uploaded checkpoints are never used but are billed every month. | Run the retention job; add an S3 lifecycle rule to abort incomplete multipart uploads after 1 day. | yes |
-| CK-17 | Checkpoint storage cost per day vs plan | ratio | above | 1.0 | 1.5 | — | S3 cost grows with every kept checkpoint. | Move protected checkpoints older than X days to Glacier; check keep counts. | no |
+| CK-17 | Checkpoint storage cost per day vs plan | ratio | above | 1.0 | 1.5 | — | S3 cost grows with every kept checkpoint. | Move protected checkpoints older than X days to the archive tier; check keep counts. | no |
 | CK-18 | Export parity failures (safetensors) | count | above | — | 1 | — | Teams 09/11/12 would evaluate or ship weights that are not the trained ones. | Block the export; compare keys and probe bits. | yes |
 | CK-19 | Resharded resumes | count | above | 1 | — | — | Resume on a different world size is safe but not bit-equal: the branch is marked. | Note it in the run log and the paper's failure table. | yes |
 | CK-20 | Probe value missing for this device class | count | above | 1 | — | — | First restore on new hardware cannot compare probe bits yet. | Record the probe on the new class at the next save. | yes |
@@ -53,7 +53,7 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | Q-14 | Team GPU-hours lost to preemption | node-h/week | above | 1 | 5 | — | Preempted team jobs lose work since their last save. | Ask the team to checkpoint more often, or schedule them away from main-run restarts. | yes |
 | Q-15 | Account budget used (GrpTRESMins) | % | above | 50 | 75 | 90 | At 100% the account's jobs stop. | Warn the team at 50/75; at 90 the lead decides to top up or stop. | no |
 | Q-16 | Jobs rejected for no valid account | count | above | 1 | — | — | Someone tried to submit outside the accounting rules. | Check the submit system's account mapping. | yes |
-| Q-17 | Clock offset between nodes | ms | above | 50 | 100 | 500 | Wrong clocks break event ordering, MTTR numbers and incident timelines. | Restart chrony; check the Amazon Time Sync endpoint. | no |
+| Q-17 | Clock offset between nodes | ms | above | 50 | 100 | 500 | Wrong clocks break event ordering, MTTR numbers and incident timelines. | Restart chrony; check the cloud's time service. | no |
 | Q-18 | Container image pull time | s | above | 300 | 900 | — | A slow first pull adds to every restart on a new node. | Pre-pull the image into the Enroot cache on NVMe at boot. | no |
 | Q-19 | Goodput of the main run | % | below | 92 | 90 | 80 | The share of paid wall-clock time that trained the model. Frontier runs: 89-90%. | See the largest non-productive bucket in the report. | yes |
 | Q-20 | MTTR (fault to first productive step) | s | above | 900 | 1800 | 3600 | Mean time the whole cluster is down per incident. | Break it down: detection, reschedule, restore (report shows each). | yes |
@@ -70,10 +70,10 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | H-05 | Row remap pending | count | above | — | 1 | — | The GPU needs a reset to finish repairing its memory. | Drain at the next checkpoint and reset the GPU. | no |
 | H-06 | Row remap failure | count | above | — | — | 1 | The GPU ran out of spare memory rows: it must be replaced. | Drain now; replace the instance. | no |
 | H-07 | GPU count lower than expected | count | above | — | — | 1 | A GPU disappeared: jobs fail to start or run slower. | Drain; reboot or replace. | no |
-| H-08 | GPU temperature vs slowdown limit | C below limit | below | 10 | 5 | 0 | A hot GPU slows down and then the whole job runs at its speed. | Check the instance; AWS ticket for cooling. | no |
+| H-08 | GPU temperature vs slowdown limit | C below limit | below | 10 | 5 | 0 | A hot GPU slows down and then the whole job runs at its speed. | Check the instance; provider support ticket for cooling. | no |
 | H-09 | Hardware slowdown / power brake active | count | above | — | 1 | — | One throttled GPU slows every GPU in the job. | Drain at the next checkpoint. | no |
 | H-10 | PCIe link narrower than max | count | above | — | 1 | — | Slow host-GPU copies: slower checkpoints and data loading. | Reboot; replace if it persists. | no |
-| H-11 | NVLink / EFA link down | count | above | — | — | 1 | Collectives fall back to slow paths or fail. | Drain now. | no |
+| H-11 | NVLink / fast network link down | count | above | — | — | 1 | Collectives fall back to slow paths or fail. | Drain now. | no |
 | H-12 | All-reduce busbw vs baseline | ratio | below | 0.95 | 0.9 | 0.7 | A slow link slows every step of the main run. | Below 0.9 the node fails --full; find the slow NIC or GPU. | no |
 | H-13 | All-reduce wrong result | count | above | — | — | 1 | Wrong sums mean wrong gradients: silent damage to the model. | Drain now; check for silent data corruption on that node. | no |
 | H-14 | Step watchdog fired (hang) | count/h | above | — | 1 | 2 | A hang was turned into a restart; repeated hangs point to a bad node or a deadlock. | Read the stack dump in the job log and the NCCL flight-recorder trace; drain the rank that stopped. | yes |
@@ -93,11 +93,11 @@ Generated from `metrics/catalog.yaml` by `python metrics/evaluate.py --render-md
 | ID | Metric | Unit | Alert when | LOW | MEDIUM | HIGH | Why it matters (simple words) | Action | Sim |
 |---|---|---|---|---|---|---|---|---|---|
 | C-01 | Burn rate vs plan | ratio | above | 1.05 | 1.1 | 1.25 | Spending faster than the plan ends the budget before training ends. | Find what is running outside the capacity calendar; stop it. | no |
-| C-02 | Cost per productive GPU-hour vs list price | ratio | above | 1.08 | 1.11 | 1.25 | price / goodput: what one useful GPU-hour really costs. 1.11 = goodput 90%. | Fix the largest waste bucket (C-03). | yes |
-| C-03 | Wasted share of main-run spend | % | above | 8 | 10 | 20 | Stall + lost work + detection + reschedule + restore, in money. | The report lists each bucket in USD. | yes |
-| C-04 | Cost of one incident | x interval cost | above | 0.75 | 1.5 | 3.0 | (lost work + detect + reschedule + restore) x cluster price. | Large values: missing emergency save, slow restore, or no spare. | yes |
-| C-05 | Instances running that Slurm does not know | count | above | — | — | 1 | A forgotten GPU instance can cost thousands of dollars a day (V4: a cluster idle for 3 days). | Stop it now; find who started it. | no |
-| C-06 | Budget days left vs training days left | ratio | below | 1.2 | 1.0 | 0.8 | Below 1.0 the money runs out before training finishes. | Cut team allocations or the run length; decide early. | no |
-| C-07 | Cross-AZ / internet egress | USD/day | above | 1 | 20 | — | Data transfer out of the region or across AZs is billed per GB; it should be near 0. | Keep nodes, bucket and eval in one region and AZ; use S3 gateway endpoints. | no |
-| C-08 | Unattached EBS volumes / old snapshots | USD/month | above | 10 | 100 | — | Storage left behind keeps billing. | Delete or snapshot-and-delete. | no |
+| C-02 | Node-hours per productive node-hour | ratio | above | 1.08 | 1.11 | 1.25 | 1 / goodput: node-hours paid for one useful node-hour. 1.11 = goodput 90%. | Fix the largest waste bucket (C-03). | yes |
+| C-03 | Wasted share of main-run spend | % | above | 8 | 10 | 20 | Stall + lost work + detection + reschedule + restore, as a share of the run's node-hours. | The report lists each bucket in node-hours. | yes |
+| C-04 | Cost of one incident | x interval node-hours | above | 0.75 | 1.5 | 3.0 | (lost work + detect + reschedule + restore) x nodes, in node-hours. | Large values: missing emergency save, slow restore, or no spare. | yes |
+| C-05 | Instances running that Slurm does not know | count | above | — | — | 1 | A forgotten GPU node is billed for 24 node-hours a day and does no work. | Stop it now; find who started it. | no |
+| C-06 | Budget days left vs training days left | ratio | below | 1.2 | 1.0 | 0.8 | Below 1.0 the node-hour budget runs out before training finishes. | Cut team allocations or the run length; decide early. | no |
+| C-07 | Cross-zone / internet egress | GB/day | above | 10 | 100 | — | Data transfer out of the region or across AZs is billed per GB; it should be near 0. | Keep nodes, bucket and eval in one region and zone; use a private storage endpoint. | no |
+| C-08 | Unattached block volumes / old snapshots | GB | above | 100 | 1000 | — | Storage left behind keeps billing. | Delete or snapshot-and-delete. | no |
 | C-09 | Spare node cost share | % | above | 15 | 25 | — | One hot spare on a 2-node run is 33% extra; on 8 nodes 11%. Worth it only if it saves more restart time. | Let the spare run preemptible team work; revisit spare count vs MTBF. | no |

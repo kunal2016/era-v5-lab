@@ -1,5 +1,5 @@
 {
- "duration_s": 1971,
+ "duration_s": 2013,
  "passed": 44,
  "total": 44,
  "drills": [
@@ -135,8 +135,8 @@
    "pass": true,
    "job": "7",
    "signal": "SIGUSR1",
-   "saved_step": 798,
-   "restored_step": 798,
+   "saved_step": 770,
+   "restored_step": 770,
    "restarts": "1",
    "lost_steps": 0
   },
@@ -168,66 +168,66 @@
    "drill": "kill_process_1",
    "pass": true,
    "node": "c1",
-   "restored_step": 2757,
-   "lost_steps": 83
+   "restored_step": 2762,
+   "lost_steps": 78
   },
   {
    "drill": "kill_process_2",
    "pass": true,
    "node": "c1",
-   "restored_step": 2889,
-   "lost_steps": 1
+   "restored_step": 2893,
+   "lost_steps": 7
   },
   {
    "drill": "kill_process_3",
    "pass": true,
    "node": "c1",
-   "restored_step": 3021,
-   "lost_steps": 9
+   "restored_step": 3025,
+   "lost_steps": 5
   },
   {
    "drill": "sigusr1_save_and_requeue_1",
    "pass": true,
-   "saved_step": 3041,
-   "restored_step": 3041,
+   "saved_step": 3071,
+   "restored_step": 3071,
    "lost_steps": 0
   },
   {
    "drill": "sigusr1_save_and_requeue_2",
    "pass": true,
-   "saved_step": 3052,
-   "restored_step": 3052,
+   "saved_step": 3088,
+   "restored_step": 3088,
    "lost_steps": 0
   },
   {
    "drill": "sigusr1_save_and_requeue_3",
    "pass": true,
-   "saved_step": 3083,
-   "restored_step": 3083,
+   "saved_step": 3120,
+   "restored_step": 3120,
    "lost_steps": 0
   },
   {
    "drill": "kill_during_save",
    "pass": true,
-   "inflight_step": 3346,
-   "restored_step": 3214,
-   "previous_latest": 3214
+   "inflight_step": 3384,
+   "restored_step": 3252,
+   "previous_latest": 3252
   },
   {
    "drill": "kill_during_restore",
    "pass": true,
-   "restore_interrupted_at": 3344,
-   "restored_step": 3344,
+   "restore_interrupted_at": 3383,
+   "restored_step": 3383,
    "restore_failures": 0
   },
   {
    "drill": "spot_notice",
    "pass": true,
-   "node": "c3",
+   "node": "c2",
    "drained": true,
    "new_nodes": [
     "c1",
-    "c2"
+    "c3"
    ],
    "lost_steps": 0
   },
@@ -250,16 +250,16 @@
     "c3"
    ],
    "pending_reason": "BeginTime",
-   "waited_s": 55,
-   "restored_step": 4273
+   "waited_s": 57,
+   "restored_step": 4330
   },
   {
    "drill": "hang_watchdog",
    "pass": true,
    "node": "c3",
-   "watchdog_idle_s": 20.02,
-   "restored_step": 4273,
-   "lost_steps": 27
+   "watchdog_idle_s": 20.05,
+   "restored_step": 4330,
+   "lost_steps": 30
   },
   {
    "drill": "node_loss",
@@ -269,7 +269,7 @@
     "c1",
     "c2"
    ],
-   "lost_steps": 47
+   "lost_steps": 30
   },
   {
    "drill": "controller_failover",
@@ -281,44 +281,44 @@
   {
    "drill": "db_backup_restore",
    "pass": true,
-   "file": "slurm_acct_db-20261030T091902Z.sql.gz",
-   "bytes": 17933,
+   "file": "slurm_acct_db-20261101T172955Z.sql.gz",
+   "bytes": 17507,
    "tables": 31,
    "tables_restored": 31,
-   "job_rows_restored": 52
+   "job_rows_restored": 51
   },
   {
    "drill": "split_brain_fenced",
    "pass": true,
    "epoch": 16,
-   "pointer_step": 6526,
-   "refused_step": 6658,
+   "pointer_step": 6825,
+   "refused_step": 6958,
    "commits_after_claim": [],
    "cause": "FencedError"
   },
   {
    "drill": "resume_after_fence",
    "pass": true,
-   "restored_step": 6526,
+   "restored_step": 6825,
    "epoch": 17
   },
   {
    "drill": "nan_guard_hold",
    "pass": true,
-   "nan_at_step": 6595,
-   "latest_committed": 6526,
+   "nan_at_step": 6865,
+   "latest_committed": 6825,
    "job_state": "SPECIAL_EXIT",
    "reason": "JobHeldUser"
   },
   {
    "drill": "held_job_explains_itself",
    "pass": true,
-   "comment": "V5 HELD (78): NaN: held at step 6595. Explain: python metrics/explain.py nonfinite. Do: roll back: sbatch --export=ALL,TRAIN_EXTRA='--from-step <last good step> --skip <N> --branch <new name>' slurm/mainrun.sbatch (last good step: python ckpt/ckpt.py "
+   "comment": "V5 HELD (78): NaN: held at step 6865. Explain: python metrics/explain.py nonfinite. Do: roll back: sbatch --export=ALL,TRAIN_EXTRA='--from-step <last good step> --skip <N> --branch <new name>' slurm/mainrun.sbatch (last good step: python ckpt/ckpt.py "
   },
   {
    "drill": "rollback_skip_branch",
    "pass": true,
-   "restored_step": 6526,
+   "restored_step": 6825,
    "branch": "b1"
   },
   {
@@ -330,13 +330,13 @@
   {
    "drill": "loss_spike_hold",
    "pass": true,
-   "spike_at_step": 6660,
-   "latest_committed": 6655
+   "spike_at_step": 6950,
+   "latest_committed": 6825
   },
   {
    "drill": "main_run_completes",
    "pass": true,
-   "final_step": 6715,
+   "final_step": 6885,
    "job": "17"
   },
   {
@@ -351,8 +351,8 @@
    "arch": [
     "arch",
     "",
-    "2906",
-    "0.349132"
+    "2993",
+    "0.342055"
    ],
    "posttrain": [
     "posttrain",
@@ -365,24 +365,24 @@
    "drill": "gpu_hours_accounting",
    "pass": true,
    "gpu_minutes_by_account": {
-    "arch": 24.6,
-    "perf": 20.6,
-    "eval": 49.7,
-    "mainrun": 36.7
+    "arch": 25.2,
+    "perf": 20.7,
+    "eval": 49.6,
+    "mainrun": 37.6
    }
   },
   {
    "drill": "retention",
    "pass": true,
-   "deleted": 44,
+   "deleted": 45,
    "protected": 12,
-   "freed_bytes": 52375220,
+   "freed_bytes": 53567129,
    "store": "s3"
   },
   {
    "drill": "export_safetensors",
    "pass": true,
-   "step": 6715
+   "step": 6885
   },
   {
    "drill": "live_alerts",
@@ -394,7 +394,6 @@
     "CK-07",
     "H-01",
     "H-14",
-    "H-15",
     "H-21",
     "H-24",
     "Q-02",

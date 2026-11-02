@@ -31,7 +31,7 @@ from trainer.tiny import SyntheticLoader, TinyLM, lm_loss, make_probe_fn  # noqa
 
 TRAIN = os.path.join(SIM, "trainer", "train.py")
 SEED = 1234
-# V5_DEVICE=cuda runs every trainer on GPU (Kaggle 2xT4, EC2). One GPU per rank, so world sizes are capped.
+# V5_DEVICE=cuda runs every trainer on GPU (Kaggle (2 GPUs), the cloud). One GPU per rank, so world sizes are capped.
 DEVICE = os.environ.get("V5_DEVICE", "cpu")
 MAX_WORLD = torch.cuda.device_count() if DEVICE == "cuda" else 4
 
@@ -241,7 +241,7 @@ def test_t12_no_false_spike(env):
     assert not env.events_named("train.loss_spike")
 
 
-@pytest.mark.skipif(DEVICE != "cuda" or MAX_WORLD < 2, reason="FSDP2 needs 2 CUDA GPUs (runs on Kaggle 2xT4)")
+@pytest.mark.skipif(DEVICE != "cuda" or MAX_WORLD < 2, reason="FSDP2 needs 2 CUDA GPUs (runs on Kaggle (2 GPUs))")
 def test_t16_fsdp_save_and_reshard(env):
     """Weights and optimizer sharded with FSDP2: saving must not hang (every rank joins the probe forward and
     the fingerprint), and the logical digest must match at the same AND at another world size (ADR 0001 §8)."""
@@ -400,9 +400,9 @@ def test_t22_deepspeed_export_safetensors(env, stage):
     assert r["backend"] == "deepspeed" and r["step"] == 6 and os.path.getsize(out) > 0
 
 
-@pytest.mark.skipif(not HAVE_DS or DEVICE != "cuda" or MAX_WORLD < 2, reason="DeepSpeed fp16 needs 2 CUDA GPUs (Kaggle 2xT4)")
+@pytest.mark.skipif(not HAVE_DS or DEVICE != "cuda" or MAX_WORLD < 2, reason="DeepSpeed fp16 needs 2 CUDA GPUs (Kaggle (2 GPUs))")
 def test_t23_deepspeed_fp16_bit_equal_resume_on_gpu(env):
-    """fp16 with a dynamic loss scale (T4 has no bf16): the scale and fp32 master weights are in the checkpoint,
+    """fp16 with a dynamic loss scale (the test GPU has no bf16): the scale and fp32 master weights are in the checkpoint,
     so a resume is bit-equal. The weights dtype is part of ds_config, so it is in the environment check too."""
     straight, resumed = env.tmp / "straight.jsonl", env.tmp / "resumed.jsonl"
     e = dict(DS_ENV, V5_DS_PRECISION="fp16")
@@ -504,7 +504,7 @@ def test_t26_store_conditional_writes(tmp_path, monkeypatch, kind):
         mock = moto.mock_aws()
         mock.start()
         import boto3
-        boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="v5-ckpt")
+        boto3.client("s3").create_bucket(Bucket="v5-ckpt")
         url = "s3://v5-ckpt/t26"
     else:
         url = str(tmp_path / "s3")
@@ -517,6 +517,9 @@ def test_t26_store_conditional_writes(tmp_path, monkeypatch, kind):
         with pytest.raises(Conflict):
             st.put_json_if("p.json", {"n": 9}, v1)                    # stale version: loses
         assert st.get_json_ver("p.json") == ({"n": 2}, v2)
+
+        if mock:      # the in-process emulator's conditional write is not atomic across threads (flaky under
+            return    # load); the folder store, the emulator server and a real store run the parallel part
 
         def appender(w):
             for i in range(10):
@@ -570,11 +573,11 @@ def test_t27_async_save_owns_its_copy(env, monkeypatch):
     assert info["step"] == 2 and not env.events_named("restore.failed")
 
 
-# ----------------------------------------------------------------------------- merged from Mallik's design (T28-T30)
+# ----------------------------------------------------------------------------- merged from millermuttu's design (T28-T30)
 
 def test_t28_frozen_change_refused_at_save(env, monkeypatch):
     """A frozen tensor (the KE2 table) that training changed is refused at the next save, not only noticed at the
-    next restore (Mallik's rule, team 07). Nothing is written; latest.json keeps the good checkpoint."""
+    next restore (millermuttu's rule, team 07). Nothing is written; latest.json keeps the good checkpoint."""
     from ckpt.ckpt import FrozenChangedError
     from trainer.tiny import FROZEN_KEYS
     monkeypatch.setenv("V5_EVENTS_DIR", env.events)
@@ -602,7 +605,7 @@ def test_t28_frozen_change_refused_at_save(env, monkeypatch):
 
 
 def test_t29_embedding_policy_is_part_of_the_environment(env):
-    """Another embedding policy (Team 04's KE2 vs plain) refuses to resume, naming the field (Mallik's meta)."""
+    """Another embedding policy (Team 04's KE2 vs plain) refuses to resume, naming the field (millermuttu's meta)."""
     env.run("--run-id", "ep", "--steps", 4, "--interval-s", 999, check=0,
             env_extra={"V5_EMBEDDING_POLICY_ID": "ke2-v1"})
     env.run("--run-id", "ep", "--steps", 6, "--interval-s", 999, check=78,

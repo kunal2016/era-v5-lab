@@ -14,7 +14,7 @@ hardware or network faults. If it crashes 3 times in 30 minutes, it is not one-o
 
 Commands:
     job_queue.py run -- <srun args> -- <trainer args>   the job wrapper; every sbatch script calls it
-    job_queue.py spot-watch                             per node: AWS 2-minute spot warning -> drain + save
+    job_queue.py spot-watch                             per node: cloud's 2-minute spot warning -> drain + save
     job_queue.py drain <reason> [--node N]              take a node out; its jobs save and move
     job_queue.py status                                 jobs and drained nodes, explained in plain words
     job_queue.py keep-spare                             controller, every minute: name the hot spare, boot one if none
@@ -33,7 +33,6 @@ import shutil
 import subprocess
 import sys
 import time
-import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
@@ -42,7 +41,7 @@ from common.events import emit  # noqa: E402
 from common.reasons import (DRAIN, EXIT_CODES, EXIT_DONE, EXIT_FATAL, EXIT_RETRY, RAW_EXIT, SLURM,  # noqa: E402
                             lookup, read_exit_notes)
 
-# The trainer the wrapper starts. On EC2: Team 05's real trainer. Default: the test trainer in the support kit.
+# The trainer the wrapper starts. On Cloud nodes: Team 05's real trainer. Default: the test trainer in the support kit.
 TRAIN_SCRIPT = os.environ.get("V5_TRAIN_SCRIPT",
                               os.path.join(HERE, "..", "support", "simulation", "trainer", "train.py"))
 CRASHLOOP_N = int(os.environ.get("CRASHLOOP_N", "3"))
@@ -127,12 +126,12 @@ def keep_spare(partition: str = "gpu", want: int = 1) -> dict:
 
 # ============================================================================ the job wrapper
 def crash_loop(run_url: str) -> tuple:
-    """Record this crash in the run's S3 folder; return (is_loop, crashes_in_window).
+    """Record this crash in the run's folder of the shared store; return (is_loop, crashes_in_window).
 
     In simple words: a requeued job can start on any node, so the count cannot live on a node's disk (it
-    would start from zero each time) or in an appended file (S3 cannot append). It is one small object,
-    `crashes.json`, read and rewritten whole. Only one wrapper of a job runs at a time, so there is no race.
-    If S3 cannot be reached, the crash is retried as usual and an event says the cap is not counting."""
+    would start from zero each time) or in an appended file (an object store cannot append). It is one small
+    file, `crashes.json`, read and rewritten whole. Only one wrapper of a job runs at a time, so there is no race.
+    If the store cannot be reached, the crash is retried as usual and an event says the cap is not counting."""
     now = time.time()
     try:
         st = open_store(run_url)
@@ -178,7 +177,7 @@ def banner(x: dict) -> None:
 
 def run(srun_args: list, train_args: list) -> int:
     run_id = os.environ.get("RUN_ID", "run")
-    run_url = os.environ.get("V5_REMOTE_ROOT", "/s3/ckpt").rstrip("/") + "/" + run_id   # same folder as the checkpoints
+    run_url = os.environ.get("V5_REMOTE_ROOT", "/shared/ckpt").rstrip("/") + "/" + run_id   # same folder as the checkpoints
     restart = int(os.environ.get("SLURM_RESTART_COUNT", "0"))
     emit("job.started", restart_count=restart, nodes=os.environ.get("SLURM_JOB_NODELIST", ""),
          account=os.environ.get("SLURM_JOB_ACCOUNT", ""), qos=os.environ.get("SLURM_JOB_QOS", ""))
@@ -225,24 +224,22 @@ def run(srun_args: list, train_args: list) -> int:
 
 
 # ============================================================================ spot watcher
-# AWS gives a spot instance a 2-minute warning before taking it back. We poll it every 5 s. When it comes, we
-# drain the node and ask its jobs to save now: we lose seconds of work, not the whole interval since the last
-# checkpoint. On EC2 it reads the instance metadata service (IMDSv2); in the Docker test, a file.
-IMDS = os.environ.get("V5_IMDS_URL")          # e.g. http://169.254.169.254 on EC2
+# The cloud gives a spot (preemptible) node a short warning, about 2 minutes, before taking it back. We poll it
+# every 5 s. When it comes, we drain the node and ask its jobs to save now: we lose seconds of work, not the whole
+# interval since the last checkpoint. How to ask differs per cloud, so it is a setting: V5_SPOT_NOTICE_CMD is a
+# command (set in /etc/v5/node.env by the node image) that prints the notice, or nothing when there is none, e.g.
+# a query of the node's metadata service. Without it (Docker test) the watcher reads a file.
+NOTICE_CMD = os.environ.get("V5_SPOT_NOTICE_CMD")
 NOTICE_FILE = os.environ.get("V5_SPOT_NOTICE_FILE", "/var/lib/v5-health/spot_notice")
 POLL_S = float(os.environ.get("V5_SPOT_POLL_S", "5"))
 
 
 def spot_notice() -> str:
-    if IMDS:
+    if NOTICE_CMD:
         try:
-            tok_req = urllib.request.Request(f"{IMDS}/latest/api/token", method="PUT",
-                                             headers={"X-aws-ec2-metadata-token-ttl-seconds": "60"})
-            tok = urllib.request.urlopen(tok_req, timeout=2).read().decode()
-            req = urllib.request.Request(f"{IMDS}/latest/meta-data/spot/instance-action",
-                                         headers={"X-aws-ec2-metadata-token": tok})
-            return urllib.request.urlopen(req, timeout=2).read().decode()   # 404 = no notice
-        except Exception:  # noqa: BLE001 - 404 and timeouts both mean "no notice yet"
+            p = subprocess.run(NOTICE_CMD, shell=True, capture_output=True, text=True, timeout=5)
+            return p.stdout.strip() if p.returncode == 0 else ""   # an error or a timeout means "no notice yet"
+        except (OSError, subprocess.TimeoutExpired):
             return ""
     if os.path.exists(NOTICE_FILE):
         return open(NOTICE_FILE).read().strip() or "spot notice (drill)"
@@ -303,7 +300,7 @@ def main(argv) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("run", help="the job wrapper: run -- <srun args> -- <trainer args>")
-    sub.add_parser("spot-watch", help="watch for the AWS spot warning on this node")
+    sub.add_parser("spot-watch", help="watch for the spot warning on this node")
     d = sub.add_parser("drain", help="take a node out of service; its jobs save and move")
     d.add_argument("reason")
     d.add_argument("--node")

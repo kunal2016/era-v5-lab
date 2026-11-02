@@ -1,5 +1,5 @@
 {
- "duration_s": 196,
+ "duration_s": 165,
  "passed": 13,
  "total": 13,
  "drills": [
@@ -139,14 +139,14 @@
     "ladder-perf"
    ],
    "team_saved_before_exit": true,
-   "seconds_submit_to_running": 4.5
+   "seconds_submit_to_running": 4.6
   },
   {
    "drill": "kill_process_1",
    "pass": true,
    "node": "c1",
-   "restored_step": 131,
-   "lost_steps": 9
+   "restored_step": 129,
+   "lost_steps": 11
   }
  ]
 }

@@ -47,7 +47,8 @@ the Docker test cluster unless the text says otherwise.
           │                     │ local NVMe (fast copy, the "stall")                                     │
           └─────────────────────┼─────────────────────────────────────────────────────────────────────────┘
                                 ▼ background upload, checked
-                     S3 bucket: <run>/latest.json, commits.jsonl, <branch>/step_<N>-e<epoch>/ (+ MANIFEST.json)
+                     checkpoint store (shared file system, or any S3-compatible store):
+                     <run>/latest.json, commits.jsonl, <branch>/step_<N>-e<epoch>/ (+ MANIFEST.json)
                                 │
      events (JSON lines) ──────►│ metrics/watch.py (alerts, plain words) ─► Team 08 pager / webhook
                                 ▼
@@ -74,8 +75,8 @@ the Docker test cluster unless the text says otherwise.
 4. **Restore.** It follows `latest.json` to the newest committed checkpoint, checks every file's sha256, checks
    the software environment, loads, and **proves** the load is exact (§1.3). A fresh run starts at step 0.
 5. **Train.** Every `INTERVAL_S` (production: 30 min) it saves. Training pauses only for the copy to host memory
-   (the *stall*); writing to NVMe and uploading to S3 run in the background.
-6. **Commit.** The checkpoint counts only when every rank's files are in S3, re-checked, the `MANIFEST.json` is
+   (the *stall*); writing to NVMe and copying to the shared store run in the background.
+6. **Commit.** The checkpoint counts only when every rank's files are in the shared store, re-checked, the `MANIFEST.json` is
    written **last**, and `latest.json` is moved (conditionally). A save that dies halfway is simply not a
    checkpoint; the pointer still shows the previous good one.
 7. **Something goes wrong** → §1.5. **Done** → exit 0, the final checkpoint is committed.
@@ -98,7 +99,7 @@ fail the same way.
 
 Slurm can believe a job is dead while it still runs (a node loses its network, Slurm starts a new copy, the
 network comes back). Two copies would then both save. Each attempt therefore takes an **epoch** ticket when it
-starts, and `latest.json` accepts commits only from the newest ticket (S3 `If-Match`). The old copy's next commit
+starts, and `latest.json` accepts commits only from the newest ticket (a conditional write: a lock file on a file system, `If-Match` on an S3 store). The old copy's next commit
 is refused, it logs `checkpoint.fenced` and exits 78 (`FencedError`). Each attempt also writes into its own
 folders, `step_<N>-e<epoch>`, so two attempts never mix files.
 
@@ -113,7 +114,7 @@ folders, `step_<N>-e<epoch>`, so two attempts never mix files.
 | A bad GPU (Xid, ECC, temperature, row remap, NVLink down, wrong collective) | periodic check drains the node; jobs save and move to a healthy node | ≈ 0 | replace hardware later |
 | Node disappears | Slurm marks it DOWN after 30 s; job requeued elsewhere | since last commit | repair the node |
 | Rank hangs without an error | step watchdog: stack dump, exit 75, restart | since last commit | no |
-| Controller dies | backup controller takes over (EC2 layout); training keeps running | 0 | restart it |
+| Controller dies | backup controller takes over (the cloud layout); training keeps running | 0 | restart it |
 | NaN, or a loss spike (×1.5 the median for 3 steps) | **no save**; exit 78; job **held** | since last commit | **yes**: roll back (§5.4) |
 | Checkpoint fails its proofs | falls back to the previous commit | since that commit | look at it (alert CK-05) |
 | Environment changed, keys renamed, other data manifest, other world size (DeepSpeed) | restore refused, exit 78, held | 0 | **yes**: fix, or allow on purpose |
@@ -138,13 +139,13 @@ folders, `step_<N>-e<epoch>`, so two attempts never mix files.
 
 ### 2.1 Accounts, queues and limits
 
-| Item | Value (EC2 layout / shared node) |
+| Item | Value (the cloud layout / shared node) |
 |---|---|
 | Team accounts | `data tokenizer ke2 arch perf infra monitoring eval posttrain release quant` (under `teams`) |
 | Partitions | `gpu` (training nodes, whole nodes), `eval` (≤ 4 h, default 1 h), `debug` (≤ 30 min, default 10 min), `cpu` (≤ 1 day, default 1 h). Without `--time` a job gets the partition default (`gpu`: the QOS `MaxWall`) |
 | QOS `normal` (default for teams) | `MaxWall` 24 h; GPUs per job ≤ your share; ≤ 50 queued jobs per team; refused at submit if over a per-job limit |
 | QOS `debug` | 30 min, 1 GPU, 1 running + 2 queued per user, higher priority |
-| GPU share per team | `GrpTRES=gres/gpu=<share>` (EC2: 16; shared node: set by TSAI) |
+| GPU share per team | `GrpTRES=gres/gpu=<share>` (Cloud nodes: 16; shared node: set by TSAI) |
 | Budget | `GrpTRESMins` GPU-hours per team; alerts at 50 / 75 / 90 %, hard stop at 100 % |
 | Main run | QOS `mainrun` preempts `normal` and `debug`; your job gets SIGTERM, 60 s to save, then requeues |
 
@@ -180,7 +181,7 @@ Options your job reads (`--export=ALL,KEY=value`):
 | `INTERVAL_S` | 600 | seconds between saves |
 | `TRAIN_EXTRA` | empty | extra trainer arguments, e.g. `--from-step 1200 --skip 5 --branch b1` |
 | `V5_TRAIN_SCRIPT` | the test trainer | your training script (it must follow §3) |
-| `V5_REMOTE_ROOT` | from `/etc/v5/node.env` | where checkpoints go (`s3://...`) |
+| `V5_REMOTE_ROOT` | from `/etc/v5/node.env` | where checkpoints go: a shared folder (`/shared/ckpt`) or `s3://...` |
 
 ### 2.3 When your job does not start
 
@@ -206,7 +207,7 @@ scontrol show job <id> | grep -E 'JobState|Restarts|Comment'   # Comment = plain
 sacct -X -j <id> -o jobid,state,exitcode,restarts,elapsed,alloctres
 python /opt/v5/queue/job_queue.py status               # every job and drained node, in plain words
 python /opt/v5/metrics/explain.py 78                  # or 75, AssocGrpGRES, FencedError, CK-05, nvlink ...
-python /opt/v5/ckpt/ckpt.py list --run s3://<bucket>/<prefix>/<RUN_ID>   # committed checkpoints
+python /opt/v5/ckpt/ckpt.py list --run /shared/ckpt/<RUN_ID>         # committed checkpoints (or s3://<bucket>/<prefix>/<RUN_ID>)
 ```
 
 ---
@@ -223,8 +224,8 @@ python /opt/v5/ckpt/ckpt.py list --run s3://<bucket>/<prefix>/<RUN_ID>   # commi
 `SLURM_PROCID`, `SLURM_LOCALID`, `SLURM_NTASKS`; the job script sets `MASTER_ADDR` and `MASTER_PORT`. Initialise
 the process group from those (the test trainer does: `support/simulation/trainer/train.py`). Why not a launcher:
 the `deepspeed` launcher dies on SIGUSR1 and kills all ranks when one exits non-zero, which breaks both the
-save-on-signal and the exit-75 contract (Max's analysis, ADR 0002 §4). DeepSpeed itself works this way: our
-DeepSpeed drills call `deepspeed.initialize` with no launcher.
+save-on-signal and the exit-75 contract (uz9ai's analysis, ADR 0002 §4). DeepSpeed itself works this way: our
+The DeepSpeed test trainer calls `deepspeed.initialize` with no launcher.
 
 ### 3.2 The skeleton
 
@@ -295,7 +296,7 @@ restoring the previous mode. It must call the model on every rank (FSDP/ZeRO-3 f
 | `V5_EMBEDDING_POLICY_ID` | Team 04's embedding policy (e.g. `ke2-v1`); part of the environment check |
 | `GIT_SHA`, `IMAGE_DIGEST`, `TOKENIZER_SHA` | recorded in every manifest and must match on resume |
 | `V5_ASYNC_SAVE` | `1` (default) async save; `0` blocking save |
-| `V5_VERIFY_MODE` | `full` (re-hash every object; tests) or `head` (compare S3's stored checksum; TB-size runs) |
+| `V5_VERIFY_MODE` | `full` (re-hash every object; tests) or `head` (compare the checksum an S3 store kept at upload; TB-size runs) |
 | `V5_DEEPSPEED`, `V5_ZERO_STAGE`, `V5_DS_PRECISION` | test trainer: DeepSpeed backend, ZeRO 0–3, fp32/fp16/bf16 |
 | `V5_FSDP` | test trainer: FSDP2 (`fully_shard`) |
 
@@ -336,7 +337,8 @@ saved state of old rank 0. That only works if it means "global batch N".
 
 ```python
 from ckpt.ckpt import export_safetensors
-export_safetensors("s3://<bucket>/<prefix>/<run>", model_factory, probe_fn, "/tmp/model.safetensors", step=None)
+export_safetensors("/shared/ckpt/<run>",          # or "s3://<bucket>/<prefix>/<run>"
+                   model_factory, probe_fn, "/tmp/model.safetensors", step=None)
 ```
 
   DeepSpeed checkpoints export through `zero_to_fp32` the same way (`ckpt/ds_ckpt.py:export_ds`). A dtype change
@@ -377,7 +379,7 @@ Alerts arrive through Team 08's pager or the webhook in `V5_ALERT_WEBHOOK`; each
 | `DataManifestError` | point the loader back at the run's shard list, or start a new branch on purpose |
 | `ReshardError` | resubmit at the saved size, or convert (DeepSpeed: `ds_to_universal.py`) |
 | `FencedError` | nothing for the run (a newer copy owns it); find why the old copy was still alive, drain that node if it repeats |
-| `CheckpointError` (no usable checkpoint) | `ckpt.py verify --run <run>`; check S3 (CK-04/CK-05) |
+| `CheckpointError` (no usable checkpoint) | `ckpt.py verify --run <run>`; check the store (CK-04/CK-05) |
 
 ### 5.3 A node is drained
 
@@ -385,7 +387,7 @@ Alerts arrive through Team 08's pager or the webhook in `V5_ALERT_WEBHOOK`; each
 
 | Check | Do |
 |---|---|
-| `xid`, `ecc_uncorrectable`, `remapped_rows`, `dcgm_diag`, `gpu_count` | replace the instance / open a hardware ticket; reboot first for `gpu_count` |
+| `xid`, `ecc_uncorrectable`, `remapped_rows`, `dcgm_diag`, `gpu_inventory` | replace the instance / open a hardware ticket; reboot first for `gpu_inventory` |
 | `nvlink` | reset GPUs or reboot; replace if the link stays down |
 | `nccl_<op>` or `nccl_collectives` | `health_check.py --mode full` on it; replace if it fails again; read the flight-recorder dump |
 | `gpu_temperature` | check cooling |
@@ -414,7 +416,7 @@ The run continues on branch `b1` from step K, skipping the 5 batches after it. T
 |---|---|
 | Move jobs off a node and keep new ones away | `python queue/job_queue.py drain "<reason>" --node <node>` |
 | Check every file of a checkpoint | `python ckpt/ckpt.py verify --run <run> [--step N]` |
-| Free storage | `python ckpt/ckpt.py retention --run <run> --keep 3 --protect-every 5 --dry-run` (then without `--dry-run`; own role on AWS) |
+| Free storage | `python ckpt/ckpt.py retention --run <run> --keep 3 --protect-every 5 --dry-run` (then without `--dry-run`; own role in the cloud) |
 | Back up the accounting DB (and prove it restores) | `slurm/backup_db.sh <dir>` then `slurm/backup_db.sh --verify-latest <dir>` |
 | Check the checkpoint store still refuses stale writes | `python ckpt/ckpt.py probe-store --run <run>` |
 | Upgrade software mid-run | only at a checkpoint: emergency save → upgrade (`slurmdbd` → `slurmctld` → `slurmd`) → resubmit with `--allow-env-change` |
@@ -449,8 +451,8 @@ $EDITOR /etc/v5/cluster.env
 | submit | main run submitted unless queued; it claimed its epoch, restored and started |
 | status | `job_queue.py status` |
 
-Secrets never live in the repo: the DB password is in `/etc/v5/db.env` (written at boot from AWS Secrets
-Manager), S3 access is the instance role, the munge key is copied by hand or from SSM.
+Secrets never live in the repo: the DB password is in `/etc/v5/db.env` (written at boot from the cloud secrets
+store), access to an S3 store is the node's own role, the munge key is copied by hand or from the cloud session manager.
 
 ### 6.2 Settings to adapt to the shared node
 
@@ -486,7 +488,7 @@ teams/07-infrastructure/
 └── support/
     ├── tests/             unit tests (pytest)
     ├── simulation/        Docker Slurm cluster + drills (run_sim.py), test trainer, results*/
-    ├── kaggle/            GPU checks on Kaggle 2×T4
+    ├── kaggle/            GPU checks on Kaggle (2 GPUs)
     ├── tools/             bench_save.py (stall and async timings)
     └── docs/              reviews, sim results, merge plans, codes_and_actions, metrics_catalog
 ```
@@ -508,7 +510,8 @@ Checkpoint tests T1–T30 are listed in `ckpt/README.md` §10; DeepSpeed tests (
 ```bash
 python3 support/simulation/run_sim.py --smoke        # ~5 min after start: accounts, limits, health fakes, kill + restore
 python3 support/simulation/run_sim.py                # every drill (~35 min); writes results/ and docs/sim_results.md
-python3 support/simulation/run_sim.py --deepspeed    # every drill with the DeepSpeed trainer
+python3 support/simulation/run_sim.py --deepspeed    # optional: every drill with the DeepSpeed trainer (not part of the submitted results)
+python3 support/simulation/run_sim.py --store folder # every drill with checkpoints on a shared file system (bare metal)
 python3 support/simulation/run_sim.py --only limits time_limit --keep-up    # some drills, leave the cluster up
 docker compose -f support/simulation/slurm-docker/docker-compose.yml exec slurmctld bash   # look around
 ```
@@ -545,12 +548,12 @@ CUDA (incl. FSDP2 and DeepSpeed fp16), the stall benchmark and the NCCL checks, 
 | Path | What |
 |---|---|
 | `/opt/v5/` | this team folder (read-only) |
-| `/etc/v5/node.env` | per-node settings (events dir, expected GPUs, store, S3 endpoint) |
+| `/etc/v5/node.env` | per-node settings (events dir, expected GPUs, checkpoint store) |
 | `/etc/v5/cluster.env` | what `launch.sh` needs (hosts, store, run id) |
-| `/var/log/v5/events/*.jsonl` | every event, one JSON per line (shipped to S3) |
+| `/var/log/v5/events/*.jsonl` | every event, one JSON per line (shipped to the shared store) |
 | `/var/log/v5/logs/<job>-<id>.out` | job logs (appended across restarts) |
 | `/var/lib/v5-health/` | health state (Xid lines seen, last report) |
-| `/nvme/ckpt/<run>/` | local checkpoint cache (S3 is the copy that counts) |
+| `/nvme/ckpt/<run>/` | local checkpoint cache (the shared store holds the copy that counts) |
 
 ### 8.2 Checkpoint store layout
 
@@ -568,7 +571,7 @@ CUDA (incl. FSDP2 and DeepSpeed fp16), the stall benchmark and the NCCL checks, 
 |---|---|---|
 | `RUN_ID` | job scripts, trainer | `v5main` (main run) |
 | `STEPS`, `INTERVAL_S`, `WATCHDOG_S`, `STEP_SLEEP`, `TRAIN_EXTRA` | job scripts | see the scripts |
-| `V5_REMOTE_ROOT`, `V5_S3_ENDPOINT`, `V5_S3_CONCURRENCY` | checkpoint store | `/s3/ckpt`, AWS, 16 |
+| `V5_REMOTE_ROOT`, `V5_S3_ENDPOINT`, `V5_S3_CONCURRENCY` | checkpoint store | `/shared/ckpt`, the library default, 16 |
 | `V5_TRAIN_SCRIPT` | wrapper | test trainer |
 | `CRASHLOOP_N`, `CRASHLOOP_WINDOW_S` | wrapper | 3, 1800 |
 | `V5_EVENTS_DIR` | everything | `/var/log/v5/events` |
@@ -598,7 +601,8 @@ CUDA (incl. FSDP2 and DeepSpeed fp16), the stall benchmark and the NCCL checks, 
 ### 8.5 What is not proven yet
 
 - Nothing has run on the shared GPU node yet (from 1 Nov); GPU numbers come from the pending Kaggle run.
-- S3 is tested on an emulator (moto 5.1.10), not on AWS; `probe-store` runs on the real bucket at every launch.
+- The store is tested as a shared folder and as an S3-compatible emulator (moto 5.1.10), not on the real store;
+  `probe-store` checks it at every launch.
 - The DeepSpeed path runs on CPU (gloo) in Docker; fp16 and FSDP2 on GPUs wait for Kaggle.
 - `launch.sh`'s `services` step and SSH transport were not run (the Docker cluster has no systemd).
-- Max's installer (`cluster.toml`) is not merged yet: Phase B of `support/docs/merge_execution_plan.md`.
+- uz9ai's installer (`cluster.toml`) is not merged yet: Phase B of `support/docs/merge_execution_plan.md`.

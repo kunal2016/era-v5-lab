@@ -62,11 +62,21 @@ def test_no_free_node_powers_one_up(monkeypatch, tmp_path):
 
 def test_spot_notice_from_drill_file(tmp_path, monkeypatch):
     f = tmp_path / "spot_notice"
-    monkeypatch.setattr(job_queue, "IMDS", None)
+    monkeypatch.setattr(job_queue, "NOTICE_CMD", None)
     monkeypatch.setattr(job_queue, "NOTICE_FILE", str(f))
     assert job_queue.spot_notice() == ""
     f.write_text("")
     assert job_queue.spot_notice() == "spot notice (drill)"
+
+
+def test_spot_notice_from_command(monkeypatch):
+    """On a cloud node a command (V5_SPOT_NOTICE_CMD) asks for the notice; empty output or an error = none."""
+    monkeypatch.setattr(job_queue, "NOTICE_CMD", "echo 'terminate in 120 s'")
+    assert job_queue.spot_notice() == "terminate in 120 s"
+    monkeypatch.setattr(job_queue, "NOTICE_CMD", "exit 1")
+    assert job_queue.spot_notice() == ""
+    monkeypatch.setattr(job_queue, "NOTICE_CMD", "true")
+    assert job_queue.spot_notice() == ""
 
 
 def test_without_slurm_nothing_crashes(monkeypatch, tmp_path, capsys):
@@ -86,7 +96,7 @@ def test_every_cluster_path_exists():
     files = glob.glob(os.path.join(TEAM, "slurm", "*")) + \
         glob.glob(os.path.join(TEAM, "support", "simulation", "slurm-docker", "*")) + \
         [os.path.join(TEAM, "support", "simulation", "run_sim.py")]
-    planned = {"slurm/ec2_suspend.sh", "slurm/ec2_resume.sh"}   # week 2, need AWS
+    planned = {"slurm/node_suspend.sh", "slurm/node_resume.sh"}   # week 2, need the cloud
     missing = set()
     for f in files:
         for p in re.findall(r"/opt/v5/([\w./-]+\.(?:py|sh|sbatch|conf))", open(f).read()):

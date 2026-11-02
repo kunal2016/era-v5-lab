@@ -21,7 +21,7 @@ results. The Kaggle GPU checks are next door in `../kaggle/`. Use it to re-run t
 
 Only in two places, both replaceable:
 
-- `queue/job_queue.py` starts `V5_TRAIN_SCRIPT`; the default is `support/simulation/trainer/train.py`. On EC2, set it to
+- `queue/job_queue.py` starts `V5_TRAIN_SCRIPT`; the default is `support/simulation/trainer/train.py`. On the cloud, set it to
   the real trainer.
 - `support/tests/test_ckpt.py` trains the tiny model from `support/simulation/trainer/` to prove bit-equal restores.
 
@@ -48,7 +48,7 @@ enough to test allocation and GPU-hour accounting, not computation.
 | preemption | team jobs fill the GPU nodes, then the main run is submitted | team jobs save and requeue; the main run starts |
 | kill (×3) | `kill -9` a training process | requeued; restored from the last commit |
 | SIGUSR1 (×3) | the stop signal a spot notice or health drain sends | emergency save; 0 steps lost |
-| spot notice | the AWS 2-minute warning, on one node | node drained; save; job moves to the spare |
+| spot notice | cloud's 2-minute warning, on one node | node drained; save; job moves to the spare |
 | health fail | force one node's health check to fail | drained; save; job moves |
 | two nodes down | both main-run nodes fail, one spare | main run waits (no crash loop); recovers on repair |
 | hang | `SIGSTOP` one rank | watchdog exits 75; restart |
@@ -64,10 +64,10 @@ enough to test allocation and GPU-hour accounting, not computation.
 Results of the latest run: [../docs/sim_results.md](../docs/sim_results.md); what they mean:
 [../docs/review_week1.md](../docs/review_week1.md).
 
-## Docker vs EC2
+## Docker vs the cloud
 
 Same `slurm.conf`. Different, by design: CPU instead of GPU (gloo instead of NCCL); placeholder GPUs; no cgroup
-enforcement (`site.conf`, `cgroup.conf`); no Pyxis containers; no power saving; no EFA; an S3 emulator instead
+enforcement (`site.conf`, `cgroup.conf`); no Pyxis containers; no power saving; no the fast network; an S3 emulator instead
 of S3. Time is compressed: save every 8 s instead of 30 min, watchdog 20 s, crash-loop window 10 s.
 
 ## Kaggle (real GPUs)

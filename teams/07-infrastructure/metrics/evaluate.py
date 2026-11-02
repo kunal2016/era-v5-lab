@@ -1,8 +1,8 @@
-"""Turn events into metrics, goodput, dollars and alerts (ADR 0004).
+"""Turn events into metrics, goodput, node-hours of waste and alerts (ADR 0004).
 
 In simple words: every component writes events. This script reads them, rebuilds each incident
 (fault -> job ends -> job restarts -> restore -> first useful step), splits the main run's wall-clock
-time into "useful training" and each kind of waste, prices the waste, and checks every metric in
+time into "useful training" and each kind of waste, counts the waste in node-hours, and checks every metric in
 metrics/catalog.yaml against its LOW / MEDIUM / HIGH thresholds.
 
     python metrics/evaluate.py --events /s3/events --out /s3/report --run v5main --nodes 2 --interval-s 1800
@@ -112,7 +112,9 @@ class Run:
         return out
 
 
-def compute(run: Run, price_usd_h: float, sim: bool):
+def compute(run: Run, nodes: int, sim: bool, price_node_h: float = None):
+    """Waste and risk are counted in node-hours (time on the GPU nodes); a cost column is added only when a price
+    is given at run time (the repo holds no price)."""
     m, detail = {}, {}
     I = run.interval_s
     commits = run.of("checkpoint.committed")
@@ -133,7 +135,7 @@ def compute(run: Run, price_usd_h: float, sim: bool):
         if base:
             at_risk = max(at_risk, s["t"] - max(base))
     m["CK-01"] = at_risk / I
-    m["CK-02"] = at_risk / 3600 * price_usd_h
+    m["CK-02"] = at_risk / 3600 * nodes
     seq, worst = 0, 0
     for e in sorted(commits + failed, key=lambda e: e["t"]):
         seq = seq + 1 if e["event"] == "checkpoint.failed" else 0
@@ -221,9 +223,13 @@ def compute(run: Run, price_usd_h: float, sim: bool):
              "reschedule": sum(i["reschedule_s"] or 0 for i in incs),
              "restore": sum(i["restore_s"] or 0 for i in incs)}
         b["productive"] = max(0.0, wall - sum(b.values()))
-        buckets = {k: {"seconds": round(v, 2), "share": round(v / wall, 4),
-                       "usd": round(v / 3600 * price_usd_h, 2)} for k, v in b.items()}
-        buckets["wall_clock"] = {"seconds": round(wall, 2), "share": 1.0, "usd": round(wall / 3600 * price_usd_h, 2)}
+        b["wall_clock"] = wall
+        buckets = {k: {"seconds": round(v, 2), "share": round(v / wall, 4) if k != "wall_clock" else 1.0,
+                       "node_h": round(v / 3600 * nodes, 4)} for k, v in b.items()}
+        if price_node_h:
+            for v in buckets.values():
+                v["cost"] = round(v["node_h"] * price_node_h, 2)
+        del b["wall_clock"]
         good = b["productive"] / wall
         m["Q-19"] = good * 100
         m["C-02"] = 1 / good if good else None
@@ -276,7 +282,7 @@ def render_md(cat, path):
                   "| ID | Metric | Unit | Alert when | LOW | MEDIUM | HIGH | Why it matters (simple words) | Action | Sim |",
                   "|---|---|---|---|---|---|---|---|---|---|"]
         for x in rows:
-            f = lambda v: "—" if v is None else (f"{v} × interval cost" if x.get("scale") else str(v))  # noqa: E731
+            f = lambda v: "—" if v is None else (f"{v} × interval node-h" if x.get("scale") else str(v))  # noqa: E731
             lines.append(f"| {x['id']} | {x['name']} | {x['unit']} | {x['direction']} | {f(x.get('low'))} | "
                          f"{f(x.get('medium'))} | {f(x.get('high'))} | {x['why']} | {x['action']} | "
                          f"{'yes' if x['sim'] else 'no'} |")
@@ -291,7 +297,9 @@ def main():
     ap.add_argument("--run", default="v5main")
     ap.add_argument("--nodes", type=int, default=2)
     ap.add_argument("--interval-s", type=float, default=1800)
-    ap.add_argument("--prices", default=os.path.join(HERE, "prices.yaml"))
+    ap.add_argument("--prices", default=os.path.join(HERE, "prices.yaml"), help="cost inputs (no price values)")
+    ap.add_argument("--price-per-node-h", type=float, default=os.environ.get("V5_PRICE_PER_NODE_H"),
+                    help="optional: price of one node-hour, adds a cost column; never stored in the repo")
     ap.add_argument("--sim", action="store_true", help="mark alerts caused by injected drills as expected")
     ap.add_argument("--render-md", help="write the catalog as a Markdown table and exit")
     a = ap.parse_args()
@@ -301,10 +309,10 @@ def main():
         return 0
 
     p = yaml.safe_load(open(a.prices))
-    price = p["instances"][p["main_instance"]]["on_demand_usd_h"] * a.nodes
+    price = float(a.price_per_node_h) if a.price_per_node_h else p.get("price_per_node_h")
     run = Run(read_all(a.events), a.run, a.interval_s)
-    m, detail = compute(run, price, a.sim)
-    interval_cost = price * a.interval_s / 3600
+    m, detail = compute(run, a.nodes, a.sim, price)
+    interval_cost = a.nodes * a.interval_s / 3600          # node-hours in one checkpoint interval
 
     alerts, metrics_out = [], {}
     for x in cat["metrics"]:
@@ -323,8 +331,9 @@ def main():
     json.dump(alerts, open(os.path.join(a.out, "alerts.json"), "w"), indent=1)
 
     L = [f"# Simulation metrics report: run `{a.run}`", "",
-         f"Cluster price used: {a.nodes} × {p['main_instance']} = **${price:,.2f}/h** (assumed price, see "
-         f"metrics/prices.yaml). Interval: {a.interval_s:.0f} s (one interval = ${interval_cost:,.2f}).", ""]
+         f"Cluster: {a.nodes} × {p['main_instance']}. Waste is counted in **node-hours** (cost = node-hours × the "
+         f"price of one node-hour, an input with no value in the repo). Interval: {a.interval_s:.0f} s "
+         f"(one interval = {interval_cost:.4f} node-hours).", ""]
     if a.sim:
         L += ["> In the simulation a fault is injected about once a minute, while a real run sees one every "
               "few hours or days. So goodput and cost-waste numbers here are far worse than production will be. "
@@ -339,10 +348,13 @@ def main():
                  f"{r['action']} |")
     b = detail["goodput_buckets"]
     if b:
-        L += ["", "## Where the main run's wall-clock time (and money) went", "",
-              "| Bucket | Seconds | Share | USD |", "|---|---|---|---|"]
+        cost = price is not None
+        L += ["", "## Where the main run's wall-clock time (and node-hours) went", "",
+              "| Bucket | Seconds | Share | Node-hours |" + (" Cost |" if cost else ""),
+              "|---|---|---|---|" + ("---|" if cost else "")]
         for k, v in b.items():
-            L.append(f"| {k} | {v['seconds']} | {v['share'] * 100:.1f}% | ${v['usd']:,.2f} |")
+            L.append(f"| {k} | {v['seconds']} | {v['share'] * 100:.1f}% | {v['node_h']} |"
+                     + (f" {v['cost']:,.2f} |" if cost else ""))
     if detail.get("mttr_by_kind"):
         L += ["", "## Recovery time by fault type (MTTR, seconds)", "", "| Fault | n | p50 | p95 | max |",
               "|---|---|---|---|---|"]

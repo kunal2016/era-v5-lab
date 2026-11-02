@@ -8,11 +8,67 @@ Simulation results: [sim_results.md](../support/docs/sim_results.md).
 > where and when; it keeps the main run first; and when something breaks it puts the main run back in the queue
 > so it restarts from the last checkpoint **without anyone typing a command**. We use **Slurm**, the standard for
 > training clusters. The instructor asked us to prove it in a **Docker copy of the cluster** first, so we do
-> not pay for GPUs while we debug the queue. The Docker copy uses **the same `slurm.conf`** as AWS.
+> not pay for GPUs while we debug the queue. The Docker copy uses **the same `slurm.conf`** as the cloud.
 
 ---
 
-## 1. Why Slurm, and why on our own EC2 instances
+## How it works, step by step
+
+Plain-words overview and the reasons behind each choice: [team briefing §3.2–3.3](../TEAM_BRIEFING.md#32-the-job-queue-slurm-and-three-exit-codes-adr-0002).
+The wrapper is `queue/job_queue.py`; the Slurm files are in `slurm/`.
+
+**A. The life of one job** (the main run or a team job)
+
+```text
+sbatch slurm/mainrun.sbatch            (team jobs: slurm/team_job.sbatch, with --time and a warning signal)
+  │  Slurm checks the account, QOS, GPU share, per-job limits and budget
+  │     over a per-job limit or budget → refused at once with the reason
+  │     share in use / no free node     → waits (PENDING, with the reason)
+  ▼
+prolog (slurm/prolog.sh → health_check.py --mode prolog, ≤ 30 s)
+  │     node fails → node drained, job back in the queue (not held), starts on a healthy node
+  ▼
+job script → job_queue.py run   (the wrapper; status comment "RUNNING (start #n)")
+  │  srun starts one trainer per GPU; the wrapper waits, and passes a time-limit warning (SIGUSR1) on to them
+  ▼
+trainer exits → the wrapper turns the result into ONE of three codes:
+  0   done                                     → Slurm: COMPLETED
+  75  saved and stopped, or a one-off crash    → Slurm requeues (RequeueExit=75); back to "prolog"
+  78  stop: NaN, loss spike, failed restore check, changed environment, other copy owns the run,
+      or 3 crashes in 30 min (crash ledger)    → Slurm holds the job (RequeueExitHold=78)
+  └─ in every case: a plain-words job comment ("what happened · already done · what you do") and events
+     (job.started / ended / requeued / held)
+```
+
+**B. The crash-loop cap** (`crash_loop()`): every crash adds a line to `crashes.json` in the run's folder of the
+shared store (not on a node, because the next attempt may start on another node). Three crashes within 30 minutes
+turn the next 75 into 78. If the store cannot be reached the crash is still retried and an event says the cap is
+not counting.
+
+**C. Who gets the GPUs** (`slurm/setup_accounts.sh`, `slurm/slurm.conf`)
+
+```text
+QOS mainrun  (priority 1000, may preempt normal and debug)  ← the main run
+QOS normal   (priority 10, 24 h max, GPUs per job ≤ share, ≤ 50 queued per team, refused at submit if over)
+QOS debug    (priority 100, 30 min, 1 GPU, 1 running + 2 queued per user)
+account per team: GPU share (GrpTRES gres/gpu), node cap, GPU-hour budget (GrpTRESMins; a job starts only if it fits)
+preemption: team job gets SIGTERM → 60 s to save → exit 75 → back in the queue
+```
+
+**D. Background helpers**
+
+| Helper | Where it runs | What it does |
+|---|---|---|
+| `job_queue.py spot-watch` (`v5-spot-watch.service`) | every GPU node | asks for a spot warning every 5 s (`V5_SPOT_NOTICE_CMD`); on a warning drains the node and tells its jobs to save |
+| `job_queue.py keep-spare` (`v5-keep-spare.timer`) | controller, every minute | keeps one free GPU node powered up as the hot spare |
+| `job_queue.py drain "<reason>"` | anywhere | takes a node out of service; its jobs save and move |
+| `job_queue.py status` | anywhere | every job and drained node, in plain words |
+| `slurm/backup_db.sh` | database host, daily | dumps the accounting database and proves the dump restores |
+
+---
+
+
+## 1. Why Slurm, and why on our own cloud instances
 
 V4 had **no scheduler**: GPUs from many student accounts, jobs started by hand, a cluster idle for 3 days, and
 restarts typed by hand.
@@ -20,10 +76,10 @@ restarts typed by hand.
 | Option | Why not / why |
 |---|---|
 | No scheduler (V4) | no queue, no fairness, no automatic restart |
-| Kubernetes (EKS) | multi-node GPU training needs add-ons; many extra layers |
-| AWS ParallelCluster | its own config layer between us and Slurm; harder to copy in Docker. **Our fallback** if running Slurm ourselves is too much work |
-| AWS Batch | weak for multi-node jobs, no fair-share |
-| **Self-managed Slurm on EC2** ✅ | full control; the norm for LLM training; **the Docker test runs the same file** |
+| managed Kubernetes | multi-node GPU training needs add-ons; many extra layers |
+| the provider's managed Slurm service | its own config layer between us and Slurm; harder to copy in Docker. **Our fallback** if running Slurm ourselves is too much work |
+| A managed cloud batch service | weak for multi-node jobs, no fair-share |
+| **Self-managed Slurm on cloud nodes** ✅ | full control; the norm for LLM training; **the Docker test runs the same file** |
 
 ---
 
@@ -37,13 +93,13 @@ restarts typed by hand.
           ┌──────────────────────────┼───────────────────────────┐
           ▼                          ▼                           ▼
    gpu-1  gpu-2  … (main run)     gpu-N (hot spare:        eval / cpu nodes
-   8 × B200 each, EFA             runs team jobs that       (evaluation, data,
+   8 GPUs each, fast network      runs team jobs that       (evaluation, data,
                                   the main run can take)    retention, export)
                                      │
                           checkpoints, logs, events ──► S3
 ```
 
-- **Main run** on on-demand or a Capacity Block, **never spot**, plus **one hot spare** node.
+- **Main run** on on-demand or a reserved capacity booking, **never spot**, plus **one hot spare** node.
 - The **hot spare is not idle**: it runs team jobs that the main run preempts when it needs the node.
 - **Idle nodes are stopped** (`State=CLOUD`, `SuspendTime=600`), except exactly one spare, which
   `job_queue.py keep-spare` names every minute (and boots, if none is free). This replaces V4's "idle alarm".
@@ -79,7 +135,7 @@ In simple words:
 4. **No team can hold more than 2 nodes** (`GrpTRES=node=2`).
 5. **Each team has a GPU-hour budget** (`GrpTRESMins`). Alerts at 50 / 75 / 90%, hard stop at 100%.
 
-Students never get SSH or AWS keys. The submit system calls `sbatch` with a team account through one service
+Students never get SSH or cloud keys. The submit system calls `sbatch` with a team account through one service
 user (`svc`).
 
 ```bash
@@ -117,7 +173,7 @@ sbatch slurm/mainrun.sbatch
 | Who sends it | When | What the job loses |
 |---|---|---|
 | Slurm (SIGTERM) | a team job is preempted by the main run | ~0 (it saves in its 60 s grace) |
-| `job_queue.py spot-watch` (SIGUSR1) | AWS 2-minute spot warning | ~0 |
+| `job_queue.py spot-watch` (SIGUSR1) | cloud's 2-minute spot warning | ~0 |
 | health check (SIGUSR1) | the node is sick | ~0 |
 | nobody (no warning) | process killed, node lost | the work since the last checkpoint |
 
@@ -132,8 +188,7 @@ so the review asked for margin: 60 s is twice the prolog budget.
 
 > **Lesson from simulation run 7.** We first forced an immediate restart (~4 s). Sometimes the job started
 > while the old credential was still valid; Slurm killed it ("Job credential revoked") and marked it
-> **FAILED**: the main run was lost. We removed that trick. ~90 s per restart (~$23 on 8 nodes at assumed
-> prices) is the price of never losing the run.
+> **FAILED**: the main run was lost. We removed that trick. ~90 s per restart (≈ 0.2 node-hours on 8 nodes) is the price of never losing the run.
 
 ### When there are not enough nodes
 
@@ -147,7 +202,7 @@ operator can restart it on fewer nodes (`sbatch --nodes=1 …`); the rollback dr
 
 | Risk | Protection | Tested |
 |---|---|---|
-| controller (`slurmctld`) dies | backup `slurmctld2` takes over (shared state on EFS); running jobs keep training | yes: takeover in 82 s, training never stopped |
+| controller (`slurmctld`) dies | backup `slurmctld2` takes over (shared state on a shared file system); running jobs keep training | yes: takeover in 82 s, training never stopped |
 | accounting database lost | `backup_db.sh` dumps it daily to S3; a backup **counts only after a test restore** with the same tables | yes: 31 of 31 tables restored |
 | software upgrade mid-run | only at a checkpoint: emergency save → roll nodes → requeue with `--allow-env-change` (logged). Slurm order: `slurmdbd` → `slurmctld` → `slurmd` | written down (ADR 0002 §11) |
 
@@ -160,7 +215,7 @@ operator can restart it on fewer nodes (`sbatch --nodes=1 …`); the rollback dr
 | Command | What it does |
 |---|---|
 | `job_queue.py run -- <srun args> -- <trainer args>` | **the job wrapper** every sbatch script calls: starts the trainer (`V5_TRAIN_SCRIPT`), maps its outcome to 0 / 75 / 78, applies the crash-loop cap, writes the plain-words job comment, log banner and `job.*` events |
-| `job_queue.py spot-watch` | runs on every node: polls the AWS spot warning (IMDSv2) every 5 s; drains the node and asks its jobs to save |
+| `job_queue.py spot-watch` | runs on every node: polls the spot warning (the instance metadata service) every 5 s; drains the node and asks its jobs to save |
 | `job_queue.py drain <reason> [--node N]` | takes a node out of service; its jobs save and move (also used by the health check) |
 | `job_queue.py status` | every job and every drained node, each explained in plain words |
 | `job_queue.py keep-spare` | controller, every minute (`slurm/v5-keep-spare.timer`): sets `SuspendExcNodes` to the spare node by name; powers one up if no GPU node is free |
@@ -172,10 +227,10 @@ threads use.
 
 | File | What it does |
 |---|---|
-| `slurm.conf` | **shared** by Docker and EC2: controllers, accounting, priorities, preemption, requeue codes, health hooks, gres |
-| `nodes.ec2.conf` | EC2 node and partition lines (`p6-b200`, `State=CLOUD`, the spare named by `keep-spare`) |
+| `slurm.conf` | **shared** by Docker and Cloud nodes: controllers, accounting, priorities, preemption, requeue codes, health hooks, gres |
+| `nodes.cloud.conf` | the cloud node and partition lines (`State=CLOUD`, the spare named by `keep-spare`) |
 | `v5-keep-spare.service`, `.timer` | systemd units on the controller: run `job_queue.py keep-spare` every minute |
-| `site.ec2.conf`, `cgroup.ec2.conf`, `gres.ec2.conf` | EC2 only: cgroup enforcement (a job uses only its own cores, memory, GPUs), GPU discovery through NVML |
+| `site.cloud.conf`, `cgroup.cloud.conf`, `gres.cloud.conf` | the cloud only: cgroup enforcement (a job uses only its own cores, memory, GPUs), GPU discovery through NVML |
 | `mainrun.sbatch` | the main-run job: account `mainrun`, 2 nodes × 8 GPUs, `--requeue`, sets the deterministic env (`OMP_NUM_THREADS=1`) and the NCCL flight recorder |
 | `team_job.sbatch` | a preemptible team job |
 | `prolog.sh` | quick health check before a job starts on a node (see health README) |
@@ -191,12 +246,12 @@ threads use.
 | `docker-compose.yml` | MariaDB, `slurmdbd`, `slurmctld` + `slurmctld2`, S3 emulator (`s3emu`, moto), nodes `c1–c3` ("GPU") and `c4` (eval/CPU) |
 | `Dockerfile` | Ubuntu 24.04, Slurm 23.11, torch 2.5.1 CPU, boto3, moto |
 | `entrypoint.sh` | starts each role; creates placeholder GPU device files `/dev/v5gpu0-1` |
-| `nodes.conf`, `gres.conf`, `site.conf`, `cgroup.conf` | the Docker versions of the four files that differ from EC2 |
+| `nodes.conf`, `gres.conf`, `site.conf`, `cgroup.conf` | the Docker versions of the four files that differ from the cloud |
 | `slurmdbd.conf` | accounting daemon config (test-only password) |
 
-**Docker vs EC2, the only differences:** CPU instead of GPU (gloo instead of NCCL); 2 placeholder GPUs per node
+**Docker vs the cloud, the only differences:** CPU instead of GPU (gloo instead of NCCL); 2 placeholder GPUs per node
 (allocation and accounting only, no computation); no cgroup enforcement; no Pyxis containers; no power saving;
-no EFA. Everything else (requeue, preemption, accounts, budgets, health drain, failover, S3 code path) is the
+no the fast network. Everything else (requeue, preemption, accounts, budgets, health drain, failover, S3 code path) is the
 real thing.
 
 ---
@@ -266,7 +321,7 @@ Full list: Q-01 … Q-21 in [metrics_catalog.md](../support/docs/metrics_catalog
 | Q-06 | idle GPU node-hours | ≥ 4 per day | power saving not working; nodes paid for nothing |
 | Q-07 | allocated but not stepping | ≥ 15 min | stuck in restore or data wait |
 | Q-09 | drained nodes | ≥ 3 | hardware wave: replace nodes |
-| Q-10 | node replacement time | ≥ 15 min | AWS capacity, AMI start |
+| Q-10 | node replacement time | ≥ 15 min | cloud capacity, node image start |
 | Q-11 | slurmctld down | ≥ 60 s | check the backup took over |
 | Q-15 | account budget used | ≥ 90% | talk to the team and the lead |
 | Q-17 | clock offset | ≥ 500 ms | chrony on the node |
@@ -277,9 +332,9 @@ Full list: Q-01 … Q-21 in [metrics_catalog.md](../support/docs/metrics_catalog
 
 ## 10. Still open
 
-- GPU type and count; Capacity Block or on-demand; real prices.
-- AWS account: IAM roles, bucket names, EFA, Pyxis/Enroot, power-saving scripts (`ec2_suspend.sh` /
-  `ec2_resume.sh` are week-2 work).
+- GPU type and count; reserved capacity booking or on-demand; real prices.
+- cloud account: cloud roles, bucket names, the fast network, Pyxis/Enroot, power-saving scripts (`node_suspend.sh` /
+  `node_resume.sh` are week-2 work).
 - The submit system's contract (does it call `sbatch` with an account?).
 - On-call rota: who acts on a HIGH alert at 4 a.m.
 - Capacity calendar for weeks 2–4.

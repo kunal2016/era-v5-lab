@@ -1,12 +1,18 @@
-"""Where committed checkpoints live: a local folder (tests) or S3 (EC2) (ADR 0001 §2).
+"""Where committed checkpoints live: a shared file system (the default) or an S3-compatible object store (ADR 0001 §2).
 
 In simple words: the checkpoint code only talks to this small interface: put a file, get a file, read and
-write a small JSON, list, delete. One version writes to a folder (the Docker test's shared volume), the other
-to an S3 bucket. The S3 version is tested against an S3 emulator (moto) in the Docker cluster, so the same
-code that will run on AWS has already run once.
+write a small JSON, list, delete. Which store is used depends only on the path, so the same code runs on bare
+metal and on any cloud:
+- a plain path is a folder on a file system that every node mounts (NFS, Lustre, GPFS, CephFS, or one disk in a
+  test). This needs nothing beyond POSIX; fencing uses an exclusive-create lock file, which these file systems
+  make atomic. `ckpt.py probe-store` checks that at launch.
+- `s3://bucket/prefix` is any S3-compatible object store (a self-hosted one such as MinIO on bare metal, or a
+  cloud's), reached with the S3 API.
+Both are tested: every unit test runs on the folder store, the checkpoint tests also against an S3 emulator, and
+the Docker drills run on either (`run_sim.py --store folder|s3`).
 
-    open_store("/s3/ckpt")                 -> LocalStore
-    open_store("s3://bucket/prefix")       -> S3Store (endpoint from V5_S3_ENDPOINT, e.g. the emulator)
+    open_store("/shared/ckpt")             -> LocalStore (a shared file system)
+    open_store("s3://bucket/prefix")       -> S3Store (endpoint from V5_S3_ENDPOINT)
 
 S3 specifics handled here:
 - no rename and no append: JSON pointers are overwritten whole; commits.jsonl is read-modify-written by rank 0
@@ -187,8 +193,12 @@ class S3Store:
         rest = url[len("s3://"):]
         self.bucket, _, self.prefix = rest.partition("/")
         self.prefix = self.prefix.strip("/")
-        self.s3 = boto3.client("s3", endpoint_url=os.environ.get("V5_S3_ENDPOINT") or None,
-                               region_name=os.environ.get("AWS_REGION", "us-east-1"),
+        # S3 API, any S3-compatible store. Endpoint, region and keys are optional settings; unset, the library's
+        # default chain applies (on a cloud node: the node's own role, so no key is ever written down).
+        opt = {"endpoint_url": os.environ.get("V5_S3_ENDPOINT"), "region_name": os.environ.get("V5_S3_REGION"),
+               "aws_access_key_id": os.environ.get("V5_S3_ACCESS_KEY"),
+               "aws_secret_access_key": os.environ.get("V5_S3_SECRET_KEY")}
+        self.s3 = boto3.client("s3", **{k: v for k, v in opt.items() if v},
                                config=Config(retries={"max_attempts": 10, "mode": "standard"}))
         from boto3.s3.transfer import TransferConfig
         self.tx = TransferConfig(multipart_threshold=64 * 2 ** 20, multipart_chunksize=64 * 2 ** 20,

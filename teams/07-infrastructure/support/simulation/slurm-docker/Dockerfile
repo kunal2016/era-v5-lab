@@ -17,7 +17,7 @@ RUN python3 -m venv /opt/venv \
     && DS_BUILD_OPS=0 /opt/venv/bin/pip install --no-cache-dir --no-build-isolation deepspeed==0.18.0 \
     && DS_ACCELERATOR=cpu /opt/venv/bin/python -c "import torch, yaml, safetensors, boto3, deepspeed; print('torch', torch.__version__, 'deepspeed', deepspeed.__version__)"
 # DeepSpeed (support/docs/deepspeed_impact.md). No ops built: the trainer uses torch's AdamW and gloo, and there is
-# no compiler in the image, so a missing op fails at once instead of compiling at job start. On EC2 the image
+# no compiler in the image, so a missing op fails at once instead of compiling at job start. On the cloud, the image
 # pre-builds the CUDA ops (DS-3). No GPU in this cluster: DeepSpeed's CPU accelerator, gloo.
 ENV DS_ACCELERATOR=cpu
 ENV PATH=/opt/venv/bin:$PATH

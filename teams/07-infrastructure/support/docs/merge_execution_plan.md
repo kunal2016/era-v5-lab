@@ -1,4 +1,4 @@
-# Merge execution plan: bringing the best of Mallik and Max into this repo
+# Merge execution plan: bringing the best of millermuttu and uz9ai into this repo
 
 How we carry out [team07_merge_plan.md](team07_merge_plan.md) in this repo, step by step, and how each step is
 proven. Written 30 Oct 2026, on `2adaf11`.
@@ -6,9 +6,9 @@ proven. Written 30 Oct 2026, on `2adaf11`.
 > **Layout note (30 Oct):** `submission/` was flattened into topic folders (`adr/`, `ckpt/`, `queue/`, `slurm/`,
 > `health/`, `metrics/`, `common/`, `ops/`) for the PR to the lab repo; file names below follow the old layout.
 
-> **In simple words.** We port the good ideas from Mallik's and Max's repos into our code one piece at a time.
+> **In simple words.** We port the good ideas from millermuttu's and uz9ai's repos into our code one piece at a time.
 > After each piece, a test must show it works, and at the end the whole Docker cluster simulation must pass
-> again with the new drills added. Pieces that need a real machine (Max's installer) or a team decision are
+> again with the new drills added. Pieces that need a real machine (uz9ai's installer) or a team decision are
 > listed separately, so nothing is claimed that was not run.
 
 ## Rules for every step
@@ -45,18 +45,18 @@ new drills pass; `run_sim.py --smoke` passes; results and evidence committed.
 
 | Step | What | Why not now |
 |---|---|---|
-| B1 | Max's `cluster/` (installer, `team7config`, `cluster.toml`, `uv.lock`) into a topic folder `cluster/`, plus a **single-host mode** | Max's code, copied with his agreement; the installer uses apt and systemd on real hosts, so it needs a VM or the shared node to test |
-| B2 | Render `slurm.conf`, Mallik's `node/` files and the accounts from `cluster.toml`; configless Slurm | depends on B1 |
-| B3 | Docker image on the torch in X's `uv.lock` (2.14) so FSDP2 runs on CPU in the drills (Mallik's finding); recheck DeepSpeed | large image change; DeepSpeed/torch pairing to verify |
+| B1 | uz9ai's `cluster/` (installer, `team7config`, `cluster.toml`, `uv.lock`) into a topic folder `cluster/`, plus a **single-host mode** | uz9ai's code, copied with his agreement; the installer uses apt and systemd on real hosts, so it needs a VM or the shared node to test |
+| B2 | Render `slurm.conf`, millermuttu's `node/` files and the accounts from `cluster.toml`; configless Slurm | depends on B1 |
+| B3 | Docker image on the torch in X's `uv.lock` (2.14) so FSDP2 runs on CPU in the drills (millermuttu's finding); recheck DeepSpeed | large image change; DeepSpeed/torch pairing to verify |
 | B4 | Preemption kept or parked; GPU shares and MaxWall values | team decisions 2–3 |
-| B5 | Move EC2-only parts to `support/ec2/` and rewrite the ADRs as in the merge plan §6 | after B1–B4, so docs describe what is final |
-| B6 | Shared node (1 Nov): installer single-host, `launch.sh`, Mallik's TESTING.md level 3, X's T01–T18 with evidence; Kaggle for GPU checkpoint numbers | hardware |
+| B5 | Move cloud-only parts to `support/cloud/` and rewrite the ADRs as in the merge plan §6 | after B1–B4, so docs describe what is final |
+| B6 | Shared node (1 Nov): installer single-host, `launch.sh`, millermuttu's TESTING.md level 3, X's T01–T18 with evidence; Kaggle for GPU checkpoint numbers | hardware |
 
 ## Provenance (filled as steps land)
 
 | Step | Idea from | Our file |
 |---|---|---|
-| A1, A2, A4, A5, A6, A7 | Mallik (`millermuttu/era-v5-lab`, `07-infrastructure`, `c6e38a3`) | see step |
-| A8 (GPU shares) | Mallik `queue/slurm-docker/docker/accounts.cfg` | `slurm/setup_accounts.sh` |
-| A8, A9, A10, A11 | Max (`uz9ai/queue`, `main`) `queue_design.md`, `cluster/tests/` | see step |
-| A3 | Mallik's Xid list + NVIDIA Xid catalog | `health/thresholds.yaml` |
+| A1, A2, A4, A5, A6, A7 | millermuttu (`millermuttu/era-v5-lab`, `07-infrastructure`, `c6e38a3`) | see step |
+| A8 (GPU shares) | millermuttu `queue/slurm-docker/docker/accounts.cfg` | `slurm/setup_accounts.sh` |
+| A8, A9, A10, A11 | uz9ai (`uz9ai/queue`, `main`) `queue_design.md`, `cluster/tests/` | see step |
+| A3 | millermuttu's Xid list + NVIDIA Xid catalog | `health/thresholds.yaml` |

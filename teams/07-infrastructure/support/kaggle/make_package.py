@@ -49,9 +49,9 @@ def code(text):
 def notebook():
     cells = [
         md("""
-# V5 infrastructure: GPU checks on Kaggle 2 × T4
+# V5 infrastructure: GPU checks on Kaggle (2 GPUs)
 
-Settings (right panel): **Accelerator = GPU T4 x2**, **Add Input** → your `v5-infra-kaggle` Dataset. Then **Run all** (about 20–30 minutes).
+Settings (right panel): **Accelerator = the 2-GPU accelerator**, **Add Input** → your `v5-infra-kaggle` Dataset. Then **Run all** (about 20–30 minutes).
 
 Code comes from the attached Dataset (`v5-infra-kaggle.zip`), or, if none is attached and Internet is on,
 from the `infrastructure` branch on GitHub. Results land in `/kaggle/working/gpu_results/` and in
@@ -79,7 +79,7 @@ os.chdir(WORK)
 print(sorted(os.listdir(".")))
 """),
         code("""
-# 2. the machine: expect 2 x Tesla T4
+# 2. the machine: expect 2 x GPU
 !nvidia-smi --query-gpu=index,name,driver_version,memory.total --format=csv
 import torch; print("torch", torch.__version__, "cuda", torch.version.cuda, "gpus", torch.cuda.device_count())
 """),

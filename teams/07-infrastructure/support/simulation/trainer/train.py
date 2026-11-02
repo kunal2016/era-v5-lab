@@ -45,7 +45,7 @@ def load_config(path: str) -> dict:
 
 
 def pick_device(name: str) -> torch.device:
-    """cpu (Docker test, laptop) or cuda (Kaggle, EC2). One GPU per rank: cuda:<LOCAL_RANK>."""
+    """cpu (Docker test, laptop) or cuda (Kaggle, the cloud). One GPU per rank: cuda:<LOCAL_RANK>."""
     if name == "cuda":
         dev = torch.device("cuda", int(os.environ.get("LOCAL_RANK", os.environ.get("SLURM_LOCALID", "0"))))
         torch.cuda.set_device(dev)
@@ -105,7 +105,7 @@ def main(argv=None) -> int:
     ap.add_argument("--step-sleep", type=float, default=0.0, help="test only: pretend each step takes longer")
     ap.add_argument("--watchdog-s", type=float, default=600.0)
     ap.add_argument("--local-root", default="/nvme/ckpt")
-    ap.add_argument("--remote-root", default="/s3/ckpt")
+    ap.add_argument("--remote-root", default="/shared/ckpt")
     ap.add_argument("--from-step", type=int, help="rollback: restore this step, not latest")
     ap.add_argument("--skip", type=int, default=0, help="rollback: skip this many batches after the restore")
     ap.add_argument("--branch", help="rollback: name of the new branch")
@@ -128,7 +128,7 @@ def main(argv=None) -> int:
                     help="train and checkpoint with a DeepSpeed ZeRO engine (support/docs/deepspeed_impact.md)")
     ap.add_argument("--zero-stage", type=int, default=int(os.environ.get("V5_ZERO_STAGE", "1")), choices=[0, 1, 2, 3])
     ap.add_argument("--ds-precision", default=os.environ.get("V5_DS_PRECISION", "fp32"), choices=["fp32", "fp16", "bf16"],
-                    help="DeepSpeed weights dtype: fp32 (CPU tests), fp16 (T4: no bf16), bf16 (B200, the real run)")
+                    help="DeepSpeed weights dtype: fp32 (CPU tests), fp16 (older GPUs: no bf16), bf16 (the real run)")
     ap.add_argument("--crash-at", type=int, default=int(os.environ.get("CRASH_AT", "-1")),
                     help="test only: raise an unhandled error at this step (exit 1)")
     a = ap.parse_args(argv)
@@ -160,8 +160,8 @@ def main(argv=None) -> int:
     ddp = model
     optim = None
     if a.deepspeed:
-        # DeepSpeed owns the optimizer and the gradient sync. fp32 on CPU; fp16 on T4 (dynamic loss scale, its
-        # state is in the checkpoint); bf16 on B200, the real run. srun or torchrun has already started the process group (DS-3: no deepspeed launcher).
+        # DeepSpeed owns the optimizer and the gradient sync. fp32 on CPU; fp16 on older GPUs (dynamic loss scale, its
+        # state is in the checkpoint); bf16 on the GPU node, the real run. srun or torchrun has already started the process group (DS-3: no deepspeed launcher).
         import platform
 
         import deepspeed

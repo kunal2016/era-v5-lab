@@ -13,6 +13,32 @@ All 74 metrics: [metrics_catalog.md](../support/docs/metrics_catalog.md). Every 
 
 ---
 
+## How it works, step by step
+
+Plain-words overview and the reasons behind each choice: [team briefing §3.5](../TEAM_BRIEFING.md#35-monitoring-cost-and-alerts-adr-0004).
+
+```text
+1. every part writes events      common/events.py emit(): one JSON line per event (UTC time, host, run, job)
+                                 into /var/log/v5/events on its node; Team 08's agent ships them to the shared store
+                                 (checkpoint.*, restore.*, job.*, health.*, node.*, train.*, cost.*)
+2. live: metrics/watch.py        every 30 s: read the events → compute the 74 metrics in metrics/catalog.yaml →
+   (v5-watch.service)            compare with LOW / MEDIUM / HIGH thresholds → a new or worse level writes
+                                 alert.fired and posts to V5_ALERT_WEBHOOK (the pager / chat)
+3. people: metrics/explain.py    any code, cause, alert id or Slurm reason → what happened · already done · what
+                                 you do (all texts in common/reasons.py and catalog.yaml, one place)
+4. after a run or a drill:       metrics/evaluate.py → metrics.json, alerts.json, report.md: goodput, time to
+                                 recover per fault, lost steps, cost of the incidents
+```
+
+| Severity | Means | Who, how fast |
+|---|---|---|
+| HIGH | the system stopped on purpose, or money is burning | page now |
+| MEDIUM | degraded, not stopped | today |
+| LOW | trend to watch | weekly review |
+
+---
+
+
 ## 1. The 30-second version
 
 | You see | It means | You do |
@@ -46,7 +72,7 @@ python metrics/explain.py 78          # or 137, loss_spike, CK-05, v5:xid, JobHe
 |---|---|---|
 | **Events** (`/var/log/v5/events/*.jsonl`, node-local) | every fact, with UTC time, host, run, job | ship the files (Team 08's agent → S3 / log store); one JSON per line, no free-text parsing |
 | **Live alerts** (`metrics/watch.py`) | `alert.fired` events + a webhook post when a metric reaches a new severity | set `V5_ALERT_WEBHOOK`; page on `severity: high` |
-| **Report** (`metrics/evaluate.py`) | goodput, incidents (MTTR per fault), dollars wasted, every metric with its level | after each dry run / daily; `metrics.json` for dashboards |
+| **Report** (`metrics/evaluate.py`) | goodput, incidents (MTTR per fault), node-hours wasted, every metric with its level | after each dry run / daily; `metrics.json` for dashboards |
 | **Slurm job Comment** | plain-words status of each job (`V5 HELD (78): loss spike at step 5880 …`) | `squeue -o "%.10i %.12T %.20r %k"` or `scontrol show job <id>` |
 | **Job log banner** | the same, longer: what happened / already done / what you do / detail | end of `/var/log/v5/logs/<job>-<id>.out` |
 | **Health report** | one JSON per check run, `verdict` + `drain_reason` | the `health.report` event; `/var/log/slurm/health-last.json` on the node |
@@ -73,7 +99,7 @@ The events you will use most:
 | `train.step` | `step`, `loss`, `step_s` | training is moving |
 | `train.watchdog`, `train.loss_spike`, `train.nonfinite` | `step` | a hang / divergence / NaN |
 | `node.drained` | `node`, `reason` | a node was taken out |
-| `node.spot_notice` | `node` | AWS takes the instance back in 2 min |
+| `node.spot_notice` | `node` | the cloud takes the instance back in 2 min |
 | `health.report` | `verdict`, `failed`, `warned`, `skipped_required` | node health |
 | `alert.fired` | `id`, `severity`, `value`, `why`, `action`, `respond`, `who`, `page` | an alert |
 
@@ -165,8 +191,8 @@ python metrics/explain.py v5:ecc_uncorrectable,xid
 
 | Reason | You do |
 |---|---|
-| `xid` (fatal code, or Xid 94 twice in 24 h on one GPU), `ecc_uncorrectable`, `remapped_rows` (failure), `dcgm_diag`, `gpu` | replace the instance (stop/start moves it to new hardware); open a hardware ticket |
-| `gpu_count` | reboot; replace if still missing |
+| `xid` (fatal code, or Xid 94 twice in 24 h on one GPU), `ecc_uncorrectable`, `remapped_rows` (failure), `dcgm_diag` | replace the instance (stop/start moves it to new hardware); open a hardware ticket |
+| `gpu_inventory` (GPUs missing, or nvidia-smi fails) | reboot; replace if still wrong |
 | `gpu_temperature` | check cooling; replace if repeated |
 | `nvme_free` | clean `/nvme` |
 | `clock_offset` | fix chrony |
@@ -195,7 +221,7 @@ nodes). The JSON report says which check; `explain.py <check name>` says what to
 | ID | Alert | HIGH when | First action |
 |---|---|---|---|
 | CK-01 | time since last commit | ≥ 2 × interval | check `checkpoint.failed`; fix storage before the next failure costs a full interval |
-| CK-02 | dollars at risk since last commit | ≥ 2 × interval cost | same as CK-01 |
+| CK-02 | node-hours at risk since last commit | ≥ 2 × interval node-hours | same as CK-01 |
 | CK-03 | failed saves in a row | ≥ 2 | read the cause (`nvme_full`, `IntegrityError`, `UploadTimeout`) and fix it now |
 | CK-04 | checksum mismatch | any | find the hop that corrupts data (NVMe, network, S3); pin the last good checkpoint |
 | CK-05 | restore check failure | any | stop; compare the printed saved/restored values; do not continue on that checkpoint |
@@ -234,8 +260,8 @@ nodes). The JSON report says which check; `explain.py <check name>` says what to
 | H-03 | ECC uncorrectable | any | drained; if the loss looks wrong, roll back to before the first error |
 | H-06 | row-remap failure | any | replace |
 | H-07 | GPU missing | any | reboot or replace |
-| H-08 | at slowdown temperature | 0 °C margin | AWS ticket for cooling |
-| H-11 | NVLink / EFA link down | any | drain now |
+| H-08 | at slowdown temperature | 0 °C margin | provider support ticket for cooling |
+| H-11 | NVLink / fast network link down | any | drain now |
 | H-12 | all-reduce bandwidth | ≤ 0.7 × baseline | find the slow NIC or GPU |
 | H-13 | all-reduce wrong sum | any | drain; suspect silent data corruption |
 | H-14 | watchdog (hang) | ≥ 2 per hour | read the stack dump and flight-recorder trace; drain the rank that stopped |
@@ -251,8 +277,8 @@ nodes). The JSON report says which check; `explain.py <check name>` says what to
 | ID | Alert | HIGH when | First action |
 |---|---|---|---|
 | C-01 | burn rate vs plan | ≥ 1.25 × | find what runs outside the capacity calendar; stop it |
-| C-02 | cost per productive GPU-hour | ≥ 1.25 × list price | fix the largest waste bucket (C-03) |
-| C-03 | wasted share of main-run spend | ≥ 20% | the report lists each bucket in dollars |
+| C-02 | node-hours per productive node-hour | ≥ 1.25 | fix the largest waste bucket (C-03) |
+| C-03 | wasted share of main-run node-hours | ≥ 20% | the report lists each bucket in node-hours |
 | C-04 | cost of one incident | ≥ 3 × interval cost | missing emergency save, slow restore, or no spare |
 | C-05 | instance outside Slurm | any | stop it now; find who started it (`support/cost/find_unmanaged.py`) |
 | C-06 | budget days left vs training days left | ≤ 0.8 | cut allocations or run length; decide early |
@@ -282,8 +308,8 @@ Training still runs, but the last commit is getting old (CK-01 will follow). `ch
 
 | Panel | From |
 |---|---|
-| Main run: state + comment, step, last commit age (CK-01), dollars at risk (CK-02) | `squeue`, `train.step`, `checkpoint.committed` |
-| Goodput and waste buckets in dollars (Q-19, C-03) | `metrics.json` |
+| Main run: state + comment, step, last commit age (CK-01), node-hours at risk (CK-02) | `squeue`, `train.step`, `checkpoint.committed` |
+| Goodput and waste buckets in node-hours (Q-19, C-03) | `metrics.json` |
 | Incidents table: kind, cause, detect / reschedule / restore seconds, steps lost | `report.md` incidents |
 | Nodes: up / drained (with reason) / down / spare | `sinfo -R`, `node.drained` |
 | Alerts open by severity | `alert.fired` |
@@ -296,18 +322,18 @@ Training still runs, but the last commit is getting old (CK-01 will follow). `ch
 | File | What it does |
 |---|---|
 | `catalog.yaml` | **the single source**: every metric with LOW / MEDIUM / HIGH thresholds, why it matters, the action, owner |
-| `evaluate.py` | events → incidents, goodput, dollars, metric levels (`report.md`, `metrics.json`, `alerts.json`); `--render-md` writes the catalog page |
+| `evaluate.py` | events → incidents, goodput, node-hours, metric levels (`report.md`, `metrics.json`, `alerts.json`); `--render-md` writes the catalog page |
 | `watch.py` | live: recomputes every 30 s, emits `alert.fired`, posts to `V5_ALERT_WEBHOOK` |
 | `explain.py` | any code / cause / alert / reason → plain words + what to do; `--all` writes [codes_and_actions.md](../support/docs/codes_and_actions.md) |
 | `../common/reasons.py` | the table behind `explain.py`, the Slurm job comment and the job-log banner |
 | `../common/events.py` | the event format |
-| `prices.yaml` | instance prices (assumptions, `checked: null`) for the dollar metrics |
+| `prices.yaml` | cost inputs: GPUs per node, hardware speeds, checkpoint retention; the price is an input with no value (`--price-per-node-h`) |
 
 In `support/`: `tests/test_monitoring.py` fails if the code can report something that has no explanation.
 
 From `teams/07-infrastructure/`. Events are written on each node's own disk (`/var/log/v5/events`) and the log agent ships
-them to `s3://<bucket>/events/`; `watch.py` reads a folder, so on EC2 point it at a synced copy
-(`aws s3 sync s3://<bucket>/events /var/lib/v5-watch/events`). In Docker the folder is the shared `/s3/events`.
+them to `s3://<bucket>/events/`; `watch.py` reads a folder, so on cloud nodes point it at a synced copy
+(an `s3 sync` of `s3://<bucket>/events` to `/var/lib/v5-watch/events`). In Docker the folder is the shared `/s3/events`.
 
 ```bash
 python metrics/watch.py --events /s3/events --run v5main --nodes 2 --interval-s 1800 --every 30
@@ -326,4 +352,4 @@ python metrics/explain.py --all ../support/docs/codes_and_actions.md        # af
 
 - The on-call rota and the alert channel (lead + Team 08).
 - Real thresholds for GPU metrics after the week-2 baseline.
-- Which metrics Team 08 stores long-term, and for how long (proposal: events 90 days, then Glacier).
+- Which metrics Team 08 stores long-term, and for how long (proposal: events 90 days, then the archive tier).

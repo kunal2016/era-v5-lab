@@ -7,8 +7,8 @@ role="${1:?role: s3emu|slurmdbd|slurmctld|slurmd}"
 if [[ "$role" == "s3emu" ]]; then
   moto_server -H 0.0.0.0 -p 9000 &
   until python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000')" 2>/dev/null; do sleep 1; done
-  AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test python3 -c "import boto3; \
-boto3.client('s3', endpoint_url='http://127.0.0.1:9000', region_name='us-east-1').create_bucket(Bucket='v5-ckpt')"
+  python3 -c "import boto3; boto3.client('s3', endpoint_url='http://127.0.0.1:9000', \
+aws_access_key_id='test', aws_secret_access_key='test').create_bucket(Bucket='v5-ckpt')"
   wait
 fi
 
@@ -21,8 +21,8 @@ chown munge:munge /etc/munge /etc/munge/munge.key && chmod 400 /etc/munge/munge.
 mkdir -p /run/munge && chown munge:munge /run/munge
 runuser -u munge -- /usr/sbin/munged --force
 
-# Per-node settings read by the prolog, health check and job scripts (on EC2: written by the AMI build).
-# On EC2 /var/log/v5 is each node's own disk, shipped to S3 by the log agent (ADR 0002 §7). Here it points at the
+# Per-node settings read by the prolog, health check and job scripts (on cloud nodes: written by the node image build).
+# On the cloud /var/log/v5 is each node's own disk, shipped to S3 by the log agent (ADR 0002 §7). Here it points at the
 # shared volume, which plays the part of that shipped copy, so the drills can read every node's events.
 ln -sfn /s3 /var/log/v5
 mkdir -p /etc/v5
@@ -34,12 +34,12 @@ case "$(hostname)" in c[1-3]) gpus=2
 install -m 755 /opt/v5/support/simulation/slurm-docker/fake-dmesg /usr/local/bin/dmesg
 mkdir -p /run/fake
 # Test users for the limit drills (fixed UIDs, the same in every container): alice is in arch, bob in perf,
-# carol has no Slurm account (ideas from Mallik's and Max's tests, team 07).
+# carol has no Slurm account (ideas from millermuttu's and uz9ai's tests, team 07).
 for u in alice:2101 bob:2102 carol:2103; do id "${u%%:*}" >/dev/null 2>&1 || useradd -m -u "${u##*:}" "${u%%:*}"; done
 printf '%s\n' "export V5_EVENTS_DIR=/s3/events" "export V5_EXPECT_GPUS=$gpus" "export V5_COLL_MAX_MB=16" \
   "export V5_NVME_MIN_FREE_GB=1" "export V5_MEM_MIN_GB=0.2" "export V5_DEVICE=cpu" \
-  "export V5_S3_ENDPOINT=http://s3emu:9000" "export AWS_ACCESS_KEY_ID=test" "export AWS_SECRET_ACCESS_KEY=test" \
-  "export AWS_REGION=us-east-1" "export V5_REMOTE_ROOT=s3://v5-ckpt/ckpt" > /etc/v5/node.env
+  "export V5_S3_ENDPOINT=http://s3emu:9000" "export V5_S3_ACCESS_KEY=test" "export V5_S3_SECRET_KEY=test" \
+  "export V5_REMOTE_ROOT=s3://v5-ckpt/ckpt" > /etc/v5/node.env
 
 # Slurm reads its config from /etc/slurm; the files come from the repo, read-only.
 mkdir -p /etc/slurm
@@ -60,7 +60,7 @@ case "$role" in
     ;;
   slurmd)
     until (echo > /dev/tcp/slurmctld/6817) 2>/dev/null; do sleep 1; done
-    # The spot-notice watcher runs on every node (ADR 0002 §5). In the test it reads a file, not EC2 IMDS.
+    # The spot-notice watcher runs on every node (ADR 0002 §5). In the test it reads a file, not the instance metadata service.
     nohup python3 /opt/v5/queue/job_queue.py spot-watch >/var/log/slurm/spot_watcher.log 2>&1 &
     touch /dev/v5gpu0 /dev/v5gpu1          # placeholder GPU devices for gres.conf (Docker test only)
     # No systemd in the container (cgroup.conf IgnoreSystemd=yes): make the slice slurmd expects.

@@ -57,7 +57,7 @@ class SyntheticLoader:
         self.position = 0
         self.skip = set()
         # Which data this is: the real loader hashes its shard list; ours is generated from the seed. A state
-        # saved on other data must be refused, not resumed (Mallik's manifest field, team 07).
+        # saved on other data must be refused, not resumed (millermuttu's manifest field, team 07).
         self.manifest = hashlib.sha256(f"synthetic:{seed}:{VOCAB}:{SEQ}".encode()).hexdigest()
 
     def _global(self, p: int) -> torch.Tensor:

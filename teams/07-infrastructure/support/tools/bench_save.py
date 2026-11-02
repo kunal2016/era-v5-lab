@@ -77,7 +77,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sizes-gb", type=float, nargs="+", default=[0.5, 1, 2])
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    ap.add_argument("--dir", default=tempfile.gettempdir(), help="local disk to write to (NVMe on EC2)")
+    ap.add_argument("--dir", default=tempfile.gettempdir(), help="local disk to write to (NVMe on cloud nodes)")
     ap.add_argument("--out")
     a = ap.parse_args()
     dev = torch.device(a.device, 0) if a.device == "cuda" else torch.device("cpu")

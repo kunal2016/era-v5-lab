@@ -11,7 +11,7 @@ whole training run (and every slow minute is paid for), so it fails the check.
 
 Every value is a small whole number, exact in fp32 in any reduction order, so a wrong value is a fault, not
 rounding. Bus bandwidth follows the nccl-tests convention. The four collectives and their checks come from
-Mallik's `health/allreduce.py` (team 07); here they share one JSON report with the rest of the health check.
+millermuttu's `health/allreduce.py` (team 07); here they share one JSON report with the rest of the health check.
 
 Run:  torchrun --nproc_per_node=<gpus> health/allreduce_test.py [--max-mb 1024] [--ops all_reduce,all_to_all]
       without GPUs it uses gloo on CPU and says so (backend: gloo); bandwidth then means nothing.
@@ -28,8 +28,13 @@ import torch.distributed as dist
 OPS = ("all_reduce", "reduce_scatter", "all_gather", "all_to_all")
 
 
+def err(y, want) -> float:
+    """Largest difference from the exact answer (0.0 when every value is right)."""
+    return float((y - want).abs().max())
+
+
 def make(op, size, r, n, dev):
-    """(run, check, busbw factor) for one collective on a message of `size` bytes."""
+    """(run, error, busbw factor, bytes) for one collective on a message of `size` bytes."""
     m = max(n, (size // 4) // n * n)              # elements, a multiple of the world size
     k = m // n
     ranks = torch.arange(n, dtype=torch.float32, device=dev).repeat_interleave(k)
@@ -40,20 +45,20 @@ def make(op, size, r, n, dev):
         def run():
             y.copy_(x)
             dist.all_reduce(y)
-        return run, lambda: bool(torch.all(y == n * (n + 1) / 2)), 2 * (n - 1) / n, m * 4
+        return run, lambda: err(y, n * (n + 1) / 2), 2 * (n - 1) / n, m * 4
     if op == "reduce_scatter":
         x = torch.full((m,), float(r + 1), device=dev)
         y = torch.empty(k, device=dev)
-        return (lambda: dist.reduce_scatter_tensor(y, x)), lambda: bool(torch.all(y == n * (n + 1) / 2)), \
+        return (lambda: dist.reduce_scatter_tensor(y, x)), lambda: err(y, n * (n + 1) / 2), \
             (n - 1) / n, m * 4
     if op == "all_gather":
         x = torch.full((k,), float(r), device=dev)
         y = torch.empty(m, device=dev)
-        return (lambda: dist.all_gather_into_tensor(y, x)), lambda: bool(torch.all(y == ranks)), (n - 1) / n, m * 4
+        return (lambda: dist.all_gather_into_tensor(y, x)), lambda: err(y, ranks), (n - 1) / n, m * 4
     # all_to_all: chunk j of rank r holds r*n+j; after the exchange, chunk s of rank r holds s*n+r
     x = (r * n + torch.arange(n, dtype=torch.float32, device=dev)).repeat_interleave(k)
     y = torch.empty(m, device=dev)
-    return (lambda: dist.all_to_all_single(y, x)), lambda: bool(torch.all(y == ranks * n + r)), (n - 1) / n, m * 4
+    return (lambda: dist.all_to_all_single(y, x)), lambda: err(y, ranks * n + r), (n - 1) / n, m * 4
 
 
 def main():
@@ -85,7 +90,7 @@ def main():
         results, wrong = [], []
         size = int(a.min_mb * 2 ** 20)
         while size <= a.max_mb * 2 ** 20:
-            run, good, factor, nbytes = make(op, size, r, n, dev)
+            run, error, factor, nbytes = make(op, size, r, n, dev)
             for _ in range(a.warmup):
                 run()
             times = []
@@ -95,12 +100,17 @@ def main():
                 run()
                 sync()
                 times.append(time.perf_counter() - t0)
-            if not good() or (corrupt == op and r == 0):
+            e = 1.0 if corrupt == op and r == 0 else error()
+            if e:
                 wrong.append(nbytes)
+            worst = torch.tensor([e], device=dev)
+            dist.all_reduce(worst, op=dist.ReduceOp.MAX)     # the largest error on any rank
             t = sorted(times)[len(times) // 2]
             algbw = nbytes / t / 1e9
-            results.append({"bytes": nbytes, "time_s": round(t, 6), "algbw_gbps": round(algbw, 3),
-                            "busbw_gbps": round(algbw * factor, 3)})
+            # seconds / max_error / all_ranks_correct: Team 08's g7-collective/1 fields; time_s kept for our tools
+            results.append({"bytes": nbytes, "time_s": round(t, 6), "seconds": round(t, 6),
+                            "algbw_gbps": round(algbw, 3), "busbw_gbps": round(algbw * factor, 3),
+                            "max_error": worst.item(), "all_ranks_correct": worst.item() == 0})
             size *= 2
         flag = torch.tensor([1 if wrong else 0], device=dev)
         dist.all_reduce(flag)

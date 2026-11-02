@@ -16,7 +16,7 @@ The lab's goal for Team 07: the cluster saves, restores and restarts the main ru
 Interruptions are routine at scale. The Session 15 reference run had one every 12.9 h and lost 5.6% of its
 time; Llama 3 had 466 in 54 days. Every hour lost to a bad restart is paid for and trains nothing (ADR 0004).
 
-V4 (LightningLM 0.1V) ran on one 8-GPU node with DeepSpeed checkpoints. Its code picks "latest" as the
+V4 used DeepSpeed checkpoints. Its code picks "latest" as the
 highest step in an S3 listing, has no checksums, saves the CUDA RNG of the current device only, and checks
 resume by eye. During the run V4 hit:
 
@@ -42,7 +42,7 @@ Model sizes and precision are still open (TSAI fills them on 31 Oct).
 
 | Option | For | Against |
 |---|---|---|
-| A. `torch.save` of a gathered state dict on rank 0 | simple; one file | gathers 1–7 TB on one rank (V4's OOM-during-gather); no parallel write; slow |
+| A. `torch.save` of a gathered state dict on rank 0 | simple; one file | gathers several TB on one rank (V4's OOM-during-gather); no parallel write; slow |
 | B. DeepSpeed `save_checkpoint` (V4) | proven in V4; sharded | tied to DeepSpeed's engine and ZeRO stage; resharding needs `zero_to_fp32`; no integrity layer |
 | C. **`torch.distributed.checkpoint` (DCP) plus our own manifest and commit layer** | every rank writes in parallel; **reshards on load** to any world size, including 1 CPU; works with FSDP2 and DDP; no engine lock-in | newer API; the manifest/verify layer is our code |
 | D. Megatron distributed checkpoint | reshards; used at scale | brings in Megatron-Core, which we may not use |
@@ -106,9 +106,17 @@ Not saved: gradients, activations, NCCL state.
    Re-check mode `V5_VERIFY_MODE`: `full` re-reads and hashes every object (tests, small checkpoints);
    `head` compares the checksum S3 stored at upload, which costs no download (TB-size checkpoints).
 
-**One interface, two stores** (`ckpt/store.py`): `LocalStore` (a folder) and `S3Store` (boto3). The Docker
-cluster runs `S3Store` against an S3 emulator (moto), so the code that will run on AWS has already run through
-every drill. S3 has no append: `commits.jsonl` is read, extended and written back **only if nobody wrote it in
+**One interface, two stores; nothing assumes a cloud** (`ckpt/store.py`). The store is chosen by the path:
+- **a shared file system (the default):** a plain path such as `/shared/ckpt` on a file system every node mounts
+  (NFS, Lustre, GPFS, CephFS). This is the bare-metal case and needs nothing beyond POSIX. Files are written to a
+  temporary name, `fsync`ed and renamed; fencing (below) uses an exclusive-create lock file, which these file
+  systems make atomic.
+- **an S3-compatible object store (optional):** `s3://bucket/prefix`, any store that speaks the S3 API (a
+  self-hosted one such as MinIO, or a cloud's). It adds checksums verified by the store and conditional writes.
+
+`ops/launch.sh` runs `ckpt.py probe-store` on whichever store is configured: a store that cannot refuse a stale
+write stops the launch. Every unit test runs on the folder store, the checkpoint tests also on an S3 emulator, and
+the whole Docker drill set runs on either (`run_sim.py --store folder` / `--store s3`). On S3 there is no append: `commits.jsonl` is read, extended and written back **only if nobody wrote it in
 between** (`If-Match`), else read again, so two writers never lose each other's line.
 
 **Fencing: only one attempt may commit.**
@@ -133,9 +141,10 @@ between** (`If-Match`), else read again, so two writers never lose each other's 
 - S3 conditional writes (`If-Match` on PutObject) exist since Nov 2024; boto3 ≥ 1.35.69 sends them. The emulator
   enforces them from moto 5.1.10 (older moto silently ignores `If-Match`, so a test on it would pass falsely).
 
-> **Node-local disk is a cache, never a copy that counts.** p6 instances' NVMe is *instance store*: it is wiped
-> when the instance stops (including Slurm power-saving) or is replaced. A restore always works from S3; the
-> local copy only saves a download when the job comes back on the same, still-running node.
+> **Node-local disk is a cache, never a copy that counts.** A node's local NVMe can be wiped when the node stops
+> (on a cloud: including Slurm power-saving) or is replaced, and on bare metal a dead node takes its disk with it.
+> A restore always works from the shared store; the local copy only saves a download when the job comes back on
+> the same, still-running node.
 
 S3 has no rename, so there is no `.tmp` directory: a prefix without a manifest is simply not a checkpoint.
 The retention job (§5) deletes such orphans after one hour, because they are billed like any other object.
@@ -184,13 +193,13 @@ give warning (preemption, spot notice, health drain) trigger an **emergency save
 |---|---|
 | Local NVMe | last 2 committed (fast restore on the same node) |
 | S3 Standard | last 3 committed + **protected**: every N-th (Team 09 sets N), the final one, any pinned (`ckpt.py pin`) |
-| S3 Glacier Flexible | protected checkpoints older than X days (≈ 6× cheaper per GB-month) |
+| Archive tier | protected checkpoints older than X days (≈ 6× cheaper per GB-month) |
 
 - S3 **versioning** on, plus a lifecycle rule that aborts incomplete multipart uploads after 1 day.
 - **Second copy of protected checkpoints:** S3 Replication to a bucket in a second region, filtered on the tag
   `v5:protected=true` (set by `ckpt.py pin` and by retention when it marks a checkpoint protected). Deletes are
   not replicated, so a wrong delete in the main bucket cannot remove the copy.
-- Delete permission belongs **only** to the retention job's IAM role (`ckpt.py retention`, ADR 0002 §7).
+- Delete permission belongs **only** to the retention job's cloud role (`ckpt.py retention`, ADR 0002 §7).
 - Retention never deletes a protected checkpoint or the one `latest.json` points to (CK-15 is HIGH).
 
 ### 6. Exit codes (shared with ADR 0002 and 0003)
@@ -217,10 +226,10 @@ Changed from the first draft, which used 1 for fatal: an uncaught Python error (
 
 | Team | Contract |
 |---|---|
-| 01/02 Data | the loader exposes `state_dict()` / `load_state_dict()` returning JSON-serialisable state, and `next_batch_id()` with a content hash of the next batch. The state is **one global ledger offset + the skip list + `manifest` (sha256 of the shard list), identical on every rank**; `load_state_dict` raises `ValueError` for a state saved on another manifest, and the restore then holds the job (`DataManifestError`, exit 78) instead of continuing on other data (Mallik's field, team 07) (each rank derives its slice from it); no per-rank positions. Reason: after a resharded restore every new rank loads old rank 0's state. The checkpointer checks this at every save (`loader_global` in the manifest) and refuses to reshard a checkpoint that fails it (`ReshardError`, exit 78); `ckpt/loader_contract.py` tests it, including a resume at another world size |
+| 01/02 Data | the loader exposes `state_dict()` / `load_state_dict()` returning JSON-serialisable state, and `next_batch_id()` with a content hash of the next batch. The state is **one global ledger offset + the skip list + `manifest` (sha256 of the shard list), identical on every rank**; `load_state_dict` raises `ValueError` for a state saved on another manifest, and the restore then holds the job (`DataManifestError`, exit 78) instead of continuing on other data (millermuttu's field, team 07) (each rank derives its slice from it); no per-rank positions. Reason: after a resharded restore every new rank loads old rank 0's state. The checkpointer checks this at every save (`loader_global` in the manifest) and refuses to reshard a checkpoint that fails it (`ReshardError`, exit 78); `ckpt/loader_contract.py` tests it, including a resume at another world size |
 | 05 Architecture | every tensor is trainable, frozen or a buffer, with a stable name. The parallel layout is given: ZeRO/FSDP stage, expert-parallel size. **Experts are stored by global expert id** (DTensor or an explicit index), so the checkpoint reshards when the EP size changes. Reversible models keep dropout at 0 |
 | 05 Training loop | the trainer calls `save()` only **between optimizer steps**, never between micro-batches of one step. With gradient accumulation (DeepSpeed `gradient_accumulation_steps` > 1) a stop signal is acted on at the next boundary (`engine.is_gradient_accumulation_boundary()`), so half-accumulated gradients never need saving. The stall budget (≤ 2 %) covers the extra wait of up to one step |
-| 04 KE2 | Kronecker tables and other non-trained tensors are declared frozen buffers and hashed in the manifest. **A save is refused** (`FrozenChangedError`, exit 78) if one changed since the last restore or save, so the bug that trained it shows at once, not at the next restore. The embedding policy is part of the environment check (`V5_EMBEDDING_POLICY_ID`): another policy refuses to resume, even with the same shapes (both from Mallik's design, team 07) |
+| 04 KE2 | Kronecker tables and other non-trained tensors are declared frozen buffers and hashed in the manifest. **A save is refused** (`FrozenChangedError`, exit 78) if one changed since the last restore or save, so the bug that trained it shows at once, not at the next restore. The embedding policy is part of the environment check (`V5_EMBEDDING_POLICY_ID`): another policy refuses to resume, even with the same shapes (both from millermuttu's design, team 07) |
 | 05 + 06 Kernels | **every kernel has a deterministic mode**: no unordered atomics, a fixed reduction order, deterministic reversible recompute. Resume tests and the CI restore probe run in deterministic mode; production may run fast mode. A kernel without a deterministic mode is flagged in its docstring and in the manifest |
 | 06 Performance | owns the **GPU-to-host stall time** against our budget (≤ 2% of the interval); Team 07 owns correctness |
 | 09 Eval, 12 Quant, 11 Release | each reads the S3 path from `checkpoint.committed`, read-only, never on a training node. **Team 07 owns the `dcp → safetensors` export**, with the same strict-key and probe-loss checks: **bit-equal** when the dtype is unchanged; a dtype change (quantization) belongs to Team 12, which states its own tolerance |
@@ -253,7 +262,7 @@ and in [metrics_catalog.md](../support/docs/metrics_catalog.md). The ones that p
 
 | ID | Metric | HIGH when |
 |---|---|---|
-| CK-01/02 | Time / dollars at risk since the last commit | ≥ 2 × interval |
+| CK-01/02 | Time / node-hours at risk since the last commit | ≥ 2 × interval |
 | CK-03 | Consecutive failed saves | ≥ 2 |
 | CK-04 | Checksum mismatch | any |
 | CK-05 | Restore check failure | any |
@@ -310,7 +319,7 @@ and T23 skip, they run on Kaggle.**
 | T13 | the data-loader contract (`ckpt/loader_contract.py`) that Teams 01/02's real loader must pass | pass |
 | T14 | fingerprint of a tensor split into uneven row shards (FSDP) or column shards (tensor parallel), for fp32/bf16/fp64/bool/int64 = fingerprint of the full tensor; a swapped row or one flipped bit changes it | pass |
 | T15 | a loader whose state differs per rank fails the contract ("must be one global ledger offset") | pass |
-| T16 | **FSDP2** (`fully_shard`) on 2 GPUs: save does not hang; restore at 2 ranks and resharded at 1 rank pass every check | GPU only: runs on Kaggle 2×T4 |
+| T16 | **FSDP2** (`fully_shard`) on 2 GPUs: save does not hang; restore at 2 ranks and resharded at 1 rank pass every check | GPU only: runs on Kaggle (2 GPUs) |
 | T17 | real DTensors on 2 and 3 gloo ranks (uneven `Shard(0)`, `Shard(1)`, `Replicate`): digest = single-process digest | pass |
 | T18–T23 | the DeepSpeed backend (ZeRO-1/2/3 resume, fallback, world change, export, fp16): see `support/docs/deepspeed_impact.md` §1.12 | pass (T23 GPU only) |
 | T24 | split brain in one process: attempt B claims the run; A's next commit is refused, the pointer stays B's, A's step is not in the history, B commits its own step in its own folder | pass |
@@ -327,17 +336,17 @@ restore onto a smaller world, retention and export, all against the S3 emulator.
 
 The same code runs inside the Docker Slurm cluster in `support/simulation/run_sim.py` (ADR 0002 §Validation).
 GPU: `V5_DEVICE=cuda` runs T1–T10 with the trainer on CUDA in deterministic mode (`CUBLAS_WORKSPACE_CONFIG` set),
-and `support/tools/bench_save.py` measures the GPU-to-host stall and `dcp.async_save` times. Both run on Kaggle 2×T4 via
-`support/kaggle/run_gpu_checks.py` (see `support/kaggle/README.md`). Week 2: the same on the B200 node for a randomly initialised
+and `support/tools/bench_save.py` measures the GPU-to-host stall and `dcp.async_save` times. Both run on Kaggle (2 GPUs) via
+`support/kaggle/run_gpu_checks.py` (see `support/kaggle/README.md`). Week 2: the same on the GPU node for a randomly initialised
 model of the final shape.
 
 ## Open points
 
 - **Sharded state, partly tested:** the digest is checked on real DTensor shards (T17, CPU) and the whole save →
-  reshard → restore path under FSDP2 runs as T16 on Kaggle 2×T4. Expert parallel and Team 05's real model wait
+  reshard → restore path under FSDP2 runs as T16 on Kaggle (2 GPUs). Expert parallel and Team 05's real model wait
   for week 2. FSDP2 needs CUDA in torch 2.5, so the Docker cluster (CPU) still trains with DDP.
 - Real S3 throughput and `head` verification on a multi-GB checkpoint (week-2 node; the emulator is in-memory).
-  Run T26 once against the real bucket too (`V5_TEST_REMOTE=s3://…`), to confirm AWS answers 412 the way the
+  Run T26 once against the real bucket too (`V5_TEST_REMOTE=s3://…`), to confirm the cloud answers 412 the way the
   emulator does; `launch.sh` runs `ckpt.py probe-store` on it before every launch.
 - Parallel layout: ZeRO-2 on 32 GPUs or ZeRO-3 on 8, and the EP degree. This sets the per-node share and the NVMe size.
 - Protected cadence N (Team 09).

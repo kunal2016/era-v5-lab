@@ -28,7 +28,8 @@ RESULTS = os.path.join(HERE, "results")
 DS = False          # --deepspeed: the trainer runs a DeepSpeed ZeRO engine (support/docs/deepspeed_impact.md)
 RUN = "v5main"
 PY = "/opt/venv/bin/python"
-REMOTE = "s3://v5-ckpt/ckpt"
+REMOTE = "s3://v5-ckpt/ckpt"   # --store folder: /shared/ckpt, a folder on the volume every node mounts (bare metal)
+STORE = "s3"
 
 # Main-run settings for the test: steps are slowed to 50 ms so there is time to break things.
 # Time is compressed: the save interval is 8 s instead of 30 min, so the crash-loop window (3 crashes in 30 min
@@ -37,7 +38,7 @@ REMOTE = "s3://v5-ckpt/ckpt"
 MAIN_ENV = {"RUN_ID": RUN, "STEPS": "100000", "INTERVAL_S": "8", "STEP_SLEEP": "0.05", "WATCHDOG_S": "20",
             "CRASHLOOP_WINDOW_S": "10"}
 TEAM_ENV = {"STEPS": "100000", "INTERVAL_S": "5", "STEP_SLEEP": "0.05"}
-# The job scripts default to EC2 (8 GPUs, 8 ranks per node); the Docker nodes have 2 placeholder GPUs.
+# The job scripts default to the cloud nodes (8 GPUs, 8 ranks per node); the Docker nodes have 2 placeholder GPUs.
 MAIN_ARGS = "--ntasks-per-node=2 --gpus-per-node=2"
 TEAM_ARGS = "--ntasks-per-node=1 --gpus-per-node=2"
 REPEATS = 3
@@ -163,7 +164,7 @@ def record(drill, ok, **detail):
 
 
 def run_drill(name, fn):
-    """Runs one drill and writes its evidence (Max's evidence folders, team 07): every command with its exit code
+    """Runs one drill and writes its evidence (uz9ai's evidence folders, team 07): every command with its exit code
     and output, and the results it recorded, so a reviewer can check the claim without rerunning it."""
     EVIDENCE.update(drill=name, lines=[])
     n0 = len(results)
@@ -251,7 +252,7 @@ def state_reason(jid):
 
 
 def d_limits():
-    """Account, QOS and GPU-share limits, each with the exact Slurm reason (Max's T05-T11 and Mallik's GPU-share
+    """Account, QOS and GPU-share limits, each with the exact Slurm reason (uz9ai's T05-T11 and millermuttu's GPU-share
     test, team 07). Users: alice (arch), bob (perf), carol (no account). Runs on the idle cluster."""
     gpu = "-p gpu --time=00:05:00 --nodes=1 --gpus-per-node=2"
     _, err = submit_as("alice", f"--account=perf {gpu}")
@@ -296,7 +297,7 @@ def d_limits():
 
 
 def d_health_fakes():
-    """The GPU checks really run in Docker, on a fake nvidia-smi and dmesg (Mallik's fakes, team 07): healthy
+    """The GPU checks really run in Docker, on a fake nvidia-smi and dmesg (millermuttu's fakes, team 07): healthy
     nodes pass; each planted fault fails the right check; Xid 94 once is only a warning; and one fault is drained
     end to end by the periodic health check, as on a real node."""
     hc = (f". /etc/v5/node.env; V5_HEALTH_STATE=/tmp/hc-drill {PY} /opt/v5/health/health_check.py "
@@ -315,7 +316,7 @@ def d_health_fakes():
     ok = {}
     for h in ("c1", "c2", "c3"):
         v, st = report(h)
-        ok[h] = (v, st.get("gpu_count"), st.get("nvlink"), st.get("remapped_rows"))
+        ok[h] = (v, st.get("gpu_inventory"), st.get("nvlink"), st.get("remapped_rows"))
     record("health_gpu_checks_run", all(x == ("pass", "pass", "pass", "pass") for x in ok.values()), nodes=ok)
 
     faults = [("gpus", "1 temperature.gpu=92", "gpu_temperature", "fail"),
@@ -347,7 +348,7 @@ def d_health_fakes():
 def d_time_limit():
     """A team job reaches its time limit: Slurm warns the batch shell (--signal=B:USR1@60), the wrapper passes it to
     the trainers, they save and exit 75, Slurm requeues the job with the same id, and it resumes at the saved step
-    (Max's self-requeue, team 07)."""
+    (uz9ai's self-requeue, team 07)."""
     t = mark("time_limit", cause_class="planned")
     jid, err = sbatch("/opt/v5/slurm/team_job.sbatch", dict(TEAM_ENV, RUN_ID="timelimit", STEPS="100000"),
                       f"--account=arch {TEAM_ARGS} --time=00:02:00 --signal=B:USR1@60")
@@ -715,7 +716,8 @@ def d_retention_export():
     sbatch(f"--wrap '. /etc/v5/node.env; OMP_NUM_THREADS=1 RUN_ID={RUN} {PY} /s3/exports/export_job.py'",
            args="--account=eval -p eval")
     ex = wait(lambda: ev_after("0", "export.done") or ev_after("0", "export.failed"), 120, "export")
-    record("retention", not any(p in ret["deleted"] for p in ret["protected"]) and ret.get("store") == "s3",
+    record("retention", not any(p in ret["deleted"] for p in ret["protected"])
+           and ret.get("store") == ("local" if STORE == "folder" else "s3"),
            deleted=len(ret["deleted"]), protected=len(ret["protected"]), freed_bytes=ret["freed_bytes"],
            store=ret.get("store"))
     record("export_safetensors", ex["event"] == "export.done", step=ex.get("step"))
@@ -736,6 +738,12 @@ def up():
     dc("down", "-v", check=False)
     dc("up", "-d", "--build")
     wait(lambda: "4" in ctl("sinfo -h -t idle -o %D -p debug").stdout, 180, "4 idle nodes")
+    if STORE == "folder":
+        # Bare-metal mode: checkpoints on a file system every node mounts (here the shared Docker volume, mounted
+        # as /shared), through the folder store. No object store is used by any job.
+        for h in ("slurmctld", "slurmctld2", "c1", "c2", "c3", "c4"):
+            sh(h, f"ln -sfn /s3 /shared && sed -i 's#^export V5_REMOTE_ROOT=.*#export V5_REMOTE_ROOT={REMOTE}#' "
+                  "/etc/v5/node.env", check=True)
     # Docker: 2 GPUs per node, so a team's share is 4 GPUs; node cap 3 lets the GPU share be the limit tested.
     ctl("V5_TEAM_GPUS=4 V5_NODE_CAP=3 bash /opt/v5/slurm/setup_accounts.sh >/dev/null", check=True)
     # Test users (fixed UIDs made by entrypoint.sh): alice in arch, bob in perf, carol in no account.
@@ -751,16 +759,21 @@ def up():
 
 def write_summary(summary):
     """docs/sim_results.md: the drill table plus the metrics report, for the PR and the ADRs."""
-    mode = " (DeepSpeed ZeRO-1 trainer)" if DS else ""
+    mode = " (DeepSpeed ZeRO-1 trainer)" if DS else " (checkpoints on a shared file system, no object store)" \
+        if STORE == "folder" else ""
+    flags = (" --deepspeed" if DS else "") + (" --store folder" if STORE == "folder" else "")
     L = [f"# Docker Slurm simulation results{mode}", "",
-         f"Generated by `support/simulation/run_sim.py{' --deepspeed' if DS else ''}` on "
+         f"Generated by `support/simulation/run_sim.py{flags}` on "
          f"{time.strftime('%Y-%m-%d %H:%M %Z')}. "
          f"**{summary['passed']} of {summary['total']} drills passed** in {summary['duration_s']} s. "
          f"Raw files: `support/simulation/{os.path.basename(RESULTS)}/` "
          "(drills.json, metrics.json, alerts.json, report.md).", "",
          "In simple words: we broke the test cluster on purpose in every way the ADRs plan for, and checked that "
-         "the main run came back by itself from its last checkpoint. Checkpoints went to an S3 emulator through "
-         "the real S3 code; GPUs were placeholders (no computation), see ADR 0002 §Validation.", "",
+         "the main run came back by itself from its last checkpoint. "
+         + ("Checkpoints went to a folder on the volume every node mounts, through the folder store (the bare-metal "
+            "case); no object store was used. " if STORE == "folder" else
+            "Checkpoints went to an S3-compatible emulator through the S3 store. ")
+         + "GPUs were placeholders (no computation), see ADR 0002 §Validation.", "",
          "| Drill | Result | Details |", "|---|---|---|"]
     for r in summary["drills"]:
         d = {k: v for k, v in r.items() if k not in ("drill", "pass")}
@@ -769,7 +782,8 @@ def write_summary(summary):
     if os.path.exists(report):
         body = open(report).read().split("\n", 1)[1]
         L += ["", "## Metrics report", "", body.replace("\n## ", "\n### ")]
-    with open(os.path.join(HERE, "..", "docs", "sim_results_deepspeed.md" if DS else "sim_results.md"), "w") as f:
+    name = "sim_results_deepspeed.md" if DS else "sim_results_folder.md" if STORE == "folder" else "sim_results.md"
+    with open(os.path.join(HERE, "..", "docs", name), "w") as f:
         f.write("\n".join(L) + "\n")
 
 
@@ -779,10 +793,16 @@ def main():
     ap.add_argument("--only", nargs="+", metavar="DRILL", help="run only these drills (debugging; no summary written)")
     ap.add_argument("--smoke", action="store_true",
                     help="quick check (~5 min after start): limits, health fakes, preemption, one kill + restore")
+    ap.add_argument("--store", choices=["s3", "folder"], default="s3",
+                    help="checkpoint store: s3 (S3-compatible emulator) or folder (a shared file system, as on bare "
+                         "metal); folder results go to results_folder/")
     ap.add_argument("--deepspeed", action="store_true",
                     help="every training job uses DeepSpeed ZeRO-1; results go to results_deepspeed/")
     a = ap.parse_args()
-    global RESULTS, DS
+    global RESULTS, DS, STORE, REMOTE
+    if a.store == "folder":
+        STORE, REMOTE = "folder", "/shared/ckpt"
+        RESULTS = os.path.join(HERE, "results_folder")
     if a.deepspeed:
         DS = True
         RESULTS = os.path.join(HERE, "results_deepspeed")
@@ -804,7 +824,7 @@ def main():
              ("node_loss", d_node_loss), ("ctld_failover", d_ctld_failover), ("db_backup", d_db_backup),
              ("split_brain", d_split_brain), ("nan", d_nan_rollback_reshard), ("budget", d_budget_fairshare), ("retention", d_retention_export),
              ("live_alerts", d_live_alerts)]
-    if a.smoke:      # Mallik's 90-second test.sh idea, on this cluster
+    if a.smoke:      # millermuttu's 90-second test.sh idea, on this cluster
         plan = [("accounts", d_accounts), ("limits", d_limits), ("health_fakes", d_health_fakes),
                 ("preemption", d_preemption), ("kill_1", d_kill(1))]
     if a.only:

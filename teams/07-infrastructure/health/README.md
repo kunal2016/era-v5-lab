@@ -1,7 +1,7 @@
 # Node health (`health/`): find broken GPUs before they waste paid hours
 
 Decision record: [ADR 0003](../adr/0003-node-health-checks.md). Queue side:
-[../slurm/README.md](../queue/README.md). Checkpoint side: [../ckpt/README.md](../ckpt/README.md).
+[../queue/README.md](../queue/README.md). Checkpoint side: [../ckpt/README.md](../ckpt/README.md).
 
 > **In one paragraph.** Most interruptions in big training runs come from broken hardware. A broken GPU either
 > **crashes** the job (we pay for the restart and the lost work) or **quietly slows everyone down** (we pay for
@@ -10,6 +10,40 @@ Decision record: [ADR 0003](../adr/0003-node-health-checks.md). Queue side:
 > node, and a frozen job is restarted instead of sitting there burning money.
 
 ---
+
+## How it works, step by step
+
+Plain-words overview and the reasons behind each choice: [team briefing §3.4](../TEAM_BRIEFING.md#34-node-health-adr-0003).
+Everything runs through `health/health_check.py` (`main()`), in one of three modes.
+
+```text
+when                         mode       runs                                                  on "fail"
+before every job (prolog)    prolog     quick checks + vendor diagnostic level 1 (GPUs idle) Slurm drains the node, job
+                                                                                              goes back to the queue
+every 30 s (Slurm health)    periodic   quick checks + read the vendor's background health  drain the node itself
+                                        (never the diagnostic: it would load busy GPUs)       (v5:<check>), its jobs
+                                                                                              save and move (exit 75)
+before a dry run / repair    full       quick checks + diagnostic level 2 + 4 collectives     ops/launch.sh drains it
+                             (≤ 15 min)                                                        (health: <check>)
+
+quick checks (every mode):
+  gpu_checks()      GPU count · temperature · uncorrectable memory errors · hardware slowdown · PCIe width
+  remap_checks()    failed / pending GPU-memory repairs (row remap)
+  nvlink_checks()   any GPU-to-GPU link inactive
+  xid_check()       new GPU driver error codes in the kernel log (fatal / restart / warn / unknown; each line once)
+  clock_check()     clock offset ·  disk_mem_checks(): free local disk, free memory
+collectives (full): allreduce_test.py → all-reduce, reduce-scatter, all-gather, all-to-all: exact values + speed
+
+verdict():  any fail → fail ·  else any warn, or a required check "skipped" → warn ·  else pass
+exit code:  0 pass, 3 warn, 4 fail   (prolog: warn exits 0, so a healthy node is never drained)
+output:     one JSON report (schema v5-health/1) + a health.report event
+```
+
+A tool that is missing gives **skipped**, never pass. Xid 94 (a contained memory error) only warns the first time;
+the same GPU logging it again within 24 h fails the node. Thresholds live in `health/thresholds.yaml`.
+
+---
+
 
 ## 1. Why: where interruptions come from
 
@@ -70,7 +104,7 @@ Two details that are easy to get wrong (both found while designing and testing):
 
 | Check | Source | Fail (drain) | Warn |
 |---|---|---|---|
-| GPU count | `nvidia-smi` | fewer GPUs than expected (8 on p6-b200) | — |
+| GPU count | `nvidia-smi` | fewer GPUs than expected (8 on the GPU node) | — |
 | ECC uncorrectable | `nvidia-smi` | ≥ 1 | — |
 | ECC correctable | `nvidia-smi` | — | trend (3 × fleet median per 24 h, after baseline) |
 | Temperature | `nvidia-smi` | ≥ 90 °C (vendor slowdown) | ≥ 85 °C |
@@ -133,12 +167,25 @@ Every run prints one JSON report (also sent as the `health.report` event):
 
 ```json
 {
-  "schema": "v5-health/1", "time": "2026-10-28T10:00:00Z", "host": "gpu-3", "mode": "periodic",
+  "schema": "v5-health/1", "timestamp_utc": "2026-10-28T10:00:00.000Z", "time": "(same)", "host": "gpu-3",
+  "mode": "periodic", "expected_gpus": 8,
   "checks": [{"name": "ecc_uncorrectable", "status": "fail", "required": true,
-              "detail": "GPU 5: 2 uncorrectable", "metrics": {}, "gpu": 5, "seconds": 0.4}],
-  "verdict": "fail", "drain_reason": "ecc_uncorrectable", "runtime_seconds": 1.9
+              "detail": "uncorrectable on GPU 5 (2)", "metrics": {"values": [0, 0, 0, 0, 0, 2, 0, 0]},
+              "gpu": 5, "seconds": 0.4}],
+  "verdict": "fail", "admit_training": false, "drain_reason": "ecc_uncorrectable", "runtime_seconds": 1.9
 }
 ```
+
+The format is **Team 08's `v5-health/1` contract** (`teams/08-monitoring/health-check/`, lab PR #125), so their
+monitoring and ClickHouse loader read our reports as they are: `gpu_inventory` (`count`, one line per GPU),
+`ecc_uncorrectable` (`values`, one per GPU), `xid` (`counts` + `events` with `pci_bdf`, `code`, `severity`
+warn/fail, `reason`), collectives (`backend`, `world_size`, `status`, per size `bytes`, `seconds`, `max_error`,
+`all_ranks_correct`). We add fields of our own (`gpu`, `seconds`, `runtime_seconds`, `time`, Xid `new`, busbw);
+the contract allows extra fields. `support/tests/test_health.py` checks real reports against the contract;
+[team08_contract_notes.md](../support/docs/team08_contract_notes.md) lists the changes and our suggestions to Team 08.
+Two differences are open with Team 08: `admit_training` is true on a `warn` (our prolog starts the job on a
+warn; their draft says false), and a CPU `gloo` collective passes on a node with no real GPUs (Docker, CPU test
+hosts; their draft never lets gloo pass).
 
 ---
 
@@ -215,7 +262,7 @@ folder.
 | Docker Slurm, run 9 | forced fail on a main-run node: drained within one interval, job saved and moved to the spare | MTTR 60–88 s, **0 steps lost** |
 | Docker Slurm | forced fail on **both** main-run nodes, one spare | both drained; main run waits (no crash loop); recovers on repair |
 | Docker Slurm | `SIGSTOP` one rank (hang) | watchdog fires at 20 s, exit 75, restart; MTTR 56 s |
-| Kaggle 2×T4 | real nvidia-smi parsing, NCCL all-reduce, NCCL timeout with trace | ready to run (`support/kaggle/README.md`) |
+| Kaggle (2 GPUs) | real nvidia-smi parsing, NCCL all-reduce, NCCL timeout with trace | ready to run (`support/kaggle/README.md`) |
 | week-2 node | 5 × `--mode full` on good nodes | gives the real baseline thresholds |
 
 From `teams/07-infrastructure`:
@@ -238,7 +285,7 @@ Full list: H-01 … H-24 in [metrics_catalog.md](../support/docs/metrics_catalog
 | H-06 | row-remap failure | any | GPU must be replaced |
 | H-07 | GPU missing | any | reboot or replace the instance |
 | H-08 | at slowdown temperature | 0 °C margin | cooling / replace |
-| H-11 | NVLink / EFA link down | any | replace instance |
+| H-11 | NVLink / fast network link down | any | replace instance |
 | H-12 | all-reduce busbw | ≤ 0.7 × baseline | keep the node out of the main run |
 | H-13 | all-reduce wrong sum | any | hardware fault: replace |
 | H-14 | step watchdog | ≥ 2 per hour | read the stack dumps: data wait? deadlock? |
@@ -262,7 +309,7 @@ week; prolog ≤ 30 s; full ≤ 15 min.
 - Should a `warn` node stay in the main-run pool?
 - Health-check interval during the main run, and its measured cost in step time.
 - On-call rota: who replaces a node at 4 a.m.?
-- Kaggle results (real nvidia-smi on T4, NCCL timeout test).
+- Kaggle results (real nvidia-smi on Kaggle's GPUs, NCCL timeout test).
 
 ---
 

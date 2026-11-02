@@ -48,9 +48,8 @@ Raw trainer exit codes (before the wrapper maps them to 75, or 78 after 3 crashe
 
 | Reason | Means | Already done | You do |
 |---|---|---|---|
-| `spot_notice` | AWS will reclaim this spot instance in 2 minutes. | node drained, jobs saved and moved to the spare | nothing; the instance goes away by itself |
-| `gpu` | nvidia-smi could not run on a GPU node (driver broken or GPU hung). | node drained, jobs saved and moved | reboot the instance; if nvidia-smi still fails, replace it |
-| `gpu_count` | Fewer GPUs visible than expected. | node drained, jobs saved and moved | reboot the instance; if still missing, replace it |
+| `spot_notice` | the cloud will reclaim this spot instance in 2 minutes. | node drained, jobs saved and moved to the spare | nothing; the instance goes away by itself |
+| `gpu_inventory` | Fewer GPUs visible than expected, or nvidia-smi could not run (driver broken or GPU hung). | node drained, jobs saved and moved | reboot the instance; if still wrong, replace it |
 | `ecc_uncorrectable` | A GPU memory error lost data. | node drained, jobs saved and moved | replace the instance (stop/start moves it to new hardware) |
 | `remapped_rows` | GPU memory row remap failed (or is pending a reset). | node drained on failure | failure: replace; pending: reset the GPU / reboot |
 | `xid` | The GPU driver logged a fatal Xid error (79 off the bus, 95 uncontained memory error, …), or Xid 94 (contained ECC) twice on one GPU within 24 h. | node drained, jobs saved and moved | replace the instance; the Xid code is in the health report |
@@ -58,7 +57,7 @@ Raw trainer exit codes (before the wrapper maps them to 75, or 78 after 3 crashe
 | `dcgm_health` | DCGM's background health watch reports a GPU failure (PCIe, memory, NVLink, thermal or power). | node drained; its jobs saved and moved | run `health_check.py --mode full`; replace if it fails again |
 | `gpu_temperature` | A GPU is at its slowdown temperature. | node drained | check cooling; replace if repeated |
 | `nvme_free` | Local disk too full for the next checkpoint. | node drained | clean /nvme, then `scontrol update nodename=<n> state=resume` |
-| `clock_offset` | The node clock is off by more than 100 ms. | node drained | fix chrony (Amazon Time Sync), then resume the node |
+| `clock_offset` | The node clock is off by more than 100 ms. | node drained | fix chrony (the cloud's time service), then resume the node |
 | `nccl_collectives` | The collective test did not finish (hang, crash or timeout). | node drained | run health_check.py --mode full on it; read the NCCL flight-recorder dump; replace if it fails again |
 | `nccl_all_reduce` | All-reduce (data-parallel gradients) gave a wrong value or was too slow. | node drained | run health_check.py --mode full on it; replace if it fails again |
 | `nccl_reduce_scatter` | Reduce-scatter (ZeRO/FSDP gradients) gave a wrong value or was too slow. | node drained | run health_check.py --mode full on it; replace if it fails again |

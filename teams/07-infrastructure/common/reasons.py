@@ -171,12 +171,10 @@ CAUSES = {
 
 # ------------------------------------------------------------------ node drain reasons (sinfo -R shows "v5:<names>")
 DRAIN = {
-    "spot_notice": ("AWS will reclaim this spot instance in 2 minutes.",
+    "spot_notice": ("the cloud will reclaim this spot instance in 2 minutes.",
                     "node drained, jobs saved and moved to the spare", "nothing; the instance goes away by itself"),
-    "gpu": ("nvidia-smi could not run on a GPU node (driver broken or GPU hung).", "node drained, jobs saved and moved",
-            "reboot the instance; if nvidia-smi still fails, replace it"),
-    "gpu_count": ("Fewer GPUs visible than expected.", "node drained, jobs saved and moved",
-                  "reboot the instance; if still missing, replace it"),
+    "gpu_inventory": ("Fewer GPUs visible than expected, or nvidia-smi could not run (driver broken or GPU hung).",
+                      "node drained, jobs saved and moved", "reboot the instance; if still wrong, replace it"),
     "ecc_uncorrectable": ("A GPU memory error lost data.", "node drained, jobs saved and moved",
                           "replace the instance (stop/start moves it to new hardware)"),
     "remapped_rows": ("GPU memory row remap failed (or is pending a reset).", "node drained on failure",
@@ -191,7 +189,7 @@ DRAIN = {
     "nvme_free": ("Local disk too full for the next checkpoint.", "node drained",
                   "clean /nvme, then `scontrol update nodename=<n> state=resume`"),
     "clock_offset": ("The node clock is off by more than 100 ms.", "node drained",
-                     "fix chrony (Amazon Time Sync), then resume the node"),
+                     "fix chrony (the cloud's time service), then resume the node"),
     "nccl_collectives": ("The collective test did not finish (hang, crash or timeout).", "node drained",
                          "run health_check.py --mode full on it; read the NCCL flight-recorder dump; replace if it fails again"),
     "nccl_all_reduce": ("All-reduce (data-parallel gradients) gave a wrong value or was too slow.", "node drained",

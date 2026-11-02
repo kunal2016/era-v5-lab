@@ -5,11 +5,11 @@
 # Every team has its own account under "teams"; they share the rest fairly, each has a GPU share and a node
 # cap so no team can take everything, and each has a GPU-hour budget so nobody overspends.
 # Team jobs have a time limit (longer work requeues itself, see team_job.sbatch) and a cap on queued jobs; a
-# "debug" QOS gives one quick 1-GPU job ahead of the queue. Limits from Max's queue design, GPU shares from
-# Mallik's accounts (team 07). On one shared 8-GPU node set V5_NODE_CAP high and V5_TEAM_GPUS to TSAI's share.
+# "debug" QOS gives one quick 1-GPU job ahead of the queue. Limits from uz9ai's queue design, GPU shares from
+# millermuttu's accounts (team 07). On one shared 8-GPU node set V5_NODE_CAP high and V5_TEAM_GPUS to TSAI's share.
 set -u
 S="sacctmgr -i"
-TEAM_GPUS="${V5_TEAM_GPUS:-16}"          # GPUs one team may hold at once (EC2: 2 nodes x 8)
+TEAM_GPUS="${V5_TEAM_GPUS:-16}"          # GPUs one team may hold at once (Cloud nodes: 2 nodes x 8)
 NODE_CAP="${V5_NODE_CAP:-2}"             # nodes one team may hold at once
 TEAM_MAXWALL="${V5_TEAM_MAXWALL:-24:00:00}"
 TEAM_MAXSUBMIT="${V5_TEAM_MAXSUBMIT:-50}"  # queued + running jobs per team
@@ -37,7 +37,7 @@ $S add user svc Account=mainrun DefaultAccount=arch >/dev/null 2>&1
 for t in $TEAMS; do $S add user svc Account="$t" >/dev/null 2>&1; done
 $S modify user svc where account=mainrun set QOS=mainrun,normal DefaultQOS=mainrun
 for t in $TEAMS; do $S modify user svc where account="$t" set QOS=normal,debug DefaultQOS=normal; done
-# root runs the retention and export jobs in the test (on AWS: their own IAM roles, ADR 0002 §7).
+# root runs the retention and export jobs in the test (in the cloud: their own cloud roles, ADR 0002 §7).
 $S add user root Account=infra DefaultAccount=infra >/dev/null 2>&1
 $S modify user root where account=infra set QOS=normal DefaultQOS=normal
 sacctmgr -n -P show assoc format=account,user,qos,grptres | sort

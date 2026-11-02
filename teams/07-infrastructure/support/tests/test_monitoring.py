@@ -45,7 +45,7 @@ def test_every_emitted_cause_is_explained():
 def test_every_drain_reason_is_explained():
     hc = src("health", "health_check.py")
     can_fail = {n for n in re.findall(r'check\("([a-z_]+)", "fail"', hc)}
-    can_fail |= {"gpu_count", "ecc_uncorrectable", "remapped_rows", "xid", "dcgm_diag", "gpu_temperature",
+    can_fail |= {"gpu_inventory", "ecc_uncorrectable", "remapped_rows", "xid", "dcgm_diag", "gpu_temperature",
                  "nvme_free", "clock_offset", "nccl_collectives", "drill_force_fail", "spot_notice",
                  "nccl_all_reduce", "nccl_reduce_scatter", "nccl_all_gather", "nccl_all_to_all", "nvlink"}
     assert can_fail - set(reasons.DRAIN) == set()

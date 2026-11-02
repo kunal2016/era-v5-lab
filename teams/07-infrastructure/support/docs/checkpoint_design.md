@@ -22,12 +22,9 @@ day is 3.3% of a 30-day run.
 
 ## 2. What V4 did, and what we change
 
-V4 (LightningLM 0.1V, repo `The-School-of-AI/LLM`) ran on **one 8-GPU node** (B300 for the 120B stage, AWS
-us-west-2, spot). It used DeepSpeed checkpoints and saved every 500 steps or 30 min, whichever came first. It
-handled SIGUSR1 (save and stop), SIGUSR2 (save and continue) and the spot 2-minute notice. Uploads ran in a
-separate process with per-node S3 prefixes. It kept the last 3 checkpoints.
-
-We keep all of that. We change five things, each tied to a V4 failure:
+V4 saved every 500 steps or 30 min, whichever came first, handled SIGUSR1 (save and stop), SIGUSR2 (save and
+continue) and the spot 2-minute notice, uploaded in a separate process and kept the last 3 checkpoints. We keep all
+of that. We change five things, each tied to a V4 failure:
 
 | V4 behaviour | What went wrong or could | V5 change |
 |---|---|---|
@@ -67,12 +64,9 @@ weight.
 | Model (total params) | Checkpoint ≈ 14 B/param | Per GPU at 64 GPUs |
 |---|---|---|
 | 30B | 420 GB | 6.6 GB |
-| 120B | 1.68 TB | 26 GB |
-| 500B (S16 worked example, 3% active) | 7.0 TB | 109 GB |
+| a frontier-size MoE | several TB | over 100 GB |
 
-V4's 120B checkpoint was only ≈ 290 GB because its expert base was a frozen 8-bit copy with rank-16 adapters, so
-little of the model carried optimizer state. The final V5 numbers wait for the model configuration, which freezes
-on 3 November.
+The final V5 numbers wait for the model configuration, which freezes on 3 November.
 
 **Format.** We use `torch.distributed.checkpoint` (DCP), not a single `torch.save` and not a DeepSpeed-only
 format:
@@ -182,7 +176,7 @@ time (steps 4–7), or saves queue up.
 | periodic | rank-0 timer or step count | save, continue | — |
 | SIGUSR2 | operator | save, continue | — |
 | SIGUSR1 / SIGTERM | operator, health drain, spot watcher (`scancel --signal=USR1`); Slurm preemption (SIGTERM, then `GraceTime`) | save, wait for the commit, stop | 75 (requeue) |
-| spot notice | EC2 IMDSv2 `spot/instance-action`, polled every 5 s | emergency save, stop | 75 |
+| spot notice | the cloud's instance metadata service `spot/instance-action`, polled every 5 s | emergency save, stop | 75 |
 | health fail | `health/` check between steps (Xid 79/94/95, ECC) | save if the GPUs still answer, stop | 75, node drained |
 | NaN / Inf | loss or grad-norm guard | **no save**; log, stop | 78 (fatal, held) |
 | run done | max steps | final save, protected | 0 |
@@ -195,7 +189,7 @@ The exit-code contract (0 done, 75 retry, 78 fatal) is what the queue uses to re
 |---|---|---|
 | Local NVMe | last **2** committed + any in flight | fast same-node restart; NVMe must hold 3 × per-node share |
 | S3 Standard | last **3** committed + **protected**: every N-th (for evals and the paper), the final one, any checkpoint pinned by an operator | a damaged checkpoint must have a good one before it (V4 step 3009 → 2909) |
-| S3 Glacier | protected ones older than X days (lifecycle rule) | cheap long-term record; the data team already plans Glacier for shards |
+| Archive tier | protected ones older than X days (lifecycle rule) | cheap long-term record; the data team already plans the archive tier for shards |
 
 Deleting is a separate job that never touches a protected checkpoint or the one `latest` points to. Disk-full on
 save was a V4 failure, so before a save starts we check free NVMe space ≥ 1.2 × checkpoint size.
@@ -257,7 +251,7 @@ initialised model of the final shape. You don't need a trained model to measure 
 
 1. Final parallel layout (ZeRO-2 on 32 GPUs or ZeRO-3 on 8, from S12; expert-parallel degree): this sets the shard
    count per node and the NVMe size.
-2. S3 bucket, prefix and IAM role for the training cluster. Who can delete?
+2. S3 bucket, prefix and cloud role for the training cluster. Who can delete?
 3. "Every N-th protected": N in steps or tokens? The eval team should say what cadence it needs.
 4. Does the instructor's submit system restart jobs itself, or should Slurm requeue (exit 75)?
 5. Spot or on-demand for the main run? Spot makes the emergency-save path the common path.
