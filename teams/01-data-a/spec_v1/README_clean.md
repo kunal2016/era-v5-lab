@@ -472,6 +472,28 @@ python -I spec_v1/tools/f1_eval.py ../.. <packs folder>
 
 ## The normaliser: `spec_v1/tools/normalize.py`
 
+### G9 fingerprint contract and limitations
+
+The G9 adapter is `normalize(text)` / `words_with_offsets(text)` with
+`NORMALIZE_ID = "g1-spec-v1"`. This word-fingerprint interface does **not**
+perform B1 HTML-entity decoding or A2 control-character removal. Those are
+additional operations of `match_key()` and `line_keys()` only. These APIs are
+different comparison representations and must not be substituted for each other.
+
+Run applicable `clean.py` rules on training documents first, exclude documents
+marked `drop`, then fingerprint the retained cleaned text. Benchmark inputs
+need a separately agreed preprocessing policy; do not assign them arbitrary
+Data A `pack_id` values. A3 mojibake repairs remain in pack-scoped cleaning.
+
+`words_with_offsets()` reports the start of a raw word in the text passed to it
+(Python character offset). Expanded tokens can share an offset, such as
+`½` -> `[("1", 0), ("2", 0)]`. Offsets for cleaned documents refer to the
+cleaned text, not automatically to the original document.
+
+Record the `NORMALIZE_ID`, source commit SHA, Python/Unicode-data versions,
+and G9 fingerprint-set SHA-256. Any change to the output of `normalize()`
+requires a new normalization ID and a fingerprint rebuild.
+
 A standard copy of a text, for comparing and matching. **It never changes a document:** code compares the copies, and the document keeps its own text, so nothing is fixed or dropped by it. `clean.py` does not use it. It gives the copy in two shapes:
 
 | function | returns | for |
