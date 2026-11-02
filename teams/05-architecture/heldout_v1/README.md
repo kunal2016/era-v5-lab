@@ -1,17 +1,16 @@
-# Held-out set v1 (G5): sample for review, and what comes next
+# Held-out set v1 (G5)
 
-**Owner:** Deepjyoti Saha (G5). **Reviewers:** Shivanshu Thapliyal (G5 lead), Rohan Shravan (instructor, TSAI).
+**Owner:** Deepjyoti Saha (G5). **Reviewers:** Shivanshu Thapliyal (G5 lead), TSAI.
 
 This folder holds G5's held-out set, the fixed text on which models are scored in bits per byte
 ([`experiments/plan_v1.md`](https://github.com/theschoolofai/era-v5-lab/blob/main/teams/05-architecture/experiments/plan_v1.md)).
 The held-out text is **one file, `data/heldout_v1.jsonl`**, with 15 slices one after the other.
-**This PR has a sample**, 20 documents per slice, so the harness can be tested now and the approach can be checked
-before the full set is built. The full set replaces this file on Mon 2 Nov, with the same script and name, and
-`results/heldout_v1.sha256` names it.
+This is the **full set**, built on 2 Nov 2026. [`results/heldout_v1.sha256`](../results/heldout_v1.sha256) names it.
+It replaces the 300-document sample that this pull request first carried for harness testing.
 
 ## Purpose
 
-- **Score the week-2 experiments.** Every arm of plan v1 (EXP-1 to EXP-5, the attention arms, the T3 confirms) is scored
+- **Score the week-2 experiments.** Every arm of plan v1 (EXP-1 to EXP-3, the Muon screen, the attention arms, the T3 confirms) is scored
   on exactly the same text, so the winner rule compares like with like.
 - **Score the final V5 model** (and the dry-run checkpoints) on the same text, with the same metric.
 - **Check that the experiments were a faithful small-scale copy of the real thing.** The week-2 choices are made on small
@@ -39,36 +38,37 @@ must never be trained on.
 |---|---|
 | `data/heldout_v1.jsonl` | The held-out text: one file, 15 slices; each id starts with its slice |
 | `data/heldout_v1_sources.jsonl` | **Source tracking**: where each document came from (see below) |
-| `data/SHA256SUMS` | The **sample's** checksums of both JSONL files (see "Checksums" below) |
+| `data/SHA256SUMS` | Checksums of both JSONL files (see "Checksums" below) |
 | `data/heldout_manifest.json` | Selection rule, pinned dataset revisions, excluded documents with the reason, the file's documents, text bytes and sha256; per slice: dataset, part, id prefix, documents, text bytes, documents skipped for personal data |
 | `heldout_decontam_v1.txt` | Output of Team 9's check on the file |
-| `heldout_report.json` | The same result in the form the G5 harness (PR #190) requires for `--heldout-report`: the file's sha256, the fingerprint set id, `scope: full`, `matches: 0`, `docs_checked`. **Sample: updated with the full set on Monday** |
+| `heldout_report.json` | The same result in the form the G5 harness (PR #190) requires for `--heldout-report`: the file's sha256, the fingerprint set id, `scope: full`, `matches: 0`, `docs_checked` |
 | `build_heldout.py` | Rebuilds `data/` byte for byte |
 | `.gitattributes` | Keeps the data files byte for byte on every operating system, so the sha256 values stay valid |
 
-## Composition (this sample)
+## Composition
 
 | Slice | Id prefix | Dataset | Part | Docs | Text bytes |
 |---|---|---|---|---|---|
-| English web | `c4-val` | [allenai/c4](https://huggingface.co/datasets/allenai/c4) | en/c4-validation.00000-of-00008.json.gz | 20 | 35,259 |
-| Indic: Hindi | `fw2-hi-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | hin_Deva test | 20 | 168,897 |
-| Indic: Bengali | `fw2-bn-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ben_Beng test | 20 | 168,896 |
-| Indic: Tamil | `fw2-ta-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | tam_Taml test | 20 | 146,109 |
-| Indic: Telugu | `fw2-te-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | tel_Telu test | 20 | 247,821 |
-| Indic: Kannada | `fw2-kn-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | kan_Knda test | 20 | 169,563 |
-| Indic: Malayalam | `fw2-ml-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | mal_Mlym test | 20 | 144,730 |
-| Indic: Marathi | `fw2-mr-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | mar_Deva test | 20 | 108,632 |
-| Indic: Gujarati | `fw2-gu-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | guj_Gujr test | 20 | 147,451 |
-| Indic: Punjabi | `fw2-pa-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | pan_Guru test | 20 | 220,946 |
-| Indic: Odia | `fw2-or-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ory_Orya test | 20 | 82,276 |
+| English web | `c4-val` | [allenai/c4](https://huggingface.co/datasets/allenai/c4) | en/c4-validation.00000-of-00008.json.gz | 144 | 253,532 |
+| Indic: Hindi | `fw2-hi-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | hin_Deva test | 34 | 255,134 |
+| Indic: Bengali | `fw2-bn-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ben_Beng test | 27 | 265,042 |
+| Indic: Tamil | `fw2-ta-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | tam_Taml test | 37 | 256,545 |
+| Indic: Telugu | `fw2-te-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | tel_Telu test | 21 | 255,189 |
+| Indic: Kannada | `fw2-kn-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | kan_Knda test | 38 | 250,459 |
+| Indic: Malayalam | `fw2-ml-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | mal_Mlym test | 30 | 251,018 |
+| Indic: Marathi | `fw2-mr-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | mar_Deva test | 38 | 250,524 |
+| Indic: Gujarati | `fw2-gu-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | guj_Gujr test | 31 | 250,826 |
+| Indic: Punjabi | `fw2-pa-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | pan_Guru test | 27 | 254,686 |
+| Indic: Odia | `fw2-or-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ory_Orya test | 55 | 254,733 |
 | Indic: Assamese | `fw2-as-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | asm_Beng test | 20 | 253,230 |
-| Math | `owm-test` | [EleutherAI/proof-pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2) | open-web-math/test/test.jsonl.zst | 20 | 80,135 |
-| Science | `pes2o-val` | [allenai/peS2o](https://huggingface.co/datasets/allenai/peS2o) | data/v2/validation-00000-of-00002.json.gz | 20 | 27,677 |
-| Code (Python, C++, Go, Java, JavaScript, Rust) | `vault-<lang>-test` | [Fsoft-AIC/the-vault-function](https://huggingface.co/datasets/Fsoft-AIC/the-vault-function) | data/test/{python,cpp,go,java,javascript,rust} | 20 | 17,695 |
-| **`data/heldout_v1.jsonl`** | | | | **300** | **2,019,317** |
+| Math | `owm-test` | [EleutherAI/proof-pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2) | open-web-math/test/test.jsonl.zst | 55 | 259,449 |
+| Science | `pes2o-val` | [allenai/peS2o](https://huggingface.co/datasets/allenai/peS2o) | data/v2/validation-00000-of-00002.json.gz | 170 | 250,710 |
+| Code (Python, C++, Go, Java, JavaScript, Rust) | `vault-<lang>-test` | [Fsoft-AIC/the-vault-function](https://huggingface.co/datasets/Fsoft-AIC/the-vault-function) | data/test/{python,cpp,go,java,javascript,rust} | 338 | 250,262 |
+| **`data/heldout_v1.jsonl`** | | | | **1065** | **3,811,339** |
 
 Text bytes = the sum of `len(text.encode("utf-8"))`, the denominator of bits per byte. The JSON quotes and line breaks
-are not counted. The full set takes about 0.25 MB of text per slice instead of 20 documents.
+are not counted. Each slice takes documents in source order until about 0.25 MB of text is reached, so the last
+document of a slice can take it slightly over.
 To score a single slice, keep the lines whose id starts with its prefix.
 
 ### Why these sources
@@ -133,28 +133,26 @@ text itself.
 
 ## Checksums
 
-- **Sample (this PR):** `data/SHA256SUMS` holds the sha256 of both files:
+- `results/heldout_v1.sha256` names the scored file, as plan v1 requires.
+- `data/SHA256SUMS` holds the sha256 of both files:
 
   ```
-  51805f10ab9bdfe75722205d82d3a5d3e152e72d9ddd5d689818803a646c18c7  heldout_v1.jsonl
-  65f5eca9bc5c1a379869c7bfb18076c90c4413d6ee3d9d96f7b220a3a26f0d33  heldout_v1_sources.jsonl
+  ce9444452f10003e0df8364bc08c260bf4298ca5f11c64094aa761ecf150272c  heldout_v1.jsonl
+  fe67410521ebb8ff7fd4b539a7b5eb71f95de282d77b5e6df7c2a88066ba475e  heldout_v1_sources.jsonl
   ```
 
   Check it from `data/` with `sha256sum -c SHA256SUMS` (Linux, macOS, Git Bash), or in PowerShell with
-  `Get-FileHash heldout_v1.jsonl -Algorithm SHA256`. The script writes this file on every build.
-- **Final set (Mon 2 Nov):** plan v1 names the scored held-out set by `results/heldout_v1.sha256`. That file is written
-  only for the full set, so the sample can never be mistaken for it. Until it exists, no arm is scored for the record.
+  `Get-FileHash heldout_v1.jsonl -Algorithm SHA256`.
 
 ## Rebuild it
 
 From the repo root (needs `pip install datasets zstandard`, and network access to Hugging Face):
 
 ```
-python teams/05-architecture/heldout_v1/build_heldout.py --out teams/05-architecture/heldout_v1/data --docs 20   # this sample
-python teams/05-architecture/heldout_v1/build_heldout.py --out teams/05-architecture/heldout_v1/data --mb 0.25   # the full set
+python teams/05-architecture/heldout_v1/build_heldout.py --out teams/05-architecture/heldout_v1/data --mb 0.25
 ```
 
-A rebuild of this sample into an empty folder gave the same `heldout_v1.jsonl`, `heldout_v1_sources.jsonl`, manifest and `SHA256SUMS`, byte for byte. TSAI jobs run without
+A rebuild into an empty folder gave the same `heldout_v1.jsonl`, `heldout_v1_sources.jsonl`, manifest and `SHA256SUMS`, byte for byte. TSAI jobs run without
 network ([`JOB_REQUEST.md`](https://github.com/theschoolofai/era-v5-lab/blob/main/JOB_REQUEST.md)), so they read the committed files, not the script.
 
 ## Benchmark check (Team 9)
@@ -164,19 +162,17 @@ network ([`JOB_REQUEST.md`](https://github.com/theschoolofai/era-v5-lab/blob/mai
 
 ```
 fingerprints v1 set_sha256 11e290a44d1467875fdf8bebc55eab21f0a6367f411aab98a4a027a546fd372e (full set)
-docs 300 flagged 0 (0.00%) by benchmark {}
+docs 1065 flagged 0 (0.00%) by benchmark {}
 ```
 
-It is repeated on the full set, and again on fingerprints v2 (due Wed 4 Nov).
+It is repeated on fingerprints v2 (due Wed 4 Nov). TSAI decided (2 Nov) that Team 9 adds held-out v1 to fingerprints v2
+as a protected set. That re-check must therefore leave out the held-out set's own fingerprints, or every document
+would match itself; only the benchmark sets count.
 
 `heldout_report.json` carries the same result for the harness, which refuses a quality run unless the report's
 `heldout_sha256` equals the held-out file's sha256, `matches` is 0, `scope` is `full`, a `fingerprint_set_id` is given
 and `docs_checked` equals the number of documents it reads. Checked with the harness's own reader from PR #190:
-300 documents read, the same 2,019,317 bytes, report accepted.
-
-> **Note: this report is for the sample.** It lets the harness run its checks now. On Mon 2 Nov it is regenerated for
-> the full set (new `heldout_sha256` and `docs_checked`, `status` changed from `SAMPLE` to `FINAL`), together with
-> `results/heldout_v1.sha256`. A report and a file from different builds will not match, so the harness rejects the pair.
+1065 documents read, the same 3,811,339 bytes, report accepted.
 
 ```
 python teams/05-architecture/harness/train_week2.py ... --heldout-data teams/05-architecture/heldout_v1/data/heldout_v1.jsonl --heldout-report teams/05-architecture/heldout_v1/heldout_report.json
@@ -186,37 +182,29 @@ python teams/05-architecture/harness/train_week2.py ... --heldout-data teams/05-
 
 | When | What | Who |
 |---|---|---|
-| Now (this PR) | The sample, for harness testing only: loading, tokenization and bits per byte | Udit |
-| Mon 2 Nov | **The full set**: the same script with `--mb 0.25` (about 0.25 MB of text per slice, about 3.75 MB, over 1M tokens), same file names in `data/`; Team 9's check on the full fingerprint set; `results/heldout_v1.sha256` written, naming the scored file; this README's tables updated | Deepjyoti |
-| Tue 3 Nov onward | EXP-1 and every later arm scored on it: the winner by mean bits per byte over the whole file (plan v1), with per-slice numbers reported beside it (lines selected by id prefix) | Udit's harness, arm owners |
+| 2 Nov | **Delivered**: the full set, Team 9's check (0 matches), `heldout_report.json`, `results/heldout_v1.sha256` | Deepjyoti |
+| From EXP-1 on | Every arm scored on it, with the plan v1 winner rule (below); every slice reported (lines selected by id prefix) | harness, arm owners |
 | Wed 4 Nov | Re-check on Team 9's **fingerprints v2** (new cleaning rule `spec-v1`, plus Terminal-Bench 2 and BFCL v3); its `set_sha256` added next to v1's | Deepjyoti, Team 9 |
-| Being agreed | **Protection**: Team 9 fingerprints this set as a protected set, so every training shard is checked against it; the Data teams' dedup excludes copies, using `heldout_v1_sources.jsonl` | Team 9, Teams 1 and 2 |
-| When spec v1 code lands | **Cleaned copy** (`heldout_v1_clean`): Team 1 and Team 2's final cleaning run on the set, then Team 9's check. A separate file; it is not the week-2 score unless the plan changes | Deepjyoti |
+| Wed 4 Nov (TSAI, 2 Nov) | **Protection**: Team 9 adds held-out v1 to fingerprints v2 as a protected set, so the decontamination of the training shards also removes these pages; `heldout_v1_sources.jsonl` gives the URLs and source ids | Team 9 |
+| When spec v1 code lands | **Cleaned copy** (`heldout_v1_clean`): Team 1 and Team 2's final cleaning run on the set, then Team 9's check. A separate file, reported as its own column; v1 stays raw | Deepjyoti |
 | Later (v1.1, separate slices) | A whole-file code slice; possibly a Paloma slice to compare with outside models; possibly a "temporal" slice (text newer than any training crawl) | to be decided |
 
 The v1 bytes never change once the full set is built. Anything new is a separate, named slice or file.
 
-## Decisions for v1
-
-These are the owner's decisions for the Monday delivery, made so the harness and the arm owners are not blocked.
-They stand unless the lead or TSAI overrides them; any feedback or override will be taken in.
+## Decisions for v1 (confirmed in the TSAI review, 2 Nov)
 
 1. **Sources (frozen for v1):** C4 `en` validation; FineWeb-2 test (11 languages); OpenWebMath test; peS2o validation;
-   The Vault test. A change after the Monday file is built becomes a new, named set (v2), not an edit to v1's bytes.
-2. **Composition and size:** 15 slices, about 0.25 MB of text each, equal bytes per slice (`--mb 0.25`): one file of
-   about 3.75 MB, over 1M tokens. 11 of the 15 slices are Indic, so about 73% of the bytes are Indic.
-3. **Score (plan v1):** every held-out token is scored; the week-2 winner is the mean bits per byte over the whole file.
-   Per-slice numbers are reported beside it and decide nothing.
-4. **Permanent:** the Monday file also scores the dry runs and the final model, so it stays out of all training.
-   Team 9 protection is being set up so every training shard is checked against it, copies included.
-5. **Cleaning:** v1 is raw text. A cleaned copy would be a separate file (`heldout_v1_clean`) and is not the week-2 score
-   unless the plan changes.
-6. **Code** is function level in v1 (The Vault gives single functions with their docstrings). A whole-file code slice
-   would be a separate, later set.
-
-**This PR is a sample for harness testing only.** The scored file is the Monday file named by
-`results/heldout_v1.sha256`. The sample has 20 documents per slice, which is not equal text (English is 35,259 bytes,
-some Indic slices over 200,000), so a bits-per-byte total on it is not a result.
+   The Vault test. A later change is a new, named set (v2), not an edit to v1's bytes.
+2. **Size:** about 0.25 MB of text per slice, 15 slices, about 3.75 MB in all: "enough for the small arms and fast to
+   score" (TSAI).
+3. **Score (plan v1, TSAI 2 Nov):** every slice is reported. An arm wins on the mean bits per byte of three groups:
+   English, code, and the mean of the 11 Indic slices. It must not be worse than the runner-up on code or on the Indic
+   mean by more than the seed spread (seeds 1234 to 1236). Math and science are reported beside it.
+4. **Permanent and kept out of training:** yes (TSAI). C4 validation and the FineWeb-2 test split come from the same web
+   crawl as some training sources, so Team 9 adds held-out v1 to fingerprints v2 as a protected set.
+5. **Raw for ever:** v1 stays raw, so every score compares the same text. A cleaned copy would be `heldout_v1_clean`,
+   reported as its own column.
+6. **Code** is function level in v1 (The Vault gives single functions with their docstrings).
 
 ## Licences and attribution
 

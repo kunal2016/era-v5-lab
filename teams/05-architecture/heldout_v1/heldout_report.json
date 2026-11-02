@@ -1,13 +1,13 @@
 {
   "heldout_file": "data/heldout_v1.jsonl",
-  "heldout_sha256": "51805f10ab9bdfe75722205d82d3a5d3e152e72d9ddd5d689818803a646c18c7",
+  "heldout_sha256": "ce9444452f10003e0df8364bc08c260bf4298ca5f11c64094aa761ecf150272c",
   "fingerprint_set_id": "11e290a44d1467875fdf8bebc55eab21f0a6367f411aab98a4a027a546fd372e",
   "fingerprint_set_version": "v1",
   "scope": "full",
   "matches": 0,
-  "docs_checked": 300,
+  "docs_checked": 1065,
   "checker": "teams/09-evaluation/decontam/decontam_check.py --id-field id --text-field text (full fingerprint set, no --tags/--benchmarks)",
   "checker_output": "heldout_decontam_v1.txt",
-  "checked_on": "2026-11-01",
-  "status": "SAMPLE"
+  "checked_on": "2026-11-02",
+  "status": "FINAL"
 }
