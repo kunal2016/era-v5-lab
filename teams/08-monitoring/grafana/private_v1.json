@@ -1,0 +1,703 @@
+{
+  "uid": "era-v5-private-v1",
+  "title": "ERA V5 Private v1",
+  "tags": [
+    "era-v5",
+    "team08"
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "utc",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "",
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "label": "ClickHouse",
+        "type": "datasource",
+        "query": "grafana-clickhouse-datasource",
+        "current": {},
+        "hide": 0
+      },
+      {
+        "name": "run",
+        "label": "run_id",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${ds}"
+        },
+        "multi": true,
+        "includeAll": true,
+        "allValue": null,
+        "refresh": 2,
+        "sort": 1,
+        "current": {},
+        "query": "SELECT DISTINCT run_id FROM metrics_raw ORDER BY run_id",
+        "definition": "SELECT DISTINCT run_id FROM metrics_raw ORDER BY run_id"
+      },
+      {
+        "name": "bucket",
+        "label": "rollup step bucket",
+        "type": "custom",
+        "query": "10,100,1000,10000",
+        "current": {
+          "text": "100",
+          "value": "100"
+        },
+        "options": [
+          {
+            "text": "10",
+            "value": "10",
+            "selected": false
+          },
+          {
+            "text": "100",
+            "value": "100",
+            "selected": true
+          },
+          {
+            "text": "1000",
+            "value": "1000",
+            "selected": false
+          },
+          {
+            "text": "10000",
+            "value": "10000",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Training (per step, from metrics_raw)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "trend",
+      "title": "Loss (next-token)",
+      "description": "loss_ntp per optimizer step.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'loss_ntp' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 3,
+      "type": "trend",
+      "title": "Loss (multi-token prediction)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'loss_mtp' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 4,
+      "type": "trend",
+      "title": "Learning rate",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'lr' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 5,
+      "type": "trend",
+      "title": "Throughput (tokens/s)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'tokens_per_second' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 6,
+      "type": "trend",
+      "title": "GPU memory allocated (GB)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'gpu_alloc_gb' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decgbytes",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 7,
+      "type": "trend",
+      "title": "Model FLOPs utilization (MFU)",
+      "description": "Fraction in [0,1]. Empty until a run that logs model_flops_utilization is loaded.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'model_flops_utilization' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Rollups (step buckets from metrics_rollup_<N>)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "trend",
+      "title": "Loss (next-token), mean per $bucket-step bucket",
+      "description": "Pick the bucket size (10 / 100 / 1000 / 10000) with the bucket variable.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "rawSql": "SELECT step_bucket AS step, run_id, mean AS value FROM metrics_rollup_${bucket} WHERE name = 'loss_ntp' AND run_id IN ($run) ORDER BY step_bucket",
+          "queryType": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "axisLabel": "step"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      }
+    },
+    {
+      "id": 10,
+      "type": "row",
+      "title": "GPU telemetry (1 s, from gpu_telemetry_1s)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "GPU power (W)",
+      "description": "Empty until gpu_sample telemetry is loaded.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 0,
+          "rawSql": "SELECT time_1s AS time, concat(run_id, ' gpu', toString(rank)) AS series, mean AS value FROM gpu_telemetry_1s WHERE name = 'power_w' AND run_id IN ($run) AND $__timeFilter(time_1s) ORDER BY time_1s",
+          "queryType": "timeseries"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "GPU temperature (C)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "editorType": "sql",
+          "format": 0,
+          "rawSql": "SELECT time_1s AS time, concat(run_id, ' gpu', toString(rank)) AS series, mean AS value FROM gpu_telemetry_1s WHERE name IN ('temp_c','gpu_temp_c') AND run_id IN ($run) AND $__timeFilter(time_1s) ORDER BY time_1s",
+          "queryType": "timeseries"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  ]
+}
