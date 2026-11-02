@@ -73,7 +73,7 @@ case "$mode" in
     *) echo "gpu_health.sh: --mode must be prolog, periodic or full (got '$mode')" >&2; exit 64 ;;
 esac
 
-cmd=("$PYTHON" -I "$SCRIPT_DIR/health_check.py" --mode "$mode")
+cmd=("$PYTHON" -I -B "$SCRIPT_DIR/health_check.py" --mode "$mode")   # -B: no __pycache__ (job packages write only to ./out/)
 [ -n "$report_only" ] && cmd+=("$report_only")
 [ -n "$out" ] && cmd+=(--out "$out")
 cmd+=("${passthrough[@]}")
