@@ -43,8 +43,8 @@ A block in the sheet with these fields, and a `medicine(doc) -> (action, text)`.
 | `ACTION` | `fix`, `drop` or `fix+drop`. |
 | `STAGE` | Stage below. The run order is section order. |
 | `STATUS` | `CANDIDATE`, `APPROVED`, `FAILED`, `BLOCKED` or `DEFERRED`. |
-| `LANGS` | Language tags it runs on. A row outside passes unchanged. |
-| `ORIGIN` | Packs it runs on, comma separated. |
+| `LANGS` | Language tags it runs on. A row outside passes unchanged, except a code row whose `pack_id` is in `ORIGIN`: some code packs label every doc `code`. |
+| `ORIGIN` | Packs it runs on, comma separated. A code or math rule reads it, and its scope is the packs in both `SPEC_PACKS` and `ORIGIN`. |
 | `SOURCE` | Pack whose medicine it came from. |
 | `AUTHOR` | Code field for `medicine_conflicts.py`. Not used in any text. |
 
@@ -54,7 +54,7 @@ Around the block: disease with counts and `doc_id` examples, medicine in words, 
 
 | stage | what | why here |
 |---|---|---|
-| 00 guard | `LANGS` and the pack scope. | A rule must not touch a language it was not tested on. The language tag is taken as correct. |
+| 00 guard | `LANGS` and the pack scope. | A rule must not touch a language it was not tested on. The language tag is taken as correct, except in code packs: a code row whose pack is in `ORIGIN` is taken even when its tag is `code`. |
 | 10 characters | A1, A2, A4, A6. | Later patterns need clean characters. |
 | 20 markup | B3. | Later rules expect the file to start at its real first line. |
 | 30 source | Drops first (E1, E2, C3, C4), then strips (E4, C1). | A generated file with its banner inside the licence survives if the licence goes first. |
@@ -106,7 +106,7 @@ These tools are on `g1-harm-test`, not on this base branch. Results here were ma
 
 `clean.py` is the cleaner. `tools/build_clean.py` generates it from `specv1.md`, which collates the four family sheets, so **add rules to a sheet, never to `clean.py`**.
 
-A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its block, and for a math rule its `ORIGIN` packs too. The build puts those pack IDs in one table, `SCOPE`, at the top of `clean.py`, and each rule reads its entry there. A document goes to the family of its `pack_id` and runs that family's rules in sheet order. A document with a missing or unknown `pack_id` passes unchanged and is not eligible for release. `run_clean.py` takes `pack_id` from the file name when a pack has no such column. `make_harm_tests.py` tests each rule only on the gold sets of the packs in its `SCOPE` entry. It also runs every rule that does not apply to a pack on that whole pack, where it must change nothing.
+A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its block, and for a code or math rule its `ORIGIN` packs too. The build puts those pack IDs in one table, `SCOPE`, at the top of `clean.py`, and each rule reads its entry there. A document goes to the family of its `pack_id` and runs that family's rules in sheet order. A document with a missing or unknown `pack_id` passes unchanged and is not eligible for release. `run_clean.py` takes `pack_id` from the file name when a pack has no such column. `make_harm_tests.py` tests each rule only on the gold sets of the packs in its `SCOPE` entry. It also runs every rule that does not apply to a pack on that whole pack, where it must change nothing.
 
 | where | what | who changes it |
 |---|---|---|

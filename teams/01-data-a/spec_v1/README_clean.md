@@ -296,7 +296,7 @@ python -I spec_v1/tools/build_clean.py --sheet spec_v1/sheets/specv1.md --out /t
 ### What the build does
 
 1. It finds each `## Medicine N — <family> / <code> / \`<ID>\`` section and its Python block.
-2. It reads the block's packs: the `SPEC_PACKS` line, and for a math rule its `ORIGIN` packs as well (`PACKS = set(ORIGIN.split(", "))`). The rule's scope is the packs both allow.
+2. It reads the block's packs: the `SPEC_PACKS` line, and for a code or math rule its `ORIGIN` packs as well (`PACKS = set(ORIGIN.split(", "))`). The rule's scope is the packs both allow.
 3. It writes those packs into `SCOPE` at the top of `clean.py`, and points the block's `SPEC_PACKS` (and `PACKS`) at its `SCOPE` entry. So pack IDs are written in one place.
 4. It puts each block in its own closure (`_<family>_<code>_<nnn>`), so helpers with the same name in two blocks do not clash. Two other changes are made to the blocks:
    - The `AUTHOR` line is dropped.
@@ -661,10 +661,16 @@ SCOPE = {
 }
 ```
 
-Each rule applies to every pack of its family, except for seven math rules whose `ORIGIN` names one math pack:
+Each rule applies to every pack of its family, except for the code rules and seven math rules whose `ORIGIN` names fewer packs:
 
 | packs | rules |
 |---|---|
+| `code-go` only | `DA-E1-001`, `DA-C3-002`, `DA-E4-005`, `DA-C1-004` |
+| `code-java` only | `DA-A4-003`, `DA-E1-006`, `DA-C4-002`, `DA-E4-009`, `DA-C1-005` |
+| `code-js-ts` only | `DA-E1-008`, `DA-E4-007` |
+| `code-cpp` only | `DA-E1-005`, `DA-E1-007` |
+| `code-python`, `code-rust` | `DA-E1-004` |
+| every code pack except `code-js-ts` | `DA-E4-010` |
 | `math-finemath` only | `DA-A1-005`, `DA-A6-003`, `DA-C1-001`, `DA-C2-001`, `DA-C3-004`, `DA-C3-005` |
 | `math-megamath` only | `DA-C5-001` |
 
@@ -675,7 +681,7 @@ The scope is checked twice, and both checks read `SCOPE`:
 
 **To change a rule's packs,** do these in order:
 
-1. Edit its `SPEC_PACKS` line in `specv1.md`. For a math rule, edit `ORIGIN` too.
+1. Edit its `SPEC_PACKS` line in `specv1.md`. For a code or math rule, edit `ORIGIN` too.
 2. Rebuild (step 1).
 3. Run the unit tests (step 2).
 4. Run the harm tests (step 4).
@@ -685,7 +691,7 @@ The scope is checked twice, and both checks read `SCOPE`:
 `clean.py` cleans only the 13 packs in `SCOPE`, and `run_clean.py` stops on any other. A new pack, or a new version of one such as `en-fineweb-edu-v2`, is not cleaned until it is added. Do not rename it to a known pack ID, and do not choose rules by name prefix (`en-*`, `code-*`): each rule's scope is tested on the gold sets of its own packs only. To add one, in order:
 
 1. Get a gold set for it in `gold/<pack_id>_gold.csv`. Without one its harm test is NOT TESTABLE, and its rules cannot be signed off.
-2. Add the pack ID to the `SPEC_PACKS` line of each rule that should run on it in `specv1.md`.
+2. Add the pack ID to the `SPEC_PACKS` line of each rule that should run on it in `specv1.md`, and to its `ORIGIN` line (code and math rules).
 3. Rebuild (step 1). The pack then has a family in `clean._FAMILY`, and `run_clean.py` accepts it.
 4. Add it to `FAMILIES` in `spec_v1/tests/test_clean.py` and run the unit tests (step 2).
 5. Run the harm tests (step 4) on all the packs.
