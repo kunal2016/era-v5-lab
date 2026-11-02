@@ -1,4 +1,4 @@
-Restore test on CPU, Team 05 tiny MoE (issue millermuttu/era-v5-lab#2)
+Restore test on CPU, Team 05 tiny MoE 
 Date: 2 Nov 2026
 
 Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so the run is CPU only):
