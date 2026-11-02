@@ -203,7 +203,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(remove_bom_characters(doc["text"]), doc["text"])
 
@@ -271,7 +271,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_a2(doc), doc["text"])
 
@@ -341,7 +341,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_a6(doc), doc["text"])
 
@@ -409,7 +409,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_a4(doc), doc["text"])
 
@@ -479,7 +479,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(m8_clean_replacement_chars(doc["text"]), doc["text"])
 
@@ -549,7 +549,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(remove_metadata_prefix(doc["text"]), doc["text"])
 
@@ -643,7 +643,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(drop_generated(doc["text"]), doc["text"])
 
@@ -723,7 +723,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(e1_generated(doc["text"]), doc["text"])
 
@@ -824,7 +824,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e1(doc), doc["text"])
 
@@ -893,7 +893,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(drop_e1(doc["text"]), doc["text"])
 
@@ -965,7 +965,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e1(doc), doc["text"])
 
@@ -1036,7 +1036,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(m7_drop_generated(doc["text"]), doc["text"])
 
@@ -1114,7 +1114,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(drop_blob(doc["text"]), doc["text"])
 
@@ -1212,7 +1212,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_c3(doc), doc["text"])
 
@@ -1279,7 +1279,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(m9_drop_joined(doc["text"]), doc["text"])
 
@@ -1370,7 +1370,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e4(doc), doc["text"])
 
@@ -1501,7 +1501,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e4_fixed(doc), doc["text"])
 
@@ -1619,7 +1619,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(strip_licence_header(doc["text"]), doc["text"])
 
@@ -1696,7 +1696,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e4(doc["text"]), doc["text"])
 
@@ -1767,7 +1767,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_c1(doc), doc["text"])
 
@@ -1871,7 +1871,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(m6_strip_ide_templates(doc["text"]), doc["text"])
 
@@ -1941,7 +1941,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_b4(doc), doc["text"])
 
@@ -2012,7 +2012,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e3(doc), doc["text"])
 
@@ -2126,7 +2126,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS or doc.get("pack_id") not in ORIGIN:
         return ("keep", doc["text"])
     return _std(medicine_e3(doc["text"]), doc["text"])
 
