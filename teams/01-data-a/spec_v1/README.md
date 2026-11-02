@@ -11,7 +11,7 @@ teams/01-data-a/
     spec_v1_<family>.md     scope, order, conflicts, open items, freeze state
     medicine_<family>.md    the runnable rules: one block per rule, in run order
     decisions_<family>.md   why each rule was picked or not, for each disease
-    specv1.md               the four family sheets collated: what spec_v1/tools/build_clean.py reads
+    specv1.md               the five family sheets collated: what spec_v1/tools/build_clean.py reads
     clean.py                the cleaner, generated from specv1.md, with the scope table at the top
     README_clean.md         how to build, test and run clean.py, step by step
     run_clean.py            runs the cleaner on one pack, or on one part of a pack with --pack-id
@@ -26,7 +26,7 @@ teams/01-data-a/
   tools/                    build, harm test run, F1 rule, checks
 ```
 
-Families: `code`, `en`, `math`. Science and Indic follow when their owners are set.
+Families: `code`, `english`, `math`, `sci`, and `indic`. Indic covers 13 packs through selected candidates; see [Indic integration](README_indic.md) for deferred rules and validation limits.
 
 **One source for each fact.** Rules live only in `medicine_<family>.md`. The registry of the template's §3 is the table at the top of that file, so it cannot drift from the code. Numbers come from `results/`, not from hand-typed tables.
 
@@ -38,7 +38,7 @@ A block in the sheet with these fields, and a `medicine(doc) -> (action, text)`.
 
 | field | meaning |
 |---|---|
-| `RULE_ID` | Stable `DA-<code>-<nnn>`. Never reused. |
+| `RULE_ID` | Stable `DA-<code>-<nnn>` or `DB-<code>-<nnn>`. Never reused. |
 | `CODE` | Disease code from `DISEASES.md`. |
 | `ACTION` | `fix`, `drop` or `fix+drop`. |
 | `STAGE` | Stage below. The run order is section order. |
