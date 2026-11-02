@@ -1,3 +1,4 @@
+import json
 import math
 import sys
 from pathlib import Path
@@ -7,7 +8,7 @@ import pytest
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from alarms import AlarmMonitor, max_vio_and_dead, run_synthetic
+from alarms import AlarmMonitor, max_vio_and_dead, run_synthetic, synthetic_stream
 
 
 def test_synthetic_3000_steps():
@@ -237,4 +238,38 @@ def test_static_bound_latches_and_rearms():
     assert mon.step(5, docs_dropped=15.0, gpu_temp_c=60.0) == []
     a3 = mon.step(6, docs_dropped=15.0, gpu_temp_c=90.0)
     assert len(a3) == 1 and a3[0]["rule"] == "static_bound" and a3[0]["metric"] == "gpu_temp_c"
+
+
+def test_checkpoint_state_dict_roundtrip_bit_equal():
+    rows, _ = synthetic_stream(steps=500, seed=15)
+    kw = dict(ema_z_threshold=4.5, tps_patience=5, moe_patience=5, bounds={"gpu_alloc_gib": (None, 40.0)})
+    mon_a = AlarmMonitor(**kw)
+    mon_b = AlarmMonitor(**kw)
+
+    alarms_a = []
+    alarms_b = []
+    saved_state = None
+    for row in rows:
+        s = row["step"]
+        metrics = {k: v for k, v in row.items() if k != "step"}
+        metrics["expert_load"] = BAD_LOAD if 240 <= s < 248 else [0.25, 0.25, 0.25, 0.25]
+        alarms_a.extend(mon_a.step(s, **metrics))
+        if s < 250:
+            alarms_b.extend(mon_b.step(s, **metrics))
+            if s == 244:
+                saved_state = json.loads(json.dumps(mon_b.state_dict()))
+
+    # Simulate a crash after step 249 and restore from step 244 checkpoint.
+    mon_restored = AlarmMonitor(**kw)
+    mon_restored.load_state_dict(saved_state)
+    alarms_restored = [a for a in alarms_b if a["step"] <= 244]
+    for row in rows[245:]:
+        s = row["step"]
+        metrics = {k: v for k, v in row.items() if k != "step"}
+        metrics["expert_load"] = BAD_LOAD if 240 <= s < 248 else [0.25, 0.25, 0.25, 0.25]
+        alarms_restored.extend(mon_restored.step(s, **metrics))
+
+    assert alarms_restored == alarms_a
+    assert mon_restored.state_dict() == mon_a.state_dict()
+
 

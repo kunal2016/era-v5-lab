@@ -142,6 +142,60 @@ class AlarmMonitor:
         """Check a single metric at `step` and return a list of alarm dicts."""
         return self.step(step, **{metric: value})
 
+    def state_dict(self):
+        """Return a JSON-serializable snapshot of trailing windows, EMA stats, and streak counters for checkpointing."""
+        return {
+            "schema": "v5-alarms/1",
+            "trailing": {k: list(v.buf) for k, v in self._trailing.items()},
+            "ema": {"mu": self._ema_mu, "var": self._ema_var, "seen": self._ema_seen},
+            "tps": {
+                "buf": list(self._tps_stats.buf),
+                "slow_streak": self._tps_slow_streak,
+                "last_step": self._tps_last_step,
+            },
+            "moe": {
+                "bad_streak": dict(self._moe_bad_streak),
+                "last_step": dict(self._moe_last_step),
+            },
+            "bound_latched": [list(x) for x in sorted(self._bound_latched)],
+        }
+
+    def load_state_dict(self, state):
+        """Restore alarm state from a checkpoint dictionary produced by `state_dict()`."""
+        if not isinstance(state, dict):
+            raise ValueError("AlarmMonitor state_dict must be a dict")
+        trailing = state.get("trailing") or {}
+        for k, stats in self._trailing.items():
+            stats.buf.clear()
+            for x in trailing.get(k, ()):
+                f = _to_float(x)
+                if f is not None and math.isfinite(f):
+                    stats.push(f)
+        ema = state.get("ema") or {}
+        mu = ema.get("mu")
+        self._ema_mu = _to_float(mu) if mu is not None else None
+        self._ema_var = float(_to_float(ema.get("var", 0.0)) or 0.0)
+        self._ema_seen = int(ema.get("seen", 0) or 0)
+        tps = state.get("tps") or {}
+        self._tps_stats.buf.clear()
+        for x in tps.get("buf", ()):
+            f = _to_float(x)
+            if f is not None and math.isfinite(f) and f > 0:
+                self._tps_stats.push(f)
+        self._tps_slow_streak = int(tps.get("slow_streak", 0) or 0)
+        last_tps = tps.get("last_step")
+        self._tps_last_step = int(last_tps) if last_tps is not None else None
+        moe = state.get("moe") or {}
+        self._moe_bad_streak = {str(k): int(v) for k, v in (moe.get("bad_streak") or {}).items()}
+        self._moe_last_step = {
+            str(k): int(v) for k, v in (moe.get("last_step") or {}).items() if v is not None
+        }
+        self._bound_latched = {
+            (str(item[0]), str(item[1]))
+            for item in (state.get("bound_latched") or ())
+            if isinstance(item, (list, tuple)) and len(item) == 2
+        }
+
     def step(self, step, **metrics):
         """Inspect one step's metrics and return a list of fired alarm dicts."""
         alarms = []

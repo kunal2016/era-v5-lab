@@ -45,6 +45,7 @@ Input and reset behaviour:
 - Throughput and MoE streaks are tracked per metric (per layer for MoE). A gap, repeat or backward step in that metric, or a null, malformed, negative or non-finite value, restarts the streak; baseline history is kept.
 - Zero throughput counts as a slowdown once 20 positive samples (after step 0) form a baseline; it never enters the baseline.
 - Severities are labels: the caller stops training and handles notifications. Spike events are returned on every qualifying step.
+- **Checkpoint hand-off (Team 07 `Checkpointer`):** `monitor.state_dict()` returns a JSON-serializable snapshot (`schema: "v5-alarms/1"`) of all trailing windows (`_trailing`), ZClip EMA stats, throughput baseline and streak counters, per-layer MoE streaks, and latched static bounds; `monitor.load_state_dict(state)` restores it so a run resumed from a checkpoint continues with identical alarm state and no cold-start warmup gap.
 
 ## 2. Results on 3,000 synthetic steps (`--synthetic 3000`)
 
