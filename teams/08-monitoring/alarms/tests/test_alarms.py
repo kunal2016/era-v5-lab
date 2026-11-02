@@ -49,11 +49,12 @@ def test_spike_score_7sigma_and_no_window_poisoning():
     assert len(a2) == 1 and a2[0]["rule"] == "spike_score" and a2[0]["severity"] == "page"
 
 
-def test_duplicate_loss_and_loss_ntp_fires_once():
+def test_duplicate_nonfinite_loss_and_loss_ntp_both_stop():
     mon = AlarmMonitor()
     out = mon.step(0, loss_ntp=float("nan"), loss=float("nan"))
-    assert len(out) == 1
-    assert out[0]["metric"] == "loss_ntp"
+    assert len(out) == 2
+    assert {a["metric"] for a in out} == {"loss_ntp", "loss"}
+    assert all(a["rule"] == "non_finite" and a["severity"] == "stop" for a in out)
 
 
 def test_ema_z_warns_without_paging():
@@ -273,3 +274,49 @@ def test_checkpoint_state_dict_roundtrip_bit_equal():
     assert mon_restored.state_dict() == mon_a.state_dict()
 
 
+def test_nonfinite_loss_is_checked_with_finite_loss_ntp():
+    out = AlarmMonitor().step(10, loss_ntp=1.0, loss=float("nan"))
+    assert len(out) == 1
+    assert out[0]["metric"] == "loss"
+    assert out[0]["rule"] == "non_finite"
+    assert out[0]["severity"] == "stop"
+
+
+def test_duplicate_finite_loss_is_not_spike_checked_twice():
+    mon = AlarmMonitor()
+    for step in range(100):
+        value = 1.0 + (0.01 if step % 2 == 0 else -0.01)
+        assert mon.step(step, loss_ntp=value, loss=value) == []
+    out = mon.step(100, loss_ntp=2.0, loss=2.0)
+    assert len(out) == 1
+    assert out[0]["metric"] == "loss_ntp"
+    assert out[0]["rule"] == "spike_score"
+    assert len(mon._trailing["loss"]) == 0
+
+
+def test_checkpoint_integer_moe_layer_keeps_streak():
+    uninterrupted = AlarmMonitor(moe_patience=10)
+    for step in range(1, 6):
+        assert uninterrupted.step(step, expert_load={0: BAD_LOAD}) == []
+    restored = AlarmMonitor(moe_patience=10)
+    restored.load_state_dict(json.loads(json.dumps(uninterrupted.state_dict())))
+    for step in range(6, 10):
+        assert uninterrupted.step(step, expert_load={0: BAD_LOAD}) == []
+        assert restored.step(step, expert_load={0: BAD_LOAD}) == []
+    expected = uninterrupted.step(10, expert_load={0: BAD_LOAD})
+    assert len(expected) == 1
+    assert expected[0]["rule"] == "moe_routing"
+    assert expected[0]["layer"] == 0
+    assert restored.step(10, expert_load={0: BAD_LOAD}) == expected
+    assert restored.state_dict() == uninterrupted.state_dict()
+
+
+def test_checkpoint_rejects_unknown_schema_before_changing_state():
+    mon = AlarmMonitor()
+    mon.step(0, loss_ntp=1.0)
+    before = mon.state_dict()
+    for schema in (None, "v5-alarms/2"):
+        invalid = dict(before, schema=schema)
+        with pytest.raises(ValueError, match="schema"):
+            mon.load_state_dict(invalid)
+        assert mon.state_dict() == before

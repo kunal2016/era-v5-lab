@@ -47,6 +47,8 @@ Input and reset behaviour:
 - Severities are labels: the caller stops training and handles notifications. Spike events are returned on every qualifying step.
 - **Checkpoint hand-off (Team 07 `Checkpointer`):** `monitor.state_dict()` returns a JSON-serializable snapshot (`schema: "v5-alarms/1"`) of all trailing windows (`_trailing`), ZClip EMA stats, throughput baseline and streak counters, per-layer MoE streaks, and latched static bounds; `monitor.load_state_dict(state)` restores it so a run resumed from a checkpoint continues with identical alarm state and no cold-start warmup gap.
 
+Resume with a monitor constructed using the same settings, including `bounds`; configuration is not saved in the checkpoint. Checkpoints must use schema `v5-alarms/1`.
+
 ## 2. Results on 3,000 synthetic steps (`--synthetic 3000`)
 
 The synthetic stream generates 3,000 steps of `loss_ntp`, `loss_mtp`, `gradient_norm`, `tokens_per_second`, `lr`, and `gpu_alloc_gib` with a 200-step warmup, exponential decay, Gaussian/lognormal step noise, and **11 planted faults**:

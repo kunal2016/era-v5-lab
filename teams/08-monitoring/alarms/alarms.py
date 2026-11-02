@@ -77,7 +77,7 @@ def max_vio_and_dead(loads):
 
 
 class _TrailingStats:
-    """O(1) trailing window mean and standard deviation over up to `maxlen` clean values."""
+    """Trailing window mean and standard deviation over up to `maxlen` clean values."""
 
     def __init__(self, maxlen=1000):
         self.buf = deque(maxlen=maxlen)
@@ -164,6 +164,8 @@ class AlarmMonitor:
         """Restore alarm state from a checkpoint dictionary produced by `state_dict()`."""
         if not isinstance(state, dict):
             raise ValueError("AlarmMonitor state_dict must be a dict")
+        if state.get("schema") != "v5-alarms/1":
+            raise ValueError("Unsupported AlarmMonitor checkpoint schema")
         trailing = state.get("trailing") or {}
         for k, stats in self._trailing.items():
             stats.buf.clear()
@@ -199,10 +201,6 @@ class AlarmMonitor:
     def step(self, step, **metrics):
         """Inspect one step's metrics and return a list of fired alarm dicts."""
         alarms = []
-        # train.py writes `loss` as a copy of `loss_ntp`; do not double-check it when `loss_ntp` is present.
-        if "loss_ntp" in metrics and "loss" in metrics:
-            metrics = {k: v for k, v in metrics.items() if k != "loss"}
-
         # 1. Non-finite check (NaN / Inf) on any metric -> stop at once.
         nonfinite_names = set()
         for name, raw in metrics.items():
@@ -220,6 +218,10 @@ class AlarmMonitor:
                         "detail": f"{name} is {val} at step {step}; stop at once",
                     })
                     break
+
+        # Check loss aliases for non-finite values before deduplicating.
+        if "loss_ntp" in metrics and "loss" in metrics:
+            metrics = {k: v for k, v in metrics.items() if k != "loss"}
 
         # 2. OLMo 2 trailing-window spike score (7 sigma over last 1,000 clean steps).
         paged_grad = False
@@ -318,26 +320,27 @@ class AlarmMonitor:
             if "expert_load" in nonfinite_names:
                 layers = dict.fromkeys(layers)  # treat every layer in this row as invalid
             for layer, loads in layers.items():
-                last = self._moe_last_step.get(layer)
+                key = str(layer)
+                last = self._moe_last_step.get(key)
                 if last is not None and step != last + 1:
-                    self._moe_bad_streak[layer] = 0
-                self._moe_last_step[layer] = step
+                    self._moe_bad_streak[key] = 0
+                self._moe_last_step[key] = step
                 if not isinstance(loads, (list, tuple)) and not hasattr(loads, "tolist"):
-                    self._moe_bad_streak[layer] = 0
+                    self._moe_bad_streak[key] = 0
                     continue
                 if hasattr(loads, "tolist"):
                     loads = loads.tolist()
                 if not isinstance(loads, (list, tuple)) or not loads:
-                    self._moe_bad_streak[layer] = 0
+                    self._moe_bad_streak[key] = 0
                     continue
                 vals = [_to_float(x) for x in loads]
                 if any(x is None or not math.isfinite(x) or x < 0 for x in vals):
-                    self._moe_bad_streak[layer] = 0
+                    self._moe_bad_streak[key] = 0
                     continue
                 mv, dead = max_vio_and_dead(loads)
                 if mv > self.moe_max_vio_limit or dead > 0:
-                    self._moe_bad_streak[layer] = self._moe_bad_streak.get(layer, 0) + 1
-                    if self._moe_bad_streak[layer] == self.moe_patience:
+                    self._moe_bad_streak[key] = self._moe_bad_streak.get(key, 0) + 1
+                    if self._moe_bad_streak[key] == self.moe_patience:
                         alarms.append({
                             "step": step,
                             "metric": "expert_load",
@@ -350,7 +353,7 @@ class AlarmMonitor:
                                        f"for {self.moe_patience} consecutive steps"),
                         })
                 else:
-                    self._moe_bad_streak[layer] = 0
+                    self._moe_bad_streak[key] = 0
 
         # 6. Optional static (lo, hi) bounds with edge-triggered latching (folded in from PR #122).
         # Fires once when a metric crosses below `lo` or above `hi`, and re-arms only when it returns in-bounds.
