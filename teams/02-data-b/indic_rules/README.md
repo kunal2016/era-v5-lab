@@ -8,6 +8,7 @@ Task 1 of Data B's week 2 (#211). It hands Data B's Indic cleaning rules to Data
 | `medicine_indic.md` | The 146 rules that are ready, in Data A's form and run order |
 | `rules_status.md` | All 363 Indic medicines from the open diagnosis PRs, with the reason each one is in or not yet |
 | `load_rules.py` | Reads the rules out of `medicine_indic.md`, so tests and `clean.py` use the sheet itself |
+| `test_indic_rules.py` | 7 checks on every rule, with made-up text |
 
 ## Which rules are in
 A rule is in when its author's `medicine.md` reports a pass on **its own pack's gold set at today's size**
@@ -28,6 +29,31 @@ for rule in load():                      # in run order
     action, text = rule.medicine(doc)    # doc = {doc_id, text, url, lang_label, pack_id}
 ```
 The code in the sheet is run as code: read it first.
+
+## Tests
+```
+python -I test_indic_rules.py        # or: python -m pytest test_indic_rules.py
+```
+For each rule it makes two made-up documents in the rule's language: a clean one and one with junk (boilerplate,
+HTML, mojibake, a made-up email). Joiners are written as `‍` and `‌`. It checks:
+
+| # | Check | A rule fails when |
+|---|---|---|
+| 1 | Loads | its block does not run on its own |
+| 2 | Other packs | it changes a document of another pack |
+| 3 | Result form | it returns anything but `("keep" \| "fix" \| "drop", text)` |
+| 4 | ZWJ, ZWNJ | a fixed document has a different number of ZWJ (U+200D) or ZWNJ (U+200C) |
+| 5 | NFC | a fixed document is no longer NFC, or loses a compatibility character from the text it should keep (NFKC) |
+| 6 | Nukta | a fixed document has a different number of nukta signs (counted after NFD) |
+| 7 | Second run | running the rule again on its output changes it again |
+
+**Result on 3 Nov 2026: 175 pass, 0 fail, 1 skipped.** `DB-F2-001` is skipped because it needs the Itihasa test set,
+which is not in the repo. The test was first checked on 6 made-up rules, 4 of them broken on purpose (one per check
+2, 4, 5 and 7): it caught all 4 and passed the 2 good ones.
+
+**What this does not show:** 45 of the 176 rules acted on the test text. The other 131 found nothing to fix in it,
+because each targets something of its own pack, so checks 4 to 7 had nothing to test for them. For real text, the
+joiner and normal-form audit is part of each author's harm run on their pack's gold set (`harm_test_indic.py`).
 
 ## Limits
 - Harm results are as each author reports them. Data B has not re-run them, because the packs are not in the repository.

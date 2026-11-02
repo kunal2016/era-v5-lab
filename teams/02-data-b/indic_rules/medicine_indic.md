@@ -12,6 +12,8 @@ Each author's code is copied unchanged: every python block of their section, in 
 
 Harm results are **as each author reports them** in their `medicine.md`. Data B has not re-run them: the packs are not in the repository. IDs are provisional.
 
+Tests: `test_indic_rules.py` runs 7 checks on every rule with made-up text (ZWJ and ZWNJ counts, NFC, nukta, second run, other packs untouched, result form, loads). Result and limits: `README.md`.
+
 Two authors report their result on their language's combined gold set: PR #3 (`ind-te-fw2`, Telugu, 46 documents) and PR #63 (`ind-kn-fw2`, Kannada, 175 documents). Each combined set holds all of today's gold documents of the author's own pack (Kannada checked by doc_id; Telugu by the gold file's history on main, unchanged since 29 Oct), so 0 changed and 0 dropped on the combined set means 0 and 0 on their own pack.
 
 **A pass on a small gold set is weak.** Changing 0 of n gold documents shows only that the rule harms fewer than about 3 in n clean documents (the rule of three, as in Data A's README). The column "a pass shows harm under" gives 3/n for each rule's pack: 0 of 5 (Telugu sangraha-s) shows under 60%, 0 of 18 (Telugu fw2) under 17%, 0 of 238 (Bengali fw2) under 1.3%. To show under 1%, a pack needs more than 300 gold documents; none has that yet. Telugu's three packs hold 50 gold documents in all (18, 5 and 27).
