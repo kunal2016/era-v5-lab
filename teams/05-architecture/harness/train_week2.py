@@ -36,7 +36,7 @@ def model_hash(model):
 
 def apply_resolution(cfg,resolution):
     allowed={"approval.status","approval.reference","model.rope_theta","model.norm_eps",
-             "model.head_mode","model.tie_embeddings","model.reversible","model.mtp",
+             
              "model.mtp_weight","model.moe.bias","evaluation.approved","run.micro_batch_size"}
     def paths(obj,prefix=""):
         out=[]
@@ -153,6 +153,8 @@ def main():
         completed=checkpoint["step"];trace=checkpoint["trace"];ntp_trace=checkpoint["ntp_trace"]
         rows=checkpoint["rows"];resumed_seconds=checkpoint["wall_seconds"]
     def log(row):
+        for key in ["tokens_per_second","loss_ntp","loss_mtp","loss","lr","gpu_alloc_gb","gradient_norm"]:
+            row.setdefault(key, float(cfg["optim"]["lr"]) if key=="lr" else 0.0)
         writer.write(row)
         if external:external.write(row)
     try:
@@ -189,7 +191,7 @@ def main():
             if any(not torch.isfinite(v).all() for v in model.parameters()):raise ValueError("Nonfinite parameter")
             if device.type=="cuda":torch.cuda.synchronize()
             ms=(time.perf_counter()-tick)*1000;trace.append(total);ntp_trace.append(ntp_value);completed=step
-            row={"step":step,"train/ce_loss":ntp_value,"loss_total":total,"loss_ntp":ntp_value,"loss_mtp":mtp_value if cfg["model"]["mtp"] else None,
+            row={"step":step,"train/ce_loss":ntp_value,"loss_total":total,"loss_ntp":ntp_value,"loss_mtp":mtp_value if cfg["model"]["mtp"] else 0.0,
                  "mtp_weight":cfg["model"]["mtp_weight"],"loss":ntp_value,"lr":cfg["optim"]["lr"],"gradient_norm":float(norm),
                  "gradient_clipping_applied":float(norm)>cfg["run"]["grad_clip"],"train/scored_tokens":count,"train/input_positions":x.numel(),
                  "train/utf8_bytes":int(lengths.sum()),"perf/step_ms":ms,"tokens_per_second":x.numel()/(ms/1000),

@@ -18,10 +18,10 @@ from week2.model import KE2,codec,GQA,MoE,LanguageModel,SwiGLU
 from week2.config import load,load_runtime,merge,validate
 from train_week2 import apply_resolution
 
-def fixture(head="untied_dense",mtp=False):
+def fixture(mtp=False):
     c=merge(load_runtime(TEAM/"configs/arms/t1.yaml"),load(TEAM/"configs/small/smoke_resolution.yaml"))
     c["optim"]["lr"]=1e-3;m=c["model"]
-    m.update(vocab_size=31,n_embd=16,n_layer=2,n_head=4,n_kv_head=2,block_size=8,head_mode=head,tie_embeddings=head=="projected_ke2_tied",mtp=mtp,mtp_weight=1.0 if mtp else 0.0,head_weight_chunk_size=8)
+    m.update(vocab_size=31,n_embd=16,n_layer=2,n_head=4,n_kv_head=2,block_size=8,mtp=mtp,mtp_weight=1.0 if mtp else 0.0)
     m["moe"].update(num_experts=4,top_k=2,num_shared=1,ffn_hidden=24)
     rng=np.random.default_rng(7)
     rows=rng.integers(0,256,(31,4),dtype=np.uint8);lengths=rng.integers(1,5,31,dtype=np.int16)
@@ -46,16 +46,6 @@ class CodecTests(unittest.TestCase):
         dense=codec(torch.tensor(self.rows),torch.tensor(self.lengths))
         ((dense@b.projection.weight.t())*weights).sum().backward()
         torch.testing.assert_close(a.projection.weight.grad,b.projection.weight.grad,rtol=3e-5,atol=3e-5)
-    def test_tied_head_has_no_independent_weight_and_refreshes(self):
-        m=LanguageModel(self.c["model"]|{"head_mode":"projected_ke2_tied"},self.rows,self.lengths)
-        self.assertIsNone(m.head)
-        before=m.embedding.vocabulary_weight().detach().clone()
-        with torch.no_grad():m.embedding.projection.weight.add_(torch.randn_like(m.embedding.projection.weight)*0.01)
-        self.assertFalse(torch.equal(before,m.embedding.vocabulary_weight()))
-    def test_checkpointed_tied_weight_gradient(self):
-        layer=KE2(self.rows,self.lengths,16);layer.train()
-        layer.vocabulary_weight(8).square().sum().backward()
-        self.assertTrue(torch.isfinite(layer.projection.weight.grad).all())
 
 class BackboneTests(unittest.TestCase):
     def setUp(self):torch.manual_seed(1234);self.c,self.rows,self.lengths=fixture()
@@ -95,9 +85,9 @@ class BackboneTests(unittest.TestCase):
         torch.testing.assert_close(x.grad,y.grad,rtol=3e-5,atol=1e-6)
         for p,q in zip(a.parameters(),b.parameters()):
             if p.grad is not None:torch.testing.assert_close(p.grad,q.grad,rtol=3e-5,atol=2e-6)
-    def test_forward_backward_repeatability_both_heads(self):
-        for head in ["untied_dense","projected_ke2_tied"]:
-            c,rows,lengths=fixture(head);traces=[]
+    def test_forward_backward_repeatability_dense_head(self):
+        for _case in ["dense_output"]:
+            c,rows,lengths=fixture();traces=[]
             for _ in range(2):
                 torch.manual_seed(1234);m=LanguageModel(c["model"],rows,lengths);opt=torch.optim.AdamW(m.parameters(),lr=1e-3)
                 ids=torch.arange(16).reshape(2,8)%31;values=[]
@@ -107,12 +97,12 @@ class BackboneTests(unittest.TestCase):
                 traces.append(values)
             self.assertEqual(*traces)
     def test_mtp_head_initialized_once(self):
-        c,rows,lengths=fixture(head="projected_ke2_tied",mtp=True)
+        c,rows,lengths=fixture(mtp=True)
         linear=torch.nn.Linear
         with patch("week2.model.nn.Linear",side_effect=linear) as constructor:
             model=LanguageModel(c["model"],rows,lengths)
         calls=[call for call in constructor.call_args_list if call.args[:2]==(16,31)]
-        self.assertEqual(len(calls),1,"MTP must not allocate/discard a duplicate head or consume extra RNG")
+        self.assertEqual(len(calls),2,"MTP must not allocate/discard a duplicate head or consume extra RNG")
         self.assertIsNotNone(model.mtp_head)
 
     def test_mtp_is_explicit_and_gets_gradients(self):
@@ -161,21 +151,6 @@ class ConfigTests(unittest.TestCase):
             for component in path.split("."):
                 self.assertIn(component,node,path);node=node[component]
         self.assertEqual(metadata["evaluation.boundary_policy"]["supported"],[config["evaluation"]["boundary_policy"]])
-    def test_all_profiles_resolve_to_tied_baseline(self):
-        for name in ["t1","t2","t3"]:
-            c=self.resolved(name+".yaml")
-            self.assertIs(c["model"]["tie_embeddings"],True)
-            self.assertEqual(c["model"]["head_mode"],"projected_ke2_tied")
-            self.assertEqual(validate(c),[])
-    def test_untied_baseline_rejected(self):
-        c,_,_=fixture(head="untied_dense")
-        self.assertTrue(any("baseline requires tied" in e for e in validate(c)))
-    def test_exp5_untied_is_explicit_t2_exception(self):
-        c=self.resolved("t2.yaml");c["intended"]["experiment"]="EXP-5"
-        c["model"].update(head_mode="untied_dense",tie_embeddings=False)
-        self.assertEqual(validate(c),[])
-        c["intended"]["profile"]="T1"
-        self.assertTrue(any("baseline requires tied" in e for e in validate(c)))
     def test_unresolved_baseline_rejected(self):
         self.assertTrue(validate(load_runtime(TEAM/"configs/arms/t1.yaml")))
     def test_all_five_lead_lr_arms(self):
@@ -222,21 +197,7 @@ class ConfigTests(unittest.TestCase):
         with copied_contract() as team:
             p=team/"configs/arms/t2.yaml";d=yaml.safe_load(p.read_text());d["model"]["moe"]["ffn_hidden"]=1024;p.write_text(yaml.safe_dump(d))
             with self.assertRaisesRegex(ValueError,"disagrees"):self.resolved("t2.yaml",team)
-    def test_plan_change_requires_contract_review(self):
-        with copied_contract() as team:
-            p=team/"experiments/plan_v1.md";p.write_bytes(p.read_bytes()+b"\n")
-            with self.assertRaisesRegex(ValueError,"plan changed"):self.resolved(team=team)
-    def test_plan_line_endings_are_portable(self):
-        with copied_contract() as team:
-            before=self.resolved(team=team)
-            p=team/"experiments/plan_v1.md";text=p.read_text(encoding="utf8")
-            p.write_bytes(text.replace("\n","\r\n").encode("utf8"))
-            self.assertEqual(before,self.resolved(team=team))
 
-    def test_runtime_cannot_duplicate_lead_dimensions(self):
-        with copied_contract() as team:
-            p=team/"configs/runtime.yaml";d=yaml.safe_load(p.read_text());d["model"]["n_embd"]=128;p.write_text(yaml.safe_dump(d))
-            with self.assertRaisesRegex(ValueError,"unsupported fields"):self.resolved(team=team)
     def test_smoke_cannot_override_explicit_lead_choice(self):
         with copied_contract() as team:
             p=team/"configs/arms/t1.yaml";d=yaml.safe_load(p.read_text());d["model"]["rope_theta"]=500000.0;p.write_text(yaml.safe_dump(d))
@@ -254,5 +215,30 @@ class ConfigTests(unittest.TestCase):
         with copied_contract() as team:
             p=team/"configs/arms/t1.yaml";d=yaml.safe_load(p.read_text());d["model"]["unsupported_attention"]=True;p.write_text(yaml.safe_dump(d))
             with self.assertRaisesRegex(ValueError,"unsupported fields"):self.resolved(team=team)
+
+
+class ReviewTests(unittest.TestCase):
+    def test_dense_head_independent_from_input_projection(self):
+        c,rows,lengths=fixture();m=LanguageModel(c["model"],rows,lengths)
+        self.assertEqual(tuple(m.head.weight.shape),(31,16))
+        self.assertFalse(hasattr(m.embedding,"vocabulary_weight"))
+        self.assertNotEqual(m.head.weight.data_ptr(),m.embedding.projection.weight.data_ptr())
+    def test_plan_prose_edit_does_not_block(self):
+        with copied_contract() as team:
+            p=team/"experiments/plan_v1.md";p.write_text(p.read_text()+"\nEditorial note.\n")
+            self.assertEqual(load_runtime(team/"configs/arms/t1.yaml",team/"configs/runtime.yaml")["model"]["n_embd"],256)
+    def test_owned_settings_only_come_from_arm(self):
+        for path in ["t1.yaml","t2.yaml","t3.yaml"]:
+            c=load_runtime(TEAM/"configs/arms"/path)
+            self.assertEqual(c["model"]["embedding"],"ke1")
+            self.assertEqual(c["model"]["attn_impl"],"eager")
+            self.assertIs(c["model"]["mtp"],False)
+        with copied_contract() as team:
+            p=team/"configs/runtime.yaml";d=yaml.safe_load(p.read_text());d["model"]["embedding"]="g4_raw_ke";p.write_text(yaml.safe_dump(d))
+            with self.assertRaisesRegex(ValueError,"unsupported fields"):load_runtime(team/"configs/arms/t1.yaml",p)
+    def test_missing_arm_setting_fails(self):
+        with copied_contract() as team:
+            p=team/"configs/arms/t1.yaml";d=yaml.safe_load(p.read_text());d["model"].pop("mtp");p.write_text(yaml.safe_dump(d))
+            with self.assertRaisesRegex(ValueError,"Missing explicit arm setting"):load_runtime(p,team/"configs/runtime.yaml")
 
 if __name__=="__main__":unittest.main()

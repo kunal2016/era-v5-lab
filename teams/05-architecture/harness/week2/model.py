@@ -1,13 +1,12 @@
 """Reference GQA/RoPE/SwiGLU MoE with G4-compatible projected byte codes.
 
-Projected tying is a provisional mathematical interpretation, not approved EXP-5.
+Dense untied output head per TSAI review; Kronecker projection is input-only.
 No fused kernels, reversible layers or expert parallelism are claimed.
 """
 import math
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.checkpoint import checkpoint
 
 
 def codec(rows,lengths):
@@ -54,15 +53,6 @@ class KE2(nn.Module):
         return result.reshape(*shape,self.width)
 
     def forward(self,ids):return self.projected(ids)
-
-    def vocabulary_weight(self,chunk_size=512):
-        pieces=[]
-        for start in range(0,self.vocab,chunk_size):
-            ids=torch.arange(start,min(start+chunk_size,self.vocab),device=self.rows.device)
-            if self.training and torch.is_grad_enabled():
-                pieces.append(checkpoint(self.projected,ids,use_reentrant=False,preserve_rng_state=False))
-            else:pieces.append(self.projected(ids))
-        return torch.cat(pieces)
 
 class RMSNorm(nn.Module):
     def __init__(self,width,eps):super().__init__();self.weight=nn.Parameter(torch.ones(width));self.eps=eps
@@ -129,14 +119,13 @@ class LanguageModel(nn.Module):
         self.blocks=nn.ModuleList(Block(m) for _ in range(m["n_layer"]))
         self.norm=RMSNorm(m["n_embd"],m["norm_eps"])
         self.mtp_head=nn.Linear(m["n_embd"],m["vocab_size"],bias=False) if m["mtp"] else None
-        self.head=None if m["head_mode"]=="projected_ke2_tied" else nn.Linear(m["n_embd"],m["vocab_size"],bias=False)
+        self.head=nn.Linear(m["n_embd"],m["vocab_size"],bias=False)
     def hidden(self,ids,valid):
         x=self.embedding(ids)
         for block in self.blocks:x=block(x,valid)
         return self.norm(x)
     def forward(self,ids,valid,return_mtp=False):
         h=self.hidden(ids,valid)
-        weight=self.embedding.vocabulary_weight(self.spec.get("head_weight_chunk_size",512)) if self.head is None else self.head.weight
-        logits=F.linear(h,weight)
+        logits=self.head(h)
         return (logits,self.mtp_head(h) if self.mtp_head is not None else None) if return_mtp else logits
     def parameter_count(self):return sum(p.numel() for p in self.parameters())

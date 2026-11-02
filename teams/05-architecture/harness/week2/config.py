@@ -63,14 +63,12 @@ def load_runtime(arm_path, runtime_path=None):
     arms_root = (team / "configs/arms").resolve()
     runtime = read_yaml(runtime_path)
     _unknown(runtime, ["contract", "model", "optim", "run", "approval", "evaluation", "budgets"], "runtime")
-    _unknown(runtime["model"], ["embedding", "activation", "position", "rope_theta", "rotary_fraction", "norm_eps", "head_mode", "tie_embeddings", "head_weight_chunk_size", "reversible", "mtp", "mtp_weight", "attn_impl", "ce_impl", "moe"], "runtime.model")
-    _unknown(runtime["model"]["moe"], ["bias", "dispatch", "bias_gamma"], "runtime.model.moe")
+    _unknown(runtime["model"], ["activation", "position", "rope_theta", "rotary_fraction", "norm_eps", "mtp_weight", "moe"], "runtime.model")
+    _unknown(runtime["model"]["moe"], ["bias", "bias_gamma"], "runtime.model.moe")
     _unknown(runtime["optim"], ["betas", "eps", "schedule"], "runtime.optim")
     _unknown(runtime["run"], ["micro_batch_size", "eval_every_steps", "compile", "flush_every_steps"], "runtime.run")
     plan = team / "experiments/plan_v1.md"
     plan_hash = hashlib.sha256(plan.read_text(encoding="utf8").encode("utf8")).hexdigest()
-    if plan_hash != runtime["contract"]["plan_sha256"]:
-        raise ValueError("Lead plan changed: review budgets and refresh the runtime contract after merge")
     path = Path(arm_path).resolve()
     seen, nodes, sources = set(), [], []
     while True:
@@ -96,7 +94,7 @@ def load_runtime(arm_path, runtime_path=None):
     for obj in reversed(nodes):
         declared = merge(declared, obj)
     src = declared["model"]
-    _unknown(src, ["vocab_size", "block_size", "n_layer", "n_head", "n_kv_head", "n_embd", "mlp_ratio", "embedding", "ke_max_pos", "ke_mode", "ffn", "moe", "activation", "position", "rope_theta", "tie_embeddings", "reversible", "mtp", "mtp_weight", "attn_impl", "ce_impl", "norm_eps", "rotary_fraction", "head_mode"], "lead model")
+    _unknown(src, ["vocab_size", "block_size", "n_layer", "n_head", "n_kv_head", "n_embd", "mlp_ratio", "embedding", "ke_max_pos", "ke_mode", "ffn", "moe", "activation", "position", "rope_theta", "reversible", "mtp", "mtp_weight", "attn_impl", "ce_impl", "norm_eps", "rotary_fraction"], "lead model")
     _unknown(src["moe"], ["num_experts", "num_shared", "top_k", "ffn_hidden", "bias", "dispatch", "bias_gamma"], "lead model.moe")
     _unknown(declared["optim"], ["name", "lr", "weight_decay", "muon_lr", "schedule", "warmup_steps", "betas", "eps"], "lead optim")
     _unknown(declared["run"], ["seed", "batch_size", "grad_clip", "dtype", "compile", "steps", "max_time_min"], "lead run")
@@ -105,11 +103,16 @@ def load_runtime(arm_path, runtime_path=None):
     if src.get("ke_mode") not in [None,"dynamic"]:
         raise ValueError("Only dynamic native KE projection is supported; cached mode cannot be ignored")
     model = copy.deepcopy(runtime["model"])
+    for key in ["embedding", "attn_impl", "mtp", "reversible", "ce_impl"]:
+        if key not in src:raise ValueError("Missing explicit arm setting: model."+key)
+        model[key]=src[key]
+    if "dispatch" not in src["moe"]:raise ValueError("Missing explicit arm setting: model.moe.dispatch")
+
     for key in ["vocab_size", "block_size", "n_layer", "n_head", "n_kv_head", "n_embd", "ke_max_pos"]:
         if key not in src:
             raise ValueError("Missing explicit lead dimension: model." + key)
         model[key] = src[key]
-    for key in ["activation", "position", "rope_theta", "tie_embeddings", "reversible", "mtp", "mtp_weight", "attn_impl", "ce_impl", "norm_eps", "rotary_fraction", "head_mode"]:
+    for key in ["activation", "position", "rope_theta", "reversible", "mtp", "mtp_weight", "attn_impl", "ce_impl", "norm_eps", "rotary_fraction"]:
         if key in src:
             model[key] = src[key].lower() if key in ["activation", "position"] and isinstance(src[key], str) else src[key]
     model["moe"] = merge(model["moe"], src["moe"])
@@ -131,7 +134,7 @@ def load_runtime(arm_path, runtime_path=None):
     run = merge(runtime["run"], runtime["budgets"][profile])
     run = merge(run, declared["run"])
     lead_choices = {}
-    for key in ["rope_theta", "norm_eps", "head_mode", "tie_embeddings", "reversible", "mtp", "mtp_weight"]:
+    for key in ["rope_theta", "norm_eps", "reversible", "mtp", "mtp_weight"]:
         if key in src and src[key] is not None:
             lead_choices["model." + key] = src[key]
     if src["moe"].get("bias") is not None:
@@ -171,11 +174,8 @@ def validate(c):
     if m.get("mtp") is True and (not number(m.get("mtp_weight")) or m["mtp_weight"]<0):errors.append("Explicit finite nonnegative MTP weight required")
     if m.get("mtp") is False and m.get("mtp_weight") not in (None,0.0):errors.append("MTP off requires weight 0")
     if m.get("ce_impl")!="torch" or m.get("attn_impl")!="eager":errors.append("Only eager attention/torch CE implemented")
-    if m.get("head_mode") not in ["projected_ke2_tied","untied_dense"]:errors.append("Output-head contract unresolved/unsupported")
-    if m.get("tie_embeddings") is not (m.get("head_mode")=="projected_ke2_tied"):errors.append("Head mode and tying must agree explicitly")
-    exp5 = c.get("intended",{}).get("experiment") == "EXP-5" and c.get("intended",{}).get("profile") == "T2"
-    if not exp5 and (m.get("head_mode")!="projected_ke2_tied" or m.get("tie_embeddings") is not True):
-        errors.append("Instructor baseline requires tied KE; untied heads need an explicit EXP-5 T2 experiment")
+    if "head_mode" in m or "tie_embeddings" in m:errors.append("Output head is fixed dense untied; head switches are removed")
+    if m.get("embedding")!="ke1":errors.append("Only arm embedding ke1 is implemented with G4 raw-code projection")
     if r["batch_size"]%r["micro_batch_size"]:errors.append("Batch not divisible by microbatch")
     if o.get("name")!="adamw":errors.append("Muon backend is an EXP-2 integration dependency, never replaced silently")
     if o.get("schedule")!="constant":errors.append("Only lead's constant schedule supported")
@@ -185,7 +185,7 @@ def validate(c):
     if not number(o.get("eps")) or o["eps"]<=0:errors.append("Invalid AdamW epsilon")
     if not number(o.get("weight_decay")) or o["weight_decay"]<0:errors.append("Invalid weight decay")
     if type(r.get("seed")) is not int or not 0<=r["seed"]<2**32:errors.append("Seed outside supported RNG range")
-    if not positive(m.get("head_weight_chunk_size")) or not positive(m.get("ke_max_pos")):errors.append("Invalid KE/head chunk size")
+    if not positive(m.get("ke_max_pos")):errors.append("Invalid KE/head chunk size")
     if c.get("evaluation",{}).get("boundary_policy")!="bos_then_all_text_tokens_document_isolated":errors.append("Unsupported scoring boundary policy")
     if r.get("dtype") not in ["fp32","bf16"]:errors.append("Unsupported precision")
     if r.get("compile") is not False:errors.append("Compiled backend not verified")

@@ -24,7 +24,7 @@ def main():
         print(str(len(errors))+" errors")
         if errors:return 1
         m=cfg["model"]
-        print(json.dumps({"profile":cfg["intended"]["profile"],"width":m["n_embd"],"layers":m["n_layer"],"heads":m["n_head"],"kv_heads":m["n_kv_head"],"expert_ffn":m["moe"]["ffn_hidden"],"context":m["block_size"],"head_mode":m["head_mode"],"baseline_approval":cfg["approval"]["status"],"provenance":cfg["provenance"]},indent=2))
+        print(json.dumps({"profile":cfg["intended"]["profile"],"width":m["n_embd"],"layers":m["n_layer"],"heads":m["n_head"],"kv_heads":m["n_kv_head"],"expert_ffn":m["moe"]["ffn_hidden"],"context":m["block_size"],"output_head":"dense_untied","baseline_approval":cfg["approval"]["status"],"provenance":cfg["provenance"]},indent=2))
         if bool(a.tokenizer)!=bool(a.byte_table):raise ValueError("Provide tokenizer AND byte table")
         if a.tokenizer:
             artifacts=Artifacts(a.tokenizer,a.byte_table)

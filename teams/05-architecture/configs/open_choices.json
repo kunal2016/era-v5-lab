@@ -7,14 +7,6 @@
     "owner": "G5 lead / attention owner",
     "note": "finite positive number"
   },
-  "model.head_mode": {
-    "owner": "G5 lead / G4 / EXP-5",
-    "supported": [
-      "untied_dense",
-      "projected_ke2_tied"
-    ],
-    "note": "Baseline fixed to projected_ke2_tied; precise KE formulation awaits agreement. Untied is accepted only as an explicit EXP-5 T2 exception."
-  },
   "model.moe.bias_gamma": {
     "owner": "G5 lead / G6",
     "supported": [
@@ -38,10 +30,5 @@
       false
     ],
     "note": "Current runtime accepts explicit bias-free experts only; true must not be advertised as supported."
-  },
-  "model.tie_embeddings": {
-    "owner": "Instructor-fixed baseline; G5/G4 confirm mathematical tying contract",
-    "required_baseline": true,
-    "note": "Requirement is not an open on/off decision; head mode and tie flag must agree."
   }
 }

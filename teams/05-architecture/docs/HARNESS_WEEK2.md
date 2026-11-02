@@ -1,47 +1,42 @@
-# Week-2 native harness
+# Week-2 harness: TSAI review revision
 
-## Integration
+## Contract
 
-Additive overlay for G5. Requires existing lead configs/arms and plan_v1.md reviewed against d15edd8 (PR180 plus arm-pinning follow-up). It does not replace those files or the accepted Week-1 harness. A changed plan requires review before refreshing configs/runtime.yaml's normalized plan SHA. G6 defaults are not inherited by this native adapter.
+Input: arm setting `embedding: ke1`, implemented by the native G4 raw-byte-code projection. This is an explicit adapter mapping, not a change to the arm. The physical raw table must match tokenizer v0 and G4 format v2. G4-shipped artifact verification is still required; passing a locally rebuilt table does not imply G4 approval.
 
-## Files
+Output: dense untied `nn.Linear(d_model, vocab_size, bias=False)` only, per TSAI's 1 Nov decision. No KE-tied output code, output-head switch or EXP-5 remains. Input projection and output parameters are independent.
 
-- train_week2.py: deterministic single-device training, JSONL metrics, checkpoints/resume and held-out evaluation.
-- check_week2.py: canonical arm resolution, config validation and optional artifact preflight.
-- week2/config.py: inheritance, provenance, dimensions and unsupported-choice guards.
-- week2/artifacts.py: tokenizer identity, raw-table integrity and exact UTF-8 round-trip validation.
-- week2/data.py: document windows, token/byte accounting and deterministic batches.
-- week2/model.py: projected Kronecker tying, GQA/RoPE/SwiGLU and selected-expert dispatch.
-- week2/evaluation.py: summed next-token NLL / ln(2) / original UTF-8 bytes.
-- runtime.yaml: harness settings and plan-linked budgets; dimensions come from lead arm files.
-- smoke_resolution.yaml: provisional development choices, never an approved experiment baseline.
-- open_choices.json: unresolved interfaces and supported choices; checked by tests.
-- tests/: focused model/gradient, config, artifact, data and BPB checks.
+`embedding`, `attn_impl`, `mtp`, `reversible`, `ce_impl` and `moe.dispatch` must come explicitly from the arm chain. The native harness does not load mutable G6 defaults. Unknown/unsupported settings fail. Muon and alternate attention are pending owner integration; no DDP/EP implementation is claimed.
 
-## Commands (repository root)
+RoPE theta, expert bias and normalization are pending. Router bias_gamma 0 and rotary_fraction 1 are implementation limits, not selected experiment values. Smoke choices must not be copied into approved arms. Production runs require an agreement reference, scoring agreement and holdout provenance. G8 writer is optional follow-up integration, not a Monday submission blocker.
 
-Use an existing working PyTorch installation; dependencies are listed in harness/requirements-week2.txt.
+## Run from repository root
+
+Requires the #188 arm pins (explicit eager attention and MTP off). Exact top-level dependency versions used for CPU verification are in harness/requirements-week2.txt. GPU wheels may require the appropriate PyTorch installation source; dependencies are not a complete hardware/driver lock.
 
 ```bash
+python -m pytest teams/05-architecture/tests/test_week2_*.py -q
 python -m unittest discover -s teams/05-architecture/tests -p 'test_week2*.py' -v
 python teams/05-architecture/harness/check_week2.py teams/05-architecture/configs/arms/exp1/lr_1e-3.yaml --resolution teams/05-architecture/configs/small/smoke_resolution.yaml --tokenizer /path/tokenizer_v0.json --byte-table /path/raw_table.npz
-python teams/05-architecture/harness/train_week2.py --config teams/05-architecture/configs/arms/exp1/lr_1e-3.yaml --tokenizer /path/tokenizer_v0.json --byte-table /path/raw_table.npz --train-data /path/train.jsonl --heldout-data /path/heldout.jsonl --device cpu --seed 1234 --smoke --smoke-steps 2 --smoke-seq-len 16 --smoke-batch-size 1 --out /path/fresh-run
+python teams/05-architecture/harness/train_week2.py --config teams/05-architecture/configs/arms/exp1/lr_1e-3.yaml --tokenizer /path/tokenizer_v0.json --byte-table /path/raw_table.npz --train-data /path/train.jsonl --heldout-data /path/heldout.jsonl --device cpu --seed 1234 --smoke --smoke-steps 2 --smoke-seq-len 8 --smoke-batch-size 1 --out /path/fresh-output
 ```
 
-Tokenizer/table/text paths are external inputs, not checked-in datasets. JSONL uses id/text; final holdout requires unique IDs. Large datasets are materialized in RAM: use a bounded real-text slice for integration checks.
+On Windows use explicit test filenames or unittest discovery if the shell does not expand wildcards. Data is materialized in RAM: start with bounded text slices.
 
-## Heldout provenance input
+## Evaluation and metrics
 
-The --heldout-report JSON must contain heldout_sha256 (exact input-file hash), fingerprint_set_id, scope: full, matches: 0 (integer), and docs_checked (matching parsed document count). Retain the original G9 checker evidence with the data owner; this sidecar records provenance, not a replacement contamination check.
+UTF-8 JSONL uses id/text. Heldout IDs must be unique for quality runs. Every text-token target is scored once; padding and artificial BOS are excluded. BPB = summed FP32 next-token NLL / ln(2) / original UTF-8 bytes. Byte-table target lengths must conserve original bytes. Evaluation restores RNG and model mode.
 
-## Current status and limits
+All metrics.jsonl rows expose the legacy alarm keys: step, tokens_per_second, loss_ntp, loss_mtp, loss, lr, gpu_alloc_gb and gradient_norm. Training loss/loss_ntp are NTP, loss_mtp is 0 when disabled, gradient_norm is the pre-clipping norm, and gpu_alloc_gb uses GiB. Additional train/val fields are additive. Evaluation-only step 0 has zero placeholders for legacy training fields and is identifiable by val/* fields without train/ce_loss; consumers should apply training alarms only to training records.
 
-52 unit tests passed in the source candidate; real-v0 artifact preflight passed for all three profiles, LR-arm resolution passed and the accepted Week-1 checker passed. The stripped overlay must be tested again in its target checkout. No fresh full-vocabulary tied training/repeatability or quality-result claim is made.
+The --heldout-report JSON needs heldout_sha256, fingerprint_set_id, scope="full", matches=0 and docs_checked. This records the data owner's evidence; it does not perform the G9 check. Official results require the file named by results/heldout_v1.sha256 and retained G9 logs.
 
-Reversibility and MTP are off. MTP weight is unset/inactive. Baseline LR 0.001 is timing-only. RoPE theta, expert bias, normalization and precise projected-KE tying agreement remain pending. Proposed tying changes parameter counts relative to the instructor labels; fixed dimensions must not be resized to match those labels.
+## Provenance and experiment selection
 
-The G6 loader's KE1 untied/learned-position implementation is not equivalent to this proposed native tied/RoPE path. G4-shipped table identity, official holdout/G9 evidence, approved training mixture and G8 writer integration remain pending. No Muon, alternate attention, DDP or expert-parallel execution is claimed. Unsupported choices fail explicitly. Quality mode requires agreements and holdout evidence; use --help for checkpoint and provenance options.
+The complete plan hash is recorded for traceability only. Editing plan prose does not block the harness. Arm shapes and rates are read directly; missing widths, invalid geometry and unsupported settings fail validation. Steps/time budgets remain harness-only defaults reviewed from the plan, and an arm can explicitly override run.steps/max_time_min. They must be reviewed if the lead changes budgets. A fixed whole-document hash is not used as enforcement.
 
-## Merge dependency
+Before EXP-1, the lead must select one harness for all five rates and all seeds in plan_v1.md. This revision supplies a proposed one-harness plan note separately; it does not silently change the lead's plan. Do not submit an EXP-1 job using this harness until that selection, real-data inputs and baseline decisions are ready.
 
-Merge after PR #188. The runtime plan fingerprint and explicit arm pins were reviewed against lead commit d15edd8. This PR does not edit arm files or plan_v1.md. Checks against older main intentionally fail the plan-identity guard. After #188 merges, rerun the tests and preflight on the actual combined branch. The current verification stages this overlay onto the lead snapshot, not onto older main.
+## Remaining work
+
+Official holdout/G9 evidence, G4-shipped table, approved mixture and unresolved baseline choices remain external inputs. CPU smoke results are not full-budget quality results. Full-context GPU feasibility, long-run stability and checkpoint-resume execution evidence remain required before relevant jobs. EXP-5 is removed by TSAI decision.
