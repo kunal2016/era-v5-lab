@@ -2,6 +2,8 @@
   "candidate": "C2: C1 + slots_v1 split (slots_v2.json = slots_v1 + swap); no normalizer; v0.1 specials",
   "tokenizer": "tokenizer.json",
   "sha256": "84204d7897d6677ac2e8ac7552d7472e5fed2baa3c67d392e40dbbfe63e35ad3",
+  "rebuild_sha256": "84204d7897d6677ac2e8ac7552d7472e5fed2baa3c67d392e40dbbfe63e35ad3",
+  "reproducible": "built twice from the same inputs (corpus60, v0.1 specials, same flags); both builds give this sha256",
   "vocab_size": 131072,
   "merges": 130460,
   "layout": {

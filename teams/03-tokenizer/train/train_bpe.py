@@ -72,6 +72,10 @@ Usage
     python train_bpe.py ... --slots slots_v2.json --special-layout v0 --v0-tokenizer v0_1_tokenizer.json \\
         --normalizer v1                                                                                    # C3: + normalizer (v2)
 
+    # The same candidates retrained with the week-2 sample v0 (sample_to_corpus.py, mix_search.py); run from the
+    # directory that holds corpus60/ and corpus_s0/, because the paths in mix_s0.json are relative
+    python train_bpe.py --corpus corpus60 --mix mix_s0.json ... (same flags as the C1, C2, C3 lines above)
+
 Writes <out>/tokenizer.json and <out>/manifest.json (sha256, slot table,
 corpus hashes, verify results). Exit 1 if a verify script fails.
 """
@@ -304,6 +308,16 @@ def word_counts(paths, script, pattern, norm=None):
     return keep
 
 
+def mixed_counts(units, script, pattern, norm=None):
+    """word_counts over (path, factor) units (--mix): each unit's counts times its factor, summed in unit order,
+    then rounded. With every factor 1 this equals word_counts over the same files."""
+    total = defaultdict(float)
+    for path, factor in units:
+        for piece, c in word_counts([path], script, pattern, norm).items():
+            total[piece] += c * factor
+    return Counter({piece: n for piece, c in total.items() if (n := round(c)) > 0})
+
+
 def learn_merges(words, freqs, id_bytes, vocab_bytes, script, n_merges, first_id):
     """Step 2: continue BPE on `words` (lists of ids) for exactly n_merges new tokens."""
     pair_count = defaultdict(int)
@@ -420,6 +434,8 @@ def main():
     ap.add_argument("--special-layout", choices=["own", "v0"], default="own",
                     help="own: specials in the top special_slots ids (slots.json); v0: tokenizer v0's exact special ids")
     ap.add_argument("--v0-tokenizer", help="tokenizer v0 tokenizer.json (from v0/build_v0.py), for --special-layout v0")
+    ap.add_argument("--mix", help='json {lang: [[path, factor], ...]}: train that language on these text files, each '
+                                  "file's word counts times its factor, instead of <corpus>/<lang>.txt")
     args = ap.parse_args()
 
     import tiktoken
@@ -486,14 +502,19 @@ def main():
     last_count = {}
     corpus_manifest_path = corpus / "corpus_manifest.json"
     corpus_manifest = json.loads(corpus_manifest_path.read_text()) if corpus_manifest_path.exists() else {}
+    mix = json.loads(Path(args.mix).read_text()) if args.mix else {}
+    mix = {k: v for k, v in mix.items() if not k.startswith("_")}     # skip "_comment"
     next_id = base_size
     for script, spec in scripts.items():
         t0 = time.time()
-        paths = [corpus / f"{lang}.txt" for lang in spec["langs"]]
-        missing = [str(p) for p in paths if not p.exists()]
+        units = [(Path(p), f) for lang in spec["langs"] for p, f in mix.get(lang, [[corpus / f"{lang}.txt", 1]])]
+        missing = [str(p) for p, _ in units if not p.exists()]
         if missing:
             sys.exit(f"ERROR: missing corpus files {missing}. Run fetch_corpus.py first.")
-        counts = word_counts(paths, script, pattern, norm)
+        if any(lang in mix for lang in spec["langs"]):
+            counts = mixed_counts(units, script, pattern, norm)
+        else:
+            counts = word_counts([p for p, _ in units], script, pattern, norm)
         items = sorted(counts.items())                      # fixed order -> deterministic ties
         encs = base_tok.encode_batch([b.decode("utf-8") for b, _ in items], add_special_tokens=False)
         words = [e.ids for e in encs]
@@ -553,6 +574,8 @@ def main():
         "base": {"source": "tiktoken o200k_base", "kept": base_size, "dropped": dropped},
         **({"o200k_swap": swap} if swap else {}),
         "corpus": {lang: corpus_manifest.get(lang) for spec in scripts.values() for lang in spec["langs"]},
+        **({"mix": {lang: [{"file": Path(p).name, "dir": Path(p).parent.name, "factor": f, "sha256": sha256_file(p)}
+                           for p, f in units] for lang, units in mix.items()}} if mix else {}),
         "normalizer": args.normalizer,
         "slots_json_sha256": sha256_file(args.slots),
         "slot_saturation": last_count,

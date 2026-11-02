@@ -2,6 +2,8 @@
   "candidate": "C3: C2 + normalizer v1 = v2 rebuilt with v0.1 specials",
   "tokenizer": "tokenizer.json",
   "sha256": "54f20825f61dd863e9bc15a0ece82fefc2f53b45005e1f71edec2d652a055306",
+  "rebuild_sha256": "54f20825f61dd863e9bc15a0ece82fefc2f53b45005e1f71edec2d652a055306",
+  "reproducible": "built twice from the same inputs (corpus60, v0.1 specials, same flags); both builds give this sha256",
   "vocab_size": 131072,
   "merges": 130460,
   "layout": {
