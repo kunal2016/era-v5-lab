@@ -8,6 +8,7 @@ then only rows with verdict "clean" are used).
 """
 
 import csv
+import hashlib
 import json
 import os
 import pathlib
@@ -121,7 +122,6 @@ def test_offsets_point_into_original_text():
 
 READY = [k for k, v in norms.NORMALIZERS.items() if not v.missing]
 ready_normalizers = pytest.mark.parametrize("nid", READY)
-spec_v1_missing = pytest.mark.skipif(not norms.NORMALIZERS["spec-v1"].missing, reason="spec-v1 is added")
 
 # ZWJ (U+200D) and ZWNJ (U+200C) in Bengali and Malayalam words.
 SAMPLES = ["Janet’s DUCKS, lay 16-eggs!", "ＡＢＣ ½", "ગુજરાતી ભાષા", "हिन्दी भाषा",
@@ -146,10 +146,61 @@ def test_unknown_normalize_id_is_refused():
         norms.get("nope")
 
 
-@spec_v1_missing
-def test_spec_v1_is_refused_until_it_is_added():
-    with pytest.raises(norms.NormalizerNotReady, match="Team 1"):
-        norms.get("spec-v1")
+def test_a_normalizer_that_is_not_ready_is_refused():
+    norms.NORMALIZERS["test-missing"] = norms.Normalizer("test-missing", "not ready", missing="the function is not added yet")
+    try:
+        with pytest.raises(norms.NormalizerNotReady, match="not added yet"):
+            norms.get("test-missing")
+    finally:
+        del norms.NORMALIZERS["test-missing"]
+
+
+# ---- spec-v1: the spec v1 normalize function of Team 1 ----
+
+def test_spec_v1_is_the_pinned_team_1_file():
+    path = pathlib.Path(norms.__file__).with_name(norms.G1_SPEC_V1_FILE)
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == norms.G1_SPEC_V1_SHA256
+    assert norms.g1_spec_v1.NORMALIZE_ID == "g1-spec-v1"
+    assert norms.g1_spec_v1.OFFSET_CONVENTION == "original_raw_word_start"
+
+
+def test_spec_v1_gives_the_team_1_words():
+    spec = norms.get("spec-v1")
+    for t in SAMPLES + ["x\u00b2 + \u0967\u0968", "com\u200bpute the \ufb01rst Stra\u00dfe"]:
+        assert spec.words_with_offsets(t) == norms.g1_spec_v1.words_with_offsets(t)
+
+
+@pytest.mark.parametrize("text, words", [
+    ("Janet\u2019s DUCKS, lay 16-eggs!", ["janet", "s", "ducks", "lay", "16", "eggs"]),
+    ("\uff21\uff22\uff23 \u00bd", ["abc", "1", "2"]),           # fullwidth and vulgar fractions fold
+    ("com\u200bpute \ufb01rst", ["compute", "first"]),            # A1 character removed, ligature folds
+    ("Stra\u00dfe", ["strasse"]),                                  # casefold, not lower()
+    ("x\u00b2 \u0967\u0968", ["x\u00b2", "\u0967\u0968"]),    # no NFKC: superscript and Indic digits stay (G4)
+    ("\u0d7a", ["\u0d7a"]), ("\u0d23\u0d4d\u200d", ["\u0d7a"]),  # Malayalam chillu: both spellings match
+])
+def test_spec_v1_known_words(text, words):
+    assert norms.get("spec-v1").normalize(text) == words
+
+
+def test_spec_v1_differs_from_g9_v1():
+    # A v1 set must not be read with spec-v1: the words differ.
+    assert norms.get("g9-v1").normalize("x\u00b2 Stra\u00dfe") != norms.get("spec-v1").normalize("x\u00b2 Stra\u00dfe")
+
+
+def test_spec_v1_offsets_point_into_the_original_text():
+    assert norms.get("spec-v1").words_with_offsets("\ufeffcom\u200bpute next") == [("compute", 0), ("next", 10)]
+    assert norms.get("spec-v1").words_with_offsets("A \u00bd B") == [("a", 0), ("1", 2), ("2", 2), ("b", 4)]
+
+
+def test_spec_v1_keeps_zwj_and_zwnj():
+    spec = norms.get("spec-v1")
+    ka_ssa = ["\u0915\u094d\u200d\u0937", "\u0915\u094d\u200c\u0937", "\u0915\u094d\u0937"]
+    assert [spec.normalize(w) for w in ka_ssa] == [[w] for w in ka_ssa]
+
+
+def test_a_normalizer_takes_prepare_or_words_not_both():
+    with pytest.raises(ValueError, match="not both"):
+        norms.Normalizer("x", "x", prepare=str.lower, words=lambda t: [])
 
 
 @ready_normalizers

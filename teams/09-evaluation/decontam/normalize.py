@@ -4,13 +4,21 @@ A fingerprint set records the ID of its normalizer in MANIFEST.json. fpset.py re
 uses the same normalizer to check documents, so a set is always read the way it was built.
 
     g9-v1    fingerprints v1. Words, NFKC, lower().
-    spec-v1  fingerprints v2. The spec v1 normalize function of Team 1, then the g9-v1 steps.
+    spec-v1  fingerprints v2. The spec v1 normalize function of Team 1 (NORMALIZE_ID "g1-spec-v1"):
+             words, NFC, a short list of compatibility folds, casefold(). No NFKC, ZWJ and ZWNJ kept.
              Training text goes through spec v1, so benchmark text must go through it too.
+
+g1_spec_v1_normalize.py is a byte-for-byte copy of teams/01-data-a/spec_v1/tools/normalize.py from
+Team 1 (commit c7a3da375efdbecb14188465f4d830a8ff34bdc5, PR #194).
+Do not edit the copy. To take a new Team 1 version, copy the file again and change G1_SPEC_V1_SHA256:
+a change of the words is a new normalizer and needs new fingerprints.
 """
 
 import re
 import sys
 import unicodedata
+
+import g1_spec_v1_normalize as g1_spec_v1
 
 DEFAULT_ID = "g9-v1"
 
@@ -53,18 +61,28 @@ class NormalizerNotReady(ValueError):
 
 
 class Normalizer:
-    """One normalize ID. prepare: a text -> text function that runs before the g9-v1 steps."""
+    """One normalize ID.
 
-    def __init__(self, normalize_id, description, prepare=None, missing=None):
+    prepare: a text -> text function that runs before the g9-v1 steps.
+    words:   a text -> [(word, char_offset)] function that replaces the g9-v1 steps.
+             Its offsets must point into the text passed in.
+    """
+
+    def __init__(self, normalize_id, description, prepare=None, words=None, missing=None):
+        if prepare and words:
+            raise ValueError(f"normalize {normalize_id}: give prepare or words, not both")
         self.id = normalize_id
         self.description = description
         self.prepare = prepare
+        self.words = words
         self.missing = missing  # why the normalizer cannot run yet, or None
 
     def words_with_offsets(self, text):
         """Return [(word, char_offset)] for text."""
         if self.missing:
             raise NormalizerNotReady(f"normalize {self.id}: {self.missing}")
+        if self.words:
+            return self.words(text)
         if self.prepare:
             text = self.prepare(text)
         return _split(text)
@@ -80,9 +98,13 @@ NORMALIZERS = {
         "words = runs of Unicode L/M/N characters; each word NFKC then lower(); everything else separates words"),
     "spec-v1": Normalizer(
         "spec-v1",
-        "spec v1 normalize function of Team 1, then the g9-v1 steps",
-        missing="the spec v1 normalize function of Team 1 is not added yet"),
+        f"spec v1 normalize of Team 1 ({g1_spec_v1.NORMALIZE_ID}): {g1_spec_v1.DESCRIPTION}",
+        words=g1_spec_v1.words_with_offsets),
 }
+
+# The Team 1 file that spec-v1 uses (see the top of this file).
+G1_SPEC_V1_FILE = "g1_spec_v1_normalize.py"
+G1_SPEC_V1_SHA256 = "b96e39af6b048cf135e5915acb13c2d5630d1a238760df494776c6783a0a6669"
 
 
 def get(normalize_id):

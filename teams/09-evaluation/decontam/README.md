@@ -60,7 +60,9 @@ or a set with two normalizers, is refused. The normalizers are in `normalize.py`
 | ID | Set | What it does |
 |---|---|---|
 | `g9-v1` | v1 | Words are runs of Unicode letters, marks and numbers. Each word: NFKC, then lower case. |
-| `spec-v1` | v2 | The spec v1 normalize function of Team 1, then the `g9-v1` steps. Training text goes through spec v1, so benchmark text must go through it too. |
+| `spec-v1` | v2 | The spec v1 normalize function of Team 1 (`g1-spec-v1`). Words as in `g9-v1`, then NFC, a short list of compatibility folds and `casefold()`. No NFKC, so Indic digits and superscripts stay. ZWJ and ZWNJ stay. Training text goes through spec v1, so benchmark text must go through it too. |
+
+`g1_spec_v1_normalize.py` is a byte-for-byte copy of `teams/01-data-a/spec_v1/tools/normalize.py` (commit `c7a3da375efdbecb14188465f4d830a8ff34bdc5`, PR #194). Do not edit it. A test checks its sha256 against `G1_SPEC_V1_SHA256` in `normalize.py`. A new Team 1 version means new words, so it needs new fingerprints.
 
 ```
 python build_fingerprints.py --data-dir ~/bench-cache --version v2 --normalize spec-v1
