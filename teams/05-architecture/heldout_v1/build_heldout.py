@@ -57,7 +57,8 @@ PERMISSIVE = {"MIT", "MIT-0", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC
 SELECTION = ("Rows in the order the source stores them (code: the six languages in turn); text stripped; empty "
              "texts skipped; code only when every repo licence is permissive; a document with an email address, "
              "a phone number or a secret-looking string is skipped (no personal data in the repo, and pr-guard "
-             "rejects emails); stop at --docs documents or once --mb megabytes of text are reached. "
+             "rejects emails); documents found in review are dropped by id (DROPPED_IN_REVIEW) and still count toward "
+             "the size budget; stop at --docs documents or once --mb megabytes of text are reached. "
              "No shuffling, no other filtering.")
 # The email and secret patterns are the lab's pr-guard patterns (.github/workflows/pr-guard.yml).
 EMAIL = re.compile(r"(?<![A-Za-z0-9._%+-])[A-Za-z0-9][A-Za-z0-9._%+-]*@(?!users\.noreply\.github\.com\b|example\.(?:com|org)\b)"
@@ -72,6 +73,18 @@ PHONE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?!\d)"
 # Documents Team 9's decontam_check.py flagged (full fingerprint set). Dropped by id, with the reason.
 EXCLUDE = {
     "owm-test-000011": "shares 13-word runs with LiveCodeBench release_v6 items (coverage 1%); fingerprints v1, 1 Nov 2026",
+}
+
+# Documents found in the G5 lead's review of PR #191 (2 Nov 2026) with a phone number or an email address that the
+# filter above did not catch (US-style numbers, a number written in Odia digits, the email@example.com placeholder).
+# Dropped by id. They still count toward their slice's size budget, so every other document stays where it was.
+DROPPED_IN_REVIEW = {
+    "c4-val-000018": "phone number (US format), lead review of PR #191, 2 Nov 2026",
+    "c4-val-000030": "phone numbers (US format), lead review of PR #191, 2 Nov 2026",
+    "c4-val-000059": "phone number (US format, dots), lead review of PR #191, 2 Nov 2026",
+    "c4-val-000094": "phone number (US format), lead review of PR #191, 2 Nov 2026",
+    "fw2-or-test-000030": "email address (email@example.com placeholder), lead review of PR #191, 2 Nov 2026",
+    "fw2-or-test-000046": "phone number written in Odia digits, lead review of PR #191, 2 Nov 2026",
 }
 
 
@@ -143,18 +156,25 @@ def build(out, n_docs, budget):
     out.mkdir(parents=True, exist_ok=True)
     manifest = {"selection": SELECTION, "licence": "ODC-By 1.0 (C4, FineWeb-2, OpenWebMath, peS2o); MIT (The Vault)",
                 "line_format": '{"id": ..., "text": ...}, UTF-8, one document per line',
-                "excluded_benchmark_matches": EXCLUDE, "file": {}, "sources_file": {}, "slices": {}}
+                "excluded_benchmark_matches": EXCLUDE, "dropped_in_review": DROPPED_IN_REVIEW,
+                "file": {}, "sources_file": {}, "slices": {}}
     path, src_path = out / "heldout_v1.jsonl", out / "heldout_v1_sources.jsonl"
     h, hs, total_docs, total_bytes = hashlib.sha256(), hashlib.sha256(), 0, 0
     with path.open("w", encoding="utf-8", newline="\n") as f, src_path.open("w", encoding="utf-8", newline="\n") as g:
         for code, repo, part, prefix, docs_of in sources():
-            docs, text_bytes, skipped = 0, 0, 0
+            docs, text_bytes, skipped, dropped, used = 0, 0, 0, 0, 0
             for doc_id, raw, origin in docs_of():
                 text = (raw or "").strip()
                 if not text or doc_id in EXCLUDE:
                     continue
                 if personal(text) or personal(origin.get("url") or "") or personal(origin.get("source_id") or ""):
                     skipped += 1
+                    continue
+                used += len(text.encode("utf-8"))  # size budget, counting documents dropped in review
+                if doc_id in DROPPED_IN_REVIEW:
+                    dropped += 1
+                    if budget and used >= budget:
+                        break
                     continue
                 line = json.dumps({"id": doc_id, "text": text}, ensure_ascii=False) + "\n"
                 f.write(line)
@@ -166,13 +186,15 @@ def build(out, n_docs, budget):
                 hs.update(src_line.encode("utf-8"))
                 docs += 1
                 text_bytes += len(text.encode("utf-8"))
-                if (n_docs and docs >= n_docs) or (budget and text_bytes >= budget):
+                if (n_docs and docs >= n_docs) or (budget and used >= budget):
                     break
             manifest["slices"][code] = {"dataset": repo, "revision": REV[repo], "part": part, "id_prefix": prefix,
-                                        "docs": docs, "text_bytes": text_bytes, "skipped_personal": skipped}
+                                        "docs": docs, "text_bytes": text_bytes, "skipped_personal": skipped,
+                                        "dropped_in_review": dropped}
             total_docs += docs
             total_bytes += text_bytes
-            print(f"{code}: {docs} docs, {text_bytes:,} text bytes, {skipped} skipped (personal data)", flush=True)
+            print(f"{code}: {docs} docs, {text_bytes:,} text bytes, {skipped} skipped (personal data), "
+                  f"{dropped} dropped in review", flush=True)
     digest, src_digest = h.hexdigest(), hs.hexdigest()
     manifest["file"] = {"name": path.name, "docs": total_docs, "text_bytes": total_bytes, "sha256": digest}
     manifest["sources_file"] = {"name": src_path.name, "docs": total_docs, "sha256": src_digest,

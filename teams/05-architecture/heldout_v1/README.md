@@ -49,7 +49,7 @@ must never be trained on.
 
 | Slice | Id prefix | Dataset | Part | Docs | Text bytes |
 |---|---|---|---|---|---|
-| English web | `c4-val` | [allenai/c4](https://huggingface.co/datasets/allenai/c4) | en/c4-validation.00000-of-00008.json.gz | 144 | 253,532 |
+| English web | `c4-val` | [allenai/c4](https://huggingface.co/datasets/allenai/c4) | en/c4-validation.00000-of-00008.json.gz | 140 | 247,056 |
 | Indic: Hindi | `fw2-hi-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | hin_Deva test | 34 | 255,134 |
 | Indic: Bengali | `fw2-bn-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ben_Beng test | 27 | 265,042 |
 | Indic: Tamil | `fw2-ta-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | tam_Taml test | 37 | 256,545 |
@@ -59,12 +59,12 @@ must never be trained on.
 | Indic: Marathi | `fw2-mr-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | mar_Deva test | 38 | 250,524 |
 | Indic: Gujarati | `fw2-gu-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | guj_Gujr test | 31 | 250,826 |
 | Indic: Punjabi | `fw2-pa-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | pan_Guru test | 27 | 254,686 |
-| Indic: Odia | `fw2-or-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ory_Orya test | 55 | 254,733 |
+| Indic: Odia | `fw2-or-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | ory_Orya test | 53 | 225,421 |
 | Indic: Assamese | `fw2-as-test` | [HuggingFaceFW/fineweb-2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2) | asm_Beng test | 20 | 253,230 |
 | Math | `owm-test` | [EleutherAI/proof-pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2) | open-web-math/test/test.jsonl.zst | 55 | 259,449 |
 | Science | `pes2o-val` | [allenai/peS2o](https://huggingface.co/datasets/allenai/peS2o) | data/v2/validation-00000-of-00002.json.gz | 170 | 250,710 |
 | Code (Python, C++, Go, Java, JavaScript, Rust) | `vault-<lang>-test` | [Fsoft-AIC/the-vault-function](https://huggingface.co/datasets/Fsoft-AIC/the-vault-function) | data/test/{python,cpp,go,java,javascript,rust} | 338 | 250,262 |
-| **`data/heldout_v1.jsonl`** | | | | **1065** | **3,811,339** |
+| **`data/heldout_v1.jsonl`** | | | | **1059** | **3,775,551** |
 
 Text bytes = the sum of `len(text.encode("utf-8"))`, the denominator of bits per byte. The JSON quotes and line breaks
 are not counted. Each slice takes documents in source order until about 0.25 MB of text is reached, so the last
@@ -92,7 +92,7 @@ split); [Paloma](https://huggingface.co/datasets/allenai/paloma) (gated, mixed l
 
 ## How documents are chosen
 
-Rows in the order the source stores them (code: the six languages in turn); text stripped; empty texts skipped; code only when every repo licence is permissive; a document with an email address, a phone number or a secret-looking string is skipped (no personal data in the repo, and pr-guard rejects emails); stop at --docs documents or once --mb megabytes of text are reached. No shuffling, no other filtering.
+Rows in the order the source stores them (code: the six languages in turn); text stripped; empty texts skipped; code only when every repo licence is permissive; a document with an email address, a phone number or a secret-looking string is skipped (no personal data in the repo, and pr-guard rejects emails); documents found in review are dropped by id (DROPPED_IN_REVIEW) and still count toward the size budget; stop at --docs documents or once --mb megabytes of text are reached. No shuffling, no other filtering.
 
 Dataset revisions are pinned, so a rebuild gives the same bytes:
 
@@ -105,6 +105,28 @@ Dataset revisions are pinned, so a rebuild gives the same bytes:
 Documents dropped after Team 9's check, with the reason (also in the manifest):
 
 - `owm-test-000011`: shares 13-word runs with LiveCodeBench release_v6 items (coverage 1%); fingerprints v1, 1 Nov 2026
+
+Documents dropped in the G5 lead's review (2 Nov), because they hold a phone number or an email address that the
+filter did not catch (US-style numbers, a number written in Odia digits, and the `email@example.com` placeholder that
+FineWeb puts where it removed an email). They still count toward their slice's size budget, so every other document
+stays where it was (also in the manifest and the script):
+
+- `c4-val-000018`: phone number (US format), lead review of PR #191, 2 Nov 2026
+- `c4-val-000030`: phone numbers (US format), lead review of PR #191, 2 Nov 2026
+- `c4-val-000059`: phone number (US format, dots), lead review of PR #191, 2 Nov 2026
+- `c4-val-000094`: phone number (US format), lead review of PR #191, 2 Nov 2026
+- `fw2-or-test-000030`: email address (email@example.com placeholder), lead review of PR #191, 2 Nov 2026
+- `fw2-or-test-000046`: phone number written in Odia digits, lead review of PR #191, 2 Nov 2026
+
+So English ends at about 247 KB and Odia at about 225 KB, a little under 0.25 MB. Bits per byte is a rate and the
+winner rule averages each Indic slice as its own number, so the smaller slices keep the same weight; only their
+estimate is slightly less precise.
+
+**Known limit of the filter.** It removes emails, Indian mobile numbers, `+` international numbers and secret-like
+strings. It does not yet catch US-style numbers, numbers written in Indic digits or the `email@example.com`
+placeholder; v1 handles those by the id list above, and a scan of the final file with wider patterns finds none left.
+Widen the filter before building any new set (v2 or a cleaned copy); changing it here would change v1's bytes.
+It does not remove names or street addresses, as is usual for public web text.
 
 ## Format
 
@@ -137,8 +159,8 @@ text itself.
 - `data/SHA256SUMS` holds the sha256 of both files:
 
   ```
-  ce9444452f10003e0df8364bc08c260bf4298ca5f11c64094aa761ecf150272c  heldout_v1.jsonl
-  fe67410521ebb8ff7fd4b539a7b5eb71f95de282d77b5e6df7c2a88066ba475e  heldout_v1_sources.jsonl
+  21c6e4b2df8dae9d69e254f4a00fc934d2a3c70f0675065a03724299d94312bb  heldout_v1.jsonl
+  95585a25bdccb077130432d49b6427c5ff5f756d5b43b9c7033803326f65e0d6  heldout_v1_sources.jsonl
   ```
 
   Check it from `data/` with `sha256sum -c SHA256SUMS` (Linux, macOS, Git Bash), or in PowerShell with
@@ -162,7 +184,7 @@ network ([`JOB_REQUEST.md`](https://github.com/theschoolofai/era-v5-lab/blob/mai
 
 ```
 fingerprints v1 set_sha256 11e290a44d1467875fdf8bebc55eab21f0a6367f411aab98a4a027a546fd372e (full set)
-docs 1065 flagged 0 (0.00%) by benchmark {}
+docs 1059 flagged 0 (0.00%) by benchmark {}
 ```
 
 It is repeated on fingerprints v2 (due Wed 4 Nov). TSAI decided (2 Nov) that Team 9 adds held-out v1 to fingerprints v2
@@ -172,7 +194,7 @@ would match itself; only the benchmark sets count.
 `heldout_report.json` carries the same result for the harness, which refuses a quality run unless the report's
 `heldout_sha256` equals the held-out file's sha256, `matches` is 0, `scope` is `full`, a `fingerprint_set_id` is given
 and `docs_checked` equals the number of documents it reads. Checked with the harness's own reader from PR #190:
-1065 documents read, the same 3,811,339 bytes, report accepted.
+1059 documents read, the same 3,775,551 bytes, report accepted.
 
 ```
 python teams/05-architecture/harness/train_week2.py ... --heldout-data teams/05-architecture/heldout_v1/data/heldout_v1.jsonl --heldout-report teams/05-architecture/heldout_v1/heldout_report.json
