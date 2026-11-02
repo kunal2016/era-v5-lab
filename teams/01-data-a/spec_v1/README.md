@@ -75,7 +75,7 @@ All of these, on every pack in `ORIGIN`. Anything else stays `CANDIDATE`, or `BL
 ## Assumptions
 
 - **Language tags are correct.** No detector runs. D1 rows wait for a language check at scale.
-- **F2 is BLOCKED on the G9 fingerprints.** The word "leetcode" alone is not a leak (instructor, 30 Oct).
+- **F2 is G9's fingerprint check** (`tools/f2_rule.py`, see "F2" below). The word "leetcode" alone is not a leak (instructor, 30 Oct).
 - **H3 has no rule.** A vendored copy is not a disease by itself. The same file twice in a pack is H1 or H2 on the second copy (instructor, 30 Oct).
 - **A 0 result is a bound, not proof.** With n gold docs and 0 hits, the harm rate is only shown to be below about 3/n. Show this next to the result. About 300 docs are needed to show 1%.
 
@@ -126,6 +126,7 @@ python spec_v1/tools/build_clean.py
 python -m pytest spec_v1/tests
 python spec_v1/run_clean.py --pack <pack>.parquet --out out
 python spec_v1/run_clean.py --pack <split>/<pack_id>/part-00000.parquet --pack-id <pack_id> --out out
+python spec_v1/run_clean.py --pack <pack>.parquet --out out --f2      # then F2, G9's benchmark fingerprints
 python spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs> [<another folder with packs> ...]
 ```
 
@@ -168,7 +169,7 @@ Each rule needs the fields in "What every rule must have" above, and has to meet
 | Regex finds some, not all | C1, C3, C5, E3 | Phrase lists and shapes fit the sites seen so far. Report what is left. |
 | Library | A3 | `ftfy`, as the English sheet does. |
 | Regex does not work | C4, D1, D3, D4, D5, F3, H1, H2, H3 | Label it. These need a whole-pack check, a language model or a classifier. |
-| Needs G9 | F2 | Blocked on the benchmark fingerprints. |
+| G9 fingerprints | F2 | `tools/f2_rule.py`: G9's check, not a regex. See "F2" below. |
 
 Try a pattern before you write the rule. This prints counts and doc_ids, never text:
 
@@ -193,3 +194,12 @@ Then:
 - **Never write a private value** in a commit, a PR or chat. Use doc_ids and offsets, as `regex_check.py` does.
 - **Known limits:** it misses lower-case addresses, and it reads "8 Bit Drive" as an address. An email at a company domain counts as personal unless it is a role address like `support@`. Names are not in the TSAI list, so it leaves them.
 - **B4:** in `clean.py`, the code B4 rule leaves `<EMAIL>` alone, because it is now the F1 tag, and still replaces `<NAME>`, `<KEY>` and `<PASSWORD>`. Before this, a second run turned the tag into `user@example.com`. `tools/build_clean.py` makes this change, and `medicine_code.md` still has the old rule until the team agrees. 26 docs labelled B4 hold only `<EMAIL>`, so they keep the token.
+
+## F2
+
+`tools/f2_rule.py` is G9's decontamination check (`teams/09-evaluation/decontam`, PR 31) as a rule: a doc that shares one run of words (13 words, 20 tokens for code) with an item of G9's fingerprint set, or holds a benchmark canary, is dropped. It uses G9's code and set unchanged.
+
+- **Where it runs:** `run_clean.py --f2`, on every pack, after `clean.py`, on the text `clean.py` keeps. It is opt-in: without `--f2` nothing changes, and the tokenizer sample job does not use it. It is not in `clean.py`: the full set needs about 1.1 GB and 20 s to load. The summary gets `f2`: the `set_sha256`, and each dropped `doc_id` with its benchmark items and offset; and `final`: kept, dropped by `clean.py`, dropped by F2 and errors, which add up to the input rows. `actions` stays `clean.py`'s.
+- **Harm test:** `python -I tools/harm_test.py ... --rules spec_v1/tools/f2_rule.py --rule F2 --timeout 300`, and `clean.py` then F2 on the same gold sets. Results on the 13 packs, and a review of every drop: [results/f2/](results/f2/).
+- **The set is pinned:** `SET` and `SET_SHA256` in `tools/f2_rule.py`. A missing set, or one with another `set_sha256`, stops the run before anything is written. `F2_FINGERPRINTS` can point to a copy of the same set. A new set from G9 (v2) needs its own harm test, then both changed.
+- **Known limits (G9's README):** it finds copies only. A reworded, translated or very short item is not found, nor a benchmark outside the set (`not_covered` in G9's `MANIFEST.json`). A flag can be shared public text that a benchmark also quotes.
