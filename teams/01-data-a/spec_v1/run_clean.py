@@ -40,15 +40,19 @@ for row in rows:  # clean.py picks the rules by pack_id: a file without the colu
         sys.exit(f"{args.pack.name}: doc_id {row['doc_id']} has pack_id {row['pack_id']!r}, not {pack!r}")
 args.out.mkdir(parents=True, exist_ok=True)
 t0, actions, dropped, errors, kept = time.time(), Counter(), [], [], []
-for row in rows:
+print(f"cleaning {len(rows)} docs of {pack} ({c._FAMILY[pack]} family)", file=sys.stderr)
+for i, row in enumerate(rows, 1):
     try:
         action, text = c.clean(row)
     except Exception as e:  # a rule that crashes keeps the doc out and is reported by type, never by text
         errors.append([row["doc_id"], type(e).__name__])
-        continue
-    actions[action] += 1
-    if action == "drop": dropped.append(row["doc_id"])
-    else: kept.append(dict(row, text=text))
+        if len(errors) == 1: print(f"first error: doc_id {row['doc_id']}: {type(e).__name__}", file=sys.stderr)
+    else:
+        actions[action] += 1
+        if action == "drop": dropped.append(row["doc_id"])
+        else: kept.append(dict(row, text=text))
+    if i % 500 == 0 or i == len(rows):  # progress goes to stderr: stdout keeps the one summary line
+        print(f"{i}/{len(rows)} {dict(actions)} errors={len(errors)} {i / max(time.time() - t0, 1e-9):.0f} docs/s", file=sys.stderr, flush=True)
 pq.write_table(pa.Table.from_pylist(kept), args.out / f"{name}_clean.parquet")
 summary = {"pack": args.pack.name, "input_sha256": sha256(args.pack), "pack_id": pack, "family": c._FAMILY[pack], "rows": len(rows), "actions": dict(actions), "errors": errors, "dropped": dropped, "seconds": round(time.time() - t0, 1), "docs_per_second": round(len(rows) / max(time.time() - t0, 1e-9), 1),
            "clean_py_sha256": sha256(Path(c.__file__))}  # which rules ran: the same hash means the same clean.py
