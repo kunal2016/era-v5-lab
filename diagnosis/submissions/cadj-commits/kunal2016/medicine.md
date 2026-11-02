@@ -1,8 +1,13 @@
 # Medicine sheet: cadj-commits (kunal2016)
 
 Status: counts are from all 500 labelled rows (427 clean, 73 fix). Harm tests are run with the
-Data A `harm_test.py` on the cadj-commits gold set built with `build_gold.py` (121 documents that two
-readers marked clean; unofficial backup copy, 30 Oct), and on my own 427 clean rows.
+Data A `harm_test.py` (main, sha256 `4dcc04bf8ac553c9`) on the official cadj-commits gold set, and on my own 427 clean rows.
+
+**Gold set.** `teams/02-data-b/gold/cadj-commits_gold.csv`, added by Data B (lead shankarpandala) in
+theschoolofai/era-v5-lab#233 on 2 Nov: **413 documents** that at least two of the three readers (kunal2016 #42,
+sureshmantha #97, pradeep-kumar-gs #111) marked clean, with no fix or drop vote from anyone. sha256 `ba4da5c2233e5ef6`.
+Limit: `max(1, floor(1% of 413))` = **4 documents**. The earlier figures used a 121-document backup copy built on 30 Oct,
+before all three label sheets were complete.
 
 Pack: about 500 commits (commit message, file path, old contents, new contents) from
 bigcode/commitpackft, about 71 each in Python, JavaScript, TypeScript, Java, C++, Go and Rust.
@@ -56,8 +61,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 3. **Action:** fix. The code is good training data; only the address is removed. The
    placeholder is a valid address, so strings like `author_email="user@example.com"` stay valid code.
 
-4. **Harm test:** on the gold set (121 documents) the medicine changes **0** and drops **0**
-   (0.00%, limit 1%): **PASS**. On my 427 clean rows it changes **1** (0.23%): **PASS**. It fixes
+4. **Harm test:** on the gold set (413 documents) the medicine changes **0** and drops **0**
+   (0.00%, limit 4 documents): **PASS**. On my 427 clean rows it changes **1** (0.23%): **PASS**. It fixes
    41 of 41 labelled F1 documents. The one changed clean row is `8ae8af60edff9ffb`, a test that creates a made-up user with a
    fake address. Replacing it does not break the code, but it counts against the 1% limit.
 
@@ -215,8 +220,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix (team decision 2.2: replace with SPDX, rather than remove entirely).
 
-4. **Harm test:** on the gold set (121 documents) the medicine changes **0** and drops **0**
-   (0.00%): **PASS**; on my 427 clean rows it changes **0**: **PASS**. It fixes 32 of 33 labelled
+4. **Harm test:** on the gold set (413 documents) the medicine changes **0** and drops **0**
+   (0.00%, limit 4 documents): **PASS**; on my 427 clean rows it changes **0**: **PASS**. It fixes 32 of 33 labelled
    E4 documents. The one it leaves alone is `ab46a006529db278` (Serde): the same Apache-2.0/MIT
    wording as the rustc header but 7 lines, under `E4_MIN_LINES`. I label all 13 Rust-style headers
    E4 for consistency; whether such pointer notices are E4 at all is open (Q2.1).
@@ -260,7 +265,7 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix.
 
-4. **Harm test:** changes **0** of the 121 gold documents and **0** of my 427 clean rows (0.00%):
+4. **Harm test:** changes **0** of the 413 gold documents and **0** of my 427 clean rows (0.00%):
    **PASS**. Fixes 5 of 5
    labelled cases, which is every A2 document in the pack. The number of lines stays the same.
 
@@ -293,7 +298,7 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 
 3. **Action:** fix.
 
-4. **Harm test:** changes **0** of the 121 gold documents and **0** of my 427 clean rows (0.00%):
+4. **Harm test:** changes **0** of the 413 gold documents and **0** of my 427 clean rows (0.00%):
    **PASS**. Fixes 1 of 1.
 
 5. **Side effects:** a U+FEFF anywhere else is left alone, because inside a string it can be
@@ -303,7 +308,8 @@ the team is likely to need them in spec v1. C1 (1) gets no medicine.
 ## How to reproduce
 
 Each medicine has one ` ```python ` block that defines `cure_<code>(text)` and returns the new text
-(the Data A convention). With the Data A tools (branch `g1-harm-test`, Linux, macOS or WSL):
+(the Data A convention). With the Data A tools on main (Linux, macOS or WSL), and the gold set
+`teams/02-data-b/gold/cadj-commits_gold.csv` as `cadj-commits_gold.csv`:
 
 ```
 python -I teams/01-data-a/tools/medicine_extract.py <this medicine.md> --out /tmp/rules.py --registry /tmp/registry.json
@@ -312,5 +318,8 @@ for c in F1 E4 A2 A1; do
       --gold cadj-commits_gold.csv --rules <this medicine.md> --rule $c
 done
 ```
+
+Result on 2 Nov (413 gold documents, limit 4): F1 0 changed / 0 dropped, PASS; E4 0 / 0, PASS; A2 0 / 0, PASS;
+A1 0 / 0, PASS.
 
 Registry IDs (29 Oct extraction): F1 `DB-F1-002`, E4 `DB-E4-001`, A2 `DB-A2-001`, A1 `DB-A1-001`.
