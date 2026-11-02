@@ -9,7 +9,7 @@ In simple words:
   right place and nothing was lost in the save and restore.
 
 Exit 0 and one PASS line when everything matches; exit 1 and the first step that differs otherwise;
-exit 78 if a run crashed. Writes only to --out (default ./out).
+exit 78 if a run crashed. Writes only to --out (default out/ next to this script, git-ignored).
 
     python restore_test.py                       # 1 CPU process
     python restore_test.py --nproc 2             # 2 CPU processes (gloo, DDP)
@@ -185,7 +185,7 @@ def main(argv=None) -> int:
     ap.add_argument("--steps", type=int, default=200)
     ap.add_argument("--save-at", type=int, default=100)
     ap.add_argument("--stop-at", type=int, default=150, help="Run B's first launch stops here")
-    ap.add_argument("--out", type=Path, default=Path("out"))
+    ap.add_argument("--out", type=Path, default=HERE / "out")
     ap.add_argument("--config", type=Path, default=CONFIGS / "config_v0.yaml")
     ap.add_argument("--tiny", type=Path, default=CONFIGS / "small" / "tiny_moe.yaml")
     a = ap.parse_args(argv)

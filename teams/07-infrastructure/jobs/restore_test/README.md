@@ -57,7 +57,7 @@ The script starts its own processes (no `torchrun`). Run A and run B always use 
 | `--steps` | 200 | last step |
 | `--save-at` | 100 | checkpoint step; the comparison starts at the step after it |
 | `--stop-at` | 150 | where run B's first launch stops |
-| `--out` | `./out` | the only folder the script writes to |
+| `--out` | `out/` next to this script (git-ignored) | the only folder the script writes to |
 | `--config`, `--tiny` | Team 05's files | model and data settings |
 
 ## Expected output
