@@ -14,23 +14,23 @@ SCOPE = {
     "DA-A2-007": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code A2, medicine 2
     "DA-A6-001": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code A6, medicine 3
     "DA-A4-002": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code A4, medicine 4
-    "DA-A4-003": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code A4, medicine 5
+    "DA-A4-003": frozenset({"code-java"}),  # code A4, medicine 5
     "DA-B3-001": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code B3, medicine 6
-    "DA-E1-001": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 7
-    "DA-E1-004": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 8
-    "DA-E1-008": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 9
-    "DA-E1-006": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 10
-    "DA-E1-005": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 11
-    "DA-E1-007": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E1, medicine 12
+    "DA-E1-001": frozenset({"code-go"}),  # code E1, medicine 7
+    "DA-E1-004": frozenset({"code-python", "code-rust"}),  # code E1, medicine 8
+    "DA-E1-008": frozenset({"code-js-ts"}),  # code E1, medicine 9
+    "DA-E1-006": frozenset({"code-java"}),  # code E1, medicine 10
+    "DA-E1-005": frozenset({"code-cpp"}),  # code E1, medicine 11
+    "DA-E1-007": frozenset({"code-cpp"}),  # code E1, medicine 12
     "DA-E2-001": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E2, medicine 13
-    "DA-C3-002": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code C3, medicine 14
-    "DA-C4-002": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code C4, medicine 15
-    "DA-E4-005": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E4, medicine 16
-    "DA-E4-010": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E4, medicine 17
-    "DA-E4-009": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E4, medicine 18
-    "DA-E4-007": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E4, medicine 19
-    "DA-C1-004": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code C1, medicine 20
-    "DA-C1-005": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code C1, medicine 21
+    "DA-C3-002": frozenset({"code-go"}),  # code C3, medicine 14
+    "DA-C4-002": frozenset({"code-java"}),  # code C4, medicine 15
+    "DA-E4-005": frozenset({"code-go"}),  # code E4, medicine 16
+    "DA-E4-010": frozenset({"code-cpp", "code-go", "code-java", "code-python", "code-rust"}),  # code E4, medicine 17
+    "DA-E4-009": frozenset({"code-java"}),  # code E4, medicine 18
+    "DA-E4-007": frozenset({"code-js-ts"}),  # code E4, medicine 19
+    "DA-C1-004": frozenset({"code-go"}),  # code C1, medicine 20
+    "DA-C1-005": frozenset({"code-java"}),  # code C1, medicine 21
     "DA-B4-009": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code B4, medicine 22
     "DA-E3-003": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E3, medicine 23
     "DA-E3-004": frozenset({"code-cpp", "code-go", "code-java", "code-js-ts", "code-python", "code-rust"}),  # code E3, medicine 24
@@ -95,6 +95,7 @@ def _code_a1_001():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-A1-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-cpp"  # pack whose medicine this came from
     import re
 
@@ -113,7 +114,7 @@ def _code_a1_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(remove_bom_characters(doc["text"]), doc["text"])
 
@@ -139,6 +140,7 @@ def _code_a2_007():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-A2-007"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -160,7 +162,7 @@ def _code_a2_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a2(doc), doc["text"])
 
@@ -186,6 +188,7 @@ def _code_a6_001():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-A6-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -209,7 +212,7 @@ def _code_a6_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a6(doc), doc["text"])
 
@@ -235,6 +238,7 @@ def _code_a4_002():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-A4-002"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -256,7 +260,7 @@ def _code_a4_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a4(doc), doc["text"])
 
@@ -282,6 +286,7 @@ def _code_a4_003():
     STATUS = "CANDIDATE"
     LANGS = {'java'}
     ORIGIN = "code-java"  # packs it runs on
+    PACKS = SCOPE["DA-A4-003"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-java"  # pack whose medicine this came from
     import re
 
@@ -304,7 +309,7 @@ def _code_a4_003():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(m8_clean_replacement_chars(doc["text"]), doc["text"])
 
@@ -330,6 +335,7 @@ def _code_b3_001():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-B3-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-cpp"  # pack whose medicine this came from
     import re
 
@@ -353,7 +359,7 @@ def _code_b3_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(remove_metadata_prefix(doc["text"]), doc["text"])
 
@@ -379,6 +385,7 @@ def _code_e1_001():
     STATUS = "CANDIDATE"
     LANGS = {'go'}
     ORIGIN = "code-go"  # packs it runs on
+    PACKS = SCOPE["DA-E1-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -426,7 +433,7 @@ def _code_e1_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(drop_generated(doc["text"]), doc["text"])
 
@@ -452,6 +459,7 @@ def _code_e1_004():
     STATUS = "CANDIDATE"
     LANGS = {'python', 'rust'}
     ORIGIN = "code-rust, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-E1-004"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-rust"  # pack whose medicine this came from
     import re
 
@@ -485,7 +493,7 @@ def _code_e1_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(e1_generated(doc["text"]), doc["text"])
 
@@ -511,6 +519,7 @@ def _code_e1_008():
     STATUS = "CANDIDATE"
     LANGS = {'javascript', 'typescript'}
     ORIGIN = "code-js-ts"  # packs it runs on
+    PACKS = SCOPE["DA-E1-008"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-js-ts"  # pack whose medicine this came from
     import re
 
@@ -565,7 +574,7 @@ def _code_e1_008():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e1(doc), doc["text"])
 
@@ -591,6 +600,7 @@ def _code_e1_006():
     STATUS = "CANDIDATE"
     LANGS = {'java'}
     ORIGIN = "code-java"  # packs it runs on
+    PACKS = SCOPE["DA-E1-006"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-java"  # pack whose medicine this came from
     import re
 
@@ -613,7 +623,7 @@ def _code_e1_006():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(drop_e1(doc["text"]), doc["text"])
 
@@ -639,6 +649,7 @@ def _code_e1_005():
     STATUS = "CANDIDATE"
     LANGS = {'cpp'}
     ORIGIN = "code-cpp"  # packs it runs on
+    PACKS = SCOPE["DA-E1-005"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -664,7 +675,7 @@ def _code_e1_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e1(doc), doc["text"])
 
@@ -690,6 +701,7 @@ def _code_e1_007():
     STATUS = "CANDIDATE"
     LANGS = {'cpp'}
     ORIGIN = "code-cpp"  # packs it runs on
+    PACKS = SCOPE["DA-E1-007"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-java"  # pack whose medicine this came from
     import re
 
@@ -714,7 +726,7 @@ def _code_e1_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(m7_drop_generated(doc["text"]), doc["text"])
 
@@ -740,6 +752,7 @@ def _code_e2_001():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-E2-001"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -771,7 +784,7 @@ def _code_e2_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(drop_blob(doc["text"]), doc["text"])
 
@@ -797,6 +810,7 @@ def _code_c3_002():
     STATUS = "CANDIDATE"
     LANGS = {'go'}
     ORIGIN = "code-go"  # packs it runs on
+    PACKS = SCOPE["DA-C3-002"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -848,7 +862,7 @@ def _code_c3_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_c3(doc), doc["text"])
 
@@ -874,6 +888,7 @@ def _code_c4_002():
     STATUS = "CANDIDATE"
     LANGS = {'java'}
     ORIGIN = "code-java"  # packs it runs on
+    PACKS = SCOPE["DA-C4-002"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-java"  # pack whose medicine this came from
     import re
 
@@ -894,7 +909,7 @@ def _code_c4_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(m9_drop_joined(doc["text"]), doc["text"])
 
@@ -920,6 +935,7 @@ def _code_e4_005():
     STATUS = "CANDIDATE"
     LANGS = {'go'}
     ORIGIN = "code-go"  # packs it runs on
+    PACKS = SCOPE["DA-E4-005"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -964,7 +980,7 @@ def _code_e4_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4(doc), doc["text"])
 
@@ -990,6 +1006,7 @@ def _code_e4_010():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'python', 'rust'}
     ORIGIN = "code-go, code-rust, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-E4-010"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-rust"  # pack whose medicine this came from
     import re
 
@@ -1074,7 +1091,7 @@ def _code_e4_010():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4_fixed(doc), doc["text"])
 
@@ -1100,6 +1117,7 @@ def _code_e4_009():
     STATUS = "CANDIDATE"
     LANGS = {'java'}
     ORIGIN = "code-java"  # packs it runs on
+    PACKS = SCOPE["DA-E4-009"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -1171,7 +1189,7 @@ def _code_e4_009():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(strip_licence_header(doc["text"]), doc["text"])
 
@@ -1197,6 +1215,7 @@ def _code_e4_007():
     STATUS = "CANDIDATE"
     LANGS = {'javascript', 'typescript'}
     ORIGIN = "code-js-ts"  # packs it runs on
+    PACKS = SCOPE["DA-E4-007"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-js-ts"  # pack whose medicine this came from
     import re
 
@@ -1227,7 +1246,7 @@ def _code_e4_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4(doc["text"]), doc["text"])
 
@@ -1253,6 +1272,7 @@ def _code_c1_004():
     STATUS = "CANDIDATE"
     LANGS = {'go'}
     ORIGIN = "code-go"  # packs it runs on
+    PACKS = SCOPE["DA-C1-004"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -1276,7 +1296,7 @@ def _code_c1_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_c1(doc), doc["text"])
 
@@ -1302,6 +1322,7 @@ def _code_c1_005():
     STATUS = "CANDIDATE"
     LANGS = {'java'}
     ORIGIN = "code-java"  # packs it runs on
+    PACKS = SCOPE["DA-C1-005"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-java"  # pack whose medicine this came from
     import re
 
@@ -1359,7 +1380,7 @@ def _code_c1_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(m6_strip_ide_templates(doc["text"]), doc["text"])
 
@@ -1385,6 +1406,7 @@ def _code_b4_009():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-B4-009"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -1408,7 +1430,7 @@ def _code_b4_009():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_b4(doc), doc["text"])
 
@@ -1434,6 +1456,7 @@ def _code_e3_003():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-E3-003"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "code-go"  # pack whose medicine this came from
     import re
 
@@ -1461,7 +1484,7 @@ def _code_e3_003():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e3(doc), doc["text"])
 
@@ -1487,6 +1510,7 @@ def _code_e3_004():
     STATUS = "CANDIDATE"
     LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
     ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+    PACKS = SCOPE["DA-E3-004"]  # the math packs share the "en" tag, so the pack is checked too
     SOURCE = "new rule, written for this sheet"  # pack whose medicine this came from
     import math
     import re
@@ -1557,7 +1581,7 @@ def _code_e3_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e3(doc["text"]), doc["text"])
 
