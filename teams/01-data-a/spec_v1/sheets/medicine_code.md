@@ -1,8 +1,8 @@
 # medicine_code: compiled code medicines
 
 Packs: go 163, rust 78, js-ts 204, java 116, cpp 120, python 46 gold docs (Data A gold, `teams/01-data-a/gold/`). Each pack is tested on its own gold set.
-Rule form: `RULE_ID`, `CODE`, `ACTION`, `STAGE`, `STATUS`, `LANGS`, `ORIGIN`, `SOURCE`, `AUTHOR`; `medicine(doc) -> (action, text)`, `doc = {doc_id, text, url, lang_label}`. A row outside `LANGS` passes unchanged. Same form as `medicine_en.md`, with `STAGE` and `STATUS` added. `AUTHOR` is a code field the team's `medicine_conflicts.py` reads; it is not used in the text.
-Run order is section order, by stage: 10 characters, 20 markup, 30 source (drops, then strips), 40 data safety. An annotator's code is copied unchanged; only the imports it uses, `_std` and the `LANGS` guard are added. Two exceptions: `DA-E4-010` is `DA-E4-004` with 3 bugs fixed, and `DA-E3-004` is new.
+Rule form: `RULE_ID`, `CODE`, `ACTION`, `STAGE`, `STATUS`, `LANGS`, `ORIGIN`, `SOURCE`, `AUTHOR`; `medicine(doc) -> (action, text)`, `doc = {doc_id, text, url, lang_label}`. A row outside `LANGS` passes unchanged, except a row whose `pack_id` is in `ORIGIN`: some code packs label every doc `code`. Same form as `medicine_en.md`, with `STAGE` and `STATUS` added. `AUTHOR` is a code field the team's `medicine_conflicts.py` reads; it is not used in the text.
+Run order is section order, by stage: 10 characters, 20 markup, 30 source (drops, then strips), 40 data safety. An annotator's code is copied unchanged; only the imports it uses, `_std`, `PACKS` and the `LANGS` guard are added. Two exceptions: `DA-E4-010` is `DA-E4-004` with 3 bugs fixed, and `DA-E3-004` is new.
 IDs: Data A registry after running the extractor on the latest sheets. `DA-E3-004`, `DA-E4-009`, `DA-E4-010` and `DA-C4-002` are the next free numbers. All IDs are provisional until the team commits the registry.
 Assumption: the language tag on a row is correct. No language detector runs (`D1`).
 Tested on `g1-harm-test` at `bae5163`. Limit: changed + dropped at most `max(1, floor(1% of gold))`. Why each rule was picked, for each disease: `decisions_code.md`.

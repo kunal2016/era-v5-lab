@@ -3,7 +3,7 @@
   python run_clean.py --pack code-go.parquet --out out
   python run_clean.py --pack train/code-go/part-00000.parquet --pack-id code-go --out out
 
-The pack is --pack-id when given, else the file name (<pack_id>.parquet). It must be one of the 13 packs clean.py has
+The pack is --pack-id when given, else the file name (<pack_id>.parquet). It must be one of the registered packs clean.py has
 rules for: any other stops the run with exit code 1 before the file is read or anything is written, since clean.py would
 pass every doc through unchanged. A pack_id column in the file must name the same pack.
 Writes out/<name>_clean.parquet (the kept docs, with their cleaned text) and out/<name>_summary.json (counts, dropped
