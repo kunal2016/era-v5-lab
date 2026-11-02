@@ -19,3 +19,4 @@ Each Week 2 rotation member in Team 09 (`09-evaluation`) runs one benchmark on o
 
 | rotator | model @ revision | benchmark (task, shots, metric) | published (source link) | ours ± s.e. | Δ | verdict | harness commit | results.json sha256 | date |
 |---|---|---|---|---|---|---|---|---|---|
+| Sandeep Kunkunuru (`@sandeepkunkunuru`) | `Qwen/Qwen2.5-1.5B` @ `e5dfabbc` | BBH (`leaderboard_bbh`, 3-shot, `acc_norm`, $n=5761$) | `40.46 ± 0.60` ([Open LLM Leaderboard v2](https://huggingface.co/datasets/open-llm-leaderboard/results) / [`baselines.yaml`](../harness_code_indic/configs/baselines.yaml)) | `40.50 ± 0.60` | `+0.04` | `PASS` | `5a1c5f3` | `1efac93132366cbb3004b31742728669dcc99a127891dba43fafcf0b957a67b5` | `2026-11-02` |
