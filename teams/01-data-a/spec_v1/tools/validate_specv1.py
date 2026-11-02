@@ -1,7 +1,8 @@
 """Validate consolidated spec with repository rule execution and the repository minimum-one harm policy.
 
-Usage: python validate_specv1.py --packs /path/to/packs --gold /path/to/gold
+Usage, from the repository root: python teams/01-data-a/spec_v1/tools/validate_specv1.py --packs <packs folder> --gold teams/01-data-a/gold
 Writes IDs, counts and digests; never source text. Source medicines are not modified.
+Paths are written relative to the repository root (gold sets) or as file names (packs), never as local absolute paths.
 """
 import argparse
 import hashlib
@@ -14,12 +15,21 @@ from fractions import Fraction
 import pyarrow.parquet as pq
 
 SPEC = Path(__file__).resolve().parents[1]
+ROOT = SPEC.parents[2]  # the era-v5-lab folder
 sys.path.insert(0, str(SPEC.parent / 'tools'))
 import harm_test as ht
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def report_paths(gold, pack):
+    """Where the gold set and the pack were, for the report, without local absolute paths (TSAI review, 2 Nov): the gold set
+    from the repository root (its file name if it is outside the repository), the pack as its file name. The digests next
+    to them identify the exact files."""
+    gold = gold.resolve()
+    return {'gold_path': gold.relative_to(ROOT).as_posix() if gold.is_relative_to(ROOT) else gold.name, 'pack_path': pack.name}
 
 
 def summarize(result, n):
@@ -136,8 +146,7 @@ def main():
         guard_result = ht.run_sheet(outside, docs, 5)
         if any(guard_result):
             raise ValueError('out-of-pack rule changed, dropped or errored on ' + pack)
-        report['packs'][pack] = {'pack_sha256': digest(path), 'gold_sha256': digest(gold),
-            'gold_path': str(gold.resolve()), 'pack_path': str(path.resolve()),
+        report['packs'][pack] = {'pack_sha256': digest(path), 'gold_sha256': digest(gold), **report_paths(gold, path),
             'independent_gold_rules': single, 'combined_gold': combined, 'combined_pack': full,
             'out_of_pack_guard': 'PASS'}
         lines.append(f'| {pack} | {len(ids)} | {len(combined["changed"])} / {len(combined["dropped"])} | {combined["result"]} | {len(full["changed"])} / {len(full["dropped"])} | {len(combined["errors"])} / {len(full["errors"])} |')
@@ -147,7 +156,7 @@ def main():
     lines += ['\nIndependent gold rules failing the repository minimum-one limit: ' +
               (', '.join(f'`{p}/{rid}` ({verdict})' for p, rid, verdict in failures) or 'none') + '.',
               '\nAll other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/cleaner/specv1_validation.json](../results/cleaner/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.',
-              '\nReproduce from the repository root (Python requires `pyarrow` and `ftfy`):\n\n```bash\npython3 teams/01-data-a/spec_v1/tools/validate_specv1.py \\\n  --packs /home/vijay/projects/erav5/erav5-lab-other-files/packs \\\n  --gold /home/vijay/projects/erav5/era-v5-lab-second-clone/teams/01-data-a/gold\n```']
+              '\nReproduce from the repository root (install `teams/01-data-a/spec_v1/requirements.txt` first):\n\n```bash\npython3 teams/01-data-a/spec_v1/tools/validate_specv1.py \\\n  --packs <packs folder> \\\n  --gold teams/01-data-a/gold\n```']
     src = sheet.read_text()
     start = src.index('<!-- VALIDATION -->')
     end = src.index('\n## Medicine 1 ', start)

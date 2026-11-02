@@ -135,26 +135,26 @@ Fresh local execution using the repository loader, mutation checks, timeouts and
 | code-go | 163 | 0 / 0 | PASS | 265 / 44 | 0 / 0 |
 | code-java | 116 | 0 / 0 | PASS | 350 / 11 | 0 / 0 |
 | code-js-ts | 204 | 0 / 0 | PASS | 264 / 22 | 0 / 0 |
-| code-python | 142 | 0 / 0 | PASS | 325 / 16 | 0 / 0 |
+| code-python | 141 | 0 / 0 | PASS | 325 / 16 | 0 / 0 |
 | code-rust | 234 | 0 / 0 | PASS | 238 / 17 | 0 / 0 |
 | en-dclm | 62 | 0 / 0 | PASS | 54 / 9 | 0 / 0 |
 | en-fineweb-edu | 158 | 0 / 0 | PASS | 12 / 1 | 0 / 0 |
-| en-nemotroncc | 34 | 0 / 0 | PASS | 62 / 17 | 0 / 0 |
+| en-nemotroncc | 129 | 0 / 0 | PASS | 62 / 17 | 0 / 0 |
 | en-nemotroncc-synth | 326 | 0 / 0 | PASS | 32 / 1 | 0 / 0 |
 | math-finemath | 86 | 0 / 0 | PASS | 176 / 13 | 0 / 0 |
 | math-megamath | 26 | 0 / 0 | PASS | 37 / 10 | 0 / 0 |
-| sci-finepdfs | 198 | 0 / 0 | PASS | 32 / 12 | 0 / 0 |
+| sci-finepdfs | 202 | 0 / 0 | PASS | 32 / 12 | 0 / 0 |
 
 Independent gold rules failing the repository minimum-one limit: none.
 
-All other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/specv1_validation.json](results/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.
+All other independently tested in-scope rules passed. Every out-of-pack guard passed on all source documents. Results apply to the snapshots recorded in [results/cleaner/specv1_validation.json](../results/cleaner/specv1_validation.json). A failed candidate is retained for review and blocks release; it is not silently disabled to improve harm numbers.
 
-Reproduce from the repository root (Python requires `pyarrow` and `ftfy`):
+Reproduce from the repository root (install `teams/01-data-a/spec_v1/requirements.txt` first):
 
 ```bash
-python3 teams/01-data-a/spec_v1/scripts/validate_specv1.py \
-  --packs /home/vijay/projects/erav5/erav5-lab-other-files/packs \
-  --gold /home/vijay/projects/erav5/era-v5-lab-second-clone/teams/01-data-a/gold
+python3 teams/01-data-a/spec_v1/tools/validate_specv1.py \
+  --packs <packs folder> \
+  --gold teams/01-data-a/gold
 ```
 
 
@@ -164,7 +164,7 @@ python3 teams/01-data-a/spec_v1/scripts/validate_specv1.py \
 
 1. **Disease:** A1 invisible junk characters. Labelled rows: go 0, rust 1, js-ts 1, java 1, cpp 12, python 0. Examples: `2faccaa1d7a77d70`, `91cf7be64838e0d0`, `beae2c42d8a34ccc`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -229,7 +229,7 @@ def medicine(doc):
 
 1. **Disease:** A2 control characters. Labelled rows: go 1, rust 6, js-ts 17, java 44, cpp 47, python 2. Examples: `34133f5414afff81`, `182c2cf59a3fa4f1`, `2f34546793ed7faf`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -297,7 +297,7 @@ def medicine(doc):
 
 1. **Disease:** A6 mixed script (look-alike letters). Labelled rows: go 2, rust 0, js-ts 0, java 0, cpp 0, python 0. Examples: `48b3b124a7aaa5fc`, `64ed179e7e5c3d21`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -367,7 +367,7 @@ def medicine(doc):
 
 1. **Disease:** A4 replacement characters. Labelled rows: go 1, rust 0, js-ts 0, java 2, cpp 0, python 0. Examples: `2a92a9a8489c5ea2`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -435,7 +435,7 @@ def medicine(doc):
 
 1. **Disease:** A4 replacement characters. Labelled rows: go 1, rust 0, js-ts 0, java 2, cpp 0, python 0. Examples: `912c53fa71c7d9ad`, `9b95cf192922d106`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -505,7 +505,7 @@ def medicine(doc):
 
 1. **Disease:** B3 ghost markers. Labelled rows: go 247, rust 225, js-ts 262, java 250, cpp 245, python 284. Examples: `01180a3ddf4dfc23`, `03d9fb46f54cf391`, `03e1fbfd3629a84a`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -575,7 +575,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `023d4d7c1524277f`, `0bbbdad3593bc36f`, `0e5b75717c831da2`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -669,7 +669,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `00a6ea4358544d22`, `0316bfaac536f88b`, `1aa2bcd706be1e4b`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -749,7 +749,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `0c10e83429b075c5`, `0f34612ed9c80d78`, `2bae666c99ad51ed`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -850,7 +850,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `138cac43be0730ea`, `2111dfa57dfd75e8`, `3cba9087383097dd`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -919,7 +919,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `4b53d240dabec20a`, `737965d79cc94955`, `83b3083721ee5df9`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -991,7 +991,7 @@ def medicine(doc):
 
 1. **Disease:** E1 minified or generated code. Labelled rows: go 43, rust 23, js-ts 23, java 14, cpp 20, python 11. Examples: `3c67c435782c8a77`, `9c1d218d257a6176`, `b5da9ac1658db525`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1062,7 +1062,7 @@ def medicine(doc):
 
 1. **Disease:** E2 data blobs. Labelled rows: go 7, rust 2, js-ts 1, java 1, cpp 1, python 1. Examples: `023d4d7c1524277f`, `637118880fa53f2f`, `8c1931d1524ec642`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1140,7 +1140,7 @@ def medicine(doc):
 
 1. **Disease:** C3 truncated or broken document. Labelled rows: go 1, rust 0, js-ts 0, java 0, cpp 0, python 0. Examples: `a27e1273db746e7d`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1238,7 +1238,7 @@ def medicine(doc):
 
 1. **Disease:** C4 two documents joined. Labelled rows: go 0, rust 0, js-ts 0, java 1, cpp 1, python 0. Examples: `1227540794647c4d`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1305,7 +1305,7 @@ def medicine(doc):
 
 1. **Disease:** E4 repeated licence headers. Labelled rows: go 76, rust 22, js-ts 9, java 103, cpp 176, python 70. Examples: `01180a3ddf4dfc23`, `0a0303df2fa01ea8`, `0c16883f44febd4f`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1396,7 +1396,7 @@ def medicine(doc):
 
 1. **Disease:** E4 repeated licence headers. Labelled rows: go 76, rust 22, js-ts 9, java 103, cpp 176, python 70. Examples: `01180a3ddf4dfc23`, `0a0303df2fa01ea8`, `0c16883f44febd4f`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1527,7 +1527,7 @@ def medicine(doc):
 
 1. **Disease:** E4 repeated licence headers. Labelled rows: go 76, rust 22, js-ts 9, java 103, cpp 176, python 70. Examples: `0796334a27ed6607`, `0dd7bdea9580fa25`, `1a1a1d7ab0bf9188`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1645,7 +1645,7 @@ def medicine(doc):
 
 1. **Disease:** E4 repeated licence headers. Labelled rows: go 76, rust 22, js-ts 9, java 103, cpp 176, python 70. Examples: `1e918efcbd1c6f4b`, `4aa682fef3c7ba0d`, `67c9226601f26da9`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1722,7 +1722,7 @@ def medicine(doc):
 
 1. **Disease:** C1 boilerplate. Labelled rows: go 1, rust 0, js-ts 0, java 80, cpp 2, python 0. Examples: `45ac5026eac81b39`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1793,7 +1793,7 @@ def medicine(doc):
 
 1. **Disease:** C1 boilerplate. Labelled rows: go 1, rust 0, js-ts 0, java 80, cpp 2, python 0. Examples: `077f2bc49b1bb6db`, `0b893004aea9459b`, `1397a887d14c0fae`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1897,7 +1897,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template junk / PII placeholders. Labelled rows: go 45, rust 18, js-ts 25, java 83, cpp 122, python 27. Examples: `0f4121b3b47fc3e0`, `1398b525d923d644`, `14a63d176ed55369`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -1967,7 +1967,7 @@ def medicine(doc):
 
 1. **Disease:** E3 secrets. Labelled rows: go 1, rust 1, js-ts 9, java 1, cpp 0, python 0. Examples: `98e4c493f32c8bfa`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.
@@ -2038,7 +2038,7 @@ def medicine(doc):
 
 1. **Disease:** E3 secrets. Labelled rows: go 1, rust 1, js-ts 9, java 1, cpp 0, python 0. Examples: `85fa4d03a2a63982`, `0d3bff117f465b99`, `8302c459b07901ca`.
 <!-- CARD EVIDENCE -->
-**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 142 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
+**Current gold harm:** code-cpp: 0 changed / 0 dropped of 122 (PASS); code-go: 0 changed / 0 dropped of 163 (PASS); code-java: 0 changed / 0 dropped of 116 (PASS); code-js-ts: 0 changed / 0 dropped of 204 (PASS); code-python: 0 changed / 0 dropped of 141 (PASS); code-rust: 0 changed / 0 dropped of 234 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.
@@ -2152,7 +2152,7 @@ def medicine(doc):
 
 1. **Disease:** A1 invisible junk characters. Labelled rows: dclm 12, fineweb-edu 1, nemotroncc 14, synth 0. Examples it treats: `10355b4f94c87a2c` (dclm), `11c3cd0e50856c3e` (dclm), `094e33117f3c3cd2` (nemotroncc).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2221,7 +2221,7 @@ def medicine(doc):
 
 1. **Disease:** A2 control characters. Labelled rows: dclm 3, fineweb-edu 0, nemotroncc 0, synth 0. Examples it treats: `5d1fd12b101321f0` (dclm), `7b1d879aa4e04769` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2280,7 +2280,7 @@ def medicine(doc):
 
 1. **Disease:** A5 wrong normal form. Labelled rows: dclm 3, fineweb-edu 0, nemotroncc 0, synth 0. Examples it treats: `10355b4f94c87a2c` (dclm), `68575a61a90990d5` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2339,7 +2339,7 @@ def medicine(doc):
 
 1. **Disease:** A3 mojibake. Labelled rows: dclm 7, fineweb-edu 4, nemotroncc 4, synth 0. Examples it treats: `5d1fd12b101321f0` (dclm), `7b1d879aa4e04769` (dclm), `53dadf5fc6ee123a` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2407,7 +2407,7 @@ def medicine(doc):
 
 1. **Disease:** B1 HTML entities. Labelled rows: dclm 1, fineweb-edu 0, nemotroncc 3, synth 0. Examples it treats: `1992526bd6e98869` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2470,7 +2470,7 @@ def medicine(doc):
 
 1. **Disease:** B2 HTML or XML tags. Labelled rows: dclm 3, fineweb-edu 1, nemotroncc 1, synth 0. Examples it treats: `6d1051dc3ca46585` (dclm), `a845e6c52e035cbb` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2534,7 +2534,7 @@ def medicine(doc):
 
 1. **Disease:** C3 truncated document. Labelled rows: dclm 103, fineweb-edu 35, nemotroncc 101, synth 50. Examples it treats: `52422fff81211f50` (dclm), `4f2fc39dee7af855` (nemotroncc), `5ef3f9c12c7a2608` (nemotroncc).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2604,7 +2604,7 @@ def medicine(doc):
 
 1. **Disease:** C3 truncated document. Labelled rows: dclm 103, fineweb-edu 35, nemotroncc 101, synth 50. Examples it treats: `484c668df3c40868` (dclm), `52422fff81211f50` (dclm), `8262087c39b0c8c5` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2690,7 +2690,7 @@ def medicine(doc):
 
 1. **Disease:** C5 lists of keywords or links. Labelled rows: dclm 61, fineweb-edu 30, nemotroncc 71, synth 7. Examples it treats: `0b139d9931d96986` (dclm), `1ec7fa64b9476242` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2777,7 +2777,7 @@ def medicine(doc):
 
 1. **Disease:** D4 bad machine translation. Labelled rows: dclm 21, fineweb-edu 3, nemotroncc 17, synth 2. Examples it treats: `0a28e7f42a4bba02` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2850,7 +2850,7 @@ def medicine(doc):
 
 1. **Disease:** C1 boilerplate. Labelled rows: dclm 389, fineweb-edu 308, nemotroncc 161, synth 76. Examples it treats: `13b37bf5acff4d16` (dclm), `319afcfc2bbab65b` (dclm), `96dfcd8dcd7a0cff` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -2920,7 +2920,7 @@ def medicine(doc):
 
 1. **Disease:** C2 repeated lines. Labelled rows: dclm 38, fineweb-edu 6, nemotroncc 39, synth 1. Examples it treats: `1e13b455581e96ca` (dclm), `28bd69b4ed987643` (dclm), `b888d78a21618c96` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3014,7 +3014,7 @@ def medicine(doc):
 
 1. **Disease:** C5 lists of keywords or links. Labelled rows: dclm 61, fineweb-edu 30, nemotroncc 71, synth 7. Examples it treats: `4604f40da35906cc` (fineweb-edu), `58b9213cca24ff17` (fineweb-edu), `d49190f1c5ef2a70` (nemotroncc).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3077,7 +3077,7 @@ def medicine(doc):
 
 1. **Disease:** D3 mixed language. Labelled rows: dclm 24, fineweb-edu 5, nemotroncc 6, synth 1. Examples it treats: `122504afaec49b2d` (dclm), `1ec7fa64b9476242` (dclm), `95e8df7138976c19` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3149,7 +3149,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template and code junk. Labelled rows: dclm 25, fineweb-edu 8, nemotroncc 15, synth 36. Examples it treats: `281de2e3af773d76` (synth), `47f4f5107ac9aece` (synth).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3241,7 +3241,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template and code junk. Labelled rows: dclm 25, fineweb-edu 8, nemotroncc 15, synth 36. Examples it treats: `0b500dc5f31c1afc` (synth), `1f21b7ad88d0ec88` (synth).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3305,7 +3305,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template and code junk. Labelled rows: dclm 25, fineweb-edu 8, nemotroncc 15, synth 36. Examples it treats: `7ecdf57b3e06fd56` (dclm), `90c2a9476f8445ad` (dclm).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3394,7 +3394,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template and code junk. Labelled rows: dclm 25, fineweb-edu 8, nemotroncc 15, synth 36. Examples it treats: `3e44df6a7ddb0098` (fineweb-edu).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3505,7 +3505,7 @@ def medicine(doc):
 
 1. **Disease:** B4 template and code junk. Labelled rows: dclm 25, fineweb-edu 8, nemotroncc 15, synth 36. Examples it treats: `d2fb665c40af5edb` (synth).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -3577,7 +3577,7 @@ def medicine(doc):
 
 1. **Disease:** F1 personal data. Labelled rows: dclm 13, fineweb-edu 12, nemotroncc 13, synth 2. Examples it treats: `416e12ac72df0b07` (dclm), `71f25549c2c4200d` (dclm), `fab230d1a3b03a77` (nemotroncc).
 <!-- CARD EVIDENCE -->
-**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 34 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
+**Current gold harm:** en-dclm: 0 changed / 0 dropped of 62 (PASS); en-fineweb-edu: 0 changed / 0 dropped of 158 (PASS); en-nemotroncc: 0 changed / 0 dropped of 129 (PASS); en-nemotroncc-synth: 0 changed / 0 dropped of 326 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.
@@ -4774,7 +4774,7 @@ def medicine(doc):
    - `50cc681aabd3d82b`: template-like email marker
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -4832,7 +4832,7 @@ def medicine(doc):
    - `aa241f145eca058d`: superscript markup
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -4902,7 +4902,7 @@ def medicine(doc):
    - `ae0c958288200e55`: footnote wrapper
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -4978,7 +4978,7 @@ def medicine(doc):
    - `78687cb0dc7a4f80`: U+FE0F case (not removed)
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.
@@ -5025,7 +5025,7 @@ def medicine(doc):
    - `cdc5973ec2161f44`: Cyrillic/Latin OCR mixture
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5083,7 +5083,7 @@ def medicine(doc):
    - `6dc622390a3f7207`: repeated copyright line (subject to attribution)
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5212,7 +5212,7 @@ def medicine(doc):
    - `f48baf0b54a4e80f`: repeated letter
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5320,7 +5320,7 @@ def medicine(doc):
    - `6acc7c94105bdebd`: interrupted joined article
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5473,7 +5473,7 @@ def medicine(doc):
    - `6acc7c94105bdebd`: other joined article (needs provenance split)
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5530,7 +5530,7 @@ def medicine(doc):
    - `1c686de5116ab261`: Lithuanian-language candidate from second reviewer
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 **Exact source characters:** JSON string literals below decode to verbatim original characters. Fix excerpts surround the first edit; drop excerpts identify the affected source document and do not establish which substring caused the drop. These are execution examples, not additional independently adjudicated labels.
 
@@ -5581,7 +5581,7 @@ def medicine(doc):
    - `b44b092b0e829a12`: private telephone at offset 86
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.
@@ -5642,7 +5642,7 @@ def medicine(doc):
    - `19c895320632e7b0`: bilingual academic/form example
 
 <!-- CARD EVIDENCE -->
-**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 198 (PASS).
+**Current gold harm:** sci-finepdfs: 0 changed / 0 dropped of 202 (PASS).
 
 
 **Example gap:** 0/3 publishable execution excerpts; private/credential spans are withheld and fewer than three affected records may exist. Complete reviewed evidence before freeze.

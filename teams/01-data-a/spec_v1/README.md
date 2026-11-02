@@ -14,7 +14,8 @@ teams/01-data-a/
     specv1.md               the four family sheets collated: what spec_v1/tools/build_clean.py reads
     clean.py                the cleaner, generated from specv1.md, with the scope table at the top
     README_clean.md         how to build, test and run clean.py, step by step
-    run_clean.py            runs the cleaner on one pack
+    run_clean.py            runs the cleaner on one pack, or on one part of a pack with --pack-id
+    requirements.txt        the pinned packages, for pip install -r
     tests/                  unit tests on made-up values
     results/cleaner/harm_tests.md   each rule on the gold sets of its packs, each clean.py function, and clean()
     results/cleaner/specv1_<pack>_harm.json   the reports behind harm_tests.md: IDs and digests only
@@ -120,14 +121,15 @@ A rule names the packs it applies to (instructor, 31 Oct): `SPEC_PACKS` in its b
 Step by step, with every option, output and error: [README_clean.md](README_clean.md).
 
 ```
-pip install pyarrow pytest tree-sitter-language-pack ftfy
+python3 -m pip install -r spec_v1/requirements.txt
 python spec_v1/tools/build_clean.py
 python -m pytest spec_v1/tests
 python spec_v1/run_clean.py --pack <pack>.parquet --out out
+python spec_v1/run_clean.py --pack <split>/<pack_id>/part-00000.parquet --pack-id <pack_id> --out out
 python spec_v1/tools/make_harm_tests.py <g1-harm-test checkout> <folder with the packs> [<another folder with packs> ...]
 ```
 
-Paths start at `teams/01-data-a/`. Run `make_harm_tests.py` where all 13 packs are: a pack it cannot find is listed as not run in `harm_tests.md`. `ftfy` is needed once the English A3 rule is in. `make_harm_tests.py` uses `harm_test.py`, which is on `g1-harm-test` until PR 140 merges. The packs are not in the repo, so get your link from the lab plan sheet.
+Paths start at `teams/01-data-a/`. Run `make_harm_tests.py` where all 13 packs are: a pack it cannot find is listed as not run in `harm_tests.md`. `requirements.txt` pins every package `clean.py`, the tools and the tests need (Python 3.10 or later). The second `run_clean.py` line cleans a tokenizer sample part, whose file is not named `<pack_id>.parquet`. `make_harm_tests.py` uses `harm_test.py`, which is on `g1-harm-test` until PR 140 merges. The packs are not in the repo, so get your link from the lab plan sheet.
 
 ## Add your medicines without double work
 
