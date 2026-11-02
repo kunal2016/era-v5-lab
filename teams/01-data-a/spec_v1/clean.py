@@ -113,7 +113,7 @@ def _code_a1_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(remove_bom_characters(doc["text"]), doc["text"])
 
@@ -160,7 +160,7 @@ def _code_a2_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a2(doc), doc["text"])
 
@@ -209,7 +209,7 @@ def _code_a6_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a6(doc), doc["text"])
 
@@ -256,7 +256,7 @@ def _code_a4_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_a4(doc), doc["text"])
 
@@ -304,7 +304,7 @@ def _code_a4_003():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(m8_clean_replacement_chars(doc["text"]), doc["text"])
 
@@ -353,7 +353,7 @@ def _code_b3_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(remove_metadata_prefix(doc["text"]), doc["text"])
 
@@ -426,7 +426,7 @@ def _code_e1_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(drop_generated(doc["text"]), doc["text"])
 
@@ -485,7 +485,7 @@ def _code_e1_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(e1_generated(doc["text"]), doc["text"])
 
@@ -565,7 +565,7 @@ def _code_e1_008():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e1(doc), doc["text"])
 
@@ -613,7 +613,7 @@ def _code_e1_006():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(drop_e1(doc["text"]), doc["text"])
 
@@ -664,7 +664,7 @@ def _code_e1_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e1(doc), doc["text"])
 
@@ -714,7 +714,7 @@ def _code_e1_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(m7_drop_generated(doc["text"]), doc["text"])
 
@@ -771,7 +771,7 @@ def _code_e2_001():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(drop_blob(doc["text"]), doc["text"])
 
@@ -848,7 +848,7 @@ def _code_c3_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_c3(doc), doc["text"])
 
@@ -894,7 +894,7 @@ def _code_c4_002():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(m9_drop_joined(doc["text"]), doc["text"])
 
@@ -964,7 +964,7 @@ def _code_e4_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4(doc), doc["text"])
 
@@ -1074,7 +1074,7 @@ def _code_e4_010():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4_fixed(doc), doc["text"])
 
@@ -1171,7 +1171,7 @@ def _code_e4_009():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(strip_licence_header(doc["text"]), doc["text"])
 
@@ -1227,7 +1227,7 @@ def _code_e4_007():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e4(doc["text"]), doc["text"])
 
@@ -1276,7 +1276,7 @@ def _code_c1_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_c1(doc), doc["text"])
 
@@ -1359,7 +1359,7 @@ def _code_c1_005():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(m6_strip_ide_templates(doc["text"]), doc["text"])
 
@@ -1408,7 +1408,7 @@ def _code_b4_009():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_b4(doc), doc["text"])
 
@@ -1461,7 +1461,7 @@ def _code_e3_003():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e3(doc), doc["text"])
 
@@ -1557,7 +1557,7 @@ def _code_e3_004():
 
 
     def medicine(doc):
-        if doc.get("lang_label") not in LANGS:
+        if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in SPEC_PACKS:
             return ("keep", doc["text"])
         return _std(medicine_e3(doc["text"]), doc["text"])
 
