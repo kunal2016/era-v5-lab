@@ -62,6 +62,8 @@ def main():
         p.add_argument("--"+name,type=Path,required=True)
     p.add_argument("--runtime",type=Path,help="Harness-only runtime contract; dimensions remain lead-owned")
     p.add_argument("--resolution",type=Path,help="Reviewed baseline choices, separate from fixed sizes")
+    p.add_argument("--heldout-sources",type=Path,help="PR191 per-document source/slice sidecar")
+    p.add_argument("--heldout-sha256",type=Path,help="Official results/heldout_v1.sha256 file")
     p.add_argument("--heldout-report",type=Path,help="Data-owner JSON provenance; see HARNESS_WEEK2.md")
     p.add_argument("--lr",type=float,help="Explicit LR override, recorded in manifest; no optimizer default")
     p.add_argument("--seed",type=int)
@@ -92,6 +94,7 @@ def main():
         if args.device!="cuda" or cfg["run"]["dtype"]!="bf16":p.error("Lead plan requires GPU BF16 for quality runs")
         if cfg["approval"]["status"]!="agreed" or not cfg["approval"]["reference"] or not cfg["evaluation"]["approved"]:
             p.error("Baseline/head/scoring agreements are pending; use smoke mode for development")
+        if not args.heldout_sources or not args.heldout_sha256:p.error("Quality scoring requires official heldout hash and slice sources")
         if not args.heldout_report:p.error("Data-owner heldout zero-match provenance required")
         if args.no_checkpoint:p.error("Quality runs must save checkpoint state")
         if args.smoke_seq_len or args.smoke_batch_size:p.error("Smoke shape overrides forbidden in quality runs")
@@ -111,8 +114,13 @@ def main():
     train_hash=sha256(args.train_data);heldout_hash=sha256(args.heldout_data)
     if train_hash==heldout_hash:p.error("Training and holdout files are identical")
     train=DocumentWindows(args.train_data,artifacts,cfg["model"]["block_size"])
-    val=DocumentWindows(args.heldout_data,artifacts,cfg["model"]["block_size"],require_ids=not args.smoke)
+    val=DocumentWindows(args.heldout_data,artifacts,cfg["model"]["block_size"],require_ids=not args.smoke,sources_path=args.heldout_sources)
     if train.document_hashes & val.document_hashes:p.error("Exact document overlap between train and holdout")
+    if args.heldout_sha256:
+        lines=[line.split() for line in args.heldout_sha256.read_text(encoding='utf8').splitlines() if line.strip()]
+        if len(lines)!=1 or len(lines[0])!=2 or lines[0][0]!=heldout_hash:p.error('Official heldout checksum mismatch')
+        if Path(lines[0][1].lstrip('*')).name!=args.heldout_data.name:p.error('Official checksum names a different heldout file')
+    if not args.smoke and set(val.slice_raw_bytes)!={'en','code','math','sci','hi','bn','ta','te','kn','ml','mr','gu','pa','or','as'}:p.error('Official holdout must provide all 15 slices')
     report=None
     if args.heldout_report:
         report=json.loads(args.heldout_report.read_text(encoding="utf8"))
@@ -128,6 +136,8 @@ def main():
     source_files=[Path(__file__),*Path(__file__).with_name("week2").glob("*.py")]
     sources={f.name:sha256(f) for f in source_files}
     identity={"config":cfg,"artifacts":artifacts.identity(),"train_sha256":train_hash,"heldout_sha256":heldout_hash,
+              "heldout_sources_sha256":sha256(args.heldout_sources) if args.heldout_sources else None,
+              "heldout_checksum_sha256":sha256(args.heldout_sha256) if args.heldout_sha256 else None,
               "sources":sources,"device":str(device),"torch":torch.__version__,"smoke":args.smoke}
     identity_hash=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
     args.out.mkdir(parents=True,exist_ok=True)

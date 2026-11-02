@@ -35,8 +35,19 @@ The --heldout-report JSON needs heldout_sha256, fingerprint_set_id, scope="full"
 
 The complete plan hash is recorded for traceability only. Editing plan prose does not block the harness. Arm shapes and rates are read directly; missing widths, invalid geometry and unsupported settings fail validation. Steps/time budgets remain harness-only defaults reviewed from the plan, and an arm can explicitly override run.steps/max_time_min. They must be reviewed if the lead changes budgets. A fixed whole-document hash is not used as enforcement.
 
-Before EXP-1, the lead must select one harness for all five rates and all seeds in plan_v1.md. This revision supplies a proposed one-harness plan note separately; it does not silently change the lead's plan. Do not submit an EXP-1 job using this harness until that selection, real-data inputs and baseline decisions are ready.
+PR197 selects train_week2.py for all five EXP-1 rates and all seeds. PR197 supplies that one-harness selection; this overlay does not edit the lead-owned plan. Do not submit the EXP-1 job until the plan is approved, real-data inputs and baseline decisions are ready.
 
 ## Remaining work
 
 Official holdout/G9 evidence, G4-shipped table, approved mixture and unresolved baseline choices remain external inputs. CPU smoke results are not full-budget quality results. Full-context GPU feasibility, long-run stability and checkpoint-resume execution evidence remain required before relevant jobs. EXP-5 is removed by TSAI decision.
+
+
+## PR191 / PR197 integration
+
+Use `--heldout-data teams/05-architecture/heldout_v1/data/heldout_v1.jsonl --heldout-sources teams/05-architecture/heldout_v1/data/heldout_v1_sources.jsonl --heldout-report teams/05-architecture/heldout_v1/heldout_report.json --heldout-sha256 teams/05-architecture/results/heldout_v1.sha256` with the existing training command. These are required for quality mode. IDs/order/text hashes must match the source sidecar exactly. Use the corrected, approved owner artifact; the fetched 1065-document snapshot still had requested removals pending. Do not freeze its old hash in code.
+
+Aggregate `val/bpb` remains available. Each slice reports `val/slices/<slice>/bpb`, `nll_nats`, `utf8_bytes`, and `scored_tokens`. Every BPB is summed nats / ln(2) / summed original bytes within that slice. Group metrics are `val/groups/english_bpb`, `val/groups/code_bpb`, `val/groups/indic_mean_bpb`. `val/three_group_bpb` is their arithmetic mean, with Indic defined as the arithmetic mean of hi,bn,ta,te,kn,ml,mr,gu,pa,or,as. Math/science are reported separately and remain in aggregate BPB, but not in the three-group score.
+
+Winner helper: `python teams/05-architecture/harness/week2/scoring.py comparison.json`. Input has challenger and runner_up arrays, each with exactly seeds 1234/1235/1236, eligible_for_quality_comparison=true, and the three-group/code/Indic metrics. It requires score improvement greater than the larger seed spread, and code/Indic regression no greater than the larger corresponding spread. This conservative interpretation of seed noise is explicit for lead review. Smoke/incomplete runs cannot win. Caller supplies the family baseline or actual runner-up according to the plan; the helper does not choose or manufacture experiment results.
+
+PR197 selects train_week2.py for EXP-1. All five learning rates/seeds must use the same version and data. Reconcile with the final approved plan; no lead-owned plan or holdout is included in this code overlay.
