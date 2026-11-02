@@ -19,7 +19,7 @@ sys.path.insert(0, str(TOOLS))
 import f2_rule
 
 CLEAN_TEXT = "Area of a circle.\nThe radius is half the diameter.\n"
-# Named decorators: pr-guard's email pattern reads an added "+@pytest.fixture" line as an address.
+# Named decorators: pr-guard's email pattern reads an added pytest decorator line as an address.
 module_fixture = pytest.fixture(scope="module")
 fixture = pytest.fixture
 
