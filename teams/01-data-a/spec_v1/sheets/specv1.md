@@ -184,6 +184,7 @@ STAGE = "10"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-cpp"  # pack whose medicine this came from
 AUTHOR = "TharunSivamani"
 import re
@@ -203,7 +204,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(remove_bom_characters(doc["text"]), doc["text"])
 
@@ -249,6 +250,7 @@ STAGE = "10"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -271,7 +273,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_a2(doc), doc["text"])
 
@@ -317,6 +319,7 @@ STAGE = "10"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -341,7 +344,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_a6(doc), doc["text"])
 
@@ -387,6 +390,7 @@ STAGE = "10"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -409,7 +413,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_a4(doc), doc["text"])
 
@@ -456,6 +460,7 @@ STAGE = "10"
 STATUS = "CANDIDATE"
 LANGS = {'java'}
 ORIGIN = "code-java"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-java"  # pack whose medicine this came from
 AUTHOR = "vaibh27"
 import re
@@ -479,7 +484,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(m8_clean_replacement_chars(doc["text"]), doc["text"])
 
@@ -525,6 +530,7 @@ STAGE = "20"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-cpp"  # pack whose medicine this came from
 AUTHOR = "TharunSivamani"
 import re
@@ -549,7 +555,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(remove_metadata_prefix(doc["text"]), doc["text"])
 
@@ -595,6 +601,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'go'}
 ORIGIN = "code-go"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "RaviNaik"
 import re
@@ -643,7 +650,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(drop_generated(doc["text"]), doc["text"])
 
@@ -689,6 +696,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'python', 'rust'}
 ORIGIN = "code-rust, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-rust"  # pack whose medicine this came from
 AUTHOR = "amukka"
 import re
@@ -723,7 +731,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(e1_generated(doc["text"]), doc["text"])
 
@@ -769,6 +777,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'javascript', 'typescript'}
 ORIGIN = "code-js-ts"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-js-ts"  # pack whose medicine this came from
 AUTHOR = "Sagar063"
 import re
@@ -824,7 +833,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e1(doc), doc["text"])
 
@@ -870,6 +879,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'java'}
 ORIGIN = "code-java"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-java"  # pack whose medicine this came from
 AUTHOR = "riyaagrahari"
 import re
@@ -893,7 +903,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(drop_e1(doc["text"]), doc["text"])
 
@@ -939,6 +949,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'cpp'}
 ORIGIN = "code-cpp"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -965,7 +976,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e1(doc), doc["text"])
 
@@ -1011,6 +1022,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'cpp'}
 ORIGIN = "code-cpp"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-java"  # pack whose medicine this came from
 AUTHOR = "vaibh27"
 import re
@@ -1036,7 +1048,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(m7_drop_generated(doc["text"]), doc["text"])
 
@@ -1082,6 +1094,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "RaviNaik"
 import re
@@ -1114,7 +1127,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(drop_blob(doc["text"]), doc["text"])
 
@@ -1160,6 +1173,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'go'}
 ORIGIN = "code-go"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -1212,7 +1226,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_c3(doc), doc["text"])
 
@@ -1258,6 +1272,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'java'}
 ORIGIN = "code-java"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-java"  # pack whose medicine this came from
 AUTHOR = "vaibh27"
 import re
@@ -1279,7 +1294,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(m9_drop_joined(doc["text"]), doc["text"])
 
@@ -1325,6 +1340,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'go'}
 ORIGIN = "code-go"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -1370,7 +1386,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e4(doc), doc["text"])
 
@@ -1416,6 +1432,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'python', 'rust'}
 ORIGIN = "code-go, code-rust, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-rust"  # pack whose medicine this came from
 AUTHOR = "amukka"
 import re
@@ -1501,7 +1518,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e4_fixed(doc), doc["text"])
 
@@ -1547,6 +1564,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'java'}
 ORIGIN = "code-java"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "RaviNaik"
 import re
@@ -1619,7 +1637,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(strip_licence_header(doc["text"]), doc["text"])
 
@@ -1665,6 +1683,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'javascript', 'typescript'}
 ORIGIN = "code-js-ts"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-js-ts"  # pack whose medicine this came from
 AUTHOR = "Sagar063"
 import re
@@ -1696,7 +1715,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e4(doc["text"]), doc["text"])
 
@@ -1743,6 +1762,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'go'}
 ORIGIN = "code-go"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -1767,7 +1787,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_c1(doc), doc["text"])
 
@@ -1813,6 +1833,7 @@ STAGE = "30"
 STATUS = "CANDIDATE"
 LANGS = {'java'}
 ORIGIN = "code-java"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-java"  # pack whose medicine this came from
 AUTHOR = "vaibh27"
 import re
@@ -1871,7 +1892,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(m6_strip_ide_templates(doc["text"]), doc["text"])
 
@@ -1917,6 +1938,7 @@ STAGE = "40"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -1941,7 +1963,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_b4(doc), doc["text"])
 
@@ -1984,6 +2006,7 @@ STAGE = "40"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "code-go"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import re
@@ -2012,7 +2035,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e3(doc), doc["text"])
 
@@ -2055,6 +2078,7 @@ STAGE = "40"
 STATUS = "CANDIDATE"
 LANGS = {'cpp', 'go', 'java', 'javascript', 'python', 'rust', 'typescript'}
 ORIGIN = "code-go, code-rust, code-js-ts, code-java, code-cpp, code-python"  # packs it runs on
+PACKS = set(ORIGIN.split(", "))  # a code pack may label every doc "code", so the pack is checked too
 SOURCE = "new rule, written for this sheet"  # pack whose medicine this came from
 AUTHOR = "TEJASKUMAR-REDDY-J"
 import math
@@ -2126,7 +2150,7 @@ def _std(out, text):
 
 
 def medicine(doc):
-    if doc.get("lang_label") not in LANGS:
+    if doc.get("lang_label") not in LANGS and doc.get("pack_id") not in PACKS:
         return ("keep", doc["text"])
     return _std(medicine_e3(doc["text"]), doc["text"])
 

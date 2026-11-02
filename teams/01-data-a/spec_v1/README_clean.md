@@ -434,7 +434,7 @@ python -I spec_v1/run_clean.py --pack <sample folder>/train/en-dclm/part-00000.p
 
 - `--pack-id` must be one of the 13 packs. The sample also holds Indic packs (`ind-<language>-<source>`); no rule of `clean.py` covers them, so the run stops on them.
 - If the part has a `pack_id` column, every row must name the same pack.
-- The results are `en-dclm_part-00000_clean.parquet` and `en-dclm_part-00000_summary.json`, so parts with the same file name from different packs never overwrite each other.
+- The results are `en-dclm_part-00000_clean.parquet` and `en-dclm_part-00000_summary.json`, so parts with the same file name from different packs never overwrite each other. A train and a heldout part of one pack do share a name, so give each split its own `--out`: a run stops, before writing, if `--out` already holds the results of another file with that name.
 - `input_sha256` in the summary is the part's SHA-256: look it up in the sample's `SHA256SUMS` to confirm which part was cleaned and that its folder is the `--pack-id` you gave.
 
 ## Step 4: run the harm tests

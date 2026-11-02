@@ -7,10 +7,14 @@ check, and a report gives its set_sha256.
   python spec_v1/run_clean.py --pack <pack>.parquet --out out --f2      clean.py, then F2 on each doc it keeps
   python -I tools/harm_test.py --pack <pack>.parquet --gold gold/<pack>_gold.csv --rules spec_v1/tools/f2_rule.py --rule F2 --timeout 300
 
---timeout 300: the set loads inside the first rule call, past harm_test.py's default of 5 s. A new set from G9 (v2) needs no code change here: change SET below, or set F2_FINGERPRINTS to its folder.
+--timeout 300: the set loads inside the first rule call, past harm_test.py's default of 5 s.
+The set is pinned: SET names its folder and SET_SHA256 its set_sha256, and a set with another set_sha256 is refused.
+F2_FINGERPRINTS can point to a copy of the same set elsewhere. A new set from G9 (v2) needs its own harm test, then both
+SET and SET_SHA256 changed here.
 The full set needs about 1.1 GB of memory and loads in about 20 s, once, on the first doc.
 It finds copies only (G9's README): a reworded, translated or very short item is not found, nor a benchmark outside the set.
 """
+import hashlib
 import importlib.util
 import os
 import sys
@@ -18,6 +22,7 @@ from functools import cache
 from pathlib import Path
 
 SET = "v1"  # G9's fingerprint set: teams/09-evaluation/fingerprints/<SET>
+SET_SHA256 = "11e290a44d1467875fdf8bebc55eab21f0a6367f411aab98a4a027a546fd372e"  # its set_sha256, harm-tested on the 13 packs
 
 
 def _g9():
@@ -31,9 +36,15 @@ def _g9():
 
 @cache
 def fingerprints(benchmarks=None):
-    """G9's fingerprint set, checked against its SHA256SUMS and loaded once. benchmarks (a tuple of IDs) is for the tests only."""
+    """G9's fingerprint set, checked against the pin and its SHA256SUMS, loaded once. benchmarks (a tuple of IDs) is for the tests only."""
     g9 = _g9()
     path = Path(os.environ.get("F2_FINGERPRINTS") or g9.parent / "fingerprints" / SET)
+    if not (path / "SHA256SUMS").is_file():
+        raise FileNotFoundError(f"no fingerprint set at {path}: SET or F2_FINGERPRINTS names a missing folder")
+    got = hashlib.sha256((path / "SHA256SUMS").read_text(encoding="utf-8").encode("utf-8")).hexdigest()  # as fpset.py computes it
+    if got != SET_SHA256:
+        raise ValueError(f"the fingerprint set at {path} has set_sha256 {got}, not the pinned {SET_SHA256}. "
+                         "A new set needs its own harm test before SET and SET_SHA256 change.")
     # fpset imports a module named normalize, and spec_v1/tools has one too (Team 1's). Load G9's for this import only.
     saved = sys.modules.pop("normalize", None)
     sys.path.insert(0, str(g9))
