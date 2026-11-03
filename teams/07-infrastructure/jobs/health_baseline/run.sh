@@ -73,6 +73,11 @@ export V5_EXPECT_GPUS="$GPUS"
 export V5_HEALTH_STATE="$OUT/state"
 export V5_EVENTS_DIR="$OUT/events"
 
+# CPU profile (--gpus 0): hide any real GPUs so torch.cuda.is_available() is False in the children.
+# Otherwise allreduce_test.py picks CUDA whenever a GPU exists and starts 2 ranks on 1 GPU, and rank 1
+# dies with "CUDA error: invalid device ordinal". Empty = no device visible, so the collectives use gloo.
+[ "$GPUS" -eq 0 ] && export CUDA_VISIBLE_DEVICES=
+
 say() { echo "[health_baseline] $*" | tee -a "$LOG"; }
 with_timeout() { local s="$1"; shift; if command -v timeout >/dev/null 2>&1; then timeout "$s" "$@"; else "$@"; fi; }
 
