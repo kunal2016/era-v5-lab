@@ -26,7 +26,7 @@ OPS = ("nccl_all_reduce", "nccl_reduce_scatter", "nccl_all_gather", "nccl_all_to
 
 
 def load_reports(out):
-    paths = sorted(glob.glob(os.path.join(out, "health_run*.json")),
+    paths = sorted(glob.glob(os.path.join(out, "health_run[0-9]*.json")),
                    key=lambda p: int(re.search(r"health_run(\d+)\.json$", p).group(1)))
     return [(p, json.load(open(p))) for p in paths]
 
