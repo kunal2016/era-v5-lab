@@ -200,6 +200,7 @@ itself: it runs the trainer as a child process and starts the same command again
 the trainer restores the newest COMPLETE checkpoint (MANIFEST written, `latest.json` moved). It stops on `0`
 and `78`, after **3 crashes in 30 minutes** (same `CRASHLOOP_N` / `CRASHLOOP_WINDOW_S` as the job wrapper) and
 after `--max-restarts` (default 10), and logs one JSON line per attempt (`--log`, and `supervisor.*` events).
+Proof: `jobs/restart_test/` (SIGKILL on CPU, equal loss), result in `results/restart_cpu.txt`.
 
 ```bash
 RUN_ID=r1 V5_REMOTE_ROOT=/shared/ckpt python ckpt/supervisor.py --log out/supervisor.jsonl -- python my_train.py

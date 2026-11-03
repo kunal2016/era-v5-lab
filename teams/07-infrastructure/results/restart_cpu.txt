@@ -1,0 +1,37 @@
+Restart test on CPU, Team 05 tiny MoE, ckpt/supervisor.py
+Date: 03 Nov 2026
+
+Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only; output goes to
+teams/07-infrastructure/jobs/restart_test/out/, git-ignored):
+
+  CUDA_VISIBLE_DEVICES="" python teams/07-infrastructure/jobs/restart_test/restart_test.py --report teams/07-infrastructure/results/restart_cpu.txt
+
+Environment:
+  Python   3.13.14
+  torch    2.14.1 (CPU only)
+  numpy    2.2.6
+  OS       macOS-27.2-arm64-arm-64bit-Mach-O
+  Team 05 config: teams/05-architecture/configs/config_v0.yaml + teams/05-architecture/configs/small/tiny_moe.yaml
+  seed 1234 (run.seed in config_v0.yaml)
+
+What it does:
+  Run A: steps 1-200, no stop, checkpoint every 25 steps.
+  Run B: the same command under ckpt/supervisor.py. Killed with SIGKILL once past step 140 and a COMPLETE
+         checkpoint exists. The supervisor restarts the same command; the trainer restores latest.json.
+  Compared: loss_ntp and loss_mtp bits and the batch data ID for every step 1-200 (for steps run B did
+            twice, the value after the restart).
+
+Result: PASS
+
+  killed after step          141
+  restarted from step        125 (last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
+  steps done twice           16 (step 126 to 141)
+  compared steps             1-200, fields loss_ntp_bits, loss_mtp_bits, batch_id
+  wall time                  run A 2.5 s, run B 3.8 s
+
+Supervisor log (out/supervisor.jsonl):
+  attempt 0: exit -9 (crash: killed by SIGKILL) -> restart from step 125
+  attempt 1: exit 0 (done) -> stop, supervisor exit 0
+
+Last line:
+  PASS restart_test cpu: SIGKILL after step 141, restarted from COMPLETE checkpoint step 125, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal
