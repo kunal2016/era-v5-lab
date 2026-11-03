@@ -1,6 +1,6 @@
 {
  "schema_version": "eval_mini_v1",
- "generated": "2026-11-01",
+ "generated": "2026-11-03",
  "sources": [
   {
    "path": "teams/09-evaluation/results/eval_mini_v0.json",
@@ -15,6 +15,7 @@
  ],
  "notes": [
   "GSM8K: our 4-shot full-set scores are 6-7 points under Qwen's own report. The gap is prompt format: lm-eval and the SmolLM2 card's lighteval agree with each other and not with Qwen's figure (results/compare_v0.md).",
+  "HellaSwag: its items are internal only (the Hugging Face copy states no licence). This file holds scores of public models, not items.",
   "subset scores are for comparing checkpoints and formats; they are NOT comparable to published full-set scores",
   "Measured 26 Oct on Qwen2.5-1.5B: switching only the attention kernel (math -> memory-efficient SDPA) moved 100-item tasks by up to 2 items and MMLU-Pro (300) by 4 items, because near-tie items flip. Treat differences of about 2 points on a 100-item task as implementation noise, not a real change."
  ],

@@ -34,6 +34,8 @@ LM_EVAL_DEFAULT_SEEDS = {"random": 0, "numpy": 1234, "torch": 1234, "fewshot": 1
 FILE_NOTES = [
     "GSM8K: our 4-shot full-set scores are 6-7 points under Qwen's own report. The gap is prompt format: lm-eval and the "
     "SmolLM2 card's lighteval agree with each other and not with Qwen's figure (results/compare_v0.md).",
+    "HellaSwag: its items are internal only (the Hugging Face copy states no licence). This file holds scores of public "
+    "models, not items.",
 ]
 
 
@@ -115,13 +117,13 @@ def build(inputs, team_dir, generated):
     for path in inputs:
         raw = path.read_bytes()
         data = json.loads(raw)
-        if "records" in data:
+        if "records" in data and all("model" in x for x in data["records"]):
             records += from_records(data)
         elif "models" in data and "spec_sha256" in data:
             records += from_by_model(data, team_dir)
             notes += [n for n in (data.get("note"), data.get("noise_note")) if n and n not in notes]
         else:
-            sys.exit(f"{path}: neither v0 shape (no 'records' list, no 'models' + 'spec_sha256')")
+            sys.exit(f"{path}: neither v0 shape (no 'records' list with a model on each record, no 'models' + 'spec_sha256')")
         try:
             shown = path.resolve().relative_to(team_dir.resolve().parent.parent).as_posix()
         except ValueError:
@@ -130,7 +132,7 @@ def build(inputs, team_dir, generated):
                         "schema_version": data.get("schema_version", "eval_mini_v0")})
     records.sort(key=lambda r: tuple(r[k] for k in KEY))
     doc = {"schema_version": "eval_mini_v1", "generated": generated, "sources": sources, "notes": notes, "records": records}
-    return doc, (json.dumps(doc, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+    return doc, (json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
 
 
 def check(doc, expect):
@@ -140,6 +142,8 @@ def check(doc, expect):
         ("record count", len(recs), expect if expect else len(recs)),
         ("records missing a required field", sum(any(k not in r for k in REQUIRED) for r in recs), 0),
         ("values outside 0-100", sum(not 0 <= r["value"] <= 100 for r in recs), 0),
+        ("stderr neither null nor a number >= 0",
+         sum(not (r["stderr"] is None or (type(r["stderr"]) in (int, float) and r["stderr"] >= 0)) for r in recs), 0),
         ("duplicate keys", len(keys) - len(set(keys)), 0),
         ("records with an empty model_revision", sum(not r["model_revision"] for r in recs), 0),
         ("records with neither a seed nor greedy decoding", sum(r["seed"] is None and r["decoding"] != "greedy" for r in recs), 0),
