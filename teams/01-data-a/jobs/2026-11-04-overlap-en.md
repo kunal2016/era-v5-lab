@@ -10,7 +10,7 @@ Command:         python teams/01-data-a/dedup/overlap.py --config teams/01-data-
 Config:          teams/01-data-a/dedup/overlap_en.json
 Inputs:          Week-2 tokenizer sample v0 only: the 8 train and 4 heldout Parquet parts of en-dclm, en-fineweb-edu, en-nemotroncc and en-nemotroncc-synth (426,508 documents), under ./inputs/sample_v0/, checked against SHA256SUMS pinned by sha256 (table below)
 Hardware:        CPU (single process; request 2 vCPU and 8 GiB RAM; no GPU)
-Max time:        45 minutes
+Max time:        60 minutes
 Precision:       not used
 Measures:        documents per part, pack and split; pairs compared; pairs at Jaccard >= 0.50, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.0 and exact (same H1 key), per pack pair; H1 exact groups; Jaccard histogram of all pairs in 0.01 bins; wall time, peak RSS, input and output sha256
 Expected result: as in the test log: 426,508 documents, 90,954,323,778 pairs; 9 H1 exact groups (21 documents, 16 exact pairs), all inside en-nemotroncc; 55 pairs at >= 0.80 and 135 at >= 0.70; 520 pairs stored at >= 0.50; the three CSV outputs byte-identical to the test log (sha256 below)
