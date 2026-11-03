@@ -10,6 +10,17 @@ Only metrics from the metric list are written; an unknown name (a typo, or a dro
 mapped to `gpu_alloc_gib`. The 10-second system metrics from G6 (`gpu_utilization`,
 `gpu_memory_used`) have no step, so they are not written here.
 
+Three MoE metrics are worked out from `expert_load` when the trainer does not pass them. An expert's utilization is
+its share of its layer's picks divided by the uniform share (1 / number of experts): 1.0 is a fair share, 0 is never picked.
+- `dead_experts_count`: routed experts, over all MoE layers, with utilization below 0.1.
+- `dead_experts_by_layer`: the same count for each MoE layer, in layer order, to show where routing collapses.
+- `expert_utilization_min`: the lowest utilization of any routed expert. It falls before an expert is counted as dead,
+  so it warns early; below 0.1 the expert is dead.
+`expert_load` is one layer (a list of per-expert picks or shares), several layers (a list of lists, or {layer: list}), or a
+2-D array or tensor. Counts and shares give the same answer, since each layer is divided by its own total. Pass the
+picks of the whole optimizer step, summed over micro-batches and data-parallel ranks: one micro-batch is too small to
+call an expert dead.
+
     with MetricsWriter("metrics.jsonl") as writer:
         for step in range(n):
             ...
@@ -28,12 +39,52 @@ FLUSH_EVERY = 10
 METRICS = frozenset({
     "loss_ntp", "loss_mtp", "lr", "tokens_per_second", "gpu_alloc_gib",
     "gradient_norm", "gradient_clipping_applied", "validation_loss",
-    "update_weight_ratio", "expert_load",
+    "update_weight_ratio", "expert_load", "dead_experts_count", "dead_experts_by_layer", "expert_utilization_min",
     "model_flops_utilization", "loader_wait_time",
 })
 
 # Names used by train.py that are written under a different name.
 ALIASES = {"gpu_alloc_gb": "gpu_alloc_gib"}
+
+# An expert is dead below this fraction of the uniform share of its layer's picks.
+DEAD_EXPERT_SHARE = 0.1
+
+
+def _number(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def expert_load_stats(expert_load, share=DEAD_EXPERT_SHARE):
+    """{dead_experts_count, dead_experts_by_layer, expert_utilization_min} from expert_load.
+
+    None when it cannot be told: no layers, an empty layer, a layer with no picks, or a negative or non-finite value.
+    """
+    if hasattr(expert_load, "tolist"):
+        expert_load = expert_load.tolist()
+    if isinstance(expert_load, dict):
+        expert_load = list(expert_load.values())
+    if not isinstance(expert_load, (list, tuple)) or not expert_load:
+        return None
+    layers = [expert_load] if all(_number(x) for x in expert_load) else expert_load
+    by_layer, lowest = [], math.inf
+    for layer in layers:
+        if hasattr(layer, "tolist"):
+            layer = layer.tolist()
+        if not isinstance(layer, (list, tuple)) or not layer or not all(_number(x) and math.isfinite(x) and x >= 0 for x in layer):
+            return None
+        total = sum(layer)
+        if total <= 0:
+            return None
+        # utilization = load / (total / n); dead below `share`, written without division
+        by_layer.append(sum(1 for x in layer if x * len(layer) < share * total))
+        lowest = min(lowest, min(layer) * len(layer) / total)
+    return {"dead_experts_count": sum(by_layer), "dead_experts_by_layer": by_layer, "expert_utilization_min": lowest}
+
+
+def dead_experts_count(expert_load, share=DEAD_EXPERT_SHARE):
+    """Routed experts below `share` x the uniform share, summed over MoE layers; None when it cannot be told."""
+    stats = expert_load_stats(expert_load, share)
+    return None if stats is None else stats["dead_experts_count"]
 
 
 def _clean(value):
@@ -72,6 +123,11 @@ class MetricsWriter:
         if self._file is None:
             raise ValueError("write() on a closed MetricsWriter")
         metrics = {ALIASES.get(name, name): value for name, value in metrics.items()}
+        # The MoE metrics are worked out from expert_load; a value passed by the trainer wins.
+        if metrics.get("expert_load") is not None:
+            for name, value in (expert_load_stats(metrics["expert_load"]) or {}).items():
+                if metrics.get(name) is None:
+                    metrics[name] = value
         # Names outside the metric list are skipped, not written.
         for name in metrics:
             if name not in METRICS and name not in self._warned:
