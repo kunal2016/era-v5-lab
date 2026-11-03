@@ -107,11 +107,12 @@ The eval-mini spec's `seed` (20261028) chooses which items are in the item set. 
 
 Team 7's checkpoint code is merged (PR #150, `ckpt/ckpt.py`). It stores a checkpoint at
 `<remote_root>/<run_id>/<branch>/step_<N>-e<E>/`: sharded files plus a `MANIFEST.json` that lists every file with its
-sha256 and is written last. PR #245 (open) puts a queue job's checkpoints under `./out/<job_run_id>/ckpt/<arm>/`, so
-there `<remote_root>` is `./out/<job_run_id>/ckpt` and `<run_id>` is the arm (`main`, `a`, `b`).
+sha256 and is written last. `<N>` is zero-padded to 8 digits (`step_00002000-e1`). PR #245 (open) puts a queue job's
+checkpoints under `./out/<job_run_id>/ckpt/<arm>/`, so there `<remote_root>` is `./out/<job_run_id>/ckpt` and `<run_id>` is
+the arm (`main`, `a`, `b`).
 
 Read only the folder that `latest.json` or a `commits.jsonl` line names, never one found by listing, and get the weights
-through `export_safetensors()`, not from the shards.
+through `export_safetensors()`, not from the shards (PR #245, section 5).
 
 | v1 field | Value |
 |---|---|
@@ -129,7 +130,7 @@ through `export_safetensors()`, not from the shards.
 {
   "model": "lab:<run>",
   "model_revision": "<sha256 of MANIFEST.json>",
-  "checkpoint": {"run": "<run>", "branch": "<branch>", "step": 2000, "epoch": 0, "tokens_seen": 0, "path": "<remote_root>/<run_id>/<branch>/step_2000-e0/"},
+  "checkpoint": {"run": "<run>", "branch": "<branch>", "step": 2000, "epoch": 1, "tokens_seen": 2048000, "path": "<remote_root>/<run_id>/<branch>/step_00002000-e1"},
   "format": "bf16",
   "backend": "lab",
   "...": "the other fields as in section 3"
@@ -140,6 +141,9 @@ through `export_safetensors()`, not from the shards.
 lowercase `manifest.json`. For such a file, `model_revision` is the sha256 of the checkpoint file, `<run>` is the run's
 folder name, `checkpoint.step` is the file's `step`, and fields the file does not hold (`branch`, `epoch`, `tokens_seen`)
 are null.
+
+**The tiny MoE, for a CPU test.** Team 5's tiny MoE harness (`harness/train.py`) saves no checkpoint. Team 7's
+`jobs/restore_test/restore_test.py` saves the same `TinyMoE` through `Checkpointer`, in the layout above, under `out/ckpt_store/`.
 
 `convert_v0_to_v1.check(doc, 0)` runs the section 7 checks on any v1 document, so a writer can test its own output with it.
 Team 8 plots scores over training by `checkpoint.step`.
