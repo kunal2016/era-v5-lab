@@ -1,10 +1,11 @@
 import json
+import math
 
 import numpy as np
 import pytest
 import torch
 
-from metrics_writer import MetricsWriter
+from metrics_writer import MetricsWriter, router_max_vio, router_max_vio_per_layer
 
 
 @pytest.fixture
@@ -84,3 +85,61 @@ def test_close_twice(path):
     w.close()
     w.close()
     assert len(rows(path)) == 1
+
+
+# router_max_vio: DeepSeek MaxVio, (max load - mean load) / mean load, from expert_load.
+
+def test_router_max_vio_balanced_is_zero():
+    assert router_max_vio([0.25, 0.25, 0.25, 0.25]) == 0.0
+
+
+def test_router_max_vio_one_layer():
+    # mean 0.25, busiest expert 0.5 -> (0.5 - 0.25) / 0.25 = 1.0
+    assert router_max_vio([0.5, 0.25, 0.125, 0.125]) == pytest.approx(1.0)
+
+
+def test_router_max_vio_per_layer_and_max():
+    layers = [[0.25, 0.25, 0.25, 0.25], [0.4, 0.2, 0.2, 0.2], [0.5, 0.25, 0.125, 0.125]]
+    assert router_max_vio_per_layer(layers) == pytest.approx([0.0, 0.6, 1.0])
+    assert router_max_vio(layers) == pytest.approx(1.0)
+    as_dict = {"layer_3": layers[1], "layer_5": layers[2]}
+    assert router_max_vio(as_dict) == pytest.approx(1.0)
+
+
+def test_router_max_vio_numpy_and_torch():
+    assert router_max_vio(np.array([[0.4, 0.2, 0.2, 0.2]])) == pytest.approx(0.6)
+    assert router_max_vio(torch.tensor([0.4, 0.2, 0.2, 0.2])) == pytest.approx(0.6)
+    assert router_max_vio([torch.tensor([0.4, 0.2, 0.2, 0.2])]) == pytest.approx(0.6)
+
+
+def test_router_max_vio_bad_input():
+    assert router_max_vio([]) is None
+    assert math.isnan(router_max_vio([0.0, 0.0]))
+    assert math.isnan(router_max_vio([[0.25, 0.75], [float("nan"), 1.0]]))
+
+
+def test_writer_adds_router_max_vio(path):
+    with MetricsWriter(path) as w:
+        w.write(1, expert_load=[[0.25, 0.25, 0.25, 0.25], [0.4, 0.2, 0.2, 0.2]])
+        w.write(2, loss_ntp=1.0)
+    first, second = rows(path)
+    assert first["router_max_vio"] == pytest.approx(0.6)
+    assert first["expert_load"] == [[0.25, 0.25, 0.25, 0.25], [0.4, 0.2, 0.2, 0.2]]
+    assert "router_max_vio" not in second
+
+
+def test_writer_keeps_explicit_router_max_vio(path):
+    with MetricsWriter(path) as w:
+        w.write(1, expert_load=[0.4, 0.2, 0.2, 0.2], router_max_vio=0.123)
+    assert rows(path)[0]["router_max_vio"] == 0.123
+
+
+def test_writer_router_max_vio_nan_flushes_at_once(path):
+    w = MetricsWriter(path)
+    w.write(1, expert_load=[0.0, 0.0])
+    assert rows(path)[0]["router_max_vio"] == "nan"
+    w.close()
+
+
+def test_router_max_vio_flat_list_of_numpy_scalars():
+    assert router_max_vio([np.float32(0.4), np.float32(0.2), np.float32(0.2), np.float32(0.2)]) == pytest.approx(0.6)
