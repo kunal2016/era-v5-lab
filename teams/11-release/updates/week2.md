@@ -9,7 +9,7 @@ The teams of the ERA V5 lab continued their week-1 work and started their week-2
 
 - **Data A:** Integrated Indic rules, fixed privacy masking. TSAI ran the cleaner on the tokenizer sample. Planned: deduplication design, cleaned document audits, benchmark checks, shard format.
 - **Data B:** <text from the team>
-- **Tokenizer:** <text from the team>
+- **Tokenizer:** Tokenizer trained three candidates on the sample, and TSAI rebuilt one with a matching hash. Planned: fertility checks per language, round-trip checks, freeze report
 - **KE2:** <text from the team. The first time, say in a few words what KE2 is.>
 - **Architecture:** <text from the team>
 - **Performance:** <text from the team>
@@ -17,7 +17,7 @@ The teams of the ERA V5 lab continued their week-1 work and started their week-2
 - **Monitoring:** Monitoring built the ClickHouse metric store, the private Grafana dashboard, checkpoint alarm restore, and the node health validator with Infrastructure.
 - **Evaluation:** <text from the team>
 - **Post-training:** <text from the team>
-- **Release:** Release finished the first weekly update, added a test for the number check, and drafted outlines for the model card and the report.
+- **Release:** Release merged the first weekly update after TSAI approved it, wrote the model card outline, and drafted the report outline.
 - **Quantization:** <text from the team>
 
 ## Next week
@@ -47,7 +47,7 @@ How to fill it:
 |---|---|---|---|
 | Data A | Yes | Yes | [#244](https://github.com/theschoolofai/era-v5-lab/pull/244) (open), [#255](https://github.com/theschoolofai/era-v5-lab/pull/255) (open) |
 | Data B | no | no | |
-| Tokenizer | no | no | |
+| Tokenizer | Yes | Yes | [#183](https://github.com/theschoolofai/era-v5-lab/pull/183), [#195](https://github.com/theschoolofai/era-v5-lab/pull/195), [#218](https://github.com/theschoolofai/era-v5-lab/pull/218) |
 | KE2 | no | no | |
 | Architecture | Yes | no (waiting for a new sentence) | [#180](https://github.com/theschoolofai/era-v5-lab/pull/180), [#197](https://github.com/theschoolofai/era-v5-lab/pull/197) |
 | Performance | no | no | |
@@ -55,7 +55,7 @@ How to fill it:
 | Monitoring | Yes | Yes | [#250](https://github.com/theschoolofai/era-v5-lab/pull/250) (open), [#260](https://github.com/theschoolofai/era-v5-lab/pull/260) (open), [#136](https://github.com/theschoolofai/era-v5-lab/pull/136) (open), [#125](https://github.com/theschoolofai/era-v5-lab/pull/125) (open) |
 | Evaluation | no | no | |
 | Post-training | no | no | |
-| Release | Yes | no | [#142](https://github.com/theschoolofai/era-v5-lab/pull/142), [#152](https://github.com/theschoolofai/era-v5-lab/pull/152), [#234](https://github.com/theschoolofai/era-v5-lab/pull/234), [#237](https://github.com/theschoolofai/era-v5-lab/pull/237), [#264](https://github.com/theschoolofai/era-v5-lab/pull/264) (open) |
+| Release | Yes | Yes | [#142](https://github.com/theschoolofai/era-v5-lab/pull/142), [#152](https://github.com/theschoolofai/era-v5-lab/pull/152), [#234](https://github.com/theschoolofai/era-v5-lab/pull/234), [#237](https://github.com/theschoolofai/era-v5-lab/pull/237), [#264](https://github.com/theschoolofai/era-v5-lab/pull/264) (open) |
 | Quantization | no | no | |
 
 - [ ] `check_style.py` gives 0 errors
