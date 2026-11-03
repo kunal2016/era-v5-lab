@@ -261,6 +261,12 @@ class GoldCase(unittest.TestCase):
         self.sheet("p1", "bob", [("d1", "partial", "clean", ""), ("d2", "full", "clean", "A6")])
         self.assertEqual(self.build()[1]("p1_gold.csv"), [])
 
+    def test_a_clean_row_whose_only_code_is_d3_is_a_clean_vote(self):
+        # TSAI, G1 31 Oct: D3 is a label only. With another code, or with a fix verdict, it is still not clean.
+        self.sheet("p1", "amy", [("d1", "full", "clean", "D3"), ("d2", "full", "clean", "D3;A6"), ("d3", "full", "fix", "D3")])
+        self.sheet("p1", "bob", [("d1", "full", "clean", ""), ("d2", "full", "clean", ""), ("d3", "full", "clean", "")])
+        self.assertEqual(self.build()[1]("p1_gold.csv"), [["d1", "amy", "bob"]])
+
     def test_a_sheet_with_a_bad_header_is_skipped_and_reported(self):
         self.sheet("p1", "amy", [("d1", "full", "clean", "")])
         self.sheet("p1", "bob", [("d1", "full", "clean", "")])
