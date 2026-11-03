@@ -6,14 +6,15 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 
 | group | medicines |
 |---|---|
-| ready: passes on its own pack's gold set, at today's size | 176 |
-| not run on gold: the pack has a gold set, but the result is a proxy, pending or missing | 55 |
+| ready: passes on its own pack's gold set, at today's size | 229 |
 | no **Disease:** line and no python block (the harm tool cannot read it) | 48 |
 | gold set empty, not testable | 37 |
-| older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set | 30 |
-| no python block (most only flag the problem) | 16 |
-| not run on gold: the pack has a gold set, but the section has no harm result | 3 |
+| not run on gold: the pack has a gold set, but the result is a proxy, pending or missing | 26 |
+| flag only: a note, not a rule (TSAI ruling 4) | 16 |
+| needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone | 6 |
+| fails on today's gold set of its pack (re-run on 3 Nov) | 2 |
 | rule in code that takes the document (it needs the URL), kept outside a python block because harm_test_indic.py passes only the text; gold set empty, not testable | 1 |
+| not a rule: the author fixes the extraction step, not the text | 1 |
 
 ## Per pack
 
@@ -22,25 +23,25 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-bn-fw2 | 238 | 24 | 0 | 0 |
 | ind-bn-sangraha-v | 50 | 0 | 23 | 0 |
 | ind-gu-fw2 | 19 | 20 | 0 | 0 |
-| ind-hi-fw2 | 234 | 5 | 9 | 0 |
+| ind-hi-fw2 | 234 | 14 | 0 | 0 |
 | ind-hi-hplt | 67 | 23 | 26 | 0 |
-| ind-hi-indiccorp | 130 | 0 | 7 | 0 |
+| ind-hi-indiccorp | 130 | 4 | 3 | 0 |
 | ind-hi-sangraha-s | 0 | 0 | 10 | 0 |
 | ind-hi-sangraha-v | 0 | 0 | 8 | 0 |
 | ind-kn-fw2 | 45 | 8 | 0 | 0 |
-| ind-kn-sangraha-s | 27 | 6 | 7 | 0 |
-| ind-kn-sangraha-v | 103 | 12 | 4 | 0 |
+| ind-kn-sangraha-s | 27 | 13 | 0 | 0 |
+| ind-kn-sangraha-v | 103 | 16 | 0 | 0 |
 | ind-ml-fw2 | 0 | 0 | 3 | 0 |
-| ind-mr-fw2 | 140 | 9 | 19 | 0 |
+| ind-mr-fw2 | 140 | 16 | 12 | 0 |
 | ind-mr-sangraha-v | 88 | 11 | 9 | 0 |
 | ind-or-fw2 | 0 | 0 | 11 | 0 |
 | ind-sa-fw2 | 68 | 31 | 1 | 0 |
 | ind-ta-fw2 | 0 | 0 | 8 | 0 |
 | ind-ta-sangraha-s | 0 | 0 | 9 | 0 |
-| ind-ta-sangraha-v | 41 | 8 | 14 | 0 |
+| ind-ta-sangraha-v | 41 | 18 | 4 | 0 |
 | ind-te-fw2 | 18 | 12 | 4 | 0 |
-| ind-te-sangraha-s | 5 | 7 | 8 | 0 |
-| ind-te-sangraha-v | 27 | 0 | 10 | 0 |
+| ind-te-sangraha-s | 5 | 9 | 6 | 0 |
+| ind-te-sangraha-v | 27 | 10 | 0 | 0 |
 
 ## Every medicine
 
@@ -118,15 +119,15 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-hi-fw2 | raj-harit-v2 | #8 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-006` |
 | ind-hi-fw2 | raj-harit-v2 | #8 | C4 | Two documents joined | ready: passes on its own pack's gold set, at today's size | `DB-C4-002` |
 | ind-hi-fw2 | raj-harit-v2 | #8 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-005` |
-| ind-hi-fw2 | revantg | #23 | C1 | Boilerplate | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | C2 | Repeated lines | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | C3 | Truncated document | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | C4 | Two documents joined | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | C5 | Lists of keywords or links | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | D3 | Mixed language | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | D4 | Bad machine translation | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | D5 | Translationese | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-hi-fw2 | revantg | #23 | F3 | Harmful content | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
+| ind-hi-fw2 | revantg | #23 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-017` |
+| ind-hi-fw2 | revantg | #23 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-014` |
+| ind-hi-fw2 | revantg | #23 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-015` |
+| ind-hi-fw2 | revantg | #23 | C4 | Two documents joined | ready: passes on its own pack's gold set, at today's size | `DB-C4-012` |
+| ind-hi-fw2 | revantg | #23 | C5 | Lists of keywords or links | ready: passes on its own pack's gold set, at today's size | `DB-C5-016` |
+| ind-hi-fw2 | revantg | #23 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-015` |
+| ind-hi-fw2 | revantg | #23 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-013` |
+| ind-hi-fw2 | revantg | #23 | D5 | Translationese | ready: passes on its own pack's gold set, at today's size | `DB-D5-003` |
+| ind-hi-fw2 | revantg | #23 | F3 | Harmful content | ready: passes on its own pack's gold set, at today's size | `DB-F3-004` |
 | ind-hi-hplt | gmrammohan15 | #70 | A5 | Wrong normal form | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
 | ind-hi-hplt | gmrammohan15 | #70 | A6 | Wrong or mixed script | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
 | ind-hi-hplt | gmrammohan15 | #70 | C1 | Boilerplate | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
@@ -176,13 +177,13 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-hi-hplt | therahulbhati | #24 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-007` |
 | ind-hi-hplt | therahulbhati | #24 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-006` |
 | ind-hi-hplt | therahulbhati | #24 | F1 | Personal data | ready: passes on its own pack's gold set, at today's size | `DB-F1-004` |
-| ind-hi-indiccorp | rajiviyer | #13 | C1 | Boilerplate | not run on gold: the pack has a gold set, but the section has no harm result |  |
-| ind-hi-indiccorp | rajiviyer | #13 | C3 | Truncated document | not run on gold: the pack has a gold set, but the section has no harm result |  |
-| ind-hi-indiccorp | rajiviyer | #13 | D4 | Bad machine translation | no python block (most only flag the problem) |  |
-| ind-hi-indiccorp | rajiviyer | #13 | F1 | Personal data | not run on gold: the pack has a gold set, but the section has no harm result |  |
-| ind-hi-indiccorp | ranjani-cse | #11 | C3 | Truncated document | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-hi-indiccorp | ranjani-cse | #11 | G1 | Cut at the vowel sign | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-hi-indiccorp | ranjani-cse | #11 | G3 | Indic dropped by an English rule | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
+| ind-hi-indiccorp | rajiviyer | #13 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-018` |
+| ind-hi-indiccorp | rajiviyer | #13 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-016` |
+| ind-hi-indiccorp | rajiviyer | #13 | D4 | Bad machine translation | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-hi-indiccorp | rajiviyer | #13 | F1 | Personal data | ready: passes on its own pack's gold set, at today's size | `DB-F1-011` |
+| ind-hi-indiccorp | ranjani-cse | #11 | C3 | Truncated document | fails on today's gold set of its pack (re-run on 3 Nov) |  |
+| ind-hi-indiccorp | ranjani-cse | #11 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-012` |
+| ind-hi-indiccorp | ranjani-cse | #11 | G3 | Indic dropped by an English rule | fails on today's gold set of its pack (re-run on 3 Nov) |  |
 | ind-hi-sangraha-s | rjvim | #106 | A6 | Wrong or mixed script | gold set empty, not testable |  |
 | ind-hi-sangraha-s | rjvim | #106 | B2 | HTML or XML tags | gold set empty, not testable |  |
 | ind-hi-sangraha-s | rjvim | #106 | B4 | Template and code junk in prose | gold set empty, not testable |  |
@@ -197,10 +198,10 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-hi-sangraha-v | shishir13 | #100 | C1 | Boilerplate | gold set empty, not testable |  |
 | ind-hi-sangraha-v | shishir13 | #100 | C2 | Repeated lines | gold set empty, not testable |  |
 | ind-hi-sangraha-v | shishir13 | #100 | C3 | Truncated document | gold set empty, not testable |  |
-| ind-hi-sangraha-v | shishir13 | #100 | C4 | Two documents joined | no python block (most only flag the problem) |  |
+| ind-hi-sangraha-v | shishir13 | #100 | C4 | Two documents joined | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-hi-sangraha-v | shishir13 | #100 | C5 | Lists of keywords or links | gold set empty, not testable |  |
-| ind-hi-sangraha-v | shishir13 | #100 | D3 | Mixed language | no python block (most only flag the problem) |  |
-| ind-hi-sangraha-v | shishir13 | #100 | D4 | Bad machine translation | no python block (most only flag the problem) |  |
+| ind-hi-sangraha-v | shishir13 | #100 | D3 | Mixed language | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-hi-sangraha-v | shishir13 | #100 | D4 | Bad machine translation | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-kn-fw2 | LokeshJatangi | #63 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-008` |
 | ind-kn-fw2 | LokeshJatangi | #63 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-006` |
 | ind-kn-fw2 | LokeshJatangi | #63 | C5 | Lists of keywords or links | ready: passes on its own pack's gold set, at today's size | `DB-C5-011` |
@@ -215,17 +216,17 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-kn-sangraha-s | millermuttu | #104 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-010` |
 | ind-kn-sangraha-s | millermuttu | #104 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-008` |
 | ind-kn-sangraha-s | millermuttu | #104 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-008` |
-| ind-kn-sangraha-s | subramanyanaik | #94 | A3 | Mojibake | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | A6 | Wrong or mixed script | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | B2 | HTML or XML tags | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | B3 | Ghost chat markers | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | C3 | Truncated document | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | D4 | Bad machine translation | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-s | subramanyanaik | #94 | G4 | Over-normalised | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-v | Anusha-raju | #40 | C1 | Boilerplate | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-v | Anusha-raju | #40 | C3 | Truncated document | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-v | Anusha-raju | #40 | D3 | Mixed language | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-kn-sangraha-v | Anusha-raju | #40 | D4 | Bad machine translation | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
+| ind-kn-sangraha-s | subramanyanaik | #94 | A3 | Mojibake | ready: passes on its own pack's gold set, at today's size | `DB-A3-005` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-016` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | B2 | HTML or XML tags | ready: passes on its own pack's gold set, at today's size | `DB-B2-006` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | B3 | Ghost chat markers | ready: passes on its own pack's gold set, at today's size | `DB-B3-002` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-017` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-014` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-005` |
+| ind-kn-sangraha-v | Anusha-raju | #40 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-019` |
+| ind-kn-sangraha-v | Anusha-raju | #40 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-018` |
+| ind-kn-sangraha-v | Anusha-raju | #40 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-016` |
+| ind-kn-sangraha-v | Anusha-raju | #40 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-015` |
 | ind-kn-sangraha-v | pyru | #25 | A3 | Mojibake | ready: passes on its own pack's gold set, at today's size | `DB-A3-004` |
 | ind-kn-sangraha-v | pyru | #25 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-007` |
 | ind-kn-sangraha-v | pyru | #25 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-002` |
@@ -241,13 +242,13 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-ml-fw2 | umeshnmenon | #116 | C1 | Boilerplate | gold set empty, not testable |  |
 | ind-ml-fw2 | umeshnmenon | #116 | C4 | Two documents joined | gold set empty, not testable |  |
 | ind-ml-fw2 | umeshnmenon | #116 | D3 | Mixed language | gold set empty, not testable |  |
-| ind-mr-fw2 | adinathauti | #114 | A1 | Invisible junk characters | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | A3 | Mojibake | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | A5 | Wrong normal form | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | C1 | Boilerplate | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | C2 | Repeated lines | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | C3 | Truncated document | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-mr-fw2 | adinathauti | #114 | D3 | Mixed language | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
+| ind-mr-fw2 | adinathauti | #114 | A1 | Invisible junk characters | ready: passes on its own pack's gold set, at today's size | `DB-A1-001` |
+| ind-mr-fw2 | adinathauti | #114 | A3 | Mojibake | ready: passes on its own pack's gold set, at today's size | `DB-A3-006` |
+| ind-mr-fw2 | adinathauti | #114 | A5 | Wrong normal form | ready: passes on its own pack's gold set, at today's size | `DB-A5-009` |
+| ind-mr-fw2 | adinathauti | #114 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-020` |
+| ind-mr-fw2 | adinathauti | #114 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-015` |
+| ind-mr-fw2 | adinathauti | #114 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-019` |
+| ind-mr-fw2 | adinathauti | #114 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-017` |
 | ind-mr-fw2 | thinktinkergreen | #50 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-008` |
 | ind-mr-fw2 | thinktinkergreen | #50 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-009` |
 | ind-mr-fw2 | thinktinkergreen | #50 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-003` |
@@ -295,7 +296,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-or-fw2 | Pritish52718 | #86 | C3 | Truncated document | gold set empty, not testable |  |
 | ind-or-fw2 | Pritish52718 | #86 | C4 | Two documents joined | gold set empty, not testable |  |
 | ind-or-fw2 | Pritish52718 | #86 | D3 | Mixed language | gold set empty, not testable |  |
-| ind-or-fw2 | Pritish52718 | #86 | D4 | Bad machine translation | no python block (most only flag the problem) |  |
+| ind-or-fw2 | Pritish52718 | #86 | D4 | Bad machine translation | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-or-fw2 | Pritish52718 | #86 | F1 | Personal data | gold set empty, not testable |  |
 | ind-or-fw2 | Pritish52718 | #86 | F3 | Harmful content | rule in code that takes the document (it needs the URL), kept outside a python block because harm_test_indic.py passes only the text; gold set empty, not testable |  |
 | ind-or-fw2 | Pritish52718 | #86 | G1 | Cut at the vowel sign | gold set empty, not testable |  |
@@ -314,7 +315,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-sa-fw2 | dattatreyamanjunath | #45 | F1 | Personal data | ready: passes on its own pack's gold set, at today's size | `DB-F1-008` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | F2 | Benchmark leak | ready: passes on its own pack's gold set, at today's size | `DB-F2-001` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-007` |
-| ind-sa-fw2 | dattatreyamanjunath | #45 | G2 | Lost ZWJ or ZWNJ | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
+| ind-sa-fw2 | dattatreyamanjunath | #45 | G2 | Lost ZWJ or ZWNJ | not a rule: the author fixes the extraction step, not the text |  |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | G3 | Indic dropped by an English rule | ready: passes on its own pack's gold set, at today's size | `DB-G3-001` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | H3 | The same content in another source or language | ready: passes on its own pack's gold set, at today's size | `DB-H3-001` |
 | ind-sa-fw2 | swatibansal | #80 | A5 | Wrong normal form | ready: passes on its own pack's gold set, at today's size | `DB-A5-008` |
@@ -332,13 +333,13 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-sa-fw2 | swatibansal | #80 | G2 | Lost ZWJ or ZWNJ | ready: passes on its own pack's gold set, at today's size | `DB-G2-003` |
 | ind-sa-fw2 | swatibansal | #80 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-003` |
 | ind-sa-fw2 | swatibansal | #80 | H3 | The same content in another source or language | ready: passes on its own pack's gold set, at today's size | `DB-H3-002` |
-| ind-ta-fw2 | Dharshanthaigu | #169 | A6 | Wrong or mixed script | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | C1 | Boilerplate | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | C2 | Repeated lines | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | C3 | Truncated document | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | C5 | Lists of keywords or links | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | D3 | Mixed language | no python block (most only flag the problem) |  |
-| ind-ta-fw2 | Dharshanthaigu | #169 | D4 | Bad machine translation | no python block (most only flag the problem) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | A6 | Wrong or mixed script | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | C1 | Boilerplate | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | C2 | Repeated lines | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | C3 | Truncated document | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | C5 | Lists of keywords or links | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | D3 | Mixed language | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-fw2 | Dharshanthaigu | #169 | D4 | Bad machine translation | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-ta-fw2 | Dharshanthaigu | #169 | G1 | Cut at the vowel sign | gold set empty, not testable |  |
 | ind-ta-sangraha-s | truesrini | #105 | A6 | Wrong or mixed script | gold set empty, not testable |  |
 | ind-ta-sangraha-s | truesrini | #105 | B2 | HTML or XML tags | gold set empty, not testable |  |
@@ -349,27 +350,27 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-ta-sangraha-s | truesrini | #105 | D5 | Translationese | gold set empty, not testable |  |
 | ind-ta-sangraha-s | truesrini | #105 | G3 | Indic dropped by an English rule | gold set empty, not testable |  |
 | ind-ta-sangraha-s | truesrini | #105 | G4 | Over-normalised | gold set empty, not testable |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | B4 | Template and code junk in prose | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | C1 | Boilerplate | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | C2 | Repeated lines | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | C3 | Truncated document | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | C4 | Two documents joined | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | C5 | Lists of keywords or links | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | D3 | Mixed language | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | D4 | Bad machine translation | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | F3 | Harmful content | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-ta-sangraha-v | Hemaaaa04 | #57 | G1 | Cut at the vowel sign | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-007` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-021` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-016` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-021` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | C4 | Two documents joined | ready: passes on its own pack's gold set, at today's size | `DB-C4-013` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | C5 | Lists of keywords or links | ready: passes on its own pack's gold set, at today's size | `DB-C5-017` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-018` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-017` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | F3 | Harmful content | ready: passes on its own pack's gold set, at today's size | `DB-F3-005` |
+| ind-ta-sangraha-v | Hemaaaa04 | #57 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-013` |
 | ind-ta-sangraha-v | abinesh1 | #101 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-012` |
 | ind-ta-sangraha-v | abinesh1 | #101 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-005` |
 | ind-ta-sangraha-v | abinesh1 | #101 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-015` |
 | ind-ta-sangraha-v | abinesh1 | #101 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-012` |
 | ind-ta-sangraha-v | abinesh1 | #101 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-012` |
-| ind-ta-sangraha-v | abinesh1 | #101 | C4 | Two documents joined | no python block (most only flag the problem) |  |
+| ind-ta-sangraha-v | abinesh1 | #101 | C4 | Two documents joined | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-ta-sangraha-v | abinesh1 | #101 | C5 | Lists of keywords or links | ready: passes on its own pack's gold set, at today's size | `DB-C5-005` |
-| ind-ta-sangraha-v | abinesh1 | #101 | D3 | Mixed language | no python block (most only flag the problem) |  |
-| ind-ta-sangraha-v | abinesh1 | #101 | D4 | Bad machine translation | no python block (most only flag the problem) |  |
+| ind-ta-sangraha-v | abinesh1 | #101 | D3 | Mixed language | flag only: a note, not a rule (TSAI ruling 4) |  |
+| ind-ta-sangraha-v | abinesh1 | #101 | D4 | Bad machine translation | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-ta-sangraha-v | abinesh1 | #101 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-009` |
-| ind-ta-sangraha-v | abinesh1 | #101 | G3 | Indic dropped by an English rule | no python block (most only flag the problem) |  |
+| ind-ta-sangraha-v | abinesh1 | #101 | G3 | Indic dropped by an English rule | flag only: a note, not a rule (TSAI ruling 4) |  |
 | ind-ta-sangraha-v | abinesh1 | #101 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-004` |
 | ind-te-fw2 | bedathurihari | #58 | C1 | Boilerplate | no **Disease:** line and no python block (the harm tool cannot read it) |  |
 | ind-te-fw2 | bedathurihari | #58 | C2 | Repeated lines | no **Disease:** line and no python block (the harm tool cannot read it) |  |
@@ -387,14 +388,14 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-te-fw2 | sandeepkunkunuru | #3 | F1 | Personal data | ready: passes on its own pack's gold set, at today's size | `DB-F1-010` |
 | ind-te-fw2 | sandeepkunkunuru | #3 | F3 | Harmful content | ready: passes on its own pack's gold set, at today's size | `DB-F3-003` |
 | ind-te-fw2 | sandeepkunkunuru | #3 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-010` |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | A3 | Mojibake | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | A6 | Wrong or mixed script | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | B2 | HTML or XML tags | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | B4 | Template and code junk in prose | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | C2 | Repeated lines | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | C3 | Truncated document | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | D4 | Bad machine translation | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
-| ind-te-sangraha-s | murthyap63-a11y | #71 | D5 | Translationese | not run on gold: the pack has a gold set, but the result is a proxy, pending or missing |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | A3 | Mojibake | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | A6 | Wrong or mixed script | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | B2 | HTML or XML tags | ready: passes on its own pack's gold set, at today's size | `DB-B2-007` |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | B4 | Template and code junk in prose | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-017` |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | C3 | Truncated document | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | D4 | Bad machine translation | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
+| ind-te-sangraha-s | murthyap63-a11y | #71 | D5 | Translationese | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
 | ind-te-sangraha-s | shankarpandala | #92 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-014` |
 | ind-te-sangraha-s | shankarpandala | #92 | B2 | HTML or XML tags | ready: passes on its own pack's gold set, at today's size | `DB-B2-005` |
 | ind-te-sangraha-s | shankarpandala | #92 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-006` |
@@ -402,13 +403,13 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-te-sangraha-s | shankarpandala | #92 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-012` |
 | ind-te-sangraha-s | shankarpandala | #92 | D5 | Translationese | ready: passes on its own pack's gold set, at today's size | `DB-D5-001` |
 | ind-te-sangraha-s | shankarpandala | #92 | G3 | Indic dropped by an English rule | ready: passes on its own pack's gold set, at today's size | `DB-G3-002` |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | A1 | Invisible junk characters | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | C1 | Boilerplate | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | C2 | Repeated lines | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | C3 | Truncated document | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | C4 | Two documents joined | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | C5 | Lists of keywords or links | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | D3 | Mixed language | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | D4 | Bad machine translation | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | D5 | Translationese | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
-| ind-te-sangraha-v | SreekanthZipsy | #109 | G1 | Cut at the vowel sign | older gold: passed on an earlier, smaller gold set of its pack; re-run on today's set |  |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | A1 | Invisible junk characters | ready: passes on its own pack's gold set, at today's size | `DB-A1-002` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-022` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-018` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-020` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | C4 | Two documents joined | ready: passes on its own pack's gold set, at today's size | `DB-C4-014` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | C5 | Lists of keywords or links | ready: passes on its own pack's gold set, at today's size | `DB-C5-018` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-019` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-016` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | D5 | Translationese | ready: passes on its own pack's gold set, at today's size | `DB-D5-004` |
+| ind-te-sangraha-v | SreekanthZipsy | #109 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-014` |
