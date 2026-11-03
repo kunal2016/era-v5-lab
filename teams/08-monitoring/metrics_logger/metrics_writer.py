@@ -180,6 +180,11 @@ class MetricsWriter:
         """Buffer one row; flush when step is a multiple of `flush_every`."""
         if self._file is None:
             raise ValueError("write() on a closed MetricsWriter")
+        # Trainer measures host-side next_batch() wait in milliseconds. Persist seconds.
+        # An explicit loader_wait_time value is already in seconds and takes precedence.
+        data_ms = metrics.pop("data_ms", None)
+        if "loader_wait_time" not in metrics and data_ms is not None:
+            metrics["loader_wait_time"] = float(data_ms) / 1000.0
         metrics = {ALIASES.get(name, name): value for name, value in metrics.items()}
         # The MoE metrics are worked out from expert_load; a value passed by the trainer wins.
         if metrics.get("expert_load") is not None:
