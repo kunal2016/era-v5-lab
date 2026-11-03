@@ -9,6 +9,7 @@ Task 1 of Data B's week 2 (#211). It hands Data B's Indic cleaning rules to Data
 | `rules_status.md` | All 363 Indic medicines from the open diagnosis PRs, with the reason each one is in or not yet |
 | `load_rules.py` | Reads the rules out of `medicine_indic.md`, so tests and `clean.py` use the sheet itself |
 | `test_indic_rules.py` | 7 checks on every rule, with made-up text |
+| `rewrites/` | Medicine sheets the harm tool could not read, rewritten in its format under TSAI's ruling 3 on #211. Each one waits for its author's OK in their own PR and for its harm test on today's gold set |
 
 ## Which rules are in
 A rule is in when its author's `medicine.md` reports a pass on **its own pack's gold set at today's size**
