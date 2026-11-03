@@ -30,6 +30,7 @@ METRICS = frozenset({
     "gradient_norm", "gradient_clipping_applied", "validation_loss",
     "update_weight_ratio", "expert_load",
     "model_flops_utilization", "loader_wait_time",
+    "tokens_per_byte", "tokens_per_byte_by_lang",
 })
 
 # Names used by train.py that are written under a different name.
