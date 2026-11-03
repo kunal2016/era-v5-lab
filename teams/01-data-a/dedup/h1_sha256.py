@@ -51,19 +51,25 @@ def pack_folders(pack):
     return parts + [d for d in sorted(pack.iterdir()) if d.is_dir() and d.name.lower() == "heldout"]
 
 
+def read_file(path):
+    """(row, doc_id, text) for every document of one Parquet file, which needs doc_id and text columns."""
+    import pyarrow.parquet as pq
+    pf = pq.ParquetFile(path)
+    missing = {"doc_id", "text"} - set(pf.schema_arrow.names)
+    if missing:
+        sys.exit(f"ERROR: {path} has no {sorted(missing)} column (it has {pf.schema_arrow.names})")
+    row = 0
+    for batch in pf.iter_batches(batch_size=1000, columns=["doc_id", "text"]):
+        for doc_id, text in zip(batch.column("doc_id").to_pylist(), batch.column("text").to_pylist()):
+            yield row, doc_id, text
+            row += 1
+
+
 def read_docs(folder):
     """(file, row, doc_id, text) for every document of every Parquet file in the folder, in file then row order."""
-    import pyarrow.parquet as pq
     for f in sorted(folder.rglob("*.parquet")):
-        pf = pq.ParquetFile(f)
-        missing = {"doc_id", "text"} - set(pf.schema_arrow.names)
-        if missing:
-            sys.exit(f"ERROR: {f} has no {sorted(missing)} column (it has {pf.schema_arrow.names})")
-        row = 0
-        for batch in pf.iter_batches(batch_size=1000, columns=["doc_id", "text"]):
-            for doc_id, text in zip(batch.column("doc_id").to_pylist(), batch.column("text").to_pylist()):
-                yield f.relative_to(folder), row, doc_id, text
-                row += 1
+        for row, doc_id, text in read_file(f):
+            yield f.relative_to(folder), row, doc_id, text
 
 
 def write_csv(path, header, rows):
