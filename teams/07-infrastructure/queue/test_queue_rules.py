@@ -53,16 +53,23 @@ def good_result(**over):
     return r
 
 
-def make_out(tmp_path, result=None, complete=True, manifest=True):
+STEP = "main/step_00000100-e1"                       # ckpt.py's step_rel(): <branch>/step_<08d>-e<epoch>
+
+
+def make_out(tmp_path, result=None, committed=True, manifest=True):
+    """./out as a job leaves it: one checkpoint of arm a, committed the way ckpt.py commits (MANIFEST.json,
+    then latest.json and a commits.jsonl line naming the folder)."""
     p = qr.job_paths(RID, str(tmp_path / "out"), arm="a")
     os.makedirs(p["logs"])
     open(p["job_log"], "w").write("2026-11-04T10:00:00Z r0 start\n")
-    step = os.path.join(p["ckpt_arm"], "main", "step_100-e1")
+    step = os.path.join(p["ckpt_arm"], *STEP.split("/"))
     os.makedirs(step)
     if manifest:
         open(os.path.join(step, "MANIFEST.json"), "w").write("{}")
-    if complete:
-        open(os.path.join(step, "COMPLETE"), "w").close()
+    if committed:
+        ptr = {"step": 100, "branch": "main", "path": STEP, "epoch": 1}
+        json.dump(ptr, open(os.path.join(p["ckpt_arm"], "latest.json"), "w"))
+        open(os.path.join(p["ckpt_arm"], "commits.jsonl"), "w").write(json.dumps(ptr) + "\n")
     json.dump(result if result is not None else good_result(), open(p["result"], "w"))
     return str(tmp_path / "out")
 
@@ -134,20 +141,55 @@ def test_a_good_out_folder_passes(tmp_path):
     assert qr.check_out(make_out(tmp_path), RID) == []
 
 
-def test_complete_without_manifest_is_an_error(tmp_path):
+def test_a_pointer_to_a_folder_without_manifest_is_an_error(tmp_path):
     problems = qr.check_out(make_out(tmp_path, manifest=False), RID)
-    assert any("COMPLETE without MANIFEST.json" in p for p in problems)
+    assert any("has no MANIFEST.json" in p for p in problems)
 
 
-def test_manifest_without_complete_is_a_cut_save_not_a_checkpoint(tmp_path):
-    out = make_out(tmp_path, complete=False)
+def test_manifest_no_pointer_names_is_a_cut_save_not_a_checkpoint(tmp_path):
+    out = make_out(tmp_path, committed=False)
     assert qr.check_out(out, RID) == []
     assert qr.check_checkpoints(os.path.join(out, RID, "ckpt")) == ([], [])
 
 
-def test_only_complete_folders_are_listed(tmp_path):
+def test_complete_folders_are_the_committed_ones(tmp_path):
     out = make_out(tmp_path)
-    assert qr.check_checkpoints(os.path.join(out, RID, "ckpt"))[1] == [os.path.join("a", "main", "step_100-e1")]
+    assert qr.check_checkpoints(os.path.join(out, RID, "ckpt"))[1] == [os.path.join("a", STEP)]
+
+
+def test_an_older_commit_in_commits_jsonl_is_complete_too(tmp_path):
+    """restore() falls back through commits.jsonl, so every commit there is COMPLETE, not only latest.json's."""
+    out = make_out(tmp_path)
+    arm = os.path.join(out, RID, "ckpt", "a")
+    os.makedirs(os.path.join(arm, "main", "step_00000050-e1"))
+    open(os.path.join(arm, "main", "step_00000050-e1", "MANIFEST.json"), "w").write("{}")
+    older = {"step": 50, "branch": "main", "path": "main/step_00000050-e1", "epoch": 1}
+    lines = open(os.path.join(arm, "commits.jsonl")).read()
+    open(os.path.join(arm, "commits.jsonl"), "w").write(json.dumps(older) + "\n" + lines)
+    got = qr.check_checkpoints(os.path.join(out, RID, "ckpt"))
+    assert got == ([], [os.path.join("a", STEP), os.path.join("a", "main", "step_00000050-e1")])
+
+
+def test_a_claim_before_the_first_save_is_not_a_checkpoint(tmp_path):
+    """ckpt.py's claim() writes latest.json with path null before anything is saved."""
+    out = make_out(tmp_path, committed=False, manifest=False)
+    arm = os.path.join(out, RID, "ckpt", "a")
+    json.dump({"step": None, "branch": None, "path": None, "epoch": 1}, open(os.path.join(arm, "latest.json"), "w"))
+    assert qr.check_out(out, RID) == []
+
+
+@pytest.mark.parametrize("latest,word", [("{not json", "not a JSON object"),
+                                         ('{"path": "main/latest"}', "is not <branch>/step_")])
+def test_a_bad_pointer_is_reported(tmp_path, latest, word):
+    out = make_out(tmp_path)
+    open(os.path.join(out, RID, "ckpt", "a", "latest.json"), "w").write(latest)
+    assert any(word in p for p in qr.check_out(out, RID))
+
+
+def test_a_bad_commits_line_is_reported(tmp_path):
+    out = make_out(tmp_path)
+    open(os.path.join(out, RID, "ckpt", "a", "commits.jsonl"), "a").write("{\"step\": 3}\n")
+    assert any("commits.jsonl line 2" in p for p in qr.check_out(out, RID))
 
 
 @pytest.mark.parametrize("over,word", [

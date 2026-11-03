@@ -85,22 +85,25 @@ Checkpoint path: ./out/<run_id>/ckpt/
 ./out/<run_id>/ckpt/<arm>/latest.json                       pointer to the newest committed checkpoint + epoch
 ./out/<run_id>/ckpt/<arm>/commits.jsonl                     every commit, in order
 ./out/<run_id>/ckpt/<arm>/<branch>/step_<N>-e<E>/           shards, extra_rank<r>.json, sums_rank<r>.json,
-                                                            MANIFEST.json, then COMPLETE
+                                                            MANIFEST.json (written last)
 ```
 
 - `<arm>` is one run inside the job: `main` for a job with one run; `a` and `b` for the restore test (run A
   saves at step 100; run B stops at 150, restores from 100 and runs to 200). Lowercase letters and digits.
 - `<branch>`, `step_<N>-e<E>`, `MANIFEST.json`, `latest.json` and `commits.jsonl` are the layout of
   `ckpt/ckpt.py`: `Checkpointer(run_id=<arm>, remote_root=./out/<run_id>/ckpt, ...)` writes exactly this.
-- **`COMPLETE` is the restart marker.** It is an empty file, written **after** `MANIFEST.json`, in the same step
-  folder. A step folder counts as a checkpoint only when both exist. The supervisor (Member D) restarts only from
-  the newest step folder with `COMPLETE`. `MANIFEST.json` without `COMPLETE` is a save that was cut; `COMPLETE`
-  without `MANIFEST.json` is an error, and the checker reports it.
-- `ckpt/ckpt.py` (PR #150) writes `MANIFEST.json` last and does not yet write `COMPLETE`. Writing `COMPLETE`
-  right after `MANIFEST.json`, in `_upload_and_commit`, is an open item for the checkpoint and supervisor owners
-  (section 6).
+- **A checkpoint is COMPLETE when its step folder has `MANIFEST.json` and `latest.json` or `commits.jsonl`
+  names that folder.** There is no separate `COMPLETE` file. `ckpt/ckpt.py` already writes `MANIFEST.json`
+  last, and moves `latest.json` (with the fencing check) and appends to `commits.jsonl` only after it. So a
+  folder that both a pointer and its `MANIFEST.json` vouch for was fully written, and only by the attempt that
+  owns the run. A second "written last" file would add no safety, and would make every checkpoint saved so far
+  incomplete.
+- A restart (`Checkpointer.restore()`, used by `ckpt/supervisor.py`) starts from the folder `latest.json`
+  names, then falls back through `commits.jsonl`, newest first. Readers outside the run follow `latest.json`.
+- `MANIFEST.json` that no pointer names is a save that was cut before its commit: not a checkpoint, not an error.
+  A pointer to a folder without `MANIFEST.json` is an error, and the checker reports it.
 - Size: the returned `./out/` is at most 50 MB (`JOB_REQUEST.md`). At the end the job keeps the receipts
-  (`latest.json`, `commits.jsonl`, `MANIFEST.json`, `COMPLETE`, `sums_rank<r>.json`) and deletes shard files
+  (`latest.json`, `commits.jsonl`, `MANIFEST.json`, `sums_rank<r>.json`) and deletes shard files
   over the limit, newest step last. The proof numbers are in `result.json`, not in the shards.
 
 ### R5. One run ID per job
@@ -156,7 +159,7 @@ compared.
 | `numbers` | object | the measures the request named, for example `{"bit_equal_steps": 100}` |
 
 `python queue/queue_rules.py check-out ./out --run-id <run_id>` checks this file, the log and checkpoint paths,
-the `COMPLETE` rule and the 50 MB limit. Run it at the end of the CPU test, and attach its output to the request.
+the COMPLETE rule of R4 and the 50 MB limit. Run it at the end of the CPU test, and attach its output to the request.
 
 ### R9. Failure
 
@@ -220,13 +223,13 @@ Sections R4 and R8 are the checkpoint path layout and file list. In short, for o
 
 | File | Who reads it |
 |---|---|
-| `<arm>/latest.json` | anyone: which step is the newest committed one |
+| `<arm>/latest.json` | anyone: which step is the newest COMPLETE one (`step`, `branch`, `path`, `epoch`) |
+| `<arm>/commits.jsonl` | anyone: every COMPLETE checkpoint, in order |
 | `<arm>/<branch>/step_<N>-e<E>/MANIFEST.json` | every file of the checkpoint with its sha256, and the environment |
-| `<arm>/<branch>/step_<N>-e<E>/COMPLETE` | present = safe to read |
 | shard files listed in `MANIFEST.json` | `ckpt/ckpt.py` restore, or `export_safetensors()` for one checked file |
 
-Teams 9 and 12 read only folders with `COMPLETE`, and take weights through `export_safetensors()`, not by
-opening shards.
+Teams 9 and 12 open only the folder that `latest.json` (or a `commits.jsonl` line) names, never a folder found
+by listing, and take weights through `export_safetensors()`, not by opening shards.
 
 ---
 
@@ -235,8 +238,6 @@ opening shards.
 | Item | Owner | Blocks |
 |---|---|---|
 | TSAI confirms the R1 limits (or gives others) | Lead → TSAI | the numbers in R1 |
-| `ckpt/ckpt.py` writes `COMPLETE` after `MANIFEST.json` | checkpoint owner, Member D | R4 on real jobs |
-| `supervisor.py` reads only `COMPLETE` folders | Member D | restart test |
 | Health and restore packages adopt R3 to R8 | Member A, Member C | their requests |
 | TSAI agrees that G7 adds the four lines to the request block | Lead → TSAI | R1 to R5 as written |
 
@@ -245,3 +246,4 @@ opening shards.
 | Version | Date | Change |
 |---|---|---|
 | v1 | 2026-11-02 | first version: five fields, `./out/` layout, `COMPLETE` marker, result file, checker |
+| v1.1 | 2026-11-03 | COMPLETE = `MANIFEST.json` + named by `latest.json` / `commits.jsonl`; no separate `COMPLETE` file (team decision, matches `ckpt.py` and `supervisor.py`) |

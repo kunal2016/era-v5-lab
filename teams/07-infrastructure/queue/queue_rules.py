@@ -169,8 +169,36 @@ def _folder_bytes(root: str) -> int:
     return sum(os.path.getsize(os.path.join(d, f)) for d, _, files in os.walk(root) for f in files)
 
 
+def committed_paths(arm_dir: str) -> tuple:
+    """(problems, step folders that latest.json or commits.jsonl names, relative to the arm). ckpt/ckpt.py
+    writes both only after MANIFEST.json, so these are the commits."""
+    problems, paths = [], []
+    latest = os.path.join(arm_dir, "latest.json")
+    if os.path.isfile(latest):
+        try:
+            with open(latest, encoding="utf-8") as f:
+                ptr = json.load(f)
+            if ptr.get("path"):                            # a claim before the first save has path null
+                paths.append(ptr["path"])
+        except (OSError, ValueError, AttributeError) as e:
+            problems.append(f"{latest}: not a JSON object ({e}) (R4)")
+    commits = os.path.join(arm_dir, "commits.jsonl")
+    if os.path.isfile(commits):
+        with open(commits, encoding="utf-8") as f:
+            for n, line in enumerate(f, 1):
+                if not line.strip():
+                    continue
+                try:
+                    paths.append(json.loads(line)["path"])
+                except (ValueError, KeyError, TypeError):
+                    problems.append(f"{commits} line {n}: not a commit record with a path (R4)")
+    return problems, list(dict.fromkeys(paths))
+
+
 def check_checkpoints(ckpt_root: str) -> tuple:
-    """(problems, complete step folders). COMPLETE without MANIFEST.json is an error (R4)."""
+    """(problems, COMPLETE step folders). COMPLETE = MANIFEST.json in the folder and the folder named by
+    latest.json or commits.jsonl (R4). A pointer to a folder without MANIFEST.json is an error; MANIFEST.json
+    that no pointer names is a save cut before its commit, which is not a checkpoint and not an error."""
     problems, complete = [], []
     if not os.path.isdir(ckpt_root):
         return problems, complete
@@ -180,16 +208,15 @@ def check_checkpoints(ckpt_root: str) -> tuple:
             continue
         if not ARM_RE.match(arm):
             problems.append(f"ckpt/{arm}: an arm name is lowercase letters and digits (R4)")
-        for d, dirs, files in os.walk(arm_dir):
-            name = os.path.basename(d)
-            if not STEP_DIR_RE.match(name):
-                continue
-            dirs[:] = []
-            rel = os.path.relpath(d, ckpt_root)
-            if "COMPLETE" in files and "MANIFEST.json" not in files:
-                problems.append(f"ckpt/{rel}: COMPLETE without MANIFEST.json (R4)")
-            elif "COMPLETE" in files:
-                complete.append(rel)
+        ptr_problems, paths = committed_paths(arm_dir)
+        problems += ptr_problems
+        for rel in paths:
+            if not STEP_DIR_RE.match(os.path.basename(rel.rstrip("/"))):
+                problems.append(f"ckpt/{arm}: pointer path {rel!r} is not <branch>/step_<N>-e<E> (R4)")
+            elif not os.path.isfile(os.path.join(arm_dir, rel, "MANIFEST.json")):
+                problems.append(f"ckpt/{arm}/{rel}: named as committed but has no MANIFEST.json (R4)")
+            else:
+                complete.append(os.path.join(arm, rel))
     return problems, complete
 
 
