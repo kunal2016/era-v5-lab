@@ -3,6 +3,7 @@
 A private dashboard that reads training metrics from ClickHouse. Panels:
 
 - Training, per step from `metrics_raw`: next-token loss, MTP loss, learning rate, tokens/s, GPU memory, MFU.
+- Validation loss (panel 20, `metrics_raw`): `validation_loss` as points at each validation run, with the training `loss_ntp` as a thin line on the same axis (both nats per token). Worked out by `metrics_logger/metrics_writer.py` from G5's `val/nll_nats` / `val/scored_tokens`.
 - Rollups from `metrics_rollup_<N>`: mean loss per 10 / 100 / 1000 / 10000 step bucket (pick with the `bucket` variable).
 - GPU telemetry from `gpu_telemetry_1s`: power and temperature.
 - GPU temperature and thermal throttle per step (panel 22, `metrics_raw`): `gpu_temp_c` with green / yellow / red at 75 C and 85 C, and `gpu_thermal_throttle` (0/1) on the right axis. Written by `metrics_logger/gpu_thermal.py`.

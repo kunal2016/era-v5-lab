@@ -24,6 +24,13 @@ call an expert dead.
 When `expert_load` is logged, `router_max_vio` (DeepSeek MaxVio, the largest over MoE layers) is
 computed from it and written in the same row, unless the caller passed it explicitly.
 
+`validation_loss` (nats per scored token on the held-out set) is worked out from the result of G5's
+`week2.evaluation.evaluate()` when the row has it: `val/nll_nats` (the summed loss) / `val/scored_tokens`. It is the
+same quantity as `loss_ntp`, so the two can be compared on one axis, and ln(`val/perplexity`). Only rows from a
+validation run carry it. A value the trainer passes itself wins.
+
+    writer.write(step, loss_ntp=..., **evaluate(model, val, ...))     # on the steps that run validation
+
     with MetricsWriter("metrics.jsonl") as writer:
         for step in range(n):
             ...
@@ -164,6 +171,27 @@ def _clean(value):
     return value, False
 
 
+def validation_loss(nll_nats, scored_tokens):
+    """Mean held-out loss in nats per scored token: nll_nats (summed) / scored_tokens; None when it cannot be told.
+
+    These are `val/nll_nats` and `val/scored_tokens` from G5's evaluate(). None when either is missing, the token
+    count is not a positive whole number, or the sum is not a finite number >= 0.
+    """
+    if nll_nats is None or scored_tokens is None or isinstance(nll_nats, bool) or isinstance(scored_tokens, bool):
+        return None
+    if hasattr(nll_nats, "item"):  # numpy / torch scalar
+        nll_nats = nll_nats.item()
+    if hasattr(scored_tokens, "item"):
+        scored_tokens = scored_tokens.item()
+    try:
+        total, tokens = float(nll_nats), float(scored_tokens)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(total) or total < 0 or not math.isfinite(tokens) or tokens < 1 or tokens != int(tokens):
+        return None
+    return total / tokens
+
+
 class MetricsWriter:
     def __init__(self, path, flush_every=FLUSH_EVERY):
         if flush_every < 1:
@@ -191,6 +219,12 @@ class MetricsWriter:
             for name, value in (expert_load_stats(metrics["expert_load"]) or {}).items():
                 if metrics.get(name) is None:
                     metrics[name] = value
+        # validation_loss from G5's evaluate() result; a value passed by the trainer wins. The two inputs are used up.
+        nll_nats, scored = metrics.pop("val/nll_nats", None), metrics.pop("val/scored_tokens", None)
+        if metrics.get("validation_loss") is None:
+            loss = validation_loss(nll_nats, scored)
+            if loss is not None:
+                metrics["validation_loss"] = loss
         # Names outside the metric list are skipped, not written.
         for name in metrics:
             if name not in METRICS and name not in self._warned:
