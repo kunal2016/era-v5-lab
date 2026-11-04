@@ -56,8 +56,7 @@ metrics:
 - name: gradient_norm
   unit: gradient_units
   cadence: Every training step
-  source: Not written yet. train.py already calculates it (clip_grad_norm_) but does not log it. Proposed for G5
-    to log.
+  source: G5 train.py, one row per step in metrics.jsonl. The value that clip_grad_norm_ returns.
   notes: Size of all gradients combined, before clipping. To confirm for real runs - combining across GPUs.
 # Clipping on most steps is worth checking. The threshold may be wrong or training may be unstable.
 - name: gradient_clipping_applied
