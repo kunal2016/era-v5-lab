@@ -622,6 +622,124 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "${ds}"
       },
+      "description": "MoE routing imbalance per optimizer step: the worst MoE layer's (max expert load - mean load) / mean load (DeepSeek MaxVio, per batch). 0 = perfectly balanced; 1.0 = busiest expert gets twice the average share. Computed from expert_load by metrics_writer.py.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1.0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^value.*"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "MaxVio"
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 60
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'router_max_vio' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "MoE Router MaxVio (router_max_vio)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
       "description": "gpu_temp_c per optimizer step (degrees C, rank 0's GPU, from NVML) with gpu_thermal_throttle next to it: 1 when NVML reports HW (0x40) or SW (0x20) thermal slowdown, so the GPU lowered its clocks because of heat. Colours: green below 75 C, yellow from 75 C, red from 85 C. Slower steps with throttle 1 mean heat, not the code. Every GPU at 1 s is in panel 12 (gpu_telemetry_1s).",
       "fieldConfig": {
         "defaults": {
