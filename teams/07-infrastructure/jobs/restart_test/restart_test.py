@@ -12,22 +12,37 @@ In simple words:
 - The supervisor log must show exactly one restart (exit -9, SIGKILL) and then a normal finish, and the
   restart must start at the step after the checkpoint it named.
 
-Exit 0 and one PASS line when all of that holds; exit 1 at the first difference; exit 78 if a run crashed.
-Writes only --out (default out/ next to this script, git-ignored), and --report if given.
+As a TSAI job (queue rules v1, docs/queue_rules_v1.md): run from teams/07-infrastructure/ with --run-id. Everything
+goes to ./out/<run_id>/:
 
-    python restart_test.py                                   # CPU, 1 process
-    python restart_test.py --report ../../results/restart_cpu.txt
+    logs/job.log             everything the job prints, each line "<UTC time> r0 ..." (R3)
+    logs/events.jsonl        checkpoint.* / restore.* / supervisor.* events (R3)
+    logs/supervisor.jsonl    one line per run B attempt
+    ckpt/a/, ckpt/b/         ckpt.py layout per arm: latest.json, commits.jsonl, <branch>/step_<N>-e<E>/ (R4)
+    rows/a.jsonl, b.jsonl    one row per step: losses, loss bits, batch data ID, attempt
+    detail.json              every row of both runs and the supervisor log
+    result.json              the R8 result, written last
+
+The job stops itself before its time limit (--max-time-min, minus 5 minutes): it stops the trainer, writes
+result.json with status stopped_at_limit and exits 75 (R1). Exit 0 and one PASS line when every check holds;
+1 at the first difference; 78 if a run crashed.
+
+    python jobs/restart_test/restart_test.py --run-id g7-restart-test-20261104-01 --device cpu    # the CPU test
+    python jobs/restart_test/restart_test.py --run-id g7-restart-test-20261104-01 --device cuda   # the GPU job
+    python jobs/restart_test/restart_test.py --report results/restart_cpu.txt   # local: jobs/restart_test/out/
 """
 import argparse
 import json
 import os
 import platform
+import re
 import shutil
 import signal
 import subprocess
 import sys
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -38,7 +53,17 @@ import restore_test as rt  # noqa: E402
 from ckpt.supervisor import Supervisor, last_complete  # noqa: E402
 
 FIELDS = rt.FIELDS
-EXIT_FATAL = 78
+EXIT_RETRY, EXIT_FATAL = 75, 78
+RESULT_SCHEMA = "g7-job-result/1"                        # queue rules R8
+RUN_ID_RE = re.compile(r"^g7-[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{2}$")   # queue rules R5
+MAX_OUT_BYTES = 50 * 1024 * 1024                         # JOB_REQUEST.md: 50 MB or less
+PRUNE_TO_BYTES = 45 * 1024 * 1024                        # aim lower, so logs and result.json still fit
+MARGIN_S = 300                                           # R1: stop 5 min before the limit (half of a shorter one)
+RECEIPTS = ("latest.json", "commits.jsonl", "MANIFEST.json")
+
+
+def utc(t: float = None) -> str:
+    return datetime.fromtimestamp(time.time() if t is None else t, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # ------------------------------------------------------------------ the trainer (one process, any attempt)
@@ -46,15 +71,15 @@ def trainer(a) -> int:
     import torch
     torch.use_deterministic_algorithms(True)
     torch.set_num_threads(1)
-    os.environ.setdefault("RUN_ID", a.run_id)
+    dev = torch.device("cuda", 0) if a.device == "cuda" else torch.device("cpu")
     cfg = rt.load_cfg(a.config, a.tiny, a.steps)
     seed = int(cfg["run.seed"])
     torch.manual_seed(seed)
-    model = rt.TinyMoE(cfg)
+    model = rt.TinyMoE(cfg).to(dev)
     optim = torch.optim.AdamW(model.parameters(), lr=float(cfg["optim.lr"]))
     loader = rt.StreamLoader(cfg, seed, 0, 1)
     clip = float(cfg["run.grad_clip"])
-    probe_batch = rt.stream_for(cfg, seed + 1)[:int(cfg["tiny.batch"])]
+    probe_batch = rt.stream_for(cfg, seed + 1)[:int(cfg["tiny.batch"])].to(dev)
 
     def probe(m) -> float:
         m.eval()
@@ -63,15 +88,16 @@ def trainer(a) -> int:
         m.train()
         return ntp.item()
 
-    ck = rt.Checkpointer(a.run_id, str(a.out / "ckpt_local"), str(a.out / "ckpt_store"),
-                         config_path=str(a.tiny), seed=seed)
+    # R4: Checkpointer(run_id=<arm>, remote_root=./out/<run_id>/ckpt) writes ckpt/<arm>/...
+    ck = rt.Checkpointer(a.arm, str(a.root / "scratch"), str(a.root / "ckpt"), config_path=str(a.tiny), seed=seed)
     info = ck.restore(model, optim, loader, probe)          # newest COMPLETE checkpoint, or None: step 0
     step = info["step"] if info else 0
     attempt = int(os.environ.get("V5_RESTART_COUNT", "0"))
-    with open(a.out / "rows.jsonl", "a") as f:
+    (a.root / "rows").mkdir(exist_ok=True)
+    with open(a.root / "rows" / f"{a.arm}.jsonl", "a") as f:
         while step < a.steps:
             batch_id = loader.next_batch_id()
-            tokens = loader.next()
+            tokens = loader.next().to(dev)
             optim.zero_grad(set_to_none=True)
             ntp, mtp = rt.losses(model, tokens)
             (ntp + mtp).backward()
@@ -89,10 +115,10 @@ def trainer(a) -> int:
     return 0 if ck.wait() else EXIT_FATAL
 
 
-# ------------------------------------------------------------------ the test
-def trainer_cmd(a, run_id: str, out: Path) -> list:
-    return [sys.executable, str(Path(__file__).resolve()), "--trainer", "--run-id", run_id, "--out", str(out),
-            "--steps", str(a.steps), "--save-every", str(a.save_every),
+# ------------------------------------------------------------------ helpers
+def trainer_cmd(a, arm: str) -> list:
+    return [sys.executable, str(Path(__file__).resolve()), "--trainer", "--arm", arm, "--root", str(a.root),
+            "--device", a.device, "--steps", str(a.steps), "--save-every", str(a.save_every),
             "--config", str(a.config), "--tiny", str(a.tiny)]
 
 
@@ -121,105 +147,229 @@ def last_step(path: Path) -> int:
         return 0
 
 
-def check(a, run_a: list, run_b: list, sup_rows: list, kill: dict) -> dict:
-    """None if every check passes, else the first problem."""
+def check(a, run_a: list, run_b: list, sup_rows: list, kill: dict) -> tuple:
+    """(first problem or None, number of steps 1..N that are bit-equal in every field)."""
     by_a = {r["step"]: r for r in run_a}
     final_b = {}
     for r in run_b:                    # later attempts overwrite: the value after the restart counts
         final_b[r["step"]] = r
+    equal = sum(1 for s in range(1, a.steps + 1)
+                if s in by_a and s in final_b and all(by_a[s][k] == final_b[s][k] for k in FIELDS))
     for step in range(1, a.steps + 1):
         if step not in by_a or step not in final_b:
-            return {"step": step, "field": "missing", "a": step in by_a, "b": step in final_b}
+            return {"step": step, "field": "missing", "a": step in by_a, "b": step in final_b}, equal
         for k in FIELDS:
             if by_a[step][k] != final_b[step][k]:
-                return {"step": step, "field": k, "a": by_a[step][k], "b": final_b[step][k]}
+                return {"step": step, "field": k, "a": by_a[step][k], "b": final_b[step][k]}, equal
     restarts = [r for r in sup_rows if r["action"] == "restart"]
     if len(restarts) != 1 or restarts[0]["rc"] != -signal.SIGKILL or sup_rows[-1].get("exit") != 0:
-        return {"field": "supervisor log", "want": "one restart after SIGKILL (-9), then exit 0", "got": sup_rows}
+        return {"field": "supervisor log", "want": "one restart after SIGKILL (-9), then exit 0",
+                "got": sup_rows}, equal
     from_step = restarts[0]["pointer_step"]
     second = [r["step"] for r in run_b if r["attempt"] == 1]
     # the trainer must have restored exactly the checkpoint latest.json pointed to (no silent fallback)
     if not (0 < from_step <= kill["step"] and from_step % a.save_every == 0 and second and second[0] == from_step + 1):
         return {"field": "restart step", "pointer_step": from_step, "killed_at": kill["step"],
-                "first_step_after_restart": second[0] if second else None}
-    return None
+                "first_step_after_restart": second[0] if second else None}, equal
+    return None, equal
 
 
+class Tee:
+    """Job mode (R3): everything this process and its children print also goes to logs/job.log, each line
+    starting with the UTC time and the rank. Works at the file-descriptor level, so the trainers' output and
+    torch's own warnings are caught too."""
+
+    def __init__(self, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.log = open(path, "a", encoding="utf-8")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        self.saved = (os.dup(1), os.dup(2))
+        r, w = os.pipe()
+        os.dup2(w, 1)
+        os.dup2(w, 2)
+        os.close(w)
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+        self.thread = threading.Thread(target=self._pump, args=(r,), daemon=True)
+        self.thread.start()
+
+    def _pump(self, r):
+        with os.fdopen(r, "rb") as src:
+            for raw in src:
+                text = raw.decode("utf-8", "replace").rstrip("\n")
+                self.log.write(f"{utc()} r0 {text}\n")
+                self.log.flush()
+                os.write(self.saved[0], raw)
+
+    def close(self):
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.dup2(self.saved[0], 1)          # closes the pipe's write end: the pump sees the end and stops
+        os.dup2(self.saved[1], 2)
+        self.thread.join(timeout=10)
+        self.log.close()
+
+
+def merge_events(root: Path) -> None:
+    """common/events.py writes one file per process; R3 wants one logs/events.jsonl, in time order."""
+    src = root / "logs" / "events.d"
+    lines = []
+    for p in sorted(src.glob("*.jsonl")) if src.exists() else []:
+        lines += [x for x in p.read_text().splitlines() if x.strip()]
+    lines.sort(key=lambda x: json.loads(x).get("time", ""))
+    (root / "logs" / "events.jsonl").write_text("".join(x + "\n" for x in lines))
+    shutil.rmtree(src, ignore_errors=True)
+
+
+def folder_bytes(root: Path) -> int:
+    return sum(p.stat().st_size for p in root.rglob("*") if p.is_file())
+
+
+def prune_to_limit(root: Path, limit: int = PRUNE_TO_BYTES) -> list:
+    """R4: keep the receipts (latest.json, commits.jsonl, MANIFEST.json, sums_rank<r>.json) and delete shard
+    files over the limit, oldest step first, newest step last. Returns the step folders that lost shards.
+    The size is measured once and counted down, so this stays fast with hundreds of step folders."""
+    pruned, size = [], folder_bytes(root)
+    steps = sorted((p for p in (root / "ckpt").glob("*/*/step_*") if p.is_dir()),
+                   key=lambda p: int(re.match(r"step_(\d+)", p.name).group(1)))
+    for d in steps:
+        if size <= limit:
+            break
+        for f in d.rglob("*"):
+            if f.is_file() and f.name not in RECEIPTS and not f.name.startswith("sums_rank"):
+                size -= f.stat().st_size
+                f.unlink()
+        pruned.append(str(d.relative_to(root)))
+    return pruned
+
+
+# ------------------------------------------------------------------ the test
 def run_test(a) -> int:
     import torch
-    out = a.out
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
-    os.environ["V5_EVENTS_DIR"] = str(out / "events")
+    root = a.root
+    if root.exists():
+        shutil.rmtree(root)
+    (root / "logs").mkdir(parents=True)
+    tee = Tee(root / "logs" / "job.log") if a.run_id else None
+    started = time.time()
+    limit_s = a.max_time_min * 60
+    margin_s = min(MARGIN_S, limit_s / 2)                # time left for the stop, the clean-up and result.json
+    deadline = started + limit_s - margin_s
+    os.environ.update(V5_EVENTS_DIR=str(root / "logs" / "events.d"), RUN_ID=a.run_id or root.name)
     os.environ.setdefault("OMP_NUM_THREADS", "1")
+    if a.device == "cuda":
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")      # R7: deterministic cuBLAS
+    timed_out = threading.Event()
+    sup = None
+    running = {}
 
-    t0 = time.time()
-    a_out = out / "run_a"
-    a_out.mkdir()
-    rc_a = subprocess.call(trainer_cmd(a, "restart-a", a_out), env=dict(os.environ, RUN_ID="restart-a"))
-    t_a = time.time() - t0
-    if rc_a != 0:
-        print(f"FAIL restart_test: run A crashed (exit {rc_a})", file=sys.stderr)
-        return EXIT_FATAL
+    def at_deadline():
+        timed_out.set()
+        print(f"time limit: {a.max_time_min} min minus {int(margin_s)} s reached, stopping", flush=True)
+        if running.get("a") is not None and running["a"].poll() is None:
+            running["a"].terminate()
+        if sup is not None:
+            sup._forward(signal.SIGTERM, None)           # no restart after this, the child gets SIGTERM
+    timer = threading.Timer(max(0.0, deadline - time.time()), at_deadline)
+    timer.daemon = True
+    timer.start()
 
-    b_out = out / "run_b"
-    b_out.mkdir()
-    run_url = str(b_out / "ckpt_store" / "restart-b")
-    kill = {}
+    status, code, diff, equal, numbers = "fail", EXIT_FATAL, None, 0, {}
+    sup_rows, run_a, run_b, kill = [], [], [], {}
+    try:
+        print(f"restart_test: run {os.environ['RUN_ID']}, device {a.device}, steps {a.steps}, "
+              f"save every {a.save_every}, kill after step {a.kill_at}, torch {torch.__version__}", flush=True)
+        t0 = time.time()
+        running["a"] = subprocess.Popen(trainer_cmd(a, "a"))
+        rc_a = running["a"].wait()
+        t_a = time.time() - t0
+        if timed_out.is_set():
+            raise TimeoutError
+        if rc_a != 0:
+            raise RuntimeError(f"run A crashed (exit {rc_a})")
 
-    def killer(proc, attempt):
-        if attempt != 0:
-            return
+        run_url = str(root / "ckpt" / "b")
+        rows_b = root / "rows" / "b.jsonl"
 
-        def watch():
-            while proc.poll() is None:
-                s = last_step(b_out / "rows.jsonl")
-                ck = last_complete(run_url) if s >= a.kill_at else None
-                if ck and ck.get("step"):
-                    proc.send_signal(signal.SIGKILL)
-                    kill.update(step=s, last_complete_seen=ck["step"], time=time.time())
-                    return
-                time.sleep(0.005)
-        threading.Thread(target=watch, daemon=True).start()
+        def killer(proc, attempt):
+            if attempt != 0:
+                return
 
-    os.environ["RUN_ID"] = "restart-b"
-    t1 = time.time()
-    rc_b = Supervisor(trainer_cmd(a, "restart-b", b_out), run_url=run_url, log_path=str(out / "supervisor.jsonl"),
-                      max_restarts=3, backoff_s=0, on_start=killer).run()
-    t_b = time.time() - t1
-    sup_rows = read_rows(out / "supervisor.jsonl")
-    if rc_b != 0 or not kill:
-        print(f"FAIL restart_test: run B exit {rc_b}, killed: {bool(kill)}", file=sys.stderr)
-        return EXIT_FATAL
+            def watch():
+                while proc.poll() is None:
+                    s = last_step(rows_b)
+                    ck = last_complete(run_url) if s >= a.kill_at else None
+                    if ck and ck.get("step"):
+                        proc.send_signal(signal.SIGKILL)
+                        kill.update(step=s, last_complete_seen=ck["step"], time=time.time())
+                        return
+                    time.sleep(0.005)
+            threading.Thread(target=watch, daemon=True).start()
 
-    run_a, run_b = read_rows(a_out / "rows.jsonl"), read_rows(b_out / "rows.jsonl")
-    kill["step"] = max(r["step"] for r in run_b if r["attempt"] == 0)   # last step the killed child finished
-    diff = check(a, run_a, run_b, sup_rows, kill)
-    restart = next(r for r in sup_rows if r["action"] == "restart")
-    after = [r["step"] for r in run_b if r["attempt"] == 1]
-    restored = after[0] - 1 if after else None          # what the trainer really loaded (its first step - 1)
-    result = {"pass": diff is None, "first_diff": diff, "device": "cpu", "nproc": 1, "steps": a.steps,
-              "save_every": a.save_every, "kill_at": a.kill_at, "killed_after_step": kill["step"],
-              "restarted_from_step": restored, "pointer_step": restart["pointer_step"],
-              "redone_steps": kill["step"] - restored if restored is not None else None,
-              "fields": FIELDS, "torch": torch.__version__, "seconds": {"run_a": round(t_a, 1), "run_b": round(t_b, 1)},
-              "supervisor": sup_rows}
-    (out / "result.json").write_text(json.dumps(result, indent=1) + "\n")
-    where = (f"cpu: SIGKILL after step {kill['step']}, restarted from COMPLETE checkpoint step "
-             f"{restored}, steps 1-{a.steps}")
-    line = (f"PASS restart_test {where}: loss_ntp and loss_mtp bit-equal, data ids equal" if diff is None
-            else f"FAIL restart_test {where}: {json.dumps(diff)[:600]}")
-    print(line)
-    if a.report:
-        write_report(a, result, line)
-    return 0 if diff is None else 1
+        t1 = time.time()
+        sup = Supervisor(trainer_cmd(a, "b"), run_url=run_url, log_path=str(root / "logs" / "supervisor.jsonl"),
+                         max_restarts=3, backoff_s=0, on_start=killer)
+        rc_b = sup.run()
+        t_b = time.time() - t1
+        sup_rows = read_rows(root / "logs" / "supervisor.jsonl")
+        if timed_out.is_set():
+            raise TimeoutError
+        if rc_b != 0 or not kill:
+            raise RuntimeError(f"run B exit {rc_b}, killed: {bool(kill)}")
+
+        run_a, run_b = read_rows(root / "rows" / "a.jsonl"), read_rows(rows_b)
+        kill["step"] = max(r["step"] for r in run_b if r["attempt"] == 0)   # last step the killed child finished
+        diff, equal = check(a, run_a, run_b, sup_rows, kill)
+        restart = next(r for r in sup_rows if r["action"] == "restart")
+        after = [r["step"] for r in run_b if r["attempt"] == 1]
+        restored = after[0] - 1 if after else None      # what the trainer really loaded (its first step - 1)
+        numbers = {"bit_equal_steps": equal, "compared_steps": a.steps, "killed_after_step": kill["step"],
+                   "restarted_from_step": restored, "pointer_step": restart["pointer_step"],
+                   "redone_steps": kill["step"] - restored if restored is not None else None,
+                   "restarts": len([r for r in sup_rows if r["action"] == "restart"]),
+                   "run_a_s": round(t_a, 1), "run_b_s": round(t_b, 1), "torch": torch.__version__}
+        status, code = ("pass", 0) if diff is None else ("fail", 1)
+        where = (f"{a.device}: SIGKILL after step {kill['step']}, restarted from COMPLETE checkpoint step "
+                 f"{restored}, steps 1-{a.steps}")
+        line = (f"PASS restart_test {where}: loss_ntp and loss_mtp bit-equal, data ids equal" if diff is None
+                else f"FAIL restart_test {where}: {json.dumps(diff)[:600]}")
+    except TimeoutError:
+        status, code = "stopped_at_limit", EXIT_RETRY
+        line = f"STOPPED restart_test: time limit ({a.max_time_min} min minus {int(margin_s)} s)"
+    except Exception as e:  # noqa: BLE001 - a crash is a failed test with a clear line, not a traceback
+        line = f"FAIL restart_test: {type(e).__name__}: {e}"
+    finally:
+        timer.cancel()
+        if sup is None and running.get("a") is not None and running["a"].poll() is None:
+            running["a"].kill()
+
+    print(line, flush=True)
+    numbers.setdefault("first_diff", diff)
+    detail = {"pass": status == "pass", "first_diff": diff, "device": a.device, "nproc": 1, "steps": a.steps,
+              "save_every": a.save_every, "kill_at": a.kill_at, **numbers, "fields": FIELDS,
+              "supervisor": sup_rows, "run_a": run_a, "run_b": run_b}
+    (root / "detail.json").write_text(json.dumps(detail, indent=1) + "\n")
+    if a.report and status == "pass":
+        write_report(a, detail, line)
+    if tee:
+        tee.close()
+    merge_events(root)
+    shutil.rmtree(root / "scratch", ignore_errors=True)    # node-local copies; the store copies stay (R4)
+    numbers["pruned_step_folders"] = prune_to_limit(root)
+    ended = time.time()
+    result = {"schema": RESULT_SCHEMA, "run_id": a.run_id or root.name, "status": status, "exit_code": code,
+              "device_kind": "gpu" if a.device == "cuda" else "cpu", "device_count": 1 if a.device == "cuda" else 0,
+              "max_time_min": a.max_time_min, "elapsed_s": round(ended - started, 1),
+              "started_utc": utc(started), "ended_utc": utc(ended), "numbers": numbers}
+    (root / "result.json").write_text(json.dumps(result, indent=1) + "\n")     # R8: written last
+    return code
 
 
 def write_report(a, r: dict, line: str) -> None:
     import numpy
     import torch
-    rel = Path(os.path.relpath(Path(__file__).resolve(), TEAM.parents[1]))
+    rel = os.path.relpath(Path(__file__).resolve(), TEAM)
     other = ""
     if getattr(a, "other_kills", None):
         other = "\nOther kill points (same command with --kill-at N):\n" + "\n".join(f"  {x}" for x in a.other_kills) + "\n"
@@ -229,10 +379,13 @@ def write_report(a, r: dict, line: str) -> None:
     text = f"""Restart test on CPU, Team 05 tiny MoE, ckpt/supervisor.py
 Date: {time.strftime('%d %b %Y')}
 
-Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only; output goes to
-teams/07-infrastructure/jobs/restart_test/out/, git-ignored):
+Commands (from teams/07-infrastructure/; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only):
 
-  CUDA_VISIBLE_DEVICES="" python {rel} --also-kill-at 31,99,164 --report teams/07-infrastructure/results/restart_cpu.txt
+  CUDA_VISIBLE_DEVICES="" python {rel} --also-kill-at 31,99,164 --report results/restart_cpu.txt
+      (output in jobs/restart_test/out/, git-ignored)
+  CUDA_VISIBLE_DEVICES="" python {rel} --run-id g7-restart-test-20261104-01 --device cpu
+      (the job form, queue rules v1: output in ./out/g7-restart-test-20261104-01/, checked with
+       python queue/queue_rules.py check-out ./out --run-id g7-restart-test-20261104-01)
 
 Environment:
   Python   {platform.python_version()}
@@ -258,10 +411,10 @@ Result: {'PASS' if r['pass'] else 'FAIL'}
   restarted from step        {r['restarted_from_step']} (first step of the restarted trainer, minus 1)
   latest.json at the restart {r['pointer_step']} (the last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
   steps done twice           {r['redone_steps']} (step {r['restarted_from_step'] + 1} to {r['killed_after_step']})
-  compared steps             1-{a.steps}, fields {', '.join(FIELDS)}
-  wall time                  run A {r['seconds']['run_a']} s, run B {r['seconds']['run_b']} s
+  bit-equal steps            {r['bit_equal_steps']} of {r['compared_steps']}, fields {', '.join(FIELDS)}
+  wall time                  run A {r['run_a_s']} s, run B {r['run_b_s']} s
 
-Supervisor log (out/supervisor.jsonl):
+Supervisor log (logs/supervisor.jsonl):
 {sup}
 
 Last line:
@@ -273,32 +426,47 @@ Last line:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--run-id", default=None,
+                    help="job run ID g7-<name>-<YYYYMMDD>-<NN> (queue rules R5): output goes to ./out/<run_id>/")
+    ap.add_argument("--device", choices=("cpu", "cuda"), default="cpu", help="cpu, or cuda (1 GPU)")
+    ap.add_argument("--max-time-min", type=int, default=30,
+                    help="the request's Max time; the job stops itself 5 min before it (R1, default 30)")
     ap.add_argument("--steps", type=int, default=200)
     ap.add_argument("--save-every", type=int, default=25, help="checkpoint every N steps")
     ap.add_argument("--kill-at", type=int, default=140, help="SIGKILL run B once it is past this step")
-    ap.add_argument("--out", type=Path, default=HERE / "out")
+    ap.add_argument("--out", type=Path, default=HERE / "out", help="output folder without --run-id")
     ap.add_argument("--report", default=None, help="also write a plain-text result file here")
     ap.add_argument("--also-kill-at", default="", help="comma list: also run with these kill points and add "
-                    "their result lines to --report (e.g. 31,99,164)")
+                    "their result lines to --report (e.g. 31,99,164); not with --run-id")
     ap.add_argument("--config", type=Path, default=rt.CONFIGS / "config_v0.yaml")
     ap.add_argument("--tiny", type=Path, default=rt.CONFIGS / "small" / "tiny_moe.yaml")
     ap.add_argument("--trainer", action="store_true", help=argparse.SUPPRESS)   # one attempt of the trainer
-    ap.add_argument("--run-id", default="restart", help=argparse.SUPPRESS)
+    ap.add_argument("--arm", default="a", help=argparse.SUPPRESS)
+    ap.add_argument("--root", type=Path, default=None, help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
     if a.trainer:
         return trainer(a)
     if not (0 < a.save_every <= a.kill_at < a.steps):
         ap.error("need 0 < --save-every <= --kill-at < --steps")
+    if a.run_id is not None and not RUN_ID_RE.match(a.run_id):
+        ap.error(f"--run-id {a.run_id!r} must look like g7-<short-name>-<YYYYMMDD>-<NN> (queue rules R5)")
+    if a.run_id and a.also_kill_at:
+        ap.error("--also-kill-at is for local runs: one job request runs one kill point")
+    if a.max_time_min < 1:
+        ap.error("--max-time-min must be at least 1")
     import torch
     # torch.__version__ is a TorchVersion: it compares as a version ("2.9.0" < "2.14.1"; "2.15.0a0+git" passes),
     # the same check as restore_test.py
     if torch.__version__ < rt.MIN_TORCH:
         ap.error(f"needs torch >= {rt.MIN_TORCH} (the restore test's pin), found {torch.__version__}")
-    a.out, a.config, a.tiny = a.out.resolve(), a.config.resolve(), a.tiny.resolve()
+    if a.device == "cuda" and not torch.cuda.is_available():
+        ap.error("--device cuda but no GPU is visible")
+    a.root = (Path("out") / a.run_id).resolve() if a.run_id else a.out.resolve()
+    a.config, a.tiny = a.config.resolve(), a.tiny.resolve()
     a.other_kills = []
     for k in [int(x) for x in a.also_kill_at.split(",") if x.strip()]:
         b = argparse.Namespace(**vars(a))
-        b.kill_at, b.report, b.out = k, None, a.out.parent / f"{a.out.name}_kill{k}"
+        b.kill_at, b.report, b.root = k, None, a.root.parent / f"{a.root.name}_kill{k}"
         if not (0 < b.save_every <= k < b.steps):
             ap.error(f"--also-kill-at {k}: need --save-every <= N < --steps")
         rc, lines = run_captured(b)
@@ -316,7 +484,7 @@ def run_captured(a) -> tuple:
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         rc = run_test(a)
-    return rc, [x for x in buf.getvalue().splitlines() if x.startswith(("PASS", "FAIL"))]
+    return rc, [x for x in buf.getvalue().splitlines() if x.startswith(("PASS", "FAIL", "STOPPED"))]
 
 
 if __name__ == "__main__":
