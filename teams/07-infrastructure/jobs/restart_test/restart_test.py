@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import shutil
 import signal
 import subprocess
@@ -97,7 +98,25 @@ def trainer_cmd(a, run_id: str, out: Path) -> list:
 
 
 def read_rows(path: Path) -> list:
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()] if path.exists() else []
+    """Every complete row. A SIGKILL can land in the middle of a write, so a last line that does not parse is
+    skipped: that step counts as not finished (the restarted trainer does it again)."""
+    rows = []
+    lines = [x for x in path.read_text().splitlines() if x.strip()] if path.exists() else []
+    for i, line in enumerate(lines):
+        try:
+            rows.append(json.loads(line))
+        except ValueError:
+            if i != len(lines) - 1:
+                raise                      # only the line being written at the kill may be cut
+    return rows
+
+
+def torch_at_least(version: str, minimum: str) -> bool:
+    """'2.15.0a0+git1234' >= '2.14.1' without an extra dependency: leading digits of major.minor.patch."""
+    def parts(v):
+        m = re.match(r"(\d+)\.(\d+)(?:\.(\d+))?", v)
+        return tuple(int(x or 0) for x in m.groups()) if m else (0, 0, 0)
+    return parts(version) >= parts(minimum)
 
 
 def last_step(path: Path) -> int:
@@ -210,6 +229,9 @@ def write_report(a, r: dict, line: str) -> None:
     import numpy
     import torch
     rel = Path(os.path.relpath(Path(__file__).resolve(), TEAM.parents[1]))
+    other = ""
+    if getattr(a, "other_kills", None):
+        other = "\nOther kill points (same command with --kill-at N):\n" + "\n".join(f"  {x}" for x in a.other_kills) + "\n"
     sup = "\n".join(f"  attempt {s['attempt']}: exit {s['rc']} ({s['meaning']}) -> {s['action']}"
                     + (f" (latest.json at step {s['pointer_step']})" if s["action"] == "restart" else f", supervisor exit {s['exit']}")
                     for s in r["supervisor"])
@@ -219,7 +241,7 @@ Date: {time.strftime('%d %b %Y')}
 Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only; output goes to
 teams/07-infrastructure/jobs/restart_test/out/, git-ignored):
 
-  CUDA_VISIBLE_DEVICES="" python {rel} --report teams/07-infrastructure/results/restart_cpu.txt
+  CUDA_VISIBLE_DEVICES="" python {rel} --also-kill-at 31,99,164 --report teams/07-infrastructure/results/restart_cpu.txt
 
 Environment:
   Python   {platform.python_version()}
@@ -236,6 +258,9 @@ What it does:
   Compared: loss_ntp and loss_mtp bits and the batch data ID for every step 1-{a.steps} (for steps run B did
             twice, the value after the restart).
 
+Bit equality is between run A and run B on the same machine; the numbers are not expected to match other
+OSes (the restore test results are from Ubuntu and Windows).
+
 Result: {'PASS' if r['pass'] else 'FAIL'}
 
   killed after step          {r['killed_after_step']}
@@ -250,7 +275,7 @@ Supervisor log (out/supervisor.jsonl):
 
 Last line:
   {line}
-"""
+{other}"""
     Path(a.report).parent.mkdir(parents=True, exist_ok=True)
     Path(a.report).write_text(text)
 
@@ -262,6 +287,8 @@ def main(argv=None) -> int:
     ap.add_argument("--kill-at", type=int, default=140, help="SIGKILL run B once it is past this step")
     ap.add_argument("--out", type=Path, default=HERE / "out")
     ap.add_argument("--report", default=None, help="also write a plain-text result file here")
+    ap.add_argument("--also-kill-at", default="", help="comma list: also run with these kill points and add "
+                    "their result lines to --report (e.g. 31,99,164)")
     ap.add_argument("--config", type=Path, default=rt.CONFIGS / "config_v0.yaml")
     ap.add_argument("--tiny", type=Path, default=rt.CONFIGS / "small" / "tiny_moe.yaml")
     ap.add_argument("--trainer", action="store_true", help=argparse.SUPPRESS)   # one attempt of the trainer
@@ -272,10 +299,31 @@ def main(argv=None) -> int:
     if not (0 < a.save_every <= a.kill_at < a.steps):
         ap.error("need 0 < --save-every <= --kill-at < --steps")
     import torch
-    if tuple(int(x) for x in torch.__version__.split("+")[0].split(".")[:3]) < (2, 14, 1):
+    if not torch_at_least(torch.__version__, rt.MIN_TORCH):
         ap.error(f"needs torch >= {rt.MIN_TORCH} (the restore test's pin), found {torch.__version__}")
     a.out, a.config, a.tiny = a.out.resolve(), a.config.resolve(), a.tiny.resolve()
+    a.other_kills = []
+    for k in [int(x) for x in a.also_kill_at.split(",") if x.strip()]:
+        b = argparse.Namespace(**vars(a))
+        b.kill_at, b.report, b.out = k, None, a.out.parent / f"{a.out.name}_kill{k}"
+        if not (0 < b.save_every <= k < b.steps):
+            ap.error(f"--also-kill-at {k}: need --save-every <= N < --steps")
+        rc, lines = run_captured(b)
+        a.other_kills.append(lines[-1] if lines else f"--kill-at {k}: no result line (exit {rc})")
+        if rc != 0:
+            print(a.other_kills[-1], file=sys.stderr)
+            return rc
     return run_test(a)
+
+
+def run_captured(a) -> tuple:
+    """run_test() for one extra kill point; returns (exit code, PASS/FAIL lines it printed)."""
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = run_test(a)
+    return rc, [x for x in buf.getvalue().splitlines() if x.startswith(("PASS", "FAIL"))]
 
 
 if __name__ == "__main__":

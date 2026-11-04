@@ -4,7 +4,7 @@ Date: 04 Nov 2026
 Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only; output goes to
 teams/07-infrastructure/jobs/restart_test/out/, git-ignored):
 
-  CUDA_VISIBLE_DEVICES="" python teams/07-infrastructure/jobs/restart_test/restart_test.py --report teams/07-infrastructure/results/restart_cpu.txt
+  CUDA_VISIBLE_DEVICES="" python teams/07-infrastructure/jobs/restart_test/restart_test.py --also-kill-at 31,99,164 --report teams/07-infrastructure/results/restart_cpu.txt
 
 Environment:
   Python   3.13.14
@@ -21,6 +21,9 @@ What it does:
   Compared: loss_ntp and loss_mtp bits and the batch data ID for every step 1-200 (for steps run B did
             twice, the value after the restart).
 
+Bit equality is between run A and run B on the same machine; the numbers are not expected to match other
+OSes (the restore test results are from Ubuntu and Windows).
+
 Result: PASS
 
   killed after step          140
@@ -28,7 +31,7 @@ Result: PASS
   latest.json at the restart 125 (the last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
   steps done twice           15 (step 126 to 140)
   compared steps             1-200, fields loss_ntp_bits, loss_mtp_bits, batch_id
-  wall time                  run A 2.6 s, run B 3.6 s
+  wall time                  run A 2.3 s, run B 3.5 s
 
 Supervisor log (out/supervisor.jsonl):
   attempt 0: exit -9 (crash: killed by SIGKILL) -> restart (latest.json at step 125)
@@ -36,3 +39,8 @@ Supervisor log (out/supervisor.jsonl):
 
 Last line:
   PASS restart_test cpu: SIGKILL after step 140, restarted from COMPLETE checkpoint step 125, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal
+
+Other kill points (same command with --kill-at N):
+  PASS restart_test cpu: SIGKILL after step 33, restarted from COMPLETE checkpoint step 25, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal
+  PASS restart_test cpu: SIGKILL after step 100, restarted from COMPLETE checkpoint step 75, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal
+  PASS restart_test cpu: SIGKILL after step 164, restarted from COMPLETE checkpoint step 150, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal

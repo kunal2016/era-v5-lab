@@ -14,6 +14,11 @@ Week-2 task (Gate 2): **a killed job restarts from the last COMPLETE checkpoint 
 - The supervisor log must show exactly one restart (exit -9) and then exit 0, and the restarted trainer must
   start at the step after the checkpoint the supervisor named.
 
+**What it does not cover:** the kill always lands after step 140, when the step-125 checkpoint is already
+committed, so it never kills a trainer in the middle of a save. That case is covered by the checkpoint drills
+(`kill_during_save` and `kill_during_restore`, `support/docs/sim_results.md`) and by tests T3/T4/T19 in
+`support/tests/test_ckpt.py`.
+
 The model, config, loss and data stream are imported from `jobs/restore_test/restore_test.py`, so both tests
 train exactly the same thing.
 
@@ -34,9 +39,21 @@ CUDA_VISIBLE_DEVICES="" python teams/07-infrastructure/jobs/restart_test/restart
 | `--kill-at` | 140 | SIGKILL run B once it is past this step |
 | `--out` | `out/` next to the script (git-ignored) | the only folder the script writes, apart from `--report` |
 | `--report` | none | also write the plain-text result (the file in `results/`) |
+| `--also-kill-at` | none | comma list, e.g. `31,99,164`: also run with these kill points; their result lines go into `--report` |
 
 Exit 0 and one `PASS` line when every check holds; 1 at the first difference; 78 if a run crashed.
 `out/result.json` has every step of both runs and the supervisor log; `out/supervisor.jsonl` one line per attempt.
+
+The file in `results/` was written with:
+
+```bash
+CUDA_VISIBLE_DEVICES="" python teams/07-infrastructure/jobs/restart_test/restart_test.py --also-kill-at 31,99,164 --report teams/07-infrastructure/results/restart_cpu.txt
+```
+
+Bit equality is between run A and run B on the same machine; the numbers are not expected to match other OSes.
+
+**GPU job request (to do):** the queue rules (#245) need a `--run-id` and output under `./out/<run_id>/` with a
+`result.json`; the command will be adjusted for that when the request is filed.
 
 Result on CPU: [`results/restart_cpu.txt`](../../results/restart_cpu.txt). One process only for now; the GPU
 run goes through a TSAI job request.
