@@ -53,8 +53,6 @@ every format with one version.
   text were dropped.
 - `logs/SUMMARY.md`, cut from the full logs, and `logs/test_llamacpp_lm_<format>.log`.
 
-The full logs and the full per-question rows are in SreekanthZipsy/era-v5-lab, branch `G12-Week1`, commit
-`2e668bd`.
 
 ## Why not llama-server (or lm_eval's own GGUF backend)
 
