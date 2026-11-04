@@ -49,8 +49,8 @@ every format with one version.
 
 **What is committed per run** (kept small for the PR):
 - `environment.json`, `scores.csv`, `scores_long.csv`, and per format `summary.json` (G9's record format) plus
-  `*.samples.jsonl`: one row per question with task, doc_id, filter and metric values. The `target` and `response`
-  text were dropped.
+  `*.samples.jsonl`: one row per question with task, doc_id, filter and metric values. The notebook never writes the
+  `target` and `response` text, and `combine.py` refuses rows that have it.
 - `logs/SUMMARY.md`, cut from the full logs, and `logs/test_llamacpp_lm_<format>.log`.
 
 
