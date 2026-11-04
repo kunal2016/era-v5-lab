@@ -44,7 +44,7 @@ Documents with the same hash form a group; one survivor is chosen by `source_pri
 | Setting | Prose (English, science, Indic, `cadj-*`) | Code (`code-*`) | Math (`math-*`) |
 |---|---|---|---|
 | Shingles | word 5-grams of the H1 key | **token** 5-grams from the language's Pygments lexer; comments and a leading licence docstring dropped; strings and preprocessor directives kept | word 5-grams of the H1 key; numbers and LaTeX kept |
-| Threshold (Jaccard) | **0.80** (English: E1) | **0.85** *(to test)* | **0.90** *(to test)* + the multisets of signed numbers must match |
+| Threshold (Jaccard) | **0.80** (English: E1) | **0.85** *(to test)* | **0.90** + the multisets of signed numbers must match (math: E1; see the numbers-rule finding) |
 | Minimum length | 50 words; shorter documents get H1 only | 20 non-blank lines after comment removal | none; extra rule below |
 
 **Families.** H1 compares every pack with every other and bypasses the length guards. For H2, a pair inside one family uses that family's rules. **A pair from two families must pass both families' rules on both documents** (the higher word threshold, the math numbers rule if math is involved, and the code token rule with the code member's lexer if code is involved). Notebooks (`cadj-notebooks`) and math pages can contain code, so mixed pairs are kept but judged strictly.
@@ -167,7 +167,7 @@ E1 and E2 run on the Week-2 tokenizer sample v0 with `overlap.py` (Task 5: Anees
 
 | # | Experiment | What is measured | What would change the design |
 |---|---|---|---|
-| E1 | **Threshold sweep** per family (English done; code, math, science after the all-pack run): pairs at 0.70, 0.75, 0.80, 0.85, 0.90, 0.95 | Jaccard histogram of all pairs; hand review of ~20 pairs just above and ~20 just below each proposed threshold; removals per threshold | Move a threshold if the gap between "same text" and "related text" sits elsewhere, or if hand review finds distinct documents above it |
+| E1 | **Threshold sweep** per family (English and math done; code and science after the all-pack run): pairs at 0.70, 0.75, 0.80, 0.85, 0.90, 0.95 | Jaccard histogram of all pairs; hand review of ~20 pairs just above and ~20 just below each proposed threshold; removals per threshold | Move a threshold if the gap between "same text" and "related text" sits elsewhere, or if hand review finds distinct documents above it |
 | E2 | **Within-pack vs cross-pack**: run the within-pack pass alone, then add the cross-pack pass | Removal counts per pack and per stage; harm check on each output separately | **Decides whether the cross-pack pass is applied.** Apply it only if it removes a modest share of each pack and no gold document; otherwise report it but keep within-pack dedup only (Risk 1) |
 | E3 | **Known-pair tests**: the duplicate and non-duplicate pairs listed in "How it was tested" | Every duplicate pair caught; every non-duplicate pair kept | If math problems differing only in a number are merged, tighten the math rule; if a known copy is missed, revisit normalisation or shingle size |
 | E4 | **Indic threshold check** (required: Indic packs are in the 38-pack job): E1 on at least one Indic pack | Same as E1; Indic removal rate reported separately | Use separate Indic thresholds or shingling (e.g. character n-grams) if the English settings over- or under-remove (Risk 2) |
@@ -194,11 +194,39 @@ From `jobs/logs/2026-11-04-overlap-local/` (`code-rust`, `en-fineweb-edu`, `ind-
 - Largest share: `code-rust`, 57 of 60,738 documents (0.09%) have a match in their own pack. Indic: `ind-hi-hplt` 2 of 8,840; `ind-mr-sangraha-v` 0.
 - This shows the scripts run on real data; it is **not** the final result (raw parts, 5 of 38 packs). The final numbers come from the TSAI 38-pack job.
 
+### Results so far: math packs, E1 (sample v0 parts, not cleaned)
+
+`math-finemath` and `math-megamath`, train + heldout, 47,250 documents; config `overlap_math.json`; 97 s, 1.0 GB. Log: `jobs/logs/2026-11-04-overlap-math-local.txt`.
+
+| | |
+|---|---|
+| H1 exact groups | 0 |
+| Pairs by word Jaccard ≥ 0.70 / 0.75 / 0.80 / 0.85 / 0.90 / 0.95 | 369 / 243 / 131 / 68 / 46 / 18 |
+| Of the 46 at ≥ 0.90: qualify / rejected by the numbers rule | 36 / 10 |
+| Qualifying matches: within `megamath` / within `finemath` / cross-pack | 32 / 3 / 1 |
+| Clusters → documents removed | 10 clusters, 28 documents → **18 removed (0.04%)** |
+| Train ↔ held-out matches | 1 (rule 0: the train copy is removed) |
+| Gold IDs present in this input | 0 of 112 |
+
+Hand review of all 10 rejected pairs and the lowest-scoring kept pairs:
+
+1. **The numbers rule rejects true copies whose only numeric difference is a header.** Two pairs are the same page saved twice (Jaccard 0.987 and 0.972), differing only in a date line ("Dec 10, 2015 · 15 minute read") or a number in the title ("UVa 11357"), plus Markdown formatting. Both pairs share their URL.
+2. **Template pages pass 0.90.** The largest cluster (7 documents) is slideserve.com pages: different presentations ("projectile motion", "the preprocessor", …) inside ~117 words of identical site boilerplate. They pass the threshold and any word minimum; only the title differs. They are low-value pages, but they are not copies of one document: this is a quality-filter problem, not a dedup one. (The same effect as the 0.82–0.85 template pages in English.)
+3. **The rule works where it should.** Two chemistry textbook chapters with different worked values are kept apart.
+4. **A same-URL copy is missed just below 0.90.** reference.com's "examples of quadrilaterals" appears in `finemath` train and `megamath` held-out with the identical URL, at Jaccard 0.894.
+5. **The gold harm check cannot be run on the sample.** None of the 112 math gold IDs are in it, which confirms that the harm check must run on the diagnosis packs.
+
+Proposed changes for the final version (to agree with the team):
+- **Numbers rule:** compare numbers in the body only (ignore the title and first line), or skip the numbers check when both copies have the same normalised URL.
+- **Same URL as a signal:** two documents with the same normalised URL (scheme, `www.` and trailing `/` ignored) count as H2 duplicates at word Jaccard ≥ 0.80, in any family.
+- **Template pages:** recorded as a known limit of H2; passed to the quality filter rather than handled by dedup.
+
 **Training ablation (not run in v1; budget-dependent).** The definitive test of dedup scope is to train small proxy models on the data after within-pack dedup only and after within- plus cross-pack dedup, and compare downstream scores (Session 3, §7 and §11). v1 does not run this; scope is checked by removal counts and the harm check only. If proxy-training budget becomes available, this is the first dedup experiment to run, because it is the only one that can show whether the wider scope helps or hurts the model. It is only worth running for a family where cross-pack dedup removes a measurable share (≥ 1% of a pack); for English it does not.
 
 ## Open questions for the team
 
-- Confirm 0.80 for prose after the hand review; agree 0.85 (code) and 0.90 (math) after the all-pack overlap run.
+- Confirm 0.80 for prose after the hand review; agree 0.85 (code) after the all-pack overlap run. Math 0.90 holds on E1.
+- Math numbers rule: body-only numbers, or skip it for same-URL pairs? Add same URL as an H2 signal? (Math E1 findings.)
 - Is 50 words the right minimum length for H2 on prose? (Short template pages score 0.82–0.85.)
 - Who writes `dedup.py`: Task 4 or Task 5?
 - **Asked TSAI on PR #255:** H3 translation scope; Data B in the cross-team pass (the 38-pack job already includes it); pack order; held-out copies; remove list as the hand-off; folder location.
