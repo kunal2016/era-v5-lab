@@ -1376,9 +1376,27 @@
                 "value": 1.0
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.run_id}"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
