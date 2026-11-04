@@ -1,6 +1,6 @@
 # EXP-2: AdamW vs Muon at T2 (DRAFT, not sent)
 
-Updated 2026-11-03 with the lead's answers in G5 (cap 90 min, AdamW lr rule, metrics only, no checkpoint) and the provisional muon_lr 1e-2.
+Updated 2026-11-03 with the lead's answers in G5 (cap 90 min, AdamW lr rule, metrics only, no checkpoint) and the provisional muon_lr 1e-2. Rebased 2026-11-04 onto main after #253 (quality-run test settings) merged; approval.status/evaluation.approved in runtime.yaml are still unset, so this stays a draft.
 
 ```
 Team:            05-architecture
@@ -28,7 +28,7 @@ Test log:        teams/05-architecture/jobs/2026-11-04-exp2-optimizer.log
 
 ## Open items before this can be sent
 1. **PR #241 merged** (Muon backend, Deepjyoti Saha). Plan rule: no script, no job request. It is rebased on main, 76 tests pass (Udit confirmed, also with #253), review pending.
-1a. **Quality-run gate:** #253 merged, `runtime.yaml` approval.status agreed with a reference and evaluation.approved true (or an agreed resolution file), one training file for all arms. Same blockers as the EXP-1 and Muon screen runs.
+1a. **Quality-run gate:** #253 is merged (4 Nov) — rope_theta, norm_eps, mtp_weight and moe.bias are on main. Still open: `runtime.yaml` approval.status is still `pending` (needs `agreed` with a reference) and evaluation.approved is still `false`, plus one training file for all arms. Per Shivanshu (4 Nov), the EXP-1 job is not filed until those two remain unset — same blockers as the Muon screen.
 2. **`muon_lr`** is provisionally 1e-2 (Deepjyoti Saha's smoke-mode T1 screen, one seed). The official screen runs after #253 merges, `runtime.yaml` approval is set and the single training file is named. If it moves, update `exp2_muon.yaml` and the Config line.
 3. **AdamW lr** is the EXP-1 winner, or 0.001 and "not final". EXP-1 runs 1234 on 3 Nov, 1235 and 1236 on 4 Nov.
 4. **Date.** Lead (G5, 3 Nov): Wed 4 Nov 23:59 IST is for EXP-1 seeds. T2 EXP-2 runs come after EXP-1, so no fixed date for this request. Ask when to file.
