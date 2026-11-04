@@ -42,10 +42,11 @@ checked on its settings. The committed notebook has changed since, without touch
 - installs pinned (`uv==0.13.6`);
 - check (2) of `test_llamacpp_lm.py` now computes the off-by-one value from the logit rows (always finite) instead of
   generation's top 50;
-- a comment.
+- a comment;
+- no `target`/`response` fields in the sample rows (nothing read them; `paired.py` output is byte-identical).
 
-A new run made with today's notebook gets a new fingerprint, so `combine.py` will not mix it with these runs: rerun
-every format with one version.
+`combine.py` mixes these fingerprints (`SAME_SCORING`): `70829160c1bd`, `ec7db60966d6` and the current `dbeeed2c28c3`.
+Any other fingerprint is refused: rerun every format with one version.
 
 **What is committed per run** (kept small for the PR):
 - `environment.json`, `scores.csv`, `scores_long.csv`, and per format `summary.json` (G9's record format) plus
