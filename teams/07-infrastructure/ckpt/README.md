@@ -203,6 +203,7 @@ after `--max-restarts` crashes (default 10) and after `--max-stops` exits 75 (de
 time-limit path, so it has its own larger limit). A stop signal (SIGTERM, or Ctrl-C passed on as SIGTERM) is
 passed to the trainer and no new trainer starts after it. It logs one JSON line per attempt (`--log`, and
 `supervisor.*` events).
+Proof: `jobs/restart_test/` (SIGKILL on CPU, equal loss), result in `results/restart_cpu.txt`.
 
 ```bash
 RUN_ID=r1 V5_REMOTE_ROOT=/shared/ckpt python ckpt/supervisor.py --log out/supervisor.jsonl -- python my_train.py
