@@ -1,19 +1,19 @@
 r"""Cross-pack overlap: the all-to-all Jaccard similarity of every pair of documents across several packs.
 
-Reads the train and heldout parts of each pack named in the config as one combined set, builds each document's H1 key
+Reads all cleaned Parquet parts under train/ and heldout/ as one combined set, builds each document's H1 key
 (h1_sha256.py: spec v1 normalize.match_key, then NFKC, casefold, whitespace), splits it into word 5-grams
 (jaccard_matrix.py) and computes the exact Jaccard similarity of every pair of documents, inside a pack and across packs.
 A document is named <pack_id>-<doc_id>, e.g. en-dclm-0086b8a3e2a24597. Pairs scoring 1.0 are kept and listed like every
 other pair; "exact" marks the pairs whose H1 keys are identical (same SHA-256), and two empty documents score 1.0.
 Documents are never changed, and no text is written out: IDs, scores and counts only.
 
-The inputs are Week-2 tokenizer sample v0 parts, pinned by the sample's SHA256SUMS, whose own sha256 is in the config.
-Each part is looked for at <inputs>/<split>/<pack>/<part> and otherwise by its sha256 anywhere under <inputs>, so a
-renamed or regrouped copy is found too. A missing part, or one whose bytes differ, stops the run before any work.
+Pack identity comes exclusively from each row's pack_id column, never from a filename or directory.
+All parts with the same pack_id form one logical pack, across both splits. Reports outside the split
+folders are ignored. Input checksum verification is deferred; no manifest or SHA256SUMS is required.
 
 HOW TO RUN IT
 =============
-With the sample v0 (SHA256SUMS and the parts) under inputs/sample_v0/ in the repository root. Python 3.9 or later with
+With the cleaner outputs under out/tokenizer_sample_v0_clean/ in the repository root. Python 3.9 or later with
 numpy, scipy and pyarrow (python3 -m pip install numpy scipy pyarrow). It needs no network and no keys, reads only its
 inputs and writes only to out/ in the repository root. Paths in the config are relative to the repository root, the
 job's working directory, so the script can also be started from any other folder.
@@ -22,10 +22,8 @@ job's working directory, so the script can also be started from any other folder
 
 CONFIG (JSON; keys starting with "_" are comments)
 ==================================================
-  inputs              the sample v0 folder, relative to the repository root      (default inputs/sample_v0)
-  sha256sums          its SHA256SUMS                                             (default <inputs>/SHA256SUMS)
-  sha256sums_sha256   the sha256 that SHA256SUMS must have                       (required)
-  packs, splits       the pack ids, and train and/or heldout                     (default the 4 English packs, both)
+  inputs              the cleaned output folder               (default out/tokenizer_sample_v0_clean)
+  splits              train and/or heldout                     (default both)
   out                 the output folder, inside out/                             (default out/overlap)
   floor               store and list the pairs at or above this Jaccard          (default 0.5)
   k, block, top       words per shingle, matrix rows per step, pairs printed     (default 5, 256, 20)
@@ -38,26 +36,25 @@ WHAT IT WRITES (in out)
   overlap_matrix.npz      the N x N matrix, for scipy.sparse.load_npz: symmetric, 1 on the diagonal, row i is row i of
                           overlap_docs.parquet. Only scores at or above the floor are stored, so an empty cell means
                           "below the floor", not 0.
-  overlap_docs.parquet    matrix row -> document: row, id, pack, split, part, row_in_part, words, shingles
+  overlap_docs.parquet    matrix row -> document: row, id, doc_id, pack, split, part, row_in_part, words, shingles
   overlap_by_pack.csv     pack x pack: pairs at or above each level (the floor, the E1 thresholds, 1.0) and exact pairs
   overlap_histogram.csv   all N(N-1)/2 pairs in bins of 0.01, including the pairs that share nothing (Jaccard 0)
-  overlap_summary.json    the counts, the input parts and their sha256, wall time, peak RSS, package versions, and
+  overlap_summary.json    the counts, the input parts and document counts, wall time, peak RSS, package versions, and
                           each other output's size and sha256
 """
 import sys
 sys.dont_write_bytecode = True   # write only to ./out/: no __pycache__ beside the scripts
 
-import argparse, hashlib, json, os, platform, resource, time  # noqa: E402
+import argparse, hashlib, json, platform, resource, time  # noqa: E402
 from collections import Counter  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from h1_sha256 import NORMALIZE_ID, h1_key, read_file, write_csv  # noqa: E402
+from h1_sha256 import NORMALIZE_ID, h1_key, write_csv  # noqa: E402
 from jaccard_matrix import THRESHOLDS, shingles  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[3]   # teams/01-data-a/dedup/overlap.py -> the repository root
-ENGLISH = ["en-dclm", "en-fineweb-edu", "en-nemotroncc", "en-nemotroncc-synth"]
-DEFAULTS = {"inputs": "inputs/sample_v0", "sha256sums": None, "sha256sums_sha256": None, "packs": ENGLISH,
+DEFAULTS = {"inputs": "out/tokenizer_sample_v0_clean",
             "splits": ["train", "heldout"], "out": "out/overlap", "floor": 0.5, "k": 5, "block": 256, "top": 20,
             "max_output_mb": 50}
 CHUNK = 2000   # documents per block of shingle digests while reading
@@ -69,10 +66,8 @@ def load_config(path):
     if unknown:
         sys.exit(f"ERROR: unknown keys in {path}: {unknown}")
     cfg = {**DEFAULTS, **{k: v for k, v in raw.items() if not k.startswith("_")}}
-    if not cfg["sha256sums_sha256"]:
-        sys.exit(f"ERROR: {path} must pin sha256sums_sha256")
-    if any(cfg[k] and Path(cfg[k]).is_absolute() for k in ("inputs", "sha256sums", "out")):
-        sys.exit("ERROR: inputs, sha256sums and out must be relative to the repository root")
+    if any(cfg[k] and Path(cfg[k]).is_absolute() for k in ("inputs", "out")):
+        sys.exit("ERROR: inputs and out must be relative to the repository root")
     if not 0 < cfg["floor"] <= 1:
         sys.exit("ERROR: floor must be above 0 and at most 1; the histogram still counts every pair")
     if not (REPO / cfg["out"]).resolve().is_relative_to((REPO / "out").resolve()):
@@ -90,33 +85,30 @@ def sha256_file(path):
     return h.hexdigest()
 
 
-def find_parts(inputs, sums, packs, splits):
-    """[(split, pack, part, path, sha256)] for the wanted parts in SHA256SUMS, in pack, split, part order, each checked."""
-    want = []
-    for line in sums.read_text().splitlines():
-        if line.strip():
-            digest, name = line.split(None, 1)
-            fields = name.strip().split("/")
-            if len(fields) == 3 and fields[0] in splits and fields[1] in packs and fields[2].endswith(".parquet"):
-                want.append((fields[0], fields[1], fields[2], digest))
-    absent = [p for p in packs if p not in {w[1] for w in want}]
-    if absent:
-        sys.exit(f"ERROR: {sums} lists no {'/'.join(splits)} part for {absent}")
-    found, by_hash = [], None
-    for split, pack, part, digest in sorted(want, key=lambda w: (packs.index(w[1]), splits.index(w[0]), w[2])):
-        path = inputs / split / pack / part
-        if not (path.is_file() and sha256_file(path) == digest):
-            if by_hash is None:   # hash every Parquet file under inputs once, to find renamed or regrouped copies
-                by_hash = {}
-                for dirpath, _, files in os.walk(inputs, followlinks=True):
-                    for f in sorted(files):
-                        if f.endswith(".parquet"):
-                            by_hash.setdefault(sha256_file(Path(dirpath) / f), Path(dirpath) / f)
-            path = by_hash.get(digest)
-            if path is None:
-                sys.exit(f"ERROR: no file under {inputs} has the sha256 of {split}/{pack}/{part} ({digest})")
-        found.append((split, pack, part, path, digest))
-    return found
+def find_parts(inputs, splits):
+    """All Parquet files under the selected split folders; paths provide provenance only."""
+    parts = [(split, str(path.relative_to(inputs / split)), path)
+             for split in splits for path in sorted((inputs / split).rglob("*.parquet")) if path.is_file()]
+    if not parts:
+        sys.exit(f"ERROR: no Parquet parts under {inputs} in splits {splits}")
+    return parts
+
+
+def read_file(path):
+    """Read embedded pack identity without changing the shared H1 reader's interface."""
+    import pyarrow.parquet as pq
+    pf = pq.ParquetFile(path)
+    columns = ["pack_id", "doc_id", "text"]
+    missing = set(columns) - set(pf.schema_arrow.names)
+    if missing:
+        sys.exit(f"ERROR: {path} has no {sorted(missing)} column (it has {pf.schema_arrow.names})")
+    row = 0
+    for batch in pf.iter_batches(batch_size=1000, columns=columns):
+        for pack, doc_id, text in zip(*(batch.column(c).to_pylist() for c in columns)):
+            if not isinstance(pack, str) or not pack.strip():
+                sys.exit(f"ERROR: {path} row {row} has invalid pack_id {pack!r}")
+            yield row, pack, doc_id, text
+            row += 1
 
 
 def peak_rss_mb():
@@ -137,22 +129,16 @@ def main():
     except ImportError:
         sys.exit("ERROR: needs numpy, scipy and pyarrow: python3 -m pip install numpy scipy pyarrow")
     t0 = time.time()
-    inputs, out, packs, splits = REPO / cfg["inputs"], REPO / cfg["out"], cfg["packs"], cfg["splits"]
-    sums = REPO / (cfg["sha256sums"] or Path(cfg["inputs"]) / "SHA256SUMS")
-    if not sums.is_file():
-        sys.exit(f"ERROR: no {sums}; put the sample v0 (SHA256SUMS and the parts) in inputs/sample_v0/ "
-                 f"in the repository root {REPO}")
-    if sha256_file(sums) != cfg["sha256sums_sha256"]:
-        sys.exit(f"ERROR: {sums} has sha256 {sha256_file(sums)}; the config pins {cfg['sha256sums_sha256']}")
-    parts = find_parts(inputs, sums, packs, splits)
-    print(f"{len(parts)} parts found and checked against {sums.relative_to(REPO)} ({time.time() - t0:.0f}s)", flush=True)
+    inputs, out, splits = REPO / cfg["inputs"], REPO / cfg["out"], cfg["splits"]
+    parts = find_parts(inputs, splits)
+    print(f"{len(parts)} cleaned parts found (input checksum verification deferred)", flush=True)
 
     # 1. Combine every part of every pack: one row per document, with its H1 hash and its set of shingles.
     # docs[i] = (pack, split, part, row_in_part, doc_id, words, shingles, sha256)
     docs, chunks, buf, part_docs = [], [], [], []
-    for split, pack, part, path, _ in parts:
+    for split, part, path in parts:
         n = 0
-        for row, doc_id, text in read_file(path):
+        for row, pack, doc_id, text in read_file(path):
             key = h1_key(text or "")
             blob, words = shingles(key, cfg["k"])
             buf.append(blob)
@@ -163,7 +149,7 @@ def main():
                 chunks.append(np.frombuffer(b"".join(buf), dtype=np.int64))
                 buf = []
         part_docs.append(n)
-        print(f"{split}/{pack}/{part}: {n} documents ({time.time() - t0:.0f}s)", flush=True)
+        print(f"{split}/{part}: {n} documents ({time.time() - t0:.0f}s)", flush=True)
     if buf:
         chunks.append(np.frombuffer(b"".join(buf), dtype=np.int64))
     N = len(docs)
@@ -171,7 +157,9 @@ def main():
         sys.exit(f"ERROR: {N} document(s); nothing to compare")
     sizes = np.array([d[6] for d in docs], dtype=np.int64)
     indptr = np.concatenate(([0], np.cumsum(sizes)))
-    pack_ix = np.array([packs.index(d[0]) for d in docs], dtype=np.int64)
+    packs = sorted({d[0] for d in docs})
+    pack_index = {pack: i for i, pack in enumerate(packs)}
+    pack_ix = np.array([pack_index[d[0]] for d in docs], dtype=np.int64)
     ids = [f"{d[0]}-{d[4]}" for d in docs]
     sha = [d[7] for d in docs]
 
@@ -239,7 +227,8 @@ def main():
     M = sparse.coo_matrix((np.concatenate([S, S, np.ones(N)]),
                            (np.concatenate([I, J, diag]), np.concatenate([J, I, diag]))), shape=(N, N)).tocsr()
     sparse.save_npz(out / "overlap_matrix.npz", M)
-    pq.write_table(pa.table({"row": np.arange(N), "id": ids, "pack": [d[0] for d in docs], "split": [d[1] for d in docs],
+    pq.write_table(pa.table({"row": np.arange(N), "id": ids, "doc_id": [d[4] for d in docs],
+                             "pack": [d[0] for d in docs], "split": [d[1] for d in docs],
                              "part": [d[2] for d in docs], "row_in_part": [d[3] for d in docs],
                              "words": [d[5] for d in docs], "shingles": sizes}),
                    out / "overlap_docs.parquet", compression="zstd")
@@ -252,8 +241,8 @@ def main():
     write_csv(out / "overlap_histogram.csv", ["jaccard_from", "jaccard_to", "pairs"],
               ([f"{b / 100:.2f}", f"{(b + 1) / 100:.2f}", int(hist[b])] for b in range(100)))
 
-    # Rows are in pack order and a < b, so each pair's packs come out in that order too.
-    pa_ix, pb_ix = pack_ix[I], pack_ix[J]
+    # File order need not match embedded pack order; count each unordered pack pair once.
+    pa_ix, pb_ix = np.minimum(pack_ix[I], pack_ix[J]), np.maximum(pack_ix[I], pack_ix[J])
     levels = [(f"{t:.2f}", S >= t) for t in sorted({cfg["floor"], *(t for t in THRESHOLDS if t >= cfg["floor"]), 1.0})]
     levels.append(("exact", exact))
     by_pack = {}
@@ -275,9 +264,9 @@ def main():
         "normalize_id": NORMALIZE_ID,
         "key": "h1_key of h1_sha256.py: normalize.match_key, then NFKC, casefold, whitespace runs to one space",
         "shingles": f"word {cfg['k']}-grams of the key as 8-byte BLAKE2b digests; a key under {cfg['k']} words is one shingle",
-        "inputs": {"sha256sums": str(sums.relative_to(REPO)), "sha256sums_sha256": cfg["sha256sums_sha256"],
-                   "parts": [{"part": f"{sp}/{pk}/{pt}", "sha256": dg, "documents": n}
-                             for (sp, pk, pt, _, dg), n in zip(parts, part_docs)]},
+        "inputs": {"root": cfg["inputs"], "checksum_verification": "deferred",
+                   "parts": [{"part": f"{sp}/{pt}", "documents": n}
+                             for (sp, pt, _), n in zip(parts, part_docs)]},
         "documents": {p: {**{sp: per_split[(p, sp)] for sp in splits}, "all": sum(per_split[(p, sp)] for sp in splits)}
                       for p in packs},
         "documents_all": N,

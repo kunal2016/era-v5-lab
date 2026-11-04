@@ -1,0 +1,11 @@
+{
+  "_comment": "All cleaned Parquet parts under train/ and heldout/. Pack identity comes from the embedded pack_id column. Input checksum verification is deferred. Paths are relative to the repository root.",
+  "inputs": "out/tokenizer_sample_v0_clean",
+  "splits": ["train", "heldout"],
+  "out": "out/overlap",
+  "floor": 0.5,
+  "k": 5,
+  "block": 256,
+  "top": 20,
+  "max_output_mb": 50
+}
