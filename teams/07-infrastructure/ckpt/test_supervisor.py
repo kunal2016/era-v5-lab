@@ -7,6 +7,7 @@ import json
 import os
 import signal
 import sys
+import threading
 import time
 
 import pytest
@@ -28,6 +29,9 @@ if step in ("kill", "sleep"):
     sys.exit(1)
 sys.exit(int(step))
 """
+
+
+posix_only = pytest.mark.skipif(os.name != "posix", reason="POSIX signals")
 
 
 @pytest.fixture
@@ -98,16 +102,29 @@ def test_crash_loop_holds(child, tmp_path):
 
 
 def test_crashes_outside_the_window_do_not_count(child, tmp_path):
-    # window 0 s: every crash is alone in its window, so only the restart limit stops it
+    # window 0 s: no two crashes share a window, so the crash loop never triggers and the run finishes
     assert sup(child(1, 1, 1, 0), tmp_path, crash_n=2, crash_window_s=0).run() == 0
 
 
-def test_restart_limit(child, tmp_path):
-    assert sup(child(75, 75, 75, 0), tmp_path, max_restarts=2).run() == EXIT_FATAL
+def test_crash_restart_limit(child, tmp_path):
+    assert sup(child(1, 1, 1, 0), tmp_path, max_restarts=2, crash_n=99).run() == EXIT_FATAL
     assert attempts(tmp_path) == [0, 1, 2]
-    assert log_rows(tmp_path)[-1]["reason"] == "restart limit reached (2)"
+    assert log_rows(tmp_path)[-1]["reason"] == "limit on restarts after a crash reached (2)"
 
 
+def test_saved_stops_do_not_count_as_crashes(child, tmp_path):
+    # a healthy long run: many 75s (time limit, preemption) must not be held by --max-restarts
+    assert sup(child(75, 75, 75, 75, 0), tmp_path, max_restarts=1).run() == 0
+    assert attempts(tmp_path) == [0, 1, 2, 3, 4]
+
+
+def test_stop_limit(child, tmp_path):
+    assert sup(child(75, 75, 75, 0), tmp_path, max_stops=2).run() == EXIT_FATAL
+    assert attempts(tmp_path) == [0, 1, 2]
+    assert log_rows(tmp_path)[-1]["reason"] == "limit on restarts after 75 reached (2)"
+
+
+@posix_only
 def test_sigkill_is_a_crash_and_restarts(child, tmp_path):
     def kill_first(proc, attempt):
         if attempt == 0:
@@ -123,7 +140,7 @@ def test_restart_reports_last_complete_checkpoint(child, tmp_path):
     run_url = commit(tmp_path / "store", "r1", 125)
     assert sup(child(75, 0), tmp_path, run_url=run_url).run() == 0
     row = log_rows(tmp_path)[0]
-    assert row["from_step"] == 125 and row["checkpoint"]["path"] == "main/step_125-e1"
+    assert row["pointer_step"] == 125 and row["pointer"]["path"] == "main/step_125-e1"
 
 
 def test_last_complete_needs_the_manifest(tmp_path):
@@ -134,16 +151,53 @@ def test_last_complete_needs_the_manifest(tmp_path):
     assert last_complete(run_url)["step"] == 50
 
 
-def test_sigterm_is_forwarded_and_stops_restarts(child, tmp_path):
-    s = sup(child("sleep", 0), tmp_path)
-
-    def term_supervisor(proc, attempt):
+@posix_only
+@pytest.mark.parametrize("signum", [signal.SIGTERM, signal.SIGINT])
+def test_stop_signal_is_delivered_forwarded_and_stops_restarts(child, tmp_path, signum):
+    # a real signal to this process, so the installed handler runs; SIGINT reaches the child as SIGTERM
+    # (the child only saves on SIGTERM: with SIGINT it would die with KeyboardInterrupt, exit 1)
+    def signal_supervisor(proc, attempt):
         time.sleep(0.3)
-        s._forward(signal.SIGTERM, None)     # what the signal handler does
-    s.on_start = term_supervisor
-    assert s.run() == 75                     # the child saved (75); the supervisor does not restart
+        os.kill(os.getpid(), signum)
+    assert sup(child("sleep", 0), tmp_path, on_start=signal_supervisor).run() == 75
     assert attempts(tmp_path) == [0]
-    assert log_rows(tmp_path)[0]["reason"] == "supervisor was told to stop"
+    assert log_rows(tmp_path)[0]["reason"] == "told to stop; child exit 75, saved"
+    assert signal.getsignal(signum) is not None      # handlers are put back after run()
+
+
+@posix_only
+def test_stop_signal_during_backoff_starts_no_new_trainer(child, tmp_path):
+    def kill_then_term(proc, attempt):
+        proc.kill()                                   # a crash, so a restart is planned after the backoff
+        proc.wait()
+        threading.Timer(0.3, os.kill, (os.getpid(), signal.SIGTERM)).start()
+    t0 = time.time()
+    assert sup(child("kill", 0), tmp_path, backoff_s=30, on_start=kill_then_term).run() == 75
+    assert time.time() - t0 < 10                      # the backoff ended early
+    assert 1 not in attempts(tmp_path)                # no second trainer (the first may die before writing)
+    rows = log_rows(tmp_path)
+    assert [r["action"] for r in rows] == ["restart", "stop"]
+    assert rows[1]["meaning"] == "not started" and rows[1]["exit"] == 75
+
+
+@posix_only
+def test_stop_signal_when_child_crashes_says_not_saved(child, tmp_path):
+    def term_then_crash(proc, attempt):
+        time.sleep(0.3)
+        os.kill(os.getpid(), signal.SIGTERM)
+        proc.kill()                                   # the child dies without saving
+    assert sup(child("sleep", 0), tmp_path, on_start=term_then_crash).run() == 75
+    assert log_rows(tmp_path)[0]["reason"] == "told to stop; child exit -9, not saved, work since the last commit is lost"
+
+
+@posix_only
+def test_child_runs_in_its_own_session(child, tmp_path):
+    seen = {}
+
+    def record(proc, attempt):
+        seen["child"], seen["me"] = os.getsid(proc.pid), os.getsid(0)
+    assert sup(child(0), tmp_path, on_start=record).run() == 0
+    assert seen["child"] != seen["me"]
 
 
 def test_meaning():
