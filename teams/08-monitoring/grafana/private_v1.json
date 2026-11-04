@@ -616,6 +616,79 @@
       ],
       "title": "GPU temperature (C)",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "tokens_per_byte per optimizer step: scored tokens / UTF-8 bytes they encode (padding excluded). One 'all' line per run, plus one line per language slice when the trainer logs tokens_per_byte_by_lang. For runs that do not log tokens_per_byte, 'all' is worked out from train/scored_tokens and train/utf8_bytes (summed over ranks). A step change means a new language mix, a tokenizer swap or unexpected text.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "tokens per byte",
+            "lineWidth": 2,
+            "showPoints": "auto"
+          },
+          "decimals": 3,
+          "min": 0,
+          "unit": "short",
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, concat(run_id, ' ', series) AS series, v AS value FROM (SELECT run_id, step, if(name = 'tokens_per_byte', 'all', replaceOne(name, 'tokens_per_byte_by_lang.', '')) AS series, value AS v FROM metrics_raw WHERE (name = 'tokens_per_byte' OR name LIKE 'tokens_per_byte_by_lang.%') AND run_id IN ($run) AND value IS NOT NULL UNION ALL SELECT run_id, step, 'all' AS series, sumIf(value, name = 'train/scored_tokens') / sumIf(value, name = 'train/utf8_bytes') AS v FROM metrics_raw WHERE name IN ('train/scored_tokens', 'train/utf8_bytes') AND run_id IN ($run) AND run_id NOT IN (SELECT DISTINCT run_id FROM metrics_raw WHERE name = 'tokens_per_byte' AND run_id IN ($run)) GROUP BY run_id, step HAVING sumIf(value, name = 'train/utf8_bytes') > 0) ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "Tokens per byte (tokens_per_byte, all and by language)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
     }
   ],
   "refresh": "",
