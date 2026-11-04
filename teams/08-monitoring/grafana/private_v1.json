@@ -1344,6 +1344,159 @@
         }
       ],
       "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "Share of steps where clip_grad_norm_ scaled the gradients down (gradient_clipping_applied = 1, gradient_norm > run.grad_clip), as the mean of the 0/1 flag per $bucket-step bucket, plotted at the bucket start. gradient_norm (before clipping) per step on the right axis. Yellow from 0.5: clipping on most steps may mean the threshold is too low or training is unstable.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "clipped share of steps",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "lineInterpolation": "stepAfter",
+            "spanNulls": true,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "decimals": 2,
+          "unit": "percentunit",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              }
+            ]
+          },
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*clipped share.*"
+            },
+            "properties": [
+              {
+                "id": "max",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*gradient_norm.*"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "gradient_norm (before clipping)"
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "linear"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": true
+              },
+              {
+                "id": "custom.thresholdsStyle",
+                "value": {
+                  "mode": "off"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 76
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT x AS step, series, y AS value FROM (SELECT intDiv(step, $bucket) * $bucket AS x, concat(run_id, ' clipped share') AS series, avg(value) AS y FROM metrics_raw WHERE name = 'gradient_clipping_applied' AND run_id IN ($run) AND value IS NOT NULL GROUP BY run_id, x UNION ALL SELECT step AS x, concat(run_id, ' gradient_norm') AS series, value AS y FROM metrics_raw WHERE name = 'gradient_norm' AND run_id IN ($run) AND value IS NOT NULL) ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "Gradient clipping rate (gradient_clipping_applied, gradient_norm)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
     }
   ],
   "refresh": "",
