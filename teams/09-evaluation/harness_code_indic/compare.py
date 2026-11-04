@@ -50,7 +50,7 @@ HARNESS_FIXES = [  # bugs in the tools themselves; every affected result was reg
     "(code, Devanagari, Telugu), so no other result was affected.",
     "Qwen2.5 ships `max_new_tokens: 2048` in `generation_config.json`, which transformers lets override lm-eval's own "
     "generation cap (`max_gen_toks`, 256 for GSM8K). `run_lm_eval.py` now clears it, as standard lm-eval behaviour intends "
-    "(found by Mahesh Sv, PR #21). Only Qwen's eval-mini GSM8K was affected (51 → 52 after a fresh rerun; the earlier run is kept "
+    "(found by `maheshsv`, PR #21). Only Qwen's eval-mini GSM8K was affected (51 → 52 after a fresh rerun; the earlier run is kept "
     "locally). gemma-2-2b and Llama-3.2-3B have no such override, and gate tasks (log-likelihood) and code generation (explicit "
     "`max_new_tokens=768`) never used it.",
 ]
