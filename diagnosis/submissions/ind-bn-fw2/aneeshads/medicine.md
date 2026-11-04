@@ -73,7 +73,7 @@ decides the sheet: C1 gets a narrow medicine that passes, and the full C1 rule i
        return _DATELINE.sub("", text)                # নিজস্ব প্রতিবেদক, নাটোর : at the start
    ```
 3. **Action:** fix the text.
-4. **Harm test:** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 ef2ec84134fc; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test:** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 16279cf5d3db; rule: changed or dropped at most 1% or 1 document, whichever is more.
    - Changed 2 of 244 (0.82%). Dropped 0 of 244 (0.00%). **PASS**
    - ZWJ/ZWNJ audit: 0 changed documents with a different count. **PASS**
    - Normal-form audit: 0 changed documents left NFC or lost a compatibility character. **PASS**
@@ -119,7 +119,7 @@ decides the sheet: C1 gets a narrow medicine that passes, and the full C1 rule i
        return _GLOSS.sub("", text)                   # রোহিত শর্মা (Rohit Sharma) -> রোহিত শর্মা
    ```
 3. **Action:** keep the documents as they are. The candidate's action would be to fix the text.
-4. **Harm test:** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 ef2ec84134fc: the tool reports "D3
+4. **Harm test:** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 16279cf5d3db: the tool reports "D3
    has no rule in code, so nothing to test". Nothing changes: 0 changed, 0 dropped of 244.
 5. **Side effects:**
    - The candidate would remove good text: English names and terms that help a model link the two scripts.
@@ -133,3 +133,17 @@ decides the sheet: C1 gets a narrow medicine that passes, and the full C1 rule i
 |---|---|---|---|
 | F1 | personal data | 1 (1) | `138b777477338cb0`, offset 633: an address (the value is not given here) |
 | C2 | repeated lines | 1 (1) | `529567589848cc21`, offset 2980: `শহীদ মিনার` |
+
+## A6 in this pack (not in my labels)
+
+A6, the Assamese RA U+09F0 `ৰ` in place of the Bengali RA U+09B0 `র`, is not in my labels for this pack. The A6
+medicine of my ind-bn-sangraha-v sheet (replace `ৰ` with `র` only when a document has more than 6 `ৰ` and fewer `ৰ`
+than `র`, the TSAI decision of 4 November) was checked on this pack on 4 November:
+
+- **Gold:** on the 244 gold documents of ind-bn-fw2 it changes 0 and drops 0 (0.00%, limit 2). ZWJ/ZWNJ and
+  normal-form audits pass. **PASS**
+- **Pack (500 documents):** 3 documents have a `ৰ`, one each (`3d1bc6eb238cbbb1`, `bd59fdf51e29e37b`,
+  `7806d286fa99b29e`), among 548 to 2,630 `র`. All three have 6 or fewer `ৰ`, so the medicine changes none of them:
+  0% of the `ৰ` changed, 100% (3 of 3) unchanged.
+
+So in this pack the filtered A6 is safe but has nothing to treat. It is not added as a medicine of this sheet.
