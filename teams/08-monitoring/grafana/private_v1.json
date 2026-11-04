@@ -622,6 +622,149 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "${ds}"
       },
+      "description": "gpu_temp_c per optimizer step (degrees C, rank 0's GPU, from NVML) with gpu_thermal_throttle next to it: 1 when NVML reports HW (0x40) or SW (0x20) thermal slowdown, so the GPU lowered its clocks because of heat. Colours: green below 75 C, yellow from 75 C, red from 85 C. Slower steps with throttle 1 mean heat, not the code. Every GPU at 1 s is in panel 12 (gpu_telemetry_1s).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "degrees C",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "decimals": 1,
+          "unit": "celsius",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*gpu_thermal_throttle.*"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "thermal throttle (0/1)"
+              },
+              {
+                "id": "custom.lineInterpolation",
+                "value": "stepAfter"
+              },
+              {
+                "id": "custom.thresholdsStyle",
+                "value": {
+                  "mode": "off"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 68
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, concat(run_id, ' ', name) AS series, value FROM metrics_raw WHERE name IN ('gpu_temp_c', 'gpu_thermal_throttle') AND run_id IN ($run) AND value IS NOT NULL ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU temperature and thermal throttle (gpu_temp_c, gpu_thermal_throttle)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
       "description": "tokens_per_byte per optimizer step: scored tokens / UTF-8 bytes they encode (padding excluded). One 'all' line per run, plus one line per language slice when the trainer logs tokens_per_byte_by_lang. For runs that do not log tokens_per_byte, 'all' is worked out from train/scored_tokens and train/utf8_bytes (summed over ranks). A step change means a new language mix, a tokenizer swap or unexpected text.",
       "fieldConfig": {
         "defaults": {

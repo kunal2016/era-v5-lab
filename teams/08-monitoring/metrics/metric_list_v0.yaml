@@ -107,6 +107,21 @@ metrics:
     (x 1,048,576).
   notes: Memory used on the whole GPU by all processes, not only PyTorch. Stored in bytes, while gpu_alloc_gb
     is in GiB, so convert before comparing them.
+# GPU heat. A hot GPU lowers its clocks (thermal slowdown), so steps get slower with no change in code or data.
+- name: gpu_temp_c
+  unit: degrees C
+  cadence: Every training step (per-step logger); 1 second in the GPU telemetry (gpu_telemetry_1s)
+  source: metrics_logger/gpu_thermal.py, NVML nvmlDeviceGetTemperature (NVML_TEMPERATURE_GPU) for the rank's own
+    GPU (LOCAL_RANK). Written nothing on a machine without an NVIDIA GPU. The writer also takes temp_c, the name
+    of G6's sampler field, and stores it as gpu_temp_c.
+  notes: GPU core temperature. Dashboard colours (panel 22) - green below 75, yellow from 75, red from 85.
+    The per-step value is one GPU (the writer runs on rank 0); every GPU is in gpu_telemetry_1s.
+- name: gpu_thermal_throttle
+  unit: 0 or 1
+  cadence: Every training step, with gpu_temp_c
+  source: metrics_logger/gpu_thermal.py, NVML clock throttle (clocks event) reasons of the same GPU.
+  notes: 1 when HW thermal slowdown (0x40) or SW thermal slowdown (0x20) is set, else 0. Other reasons (power
+    cap, idle, application clocks) do not count. A 1 next to slower steps means heat, not the code.
 # Model FLOPs utilization (MFU): how much of the GPUs' peak compute is actually used. G6 owns the method.
 - name: model_flops_utilization
   unit: fraction
