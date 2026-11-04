@@ -22,7 +22,6 @@ import argparse
 import json
 import os
 import platform
-import re
 import shutil
 import signal
 import subprocess
@@ -109,14 +108,6 @@ def read_rows(path: Path) -> list:
             if i != len(lines) - 1:
                 raise                      # only the line being written at the kill may be cut
     return rows
-
-
-def torch_at_least(version: str, minimum: str) -> bool:
-    """'2.15.0a0+git1234' >= '2.14.1' without an extra dependency: leading digits of major.minor.patch."""
-    def parts(v):
-        m = re.match(r"(\d+)\.(\d+)(?:\.(\d+))?", v)
-        return tuple(int(x or 0) for x in m.groups()) if m else (0, 0, 0)
-    return parts(version) >= parts(minimum)
 
 
 def last_step(path: Path) -> int:
@@ -299,7 +290,9 @@ def main(argv=None) -> int:
     if not (0 < a.save_every <= a.kill_at < a.steps):
         ap.error("need 0 < --save-every <= --kill-at < --steps")
     import torch
-    if not torch_at_least(torch.__version__, rt.MIN_TORCH):
+    # torch.__version__ is a TorchVersion: it compares as a version ("2.9.0" < "2.14.1"; "2.15.0a0+git" passes),
+    # the same check as restore_test.py
+    if torch.__version__ < rt.MIN_TORCH:
         ap.error(f"needs torch >= {rt.MIN_TORCH} (the restore test's pin), found {torch.__version__}")
     a.out, a.config, a.tiny = a.out.resolve(), a.config.resolve(), a.tiny.resolve()
     a.other_kills = []
