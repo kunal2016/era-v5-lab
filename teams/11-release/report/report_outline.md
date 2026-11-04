@@ -23,34 +23,34 @@ Each section has an owner team, a status and a lead confirmation.
 
 **Lead OK** tracks whether the lead of each owner team confirmed the section and its scope.
 Write `pending` until they confirm. Then write `OK` and the GitHub handle of each lead who confirmed.
-For a shared section, record an OK from the lead of each owner team.
+For a shared section, name each owner team, for example `Data A OK @handle; Data B pending`.
 This confirms the outline only. TSAI still approves the final text.
 
 ## Sections
 
 | Section | Owner team | Status | Lead OK |
 |---|---|---|---|
-| Abstract | Release | empty | pending |
-| Introduction | Release, Data B, Evaluation | empty | pending |
-| Background and Related Work | Release, Data A, Tokenizer, KE2, Architecture, Post-training | empty | pending |
-| Training Data | Data A, Data B, Evaluation | empty | pending |
+| Abstract | Release | empty | Release OK @pyru |
+| Introduction | Release, Data B, Evaluation | empty | Release OK @pyru; Data B pending; Evaluation pending |
+| Background and Related Work | Release, Data A, Tokenizer, KE2, Architecture, Post-training | empty | Release OK @pyru; Data A pending; Tokenizer pending; KE2 pending; Architecture OK @shivman; Post-training pending |
+| Training Data | Data A, Data B, Evaluation | empty | Data A pending; Data B pending; Evaluation pending |
 | Tokenizer | Tokenizer | empty | pending |
 | KE2 | KE2 | empty | pending |
-| Model Design | Architecture | empty | pending |
-| Training Speed and Correctness | Performance, KE2 | empty | pending |
+| Model Design | Architecture | empty | OK @shivman |
+| Training Speed and Correctness | Performance, KE2 | empty | Performance pending; KE2 pending |
 | Training Infrastructure | Infrastructure | empty | pending |
 | Monitoring the Training Run | Monitoring | empty | pending |
-| The Training Run | Infrastructure, Data A, Architecture, Monitoring | empty | pending |
-| What Went Wrong and How We Fixed It | Monitoring, Infrastructure | empty | pending |
+| The Training Run | Infrastructure, Data A, Architecture, Monitoring | empty | Infrastructure pending; Data A pending; Architecture OK @shivman; Monitoring pending |
+| What Went Wrong and How We Fixed It | Monitoring, Infrastructure | empty | Monitoring pending; Infrastructure pending |
 | Post-training | Post-training | empty | pending |
 | Quantization and Serving | Quantization | empty | pending |
-| Results | Evaluation, Quantization | empty | pending |
-| Limitations | Evaluation, Release | empty | pending |
-| Reproducibility | Release, Architecture, Infrastructure | empty | pending |
-| Licence and Attribution | Post-training, Data A, Data B | empty | pending |
-| Conclusion | Release | empty | pending |
-| Contributors and Acknowledgments | Release | empty | pending |
-| Resources and Citation | Release | empty | pending |
+| Results | Evaluation, Quantization | empty | Evaluation pending; Quantization pending |
+| Limitations | Evaluation, Release | empty | Evaluation pending; Release OK @pyru |
+| Reproducibility | Release, Architecture, Infrastructure | empty | Release OK @pyru; Architecture OK @shivman; Infrastructure pending |
+| Licence and Attribution | Post-training, Data A, Data B | empty | Post-training pending; Data A pending; Data B pending |
+| Conclusion | Release | empty | Release OK @pyru |
+| Contributors and Acknowledgments | Release | empty | Release OK @pyru |
+| Resources and Citation | Release | empty | Release OK @pyru |
 
 ## Rules for every section
 
