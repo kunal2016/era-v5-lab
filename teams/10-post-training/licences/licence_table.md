@@ -89,6 +89,10 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | sft-safety-wildjailbreak | [allenai/wildjailbreak](https://huggingface.co/datasets/allenai/wildjailbreak) | English | GPT-4 and GPT-3.5 (OpenAI, proprietary closed) + Mixtral-8x7B (Apache-2.0) | ODC-By; gated AI2 conditions | excluded |
 | sft-safety-nemotron-sft-v2 | [nvidia/Nemotron-SFT-Safety-v2](https://huggingface.co/datasets/nvidia/Nemotron-SFT-Safety-v2) | English, German, Spanish, French, Japanese, Italian, Chinese | Unknown English response/reasoning generator (not named on the card); Riva-Translate-4B-Instruct-v1.1 translates | CC-BY-4.0; additional Apache-2.0 / MIT terms | excluded |
 | sft-science-glm51-phd | [Jackrong/GLM-5.1-Reasoning-1M-Cleaned](https://huggingface.co/datasets/Jackrong/GLM-5.1-Reasoning-1M-Cleaned) | Science; release language tags: English / Chinese | GLM-5.1 (MIT, open weights) generates reasoning and final answers (`PHD-Science` Apache-2.0 config only) | Apache-2.0 (cleaned and upstream publisher cards) | TSAI reserves |
+| sft-code-nemotron-opencode | [nvidia/Nemotron-SFT-OpenCode-v1](https://huggingface.co/datasets/nvidia/Nemotron-SFT-OpenCode-v1) | English / Code (agentic CLI, tool use, agent skills) | gpt-oss-120b (Apache-2.0, open weights) writes the questions and agent skills; Qwen3-Coder-480B-A35B-Instruct (Apache-2.0, open weights) writes the solution traces | cc-by-4.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
+| sft-code-nemotron-cuda | [nvidia/Nemotron-SFT-CUDA-v1](https://huggingface.co/datasets/nvidia/Nemotron-SFT-CUDA-v1) | English / Code (CUDA kernels) | GLM-4.7 (MIT, open weights) writes the problems and the solutions; only runs that pass the hidden tests with no Compute-Sanitizer errors are kept (execution-verified) | cc-by-4.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
+| sft-math-nemotron-sft-math-v4 | [nvidia/Nemotron-SFT-Math-v4](https://huggingface.co/datasets/nvidia/Nemotron-SFT-Math-v4) | English / Mathematics | DeepSeek-V4-Pro (MIT, open weights) writes all solutions; problems are human-written (AoPS, Math StackExchange) and only solutions that match the reference answer are kept | cc-by-4.0 (AoPS-derived), cc-by-sa-4.0 (Math StackExchange-derived) (Hub tags; share-alike on part, attribution needed) | allowed (CC-BY-SA, attribution needed) |
+| sft-math-nemotron-proofs-v3-sft | [nvidia/Nemotron-Math-Proofs-v3-SFT](https://huggingface.co/datasets/nvidia/Nemotron-Math-Proofs-v3-SFT) | English / Mathematics (proofs) | DeepSeek-V4-Pro (MIT, open weights) writes the proof, refinement, verification and meta-verification traces; problems are human-written AoPS proof problems | cc-by-4.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
 
 ### Stage 2: Preference optimization and RLVR
 
@@ -114,6 +118,7 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | rl-community-alignment | [facebook/community-alignment-dataset](https://huggingface.co/datasets/facebook/community-alignment-dataset) | Hindi, English, French, Italian, Portuguese | Llama-based candidate generation (Llama licence) and unnamed response generators on card | CC-BY-4.0 | excluded |
 | rl-safety-hh-rlhf | [Anthropic/hh-rlhf](https://huggingface.co/datasets/Anthropic/hh-rlhf) | English | Anthropic 52B context-distilled / RLHF models (Anthropic, proprietary closed) | MIT | excluded |
 | rl-safety-alignment-faking | [Anthropic/alignment-faking-rl](https://huggingface.co/datasets/Anthropic/alignment-faking-rl) | English | Anthropic Claude 3.5 Sonnet / Opus 3 / Sonnet 4 (Anthropic, proprietary closed) | CC-BY-4.0 (body link; Hub tag is cc) | excluded |
+| rl-code-code-contests | [deepmind/code_contests](https://huggingface.co/datasets/deepmind/code_contests) | Code (competitive; Python, C++, Java) | none (human problems and human solutions scraped from Codeforces, AtCoder, CodeChef, Aizu and HackerEarth; extra tests are made by programmatic mutation of existing inputs and checked against known-correct solutions, no LLM) | cc-by-4.0 (Hub tag; commercial use permitted per tag; upstream site content scraped) | TSAI reserves |
 
 ---
 
@@ -792,6 +797,55 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Decision:** `TSAI reserves`
 - **Our opinion:** Training purpose: safe-response SFT, jailbreak resistance, reduced over-refusal, bias and leakage mitigation. Generator: English teacher undisclosed; Riva translates. Subset/source relationship: English matches Safety-v1, with six new translation languages and no Indic language. Prompts reuse AEGIS 2.0, Gretel Safety Alignment v1 and HarmfulTasks; original answers are replaced. The card reports 130,350 examples (43,521 English). Avoid duplicate v1/translated content across splits. Kolibri use is not confirmed by the report. TSAI decides use. Source check: 2026-11-03; [publisher card at revision 8a40a63c9a1a340874b874f980953be53bff0a07](https://huggingface.co/datasets/nvidia/Nemotron-SFT-Safety-v2/blob/8a40a63c9a1a340874b874f980953be53bff0a07/README.md).
 
+### `sft-code-nemotron-opencode` — Nemotron-SFT-OpenCode-v1
+
+- **Stage:** SFT
+- **Set:** `sft-code-nemotron-opencode`
+- **Language:** English / Code (agentic CLI, tool use, agent skills)
+- **Source:** [`nvidia/Nemotron-SFT-OpenCode-v1`](https://huggingface.co/datasets/nvidia/Nemotron-SFT-OpenCode-v1)
+- **Licence:** `cc-by-4.0` — Hugging Face tag and card. The card says it is ready for commercial use. Attribution is needed.
+- **Generator model:** gpt-oss-120b (Apache-2.0) writes the questions and agent skills; Qwen3-Coder-480B-A35B-Instruct (Apache-2.0) writes the agentic solution traces and also simulates the user answers in the `question_tool` subsets. Both are open weights.
+- **Decision:** `TSAI reserves` — passes the 3 Nov TSAI generator rule: every generator named on the card is an open-weight model under Apache-2.0, and no closed or Llama model appears.
+- **Our opinion:** use. Six subsets (`general`, `bash_only_tool`, `bash_only_tool_skills`, `agent_skills`, `question_tool`, `agent_skills_question_tool`). The data is synthetic and not execution-verified on the card, so the Team 9 decontamination test is still needed.
+- **Added by:** Tanmay Sharma (Week 2 rotation, 4 Nov 2026). Hugging Face cards and generator-model pages read on 4 Nov 2026. A tag is not legal clearance.
+
+### `sft-code-nemotron-cuda` — Nemotron-SFT-CUDA-v1
+
+- **Stage:** SFT
+- **Set:** `sft-code-nemotron-cuda`
+- **Language:** English / Code (CUDA kernels)
+- **Source:** [`nvidia/Nemotron-SFT-CUDA-v1`](https://huggingface.co/datasets/nvidia/Nemotron-SFT-CUDA-v1)
+- **Licence:** `cc-by-4.0` — Hugging Face tag and card; the card says ready for commercial use. Attribution is needed.
+- **Generator model:** GLM-4.7 (MIT, open weights) inside an OpenCode agent writes the problems and, in a second pass, the solutions. The seed code comes from `nvidia/Nemotron-Pretraining-Code-v2` CUDA files, which the card describes as permissively licensed.
+- **Decision:** `TSAI reserves` — passes the 3 Nov TSAI generator rule: the only generator is an open-weight MIT model, and each kept trace passes hidden tests with no Compute-Sanitizer errors (execution-verified).
+- **Our opinion:** use. Small set (about 1K to 10K rows). The seed files keep their own per-file licences and the card does not list them, so keep the source reference per row for attribution.
+- **Added by:** Tanmay Sharma (Week 2 rotation, 4 Nov 2026). Hugging Face cards and generator-model pages read on 4 Nov 2026. A tag is not legal clearance.
+
+### `sft-math-nemotron-sft-math-v4` — Nemotron-SFT-Math-v4
+
+- **Stage:** SFT
+- **Set:** `sft-math-nemotron-sft-math-v4`
+- **Language:** English / Mathematics
+- **Source:** [`nvidia/Nemotron-SFT-Math-v4`](https://huggingface.co/datasets/nvidia/Nemotron-SFT-Math-v4)
+- **Licence:** `cc-by-4.0` for AoPS-derived samples and `cc-by-sa-4.0` for Math StackExchange-derived samples (card terms; Hub tags list both). Attribution is needed, and share-alike applies to the StackExchange part.
+- **Generator model:** DeepSeek-V4-Pro (MIT, open weights) in High mode writes every solution. The problems are human-written, taken from `nvidia/Nemotron-Math-v2` (AoPS and Math StackExchange / MathOverflow). Only solutions whose final answer matches the reference answer are kept.
+- **Decision:** `allowed (CC-BY-SA, attribution needed)` — TSAI ruling (G10 chat, 30 Oct): CC-BY-SA data is allowed with attribution when a permissive model made it. DeepSeek-V4-Pro is MIT, so it passes the 3 Nov generator rule.
+- **Our opinion:** use, with attribution. The card calls this a direct replacement for `Nemotron-SFT-Math-v3`, so use v4 and not both.
+- **Added by:** Tanmay Sharma (Week 2 rotation, 4 Nov 2026). Hugging Face cards and generator-model pages read on 4 Nov 2026. A tag is not legal clearance.
+
+### `sft-math-nemotron-proofs-v3-sft` — Nemotron-Math-Proofs-v3-SFT
+
+- **Stage:** SFT
+- **Set:** `sft-math-nemotron-proofs-v3-sft`
+- **Language:** English / Mathematics (proofs)
+- **Source:** [`nvidia/Nemotron-Math-Proofs-v3-SFT`](https://huggingface.co/datasets/nvidia/Nemotron-Math-Proofs-v3-SFT)
+- **Licence:** `cc-by-4.0` — Hugging Face tag and card. The card gives one licence label, `cc-by-4.0`, for every sample. Attribution is needed.
+- **Generator model:** DeepSeek-V4-Pro (MIT, open weights) in Max mode writes all four trace types (proof generation, proof refinement, verification, meta-verification). The 15,879 source problems are human-written AoPS proof problems from `nvidia/Nemotron-Math-Proofs-v1`.
+- **Decision:** `TSAI reserves` — passes the 3 Nov TSAI generator rule: the only generator is an open-weight MIT model and the problems are human-written.
+- **Our opinion:** use. 414,890 samples over 15,818 unique problems. Proof correctness is judged by model verifier traces, not by execution, so treat the traces as unverified proofs. The same problems appear in `sft-math-nemotron-proofs`, so de-duplicate by problem.
+- **Added by:** Tanmay Sharma (Week 2 rotation, 4 Nov 2026). Hugging Face cards and generator-model pages read on 4 Nov 2026. A tag is not legal clearance.
+
+
 ## Stage 2: Preference optimization and RLVR, candidate sets
 
 Verifiable-answer and test-based sets for RL (math, code, SWE tasks). Each entry has the standard fields, `TSAI reserves` as the decision (`excluded` where TSAI ruled a set out), and one line of opinion. Licence values are the Hugging Face tags read on 29 Oct 2026; a tag is not legal clearance. Per-dataset notes, 20-row samples and a benchmark-overlap check are in [team10-datasets](https://github.com/RaviNaik/ERA/tree/main/v5/capstone/team10-datasets).
@@ -903,6 +957,19 @@ Verifiable-answer and test-based sets for RL (math, code, SWE tasks). Each entry
 - **Decision:** `TSAI reserves`
 - **Our opinion:** use. The card says it was decontaminated against common benchmarks.
 - **Details and 20-row sample:** [zwhe99__DeepMath-103K](https://github.com/RaviNaik/ERA/tree/main/v5/capstone/team10-datasets/zwhe99__DeepMath-103K)
+
+### `rl-code-code-contests` — code_contests
+
+- **Stage:** RL
+- **Set:** `rl-code-code-contests`
+- **Language:** Code (competitive; Python, C++, Java)
+- **Source:** [`deepmind/code_contests`](https://huggingface.co/datasets/deepmind/code_contests)
+- **Licence:** `cc-by-4.0` — Hugging Face tag and card. The problems and solutions are scraped from Aizu, AtCoder, CodeChef, Codeforces and HackerEarth, so the upstream sites keep their own rights.
+- **Generator model:** None. Problems and solutions are human-written. The `generated_tests` field comes from programmatic mutation of existing test inputs, with outputs checked against known-correct solutions; no LLM is involved.
+- **Decision:** `TSAI reserves` — passes the 3 Nov TSAI generator rule: human-written and execution-verified, with no model generator.
+- **Our opinion:** use, check. The card does not say who holds rights in the scraped problem text, so keep the source URL per problem. Many Codeforces problems also appear in `open-r1/codeforces` and in benchmarks such as LiveCodeBench, so the Team 9 decontamination test is needed before any use.
+- **Added by:** Tanmay Sharma (Week 2 rotation, 4 Nov 2026). Hugging Face cards and generator-model pages read on 4 Nov 2026. A tag is not legal clearance.
+
 
 ### `sft-openhermes-2.5` — OpenHermes-2.5
 
