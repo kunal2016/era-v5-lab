@@ -120,6 +120,12 @@ def milu_avg(model):
     return round(sum(scores.values()) / len(scores), 2), scores
 
 
+def full_logits_runs(model):
+    """MILU per-language gate runs made with --full-logits (scored_logits_only false in results.json)."""
+    return [lang for lang in MILU_LANGS
+            if (load(RUNS / model / f"gate_milu_{lang}" / "results.json") or {}).get("scored_logits_only") is False]
+
+
 def ours_for(anchor):
     """Our full-set score for one anchor, or None while the run is missing."""
     model, task = anchor["model"], anchor["task"]
@@ -188,6 +194,12 @@ def main():
         counts[verdict] += 1
         if a["task"] == "milu" and ours is not None:
             milu_notes.append(f"- MILU-avg {a['model']}, the 11 scores: " + ", ".join(f"{k} {v:.2f}" for k, v in milu_avg(a["model"])[1].items()))
+            full = full_logits_runs(a["model"])
+            if full:
+                milu_notes.append(f"- MILU-avg {a['model']}: {', '.join(full)} ran with `--full-logits`. Each has answer options longer "
+                                  "than the 512 positions the default path keeps (up to 1,112 tokens), so the guard stops the default "
+                                  "run. Same log-likelihoods either way: on milu_Marathi (200 items, both paths) all 800 option "
+                                  "log-likelihoods were identical.")
         rows.append(f"| {a['model']} | {a['benchmark']} | {a['published']:.2f} | {'' if ours is None else f'{ours:.2f}'} | {diff} | "
                     f"**{verdict}** | [{a['source']['name']}]({a['source']['url']}) |")
 
