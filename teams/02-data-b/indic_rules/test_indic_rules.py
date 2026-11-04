@@ -8,7 +8,8 @@ Checks for each rule (TSAI's Gate 2 checks for indic_rules/, and Data A's spec v
   1. loads         the block runs on its own and defines medicine(doc)
   2. other packs   a document of any other pack comes back as ("keep", text)
   3. result form   medicine(doc) returns ("keep" | "fix" | "drop", str)
-  4. ZWJ, ZWNJ     a fixed document has the same number of ZWJ (U+200D) and ZWNJ (U+200C) as before
+  4. ZWJ, ZWNJ     no word the rule keeps loses or gains a ZWJ (U+200D) or ZWNJ (U+200C); deleting a whole
+                   repeated sentence or junk line, joiners and all, is allowed
   5. NFC           a fixed document that was NFC is still NFC, and keeps its compatibility characters (no NFKC)
   6. nukta         a fixed document has the same number of nukta signs (counted after NFD, so both spellings count)
   7. second run    the rule run again on its own output changes nothing
@@ -71,6 +72,17 @@ def test_docs(lang, pack):
              "pack_id": pack} for name, text in docs]
 
 
+def joiner_changes(before, after):
+    """Words the rule kept but whose ZWJ or ZWNJ changed: a word of the output that is a word of the input with its
+    joiners taken out, put in or moved. A rule may delete a whole repeated sentence or junk line, joiners and all; it
+    may not change the joiners inside text it keeps."""
+    bare = lambda w: w.replace(ZWJ, "").replace(ZWNJ, "")
+    forms = {}
+    for w in before.split():
+        forms.setdefault(bare(w), set()).add(w)
+    return [w for w in after.split() if bare(w) in forms and w not in forms[bare(w)]]
+
+
 def nukta_count(text):
     return sum(unicodedata.normalize("NFD", text).count(c) for c in NUKTA)
 
@@ -108,9 +120,10 @@ def check(rule):
         if action == "drop":
             continue
         before = doc["text"]
-        if (before.count(ZWJ), before.count(ZWNJ)) != (new.count(ZWJ), new.count(ZWNJ)):
-            bad.append(("4 ZWJ, ZWNJ", f"{doc['doc_id']}: ZWJ {before.count(ZWJ)} -> {new.count(ZWJ)}, "
-                                       f"ZWNJ {before.count(ZWNJ)} -> {new.count(ZWNJ)}"))
+        changed = joiner_changes(before, new)
+        if changed:
+            bad.append(("4 ZWJ, ZWNJ", f"{doc['doc_id']}: {len(changed)} kept word(s) lost or gained a joiner "
+                                       f"(ZWJ {before.count(ZWJ)} -> {new.count(ZWJ)}, ZWNJ {before.count(ZWNJ)} -> {new.count(ZWNJ)})"))
         if not unicodedata.is_normalized("NFC", new):
             bad.append(("5 NFC", f"{doc['doc_id']}: the output is not NFC"))
         # only the compatibility characters of text that should be kept: repairing the junk lines can rightly remove
