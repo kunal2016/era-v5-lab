@@ -56,12 +56,20 @@ def apply_resolution(cfg,resolution):
                 raise ValueError("Resolution conflicts with explicit lead choice: "+key)
     return merge(cfg,resolution)
 
+
+def resolve_run_config(cfg,resolution_path,smoke):
+    """Only an explicitly supplied resolution may override the runtime baseline."""
+    if resolution_path is None:
+        if not smoke:raise ValueError("Baseline choices pending: supply an agreed resolution file")
+        return merge(cfg,{})
+    return apply_resolution(cfg,load(resolution_path))
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ["config","tokenizer","byte-table","train-data","heldout-data","out"]:
         p.add_argument("--"+name,type=Path,required=True)
     p.add_argument("--runtime",type=Path,help="Harness-only runtime contract; dimensions remain lead-owned")
-    p.add_argument("--resolution",type=Path,help="Reviewed baseline choices, separate from fixed sizes")
+    p.add_argument("--resolution",type=Path,help="Explicit baseline overrides; smoke without this option preserves runtime settings")
     p.add_argument("--heldout-sources",type=Path,help="PR191 per-document source/slice sidecar")
     p.add_argument("--heldout-sha256",type=Path,help="Official results/heldout_v1.sha256 file")
     p.add_argument("--heldout-report",type=Path,help="Data-owner JSON provenance; see HARNESS_WEEK2.md")
@@ -79,10 +87,8 @@ def main():
     args=p.parse_args();started=time.perf_counter()
     if args.out.exists() and any(args.out.iterdir()):p.error("Use a fresh output directory")
     cfg=load_runtime(args.config,args.runtime)
-    if args.resolution is None:
-        if not args.smoke:p.error("Baseline choices pending: supply an agreed resolution file")
-        args.resolution=Path(__file__).resolve().parents[1]/"configs/small/smoke_resolution.yaml"
-    cfg=apply_resolution(cfg,load(args.resolution))
+    try:cfg=resolve_run_config(cfg,args.resolution,args.smoke)
+    except ValueError as error:p.error(str(error))
     if args.lr is not None:cfg["optim"]["lr"]=args.lr
     if args.seed is not None:cfg["run"]["seed"]=args.seed
     if args.smoke:
