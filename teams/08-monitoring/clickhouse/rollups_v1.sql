@@ -270,3 +270,61 @@ WHERE value IS NOT NULL
   )
 GROUP BY run_id, time_1s, name, rank
 ORDER BY run_id, name, time_1s, rank;
+
+-- ============================================================================
+-- Team 09 `eval_mini_v1` pivot view (`v_eval_mini_pivot`)
+-- Pivots primary task scores (`primary = 1`) per `(model, model_revision, format, item_set)`
+-- and `checkpoint_step` so Grafana panels and queries can compare models, quantized formats,
+-- and lab checkpoints across tasks.
+-- ============================================================================
+CREATE OR REPLACE VIEW v_eval_mini_pivot AS
+SELECT
+    run_id,
+    model,
+    model_revision,
+    format,
+    any(backend) AS backend,
+    item_set,
+    any(profile) AS profile,
+    checkpoint_run,
+    checkpoint_step,
+    checkpoint_tokens_seen,
+    max(run_date) AS run_date,
+    count() AS primary_tasks_scored,
+    round(avg(value), 2) AS mean_primary_score,
+    maxIf(value, task = 'arc_easy') AS arc_easy,
+    maxIf(value, task = 'arc_challenge' AND num_fewshot = 0) AS arc_challenge_0shot,
+    maxIf(value, task = 'arc_challenge' AND num_fewshot = 25) AS arc_challenge_25shot,
+    maxIf(value, task = 'arc_average') AS arc_average,
+    maxIf(value, task = 'hellaswag') AS hellaswag,
+    maxIf(value, task = 'gsm8k' AND num_fewshot = 4) AS gsm8k_4shot,
+    maxIf(value, task = 'gsm8k' AND num_fewshot = 5) AS gsm8k_5shot,
+    maxIf(value, task = 'truthfulqa_mc2') AS truthfulqa_mc2,
+    maxIf(value, task = 'winogrande') AS winogrande,
+    maxIf(value, task = 'mmlu') AS mmlu,
+    maxIf(value, task = 'leaderboard_mmlu_pro') AS leaderboard_mmlu_pro,
+    maxIf(value, task = 'humaneval') AS humaneval,
+    maxIf(value, task = 'humaneval_plus') AS humaneval_plus,
+    maxIf(value, task = 'mbpp') AS mbpp,
+    maxIf(value, task = 'mbpp_plus') AS mbpp_plus,
+    maxIf(value, task = 'milu_English') AS milu_English,
+    maxIf(value, task = 'milu_Hindi') AS milu_Hindi,
+    maxIf(value, task = 'milu_Telugu') AS milu_Telugu
+FROM eval_mini FINAL
+WHERE primary = 1
+GROUP BY
+    run_id,
+    model,
+    model_revision,
+    format,
+    item_set,
+    checkpoint_run,
+    checkpoint_step,
+    checkpoint_tokens_seen
+ORDER BY
+    run_id,
+    model,
+    model_revision,
+    format,
+    item_set,
+    checkpoint_step;

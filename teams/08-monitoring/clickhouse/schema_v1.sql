@@ -52,3 +52,51 @@ CREATE TABLE IF NOT EXISTS node_health
 )
 ENGINE = MergeTree
 ORDER BY (host, timestamp_utc);
+
+-- Team 09 `eval_mini_v1` result store (`teams/09-evaluation/results/eval_mini_v1_schema.md`, PR #186).
+-- Record key (Section 4): `(model, model_revision, format, item_set, task, num_fewshot, metric, filter)` — never NULL.
+-- Nullable fields (Section 2 & 3): `checkpoint`, `dtype`, `seed`, `stderr`, `n_items_total`, `profile`, `derived_from`,
+-- plus dotted flat fields (`checkpoint.*`, `seed.*`, `harness.script_sha256`).
+CREATE TABLE IF NOT EXISTS eval_mini
+(
+    run_id                  LowCardinality(String),
+    model                   LowCardinality(String),
+    model_revision          String,
+    format                  LowCardinality(String),
+    item_set                String,
+    task                    LowCardinality(String),
+    num_fewshot             UInt16,
+    metric                  LowCardinality(String),
+    filter                  LowCardinality(String),
+    backend                 String,
+    primary                 UInt8,
+    value                   Float64,
+    stderr                  Nullable(Float64),
+    dtype                   Nullable(String),
+    n_items                 UInt32,
+    n_items_total           Nullable(UInt32),
+    profile                 Nullable(String),
+    decoding                LowCardinality(String),
+    checkpoint              Nullable(String),
+    checkpoint_run          Nullable(String),
+    checkpoint_branch       Nullable(String),
+    checkpoint_step         Nullable(UInt64),
+    checkpoint_epoch        Nullable(UInt32),
+    checkpoint_tokens_seen  Nullable(UInt64),
+    checkpoint_path         Nullable(String),
+    seed                    Nullable(String),
+    seed_random             Nullable(Int64),
+    seed_numpy              Nullable(Int64),
+    seed_torch              Nullable(Int64),
+    seed_fewshot            Nullable(Int64),
+    harness_name            LowCardinality(String),
+    harness_version         LowCardinality(String),
+    harness_script_sha256   Nullable(String),
+    hardware                String,
+    run_date                String,
+    derived_from            Nullable(String),
+    notes                   Array(String),
+    loaded_at               DateTime64(3, 'UTC') DEFAULT now64(3, 'UTC')
+)
+ENGINE = ReplacingMergeTree(loaded_at)
+ORDER BY (run_id, model, model_revision, format, item_set, task, num_fewshot, metric, filter);

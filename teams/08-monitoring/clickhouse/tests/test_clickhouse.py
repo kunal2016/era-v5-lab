@@ -38,6 +38,101 @@ def test_parse_team5_and_team6_sources_offline():
     assert {"step_ms", "mfu", "model_flops_utilization", "gpu_utilization", "gpu_memory_used"} <= names
 
 
+def test_parse_eval_mini_v1_json_and_jsonl():
+    sample_doc = {
+        "schema_version": "eval_mini_v1",
+        "generated": "2026-11-03",
+        "sources": [],
+        "notes": [],
+        "records": [
+            {
+                "model": "HuggingFaceTB/SmolLM2-1.7B",
+                "model_revision": "effd688a12921b4cc83e3312b6feb579f70f9c71",
+                "checkpoint": None,
+                "format": "bf16",
+                "backend": "hf",
+                "dtype": "bfloat16",
+                "task": "arc_average",
+                "metric": "acc_norm",
+                "filter": "none",
+                "primary": True,
+                "value": 60.34,
+                "stderr": 0.86,
+                "n_items": 3548,
+                "n_items_total": 3548,
+                "item_set": "full",
+                "profile": "check",
+                "num_fewshot": 0,
+                "decoding": "loglikelihood",
+                "seed": {"random": 42, "numpy": 42, "torch": 42, "fewshot": 42},
+                "harness": {"name": "lm_eval", "version": "0.4.13"},
+                "hardware": "Apple M2 Pro",
+                "run_date": "2026-10-24",
+                "derived_from": ["arc_easy", "arc_challenge"],
+                "notes": [],
+            },
+            {
+                "model": "Qwen/Qwen2.5-1.5B",
+                "model_revision": "e5dfabbcffd9b0c7b31d89b82c5a6b72e663f32c",
+                "checkpoint": None,
+                "format": "bf16",
+                "backend": "hf",
+                "dtype": "bfloat16",
+                "task": "humaneval",
+                "metric": "pass@1",
+                "filter": "none",
+                "primary": True,
+                "value": 37.20,
+                "stderr": None,
+                "n_items": 164,
+                "n_items_total": 164,
+                "item_set": "full",
+                "profile": "code_indic",
+                "num_fewshot": 0,
+                "decoding": "greedy",
+                "seed": None,
+                "harness": {"name": "evalplus", "version": "0.3.1"},
+                "hardware": "RTX 3070",
+                "run_date": "2026-10-27",
+                "derived_from": None,
+                "notes": [],
+            },
+        ],
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp_json:
+        json.dump(sample_doc, tmp_json)
+        json_path = Path(tmp_json.name)
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as tmp_jsonl:
+        for r in sample_doc["records"]:
+            tmp_jsonl.write(json.dumps(r) + "\n")
+        jsonl_path = Path(tmp_jsonl.name)
+
+    try:
+        for path in (json_path, jsonl_path):
+            parsed = parse_source(str(path), run_id_override="eval_mini_v1")
+            assert parsed["target_table"] == "eval_mini"
+            assert parsed["jsonl_lines"] == 2
+            assert parsed["metric_rows"] == 2
+            assert parsed["null_rows"] == 1
+            assert parsed["nulls_by_col"] == {
+                "checkpoint": 2,
+                "derived_from": 1,
+                "seed": 1,
+                "stderr": 1,
+                "dtype": 0,
+                "n_items_total": 0,
+                "profile": 0,
+            }
+            r0, r1 = parsed["rows"]
+            assert r0["checkpoint"] is None and r0["derived_from"] == '["arc_easy","arc_challenge"]'
+            assert r0["seed_random"] == 42 and math.isclose(r0["stderr"], 0.86)
+            assert r1["seed"] is None and r1["seed_random"] is None and r1["stderr"] is None
+            assert r1["derived_from"] is None and r1["harness_name"] == "evalplus"
+    finally:
+        json_path.unlink(missing_ok=True)
+        jsonl_path.unlink(missing_ok=True)
+
+
 def test_parse_live_g6_events_and_null_handling():
     sample = "\n".join([
         json.dumps({
@@ -132,3 +227,26 @@ def test_clickhouse_end_to_end_load_check_and_rollups():
     ).strip().splitlines()
     g_names = {json.loads(line)["name"] for line in g1s}
     assert {"gpu_utilization", "gpu_memory_used", "power_w", "temp_c"} <= g_names
+
+    # Verify Team 09 eval_mini_v1.json loads into `eval_mini` and populates `v_eval_mini_pivot`
+    try:
+        load_source("teams/09-evaluation/results/eval_mini_v1.json")
+        res_ev = verify_source("teams/09-evaluation/results/eval_mini_v1.json")
+        assert res_ev["ok"], f"eval_mini_v1.json verification failed: {res_ev}"
+        assert res_ev["ch_lines"] == 98
+        assert res_ev["ch_nulls_by_col"] == {
+            "checkpoint": 98,
+            "derived_from": 92,
+            "seed": 12,
+            "stderr": 12,
+            "dtype": 0,
+            "n_items_total": 0,
+            "profile": 0,
+        }
+        pivot_rows = ch_Exec(
+            "SELECT model, model_revision, item_set, primary_tasks_scored "
+            "FROM v_eval_mini_pivot WHERE run_id = 'eval_mini_v1' FORMAT JSONEachRow"
+        ).strip().splitlines()
+        assert len(pivot_rows) >= 5
+    except FileNotFoundError:
+        pass

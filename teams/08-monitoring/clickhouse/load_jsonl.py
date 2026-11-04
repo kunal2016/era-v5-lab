@@ -139,11 +139,12 @@ def resolve_source_text(source: str) -> tuple[str, str, str]:
         run_id = p.parent.name if p.name == "metrics.jsonl" else p.stem
         return rel, run_id, p.read_text(encoding="utf-8")
 
-    # Fallback: check git refs (e.g. `pr-135:<path>` or unmerged PR #135 files).
+    # Fallback: check git refs (e.g. `pr-135:<path>`, `pr-186:<path>`, or `upstream/main:<path>`).
     git_spec = source[4:] if source.startswith("git:") else source
     if git_spec.endswith("/"):
         git_spec = f"{git_spec}metrics.jsonl"
     candidates = [git_spec] if ":" in git_spec else [
+        f"pr-186:{git_spec}",
         f"pr-135:{git_spec}",
         f"upstream/main:{git_spec}",
         f"HEAD:{git_spec}",
@@ -449,6 +450,7 @@ def _parse_team6_run_json(text: str, default_run_id: str, run_id_override: str |
 
     line_count = len(raw_steps) if raw_steps else 1
     return {
+        "target_table": "metrics_raw",
         "run_id": resolved_run_id,
         "jsonl_lines": line_count,
         "metric_rows": len(rows),
@@ -457,25 +459,236 @@ def _parse_team6_run_json(text: str, default_run_id: str, run_id_override: str |
     }
 
 
+EVAL_MINI_KEY_FIELDS = (
+    "model",
+    "model_revision",
+    "format",
+    "item_set",
+    "task",
+    "num_fewshot",
+    "metric",
+    "filter",
+)
+EVAL_MINI_NULLABLE_FIELDS = (
+    "checkpoint",
+    "derived_from",
+    "seed",
+    "stderr",
+    "dtype",
+    "n_items_total",
+    "profile",
+)
+
+
+def _is_eval_mini_record(rec: object) -> bool:
+    if not isinstance(rec, dict):
+        return False
+    return all(k in rec for k in EVAL_MINI_KEY_FIELDS) and "value" in rec and "harness" in rec
+
+
+def _parse_eval_mini_records(
+    records: list[dict],
+    default_run_id: str,
+    run_id_override: str | None = None,
+) -> dict:
+    """Dedicated reader for Team 09 `eval_mini_v1.json` (`{"records": [...]}`) and `eval_mini_v1.jsonl`."""
+    resolved_run_id = run_id_override or default_run_id
+    rows: list[dict] = []
+    null_rows = 0
+    nulls_by_col = {col: 0 for col in EVAL_MINI_NULLABLE_FIELDS}
+    seen_keys: set[tuple] = set()
+
+    for idx, rec in enumerate(records):
+        if not isinstance(rec, dict):
+            raise ValueError(f"eval_mini record {idx} is not a JSON object")
+
+        # Validate non-null record key (Section 4) and `value`
+        for k in EVAL_MINI_KEY_FIELDS:
+            if rec.get(k) is None or (isinstance(rec.get(k), str) and not rec[k].strip()):
+                raise ValueError(f"eval_mini record {idx} has null/empty key field {k!r}")
+        val = _to_nullable_float(rec.get("value"))
+        if val is None:
+            raise ValueError(f"eval_mini record {idx} has null or non-finite 'value': {rec.get('value')!r}")
+
+        rec_key = (
+            str(rec["model"]),
+            str(rec["model_revision"]),
+            str(rec["format"]),
+            str(rec["item_set"]),
+            str(rec["task"]),
+            int(rec["num_fewshot"]),
+            str(rec["metric"]),
+            str(rec["filter"]),
+        )
+        if rec_key in seen_keys:
+            raise ValueError(f"Duplicate eval_mini record key at index {idx}: {rec_key}")
+        seen_keys.add(rec_key)
+
+        for col in EVAL_MINI_NULLABLE_FIELDS:
+            if rec.get(col) is None:
+                nulls_by_col[col] += 1
+
+        # Nullable numeric `stderr`
+        stderr_val = _to_nullable_float(rec.get("stderr"))
+        if stderr_val is None:
+            null_rows += 1
+
+        # Nullable nested `checkpoint` object + dotted flat columns (`checkpoint.*`)
+        ckpt = rec.get("checkpoint")
+        if isinstance(ckpt, dict):
+            ckpt_json: str | None = json.dumps(ckpt, separators=(",", ":"), sort_keys=True)
+            ckpt_run = str(ckpt["run"]) if ckpt.get("run") is not None else None
+            ckpt_branch = str(ckpt["branch"]) if ckpt.get("branch") is not None else None
+            ckpt_step = int(ckpt["step"]) if ckpt.get("step") is not None else None
+            ckpt_epoch = int(ckpt["epoch"]) if ckpt.get("epoch") is not None else None
+            ckpt_tokens = int(ckpt["tokens_seen"]) if ckpt.get("tokens_seen") is not None else None
+            ckpt_path = str(ckpt["path"]) if ckpt.get("path") is not None else None
+        else:
+            ckpt_json = None
+            ckpt_run = None
+            ckpt_branch = None
+            ckpt_step = None
+            ckpt_epoch = None
+            ckpt_tokens = None
+            ckpt_path = None
+
+        # Nullable nested `seed` object + dotted flat columns (`seed.*`)
+        seed_obj = rec.get("seed")
+        if isinstance(seed_obj, dict):
+            seed_json: str | None = json.dumps(seed_obj, separators=(",", ":"), sort_keys=True)
+            seed_random = int(seed_obj["random"]) if seed_obj.get("random") is not None else None
+            seed_numpy = int(seed_obj["numpy"]) if seed_obj.get("numpy") is not None else None
+            seed_torch = int(seed_obj["torch"]) if seed_obj.get("torch") is not None else None
+            seed_fewshot = int(seed_obj["fewshot"]) if seed_obj.get("fewshot") is not None else None
+        else:
+            seed_json = None
+            seed_random = None
+            seed_numpy = None
+            seed_torch = None
+            seed_fewshot = None
+
+        # Required nested `harness` object (`{name, version}` + optional `script_sha256`)
+        harness_obj = rec.get("harness") if isinstance(rec.get("harness"), dict) else {}
+        harness_name = str(harness_obj.get("name") or "")
+        harness_version = str(harness_obj.get("version") or "")
+        harness_script_sha256 = (
+            str(harness_obj["script_sha256"]) if harness_obj.get("script_sha256") is not None else None
+        )
+
+        # Nullable `derived_from` list
+        df_raw = rec.get("derived_from")
+        if isinstance(df_raw, list):
+            derived_from_json: str | None = json.dumps([str(x) for x in df_raw], separators=(",", ":"))
+        else:
+            derived_from_json = None
+
+        notes_raw = rec.get("notes")
+        notes_list = [str(x) for x in notes_raw] if isinstance(notes_raw, list) else []
+
+        n_items_total_raw = rec.get("n_items_total")
+        n_items_total = int(n_items_total_raw) if n_items_total_raw is not None else None
+
+        rows.append({
+            "run_id": resolved_run_id,
+            "model": str(rec["model"]),
+            "model_revision": str(rec["model_revision"]),
+            "format": str(rec["format"]),
+            "item_set": str(rec["item_set"]),
+            "task": str(rec["task"]),
+            "num_fewshot": int(rec["num_fewshot"]),
+            "metric": str(rec["metric"]),
+            "filter": str(rec["filter"]),
+            "backend": str(rec.get("backend") or ""),
+            "primary": 1 if bool(rec.get("primary")) else 0,
+            "value": val,
+            "stderr": stderr_val,
+            "dtype": str(rec["dtype"]) if rec.get("dtype") is not None else None,
+            "n_items": int(rec.get("n_items") or 0),
+            "n_items_total": n_items_total,
+            "profile": str(rec["profile"]) if rec.get("profile") is not None else None,
+            "decoding": str(rec.get("decoding") or ""),
+            "checkpoint": ckpt_json,
+            "checkpoint_run": ckpt_run,
+            "checkpoint_branch": ckpt_branch,
+            "checkpoint_step": ckpt_step,
+            "checkpoint_epoch": ckpt_epoch,
+            "checkpoint_tokens_seen": ckpt_tokens,
+            "checkpoint_path": ckpt_path,
+            "seed": seed_json,
+            "seed_random": seed_random,
+            "seed_numpy": seed_numpy,
+            "seed_torch": seed_torch,
+            "seed_fewshot": seed_fewshot,
+            "harness_name": harness_name,
+            "harness_version": harness_version,
+            "harness_script_sha256": harness_script_sha256,
+            "hardware": str(rec.get("hardware") or ""),
+            "run_date": str(rec.get("run_date") or ""),
+            "derived_from": derived_from_json,
+            "notes": notes_list,
+        })
+
+    return {
+        "target_table": "eval_mini",
+        "run_id": resolved_run_id,
+        "jsonl_lines": len(rows),
+        "metric_rows": len(rows),
+        "null_rows": null_rows,
+        "nulls_by_col": nulls_by_col,
+        "rows": rows,
+    }
+
+
 def parse_source(source: str, run_id_override: str | None = None) -> dict:
-    """Parse a JSONL or Team 6 JSON source into ClickHouse rows and line/row counts."""
+    """Parse a JSONL, Team 09 `eval_mini_v1.json`/`.jsonl`, or Team 6 JSON source into ClickHouse rows."""
     canonical_source, default_run_id, text = resolve_source_text(source)
     stripped = text.lstrip()
-    # Team 6 benchmark summary JSON vs line-delimited JSONL
-    if canonical_source.endswith(".json") and not canonical_source.endswith(".jsonl"):
-        parsed = _parse_team6_run_json(text, default_run_id, run_id_override)
-    elif "\n" not in stripped.rstrip() and stripped.startswith("{") and '"clean"' in stripped and '"meta"' in stripped:
-        parsed = _parse_team6_run_json(text, default_run_id, run_id_override)
-    else:
-        parsed = _parse_jsonl_content(text, default_run_id, run_id_override)
+
+    # 1. Check if the source is a single JSON document (`eval_mini_v1.json` or Team 6 `.json`)
+    if stripped.startswith("{"):
+        try:
+            doc = json.loads(stripped)
+        except json.JSONDecodeError:
+            doc = None
+        if isinstance(doc, dict):
+            if doc.get("schema_version") == "eval_mini_v1" or (
+                isinstance(doc.get("records"), list)
+                and (not doc["records"] or _is_eval_mini_record(doc["records"][0]))
+            ):
+                parsed = _parse_eval_mini_records(doc.get("records", []), default_run_id, run_id_override)
+                parsed["source_file"] = canonical_source
+                return parsed
+            if (canonical_source.endswith(".json") and not canonical_source.endswith(".jsonl")) or (
+                "clean" in doc and "meta" in doc
+            ):
+                parsed = _parse_team6_run_json(text, default_run_id, run_id_override)
+                parsed["source_file"] = canonical_source
+                return parsed
+
+    # 2. Check if JSONL lines are `eval_mini_v1` records (from Section 2's one-line JSONL conversion)
+    raw_lines = [ln for ln in text.splitlines() if ln.strip()]
+    if raw_lines:
+        try:
+            first_obj = json.loads(raw_lines[0])
+        except json.JSONDecodeError:
+            first_obj = None
+        if _is_eval_mini_record(first_obj):
+            records = [json.loads(ln) for ln in raw_lines]
+            parsed = _parse_eval_mini_records(records, default_run_id, run_id_override)
+            parsed["source_file"] = canonical_source
+            return parsed
+
+    parsed = _parse_jsonl_content(text, default_run_id, run_id_override)
+    parsed["target_table"] = "metrics_raw"
     parsed["source_file"] = canonical_source
     return parsed
 
 
 def load_source(source: str, run_id_override: str | None = None, url: str = DEFAULT_CH_URL) -> dict:
-    """Parse `source` and load its rows into ClickHouse `metrics_raw` and `ingest_manifest`."""
+    """Parse `source` and load its rows into ClickHouse (`metrics_raw` or `eval_mini`) and `ingest_manifest`."""
     ensure_schema(url=url)
     parsed = parse_source(source, run_id_override=run_id_override)
+    target_table = parsed.get("target_table", "metrics_raw")
     run_id = parsed["run_id"]
     source_file = parsed["source_file"]
     safe_run = run_id.replace("'", "''")
@@ -483,7 +696,7 @@ def load_source(source: str, run_id_override: str | None = None, url: str = DEFA
 
     # Idempotent reload: remove previous rows for this `run_id` before inserting.
     ch_Exec(
-        f"ALTER TABLE metrics_raw DELETE WHERE run_id = '{safe_run}' SETTINGS mutations_sync = 2",
+        f"ALTER TABLE {target_table} DELETE WHERE run_id = '{safe_run}' SETTINGS mutations_sync = 2",
         url=url,
     )
     ch_Exec(
@@ -494,7 +707,7 @@ def load_source(source: str, run_id_override: str | None = None, url: str = DEFA
     payload_lines = [json.dumps(r, separators=(",", ":")) for r in parsed["rows"]]
     if payload_lines:
         body = ("\n".join(payload_lines) + "\n").encode("utf-8")
-        ch_Exec("INSERT INTO metrics_raw FORMAT JSONEachRow", data=body, url=url)
+        ch_Exec(f"INSERT INTO {target_table} FORMAT JSONEachRow", data=body, url=url)
 
     manifest_row = {
         "run_id": run_id,
@@ -509,6 +722,7 @@ def load_source(source: str, run_id_override: str | None = None, url: str = DEFA
         url=url,
     )
     return {
+        "target_table": target_table,
         "run_id": run_id,
         "source_file": source_file,
         "jsonl_lines": parsed["jsonl_lines"],
