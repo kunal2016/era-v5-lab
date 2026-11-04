@@ -1,5 +1,5 @@
 Restart test on CPU, Team 05 tiny MoE, ckpt/supervisor.py
-Date: 03 Nov 2026
+Date: 04 Nov 2026
 
 Command (from the repo root; CUDA_VISIBLE_DEVICES="" hides any GPU so it runs on CPU only; output goes to
 teams/07-infrastructure/jobs/restart_test/out/, git-ignored):
@@ -23,15 +23,16 @@ What it does:
 
 Result: PASS
 
-  killed after step          141
-  restarted from step        125 (last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
-  steps done twice           16 (step 126 to 141)
+  killed after step          140
+  restarted from step        125 (first step of the restarted trainer, minus 1)
+  latest.json at the restart 125 (the last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
+  steps done twice           15 (step 126 to 140)
   compared steps             1-200, fields loss_ntp_bits, loss_mtp_bits, batch_id
-  wall time                  run A 2.5 s, run B 3.8 s
+  wall time                  run A 2.6 s, run B 3.6 s
 
 Supervisor log (out/supervisor.jsonl):
-  attempt 0: exit -9 (crash: killed by SIGKILL) -> restart from step 125
+  attempt 0: exit -9 (crash: killed by SIGKILL) -> restart (latest.json at step 125)
   attempt 1: exit 0 (done) -> stop, supervisor exit 0
 
 Last line:
-  PASS restart_test cpu: SIGKILL after step 141, restarted from COMPLETE checkpoint step 125, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal
+  PASS restart_test cpu: SIGKILL after step 140, restarted from COMPLETE checkpoint step 125, steps 1-200: loss_ntp and loss_mtp bit-equal, data ids equal

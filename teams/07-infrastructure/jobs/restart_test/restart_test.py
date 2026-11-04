@@ -126,10 +126,11 @@ def check(a, run_a: list, run_b: list, sup_rows: list, kill: dict) -> dict:
     restarts = [r for r in sup_rows if r["action"] == "restart"]
     if len(restarts) != 1 or restarts[0]["rc"] != -signal.SIGKILL or sup_rows[-1].get("exit") != 0:
         return {"field": "supervisor log", "want": "one restart after SIGKILL (-9), then exit 0", "got": sup_rows}
-    from_step = restarts[0]["from_step"]
+    from_step = restarts[0]["pointer_step"]
     second = [r["step"] for r in run_b if r["attempt"] == 1]
+    # the trainer must have restored exactly the checkpoint latest.json pointed to (no silent fallback)
     if not (0 < from_step <= kill["step"] and from_step % a.save_every == 0 and second and second[0] == from_step + 1):
-        return {"field": "restart step", "from_step": from_step, "killed_at": kill["step"],
+        return {"field": "restart step", "pointer_step": from_step, "killed_at": kill["step"],
                 "first_step_after_restart": second[0] if second else None}
     return None
 
@@ -186,14 +187,17 @@ def run_test(a) -> int:
     kill["step"] = max(r["step"] for r in run_b if r["attempt"] == 0)   # last step the killed child finished
     diff = check(a, run_a, run_b, sup_rows, kill)
     restart = next(r for r in sup_rows if r["action"] == "restart")
+    after = [r["step"] for r in run_b if r["attempt"] == 1]
+    restored = after[0] - 1 if after else None          # what the trainer really loaded (its first step - 1)
     result = {"pass": diff is None, "first_diff": diff, "device": "cpu", "nproc": 1, "steps": a.steps,
               "save_every": a.save_every, "kill_at": a.kill_at, "killed_after_step": kill["step"],
-              "restarted_from_step": restart["from_step"], "redone_steps": kill["step"] - restart["from_step"],
+              "restarted_from_step": restored, "pointer_step": restart["pointer_step"],
+              "redone_steps": kill["step"] - restored if restored is not None else None,
               "fields": FIELDS, "torch": torch.__version__, "seconds": {"run_a": round(t_a, 1), "run_b": round(t_b, 1)},
               "supervisor": sup_rows}
     (out / "result.json").write_text(json.dumps(result, indent=1) + "\n")
     where = (f"cpu: SIGKILL after step {kill['step']}, restarted from COMPLETE checkpoint step "
-             f"{restart['from_step']}, steps 1-{a.steps}")
+             f"{restored}, steps 1-{a.steps}")
     line = (f"PASS restart_test {where}: loss_ntp and loss_mtp bit-equal, data ids equal" if diff is None
             else f"FAIL restart_test {where}: {json.dumps(diff)[:600]}")
     print(line)
@@ -207,7 +211,7 @@ def write_report(a, r: dict, line: str) -> None:
     import torch
     rel = Path(os.path.relpath(Path(__file__).resolve(), TEAM.parents[1]))
     sup = "\n".join(f"  attempt {s['attempt']}: exit {s['rc']} ({s['meaning']}) -> {s['action']}"
-                    + (f" from step {s['from_step']}" if s["action"] == "restart" else f", supervisor exit {s['exit']}")
+                    + (f" (latest.json at step {s['pointer_step']})" if s["action"] == "restart" else f", supervisor exit {s['exit']}")
                     for s in r["supervisor"])
     text = f"""Restart test on CPU, Team 05 tiny MoE, ckpt/supervisor.py
 Date: {time.strftime('%d %b %Y')}
@@ -235,7 +239,8 @@ What it does:
 Result: {'PASS' if r['pass'] else 'FAIL'}
 
   killed after step          {r['killed_after_step']}
-  restarted from step        {r['restarted_from_step']} (last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
+  restarted from step        {r['restarted_from_step']} (first step of the restarted trainer, minus 1)
+  latest.json at the restart {r['pointer_step']} (the last COMPLETE checkpoint: MANIFEST.json written, latest.json moved)
   steps done twice           {r['redone_steps']} (step {r['restarted_from_step'] + 1} to {r['killed_after_step']})
   compared steps             1-{a.steps}, fields {', '.join(FIELDS)}
   wall time                  run A {r['seconds']['run_a']} s, run B {r['seconds']['run_b']} s
