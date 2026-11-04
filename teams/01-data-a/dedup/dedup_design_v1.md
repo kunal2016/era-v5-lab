@@ -1,6 +1,6 @@
 # Dedup design v1: How duplicates are found
 
-Status: **DRAFT — proposed decisions, not yet agreed by the team.** Thresholds marked *(to test)* will be confirmed on the math and science packs before submission.
+Status: **DRAFT v1 — agreed by the team (Data A), pending TSAI review.** Open questions to TSAI are on PR #255. The method follows the implemented `overlap.py` and `overlap_rules.py` (see "Pipeline and hand-off to TSAI"). English and five-pack local results are in (below); thresholds marked *(to test)* wait for the all-pack overlap job.
 
 Covers the duplicate "diseases" defined in `diagnosis/DISEASES.md`, section H.
 
@@ -10,21 +10,20 @@ Covers the duplicate "diseases" defined in `diagnosis/DISEASES.md`, section H.
 
 | Code | Disease | Proposed decision |
 |---|---|---|
-| H1 | Exact duplicate in the pack | SHA-256 of normalised text; run first |
-| H2 | Near duplicate (small changes) | MinHash + LSH, word 5-grams, 128 permutations, Jaccard ≥ 0.80 *(to test)*; verified by exact Jaccard; separate settings for code and math |
+| H1 | Exact duplicate in the pack | SHA-256 of the H1 key: spec v1 `normalize.match_key`, then NFKC, casefold, whitespace collapse |
+| H2 | Near duplicate (small changes) | **Exact** Jaccard of word 5-grams for every pair (`overlap.py`); counts as a duplicate at ≥ 0.80 for prose (English evidence: E1), 0.90 + same numbers for math, and token 5-gram Jaccard ≥ 0.85 for code *(to test)*; a pair from two families must pass both families' rules |
 | H3 | Same content in another source/language | Same-language copies from another source: H1/H2 within each pack; across packs only if E2 validates it. Translations: **out of scope for v1**, pending TSAI confirmation; v2 candidate is multilingual embeddings or translate-then-match |
 | – | Where dedup runs | After `clean.py`. **v1 default: within each pack only** (the per-snapshot analogue). Cross-pack and cross-team passes are measured, and applied only if E2 validates them |
-| – | What is recorded | One log row per removed document: `(pack_id, part, doc_id)` for both removed and kept copies, similarity, rule, priority rule that decided |
+| – | What is recorded | One log row per removed document: `(pack_id, split, part, doc_id)` for both removed and kept copies, similarity, rule, priority rule that decided; plus a remove list for TSAI |
 | – | How it was tested | Known duplicate pairs + known non-duplicate pairs + gold harm check on `build_gold.py` output, matched on `(pack_id, doc_id)`, failing if no gold IDs are in the input |
 
 ---
 
 ## H1 — Exact duplicates
 
-**Normalisation** (applied only to compute the hash; the stored text is not changed):
-1. Unicode NFKC.
-2. Case-fold.
-3. Collapse every run of whitespace (spaces, tabs, newlines) to one space; strip ends.
+**Normalisation: the H1 key** (applied only to compute the hash; the stored text is not changed). Implemented as `h1_key()` in `h1_sha256.py`:
+1. Spec v1 `normalize.match_key(text)` from `spec_v1/tools/normalize.py`, unchanged (spec v1 is frozen): HTML entities decoded, control and invisible characters removed, NFC with its listed folds, casefold, spaces collapsed.
+2. Then on top: Unicode NFKC, case-fold, every run of whitespace (spaces, tabs, newlines) to one space. NFKC is applied here, never inside `normalize.py`, so spec v1 and G9's fingerprints are unaffected.
 
 **Hash:** SHA-256 of the UTF-8 bytes of the normalised text.
 
@@ -36,22 +35,27 @@ Documents with the same hash form a group; one survivor is chosen by `source_pri
 
 ## H2 — Near duplicates
 
-**Method:** MinHash signatures with Locality-Sensitive Hashing (e.g. `datasketch` `MinHashLSH`).
+**Terms.** A document's *shingles* are the set of its word 5-grams (overlapping 5-word windows of the H1 key; repeats count once). The *Jaccard similarity* of two documents is shingles in both ÷ shingles in either. Example with 3-word shingles: "the cat sat on the mat" vs "the cat sat on a mat" share 2 of 6 distinct shingles, J = 0.33; compared word by word they would score 5/6 = 0.83, which is why single words are not used.
 
-| Setting | Prose (default) | Code | Math |
+**Method: exact Jaccard of every pair** (`overlap.py`, with `jaccard_matrix.py`). Each shingle is stored as an 8-byte BLAKE2b digest; the documents × shingles matrix times its transpose gives the shared count of every pair that shares a shingle, block by block. There is no sampling and no MinHash estimate, so the score is exact and is the value logged. On the four English packs (426,508 documents, 9 × 10¹⁰ pairs) this took 845 s and 3.4 GB on a laptop. **Fallback:** if a run does not fit (see Risk 4), MinHash + LSH proposes candidates and each candidate is scored by the same exact Jaccard.
+
+`overlap.py` measures and stores every pair at word Jaccard ≥ 0.5 (`floor`, at most 0.80 so no prose candidate is lost). `overlap_rules.py` then decides which pairs qualify as H1/H2 matches (`overlap_matches.csv`), with the settings below:
+
+| Setting | Prose (English, science, Indic, `cadj-*`) | Code (`code-*`) | Math (`math-*`) |
 |---|---|---|---|
-| Shingles | word 5-grams on H1-normalised text | token 5-grams after stripping licence header and comments | word 5-grams, numbers and LaTeX kept as tokens |
-| Permutations | 128 | 128 | 128 |
-| Threshold (Jaccard) | **0.80** *(to test)* | **0.85** *(to test)* | **0.90** *(to test)* + numbers must match |
-| Minimum length | 50 words; shorter documents get H1 only | 20 lines | none; extra rule below |
+| Shingles | word 5-grams of the H1 key | **token** 5-grams from the language's Pygments lexer; comments and a leading licence docstring dropped; strings and preprocessor directives kept | word 5-grams of the H1 key; numbers and LaTeX kept |
+| Threshold (Jaccard) | **0.80** (English: E1) | **0.85** *(to test)* | **0.90** *(to test)* + the multisets of signed numbers must match |
+| Minimum length | 50 words; shorter documents get H1 only | 20 non-blank lines after comment removal | none; extra rule below |
 
-**Why 0.80 for prose.** It is the common setting in public pre-training pipelines and catches re-posted pages with changed boilerplate, dates or a few edited sentences, while pages that merely share a topic sit well below it. We will confirm it from the similarity histogram of candidate pairs on our packs: the threshold should sit in the gap between the "same text" cluster and the "related text" cluster.
+**Families.** H1 compares every pack with every other and bypasses the length guards. For H2, a pair inside one family uses that family's rules. **A pair from two families must pass both families' rules on both documents** (the higher word threshold, the math numbers rule if math is involved, and the code token rule with the code member's lexer if code is involved). Notebooks (`cadj-notebooks`) and math pages can contain code, so mixed pairs are kept but judged strictly.
+
+**Why 0.80 for prose.** It is the common setting in public pre-training pipelines and catches re-posted pages with changed boilerplate, dates or a few edited sentences, while pages that merely share a topic sit well below it. It is confirmed from the Jaccard histogram of all pairs (`overlap_histogram.csv`) on our packs: the threshold should sit in the gap between the "same text" cluster and the "related text" cluster.
 
 **Why 5-grams.** Shorter shingles (1–3 words) make unrelated texts look similar through common phrases; longer ones make one edited word break many shingles. Five is the usual middle ground.
 
-**Verification step.** LSH only proposes candidate pairs. Each candidate is checked by computing the exact Jaccard similarity of the two shingle sets; only pairs at or above the threshold are treated as duplicates. This removes LSH false positives, and the exact value is what we log.
+**Short documents.** In a 60-word document one changed word breaks 5 of about 56 shingles, so template pages that differ only in a name or date score about 0.82–0.85 (observed on the English packs). This is why H2 needs a minimum length.
 
-**Code.** Files copied between forks differ in licence headers, comments and formatting, so these are stripped before shingling. The higher threshold (0.85) avoids merging different files that share a lot of boilerplate (imports, generated code).
+**Code.** Files copied between forks differ in licence headers, comments and formatting, so code is compared on lexer tokens with comments and licence headers removed. Code/code pairs are scored in their own exact all-pairs pass, independent of the word-Jaccard floor, so a forked file whose comments lower its word score is still found. The higher threshold (0.85) avoids merging different files that share a lot of boilerplate (imports, generated code).
 
 **Math.** Templated problems are the main risk: *"Solve 2x + 3 = 7"* and *"Solve 2x + 5 = 7"* are near-identical in text but are different problems. So for math packs a pair counts as a duplicate only if it passes the 0.90 threshold **and** the multiset of numbers in both documents is identical.
 
@@ -72,12 +76,37 @@ Documents with the same hash form a group; one survivor is chosen by `source_pri
 
 **Fallback if TSAI requires H3 for v1:** a narrow version for Sanskrit/Hindi/English only, where the Sanskrit packs are known to carry translations.
 
+## Pipeline and hand-off to TSAI
+
+```
+raw sample ─▶ clean.py (TSAI, spec v1) ─▶ cleaned parts (doc_id, text, url, lang_label, pack_id)
+                                              │
+                                              ▼
+                     overlap.py   MEASURES + QUALIFIES: H1 key, exact Jaccard of every pair, family rules
+                                  → overlap_matches.csv, overlap_matrix.csv, overlap_docs.parquet, summary
+                                              │
+                                              ▼
+                     dedup.py     DECIDES: scope, clusters, which copy survives
+                                  → remove_list.csv, dedup_log.jsonl, dedup_summary.json
+                                              │
+                                              ▼
+                     harm check   gold, matched on (pack_id, doc_id)
+```
+
+| Step | Code | Status |
+|---|---|---|
+| Measure and qualify | `overlap.py`, `overlap_rules.py`, `h1_sha256.py`, `jaccard_matrix.py`, `overlap_report.py`, `README_overlap.md`, tests; configs `overlap.json` (all 38 cleaned packs) and `overlap_local.json` (five-pack local run) | Written (Aneesha Das, Vijay Patil). Job request `jobs/2026-11-04-overlap.md` (38 packs; provisional 60 min / 32 GiB); `jobs/2026-11-04-overlap-en.md` is the earlier English-only request |
+| Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, apply the scope switch (within-pack default; cross-pack only if E2 validates it), join matches into clusters (union-find), pick survivors by `source_priority_v1.md`, write the remove list and log | To write |
+| Check | harm check of the remove list against gold | With `dedup.py` |
+
+**What TSAI receives:** the approved design (this file and `source_priority_v1.md`), the code and configs above with tests and test logs, and the job requests: (1) overlap on all 38 cleaned packs (`jobs/2026-11-04-overlap.md`; returns go to `jobs/results/2026-11-04-overlap/`, the reviewed matrix to `dedup/overlap_matrix.csv` by 13 Nov), (2) "which documents would v1 remove from sample v0, per pack and stage, and does it remove any gold?" After approval TSAI applies the **remove list** to the full data, as it applies spec v1. The data is filtered, never rewritten by our code, so every removal is reversible from the log.
+
 ## Where dedup runs
 
 1. **After `clean.py`.** Cleaning removes boilerplate and fixes encoding, which can turn two different pages into identical ones; deduplicating earlier would miss those.
 2. **Within each pack** (H1 then H2). **This is the v1 default.** It is the analogue of FineWeb's per-snapshot dedup, which trained better models than global dedup (Session 3, §7; Risk 1).
 3. **Across packs** (H1 then H2 on the union of surviving documents) — covers the same-language half of H3. **Measured, not applied by default:** it is run and its removals logged, but applied to the data only if E2 shows it removes a modest share of each pack and no gold document.
-4. **Across both teams' packs** if Data B joins: same rule as step 3, plus the Indic check (E4).
+4. **Across both teams' packs** (Data B's Indic and `cadj-*` packs are in the 38-pack job): same rule as step 3, plus the Indic check (E4).
 
 Our packs are split by domain or source, not by crawl time as FineWeb's snapshots were, so a copy found in two of our packs is closer to a true duplicate than a page repeated across crawls. The analogy is therefore partial: it does not prove cross-pack dedup harmful here, only that the wider scope should not be the default until checked.
 
@@ -90,19 +119,21 @@ For every removed document, one row in `dedup_log.jsonl`:
 | Field | Meaning |
 |---|---|
 | `removed_pack_id` | Pack of the removed document |
+| `removed_split` | `train` or `heldout` |
 | `removed_part` | Part of the removed document |
 | `removed_id` | `doc_id` of the removed document, unchanged |
 | `kept_pack_id` | Pack of the survivor |
+| `kept_split` | `train` or `heldout` |
 | `kept_part` | Part of the survivor |
 | `kept_id` | `doc_id` of the surviving copy it duplicated, unchanged |
 | `rule` | `H1`, `H2` or `H3` |
 | `similarity` | 1.0 for H1; exact Jaccard for H2/H3 |
-| `priority_rule` | Which `source_priority_v1.md` rule chose the survivor (1–4) |
+| `priority_rule` | Which `source_priority_v1.md` rule chose the survivor (0–4) |
 | `stage` | `within_pack`, `cross_pack` or `cross_team` |
 
-**Why both sides carry pack and part.** `doc_id` is a hash of the original text, so exact copies share it. Within one part this cannot happen (the sample job stops on a duplicate `doc_id`), but across parts or packs it can, giving `removed_id == kept_id`. A document is therefore identified by `(pack_id, part, doc_id)`, never by `doc_id` alone. No current gold ID appears in two packs (checked across all 3,269), but this can change after a full run.
+**Why both sides carry pack, split and part.** `doc_id` is a hash of the original text, so exact copies share it. Within one part this cannot happen (the sample job stops on a duplicate `doc_id`), but across parts or packs it can, giving `removed_id == kept_id`; `overlap.py` reports such IDs as `ids_used_by_2_or_more_documents`. A document is therefore identified by `(pack_id, split, part, doc_id)`, never by `doc_id` alone. (`overlap.py` names a document `<pack_id>-<doc_id>` and gives split and part in separate columns.) No current gold ID appears in two packs (checked across all 3,269), but this can change after a full run.
 
-Plus a summary per pack: documents in, removed by H1, removed by H2, removed cross-pack, documents out.
+Plus `remove_list.csv` (`pack_id, split, part, doc_id`: what TSAI filters out) and a summary per pack: documents in, removed by H1, removed by H2, removed cross-pack, documents out.
 
 ## How it was tested
 
@@ -114,7 +145,7 @@ Plus a summary per pack: documents in, removed by H1, removed by H2, removed cro
    - **Coverage first:** gold comes from the week-1 diagnosis packs (~500 docs each); the tokenizer sample (1.44M docs) is a separate draw. Before the check, count how many gold IDs are present in the dedup input and report that number with the result. **If it is zero, the harm check fails**, because it tested nothing. Preferred: run the harm check on the diagnosis packs, where gold coverage is guaranteed.
    - `harm_test.py` already refuses a gold file whose IDs are missing from the pack, so a mismatched pack and gold file fails loudly.
    - Any gold removal is listed and reviewed by hand.
-4. **Threshold check:** similarity histogram of H2 candidate pairs on the math and science packs, plus a hand review of ~20 pairs just above and ~20 just below each threshold.
+4. **Threshold check:** the Jaccard histogram of all pairs (`overlap_histogram.csv`) and the pair counts at 0.70–0.95 per family, plus a hand review of ~20 pairs just above and ~20 just below each threshold.
 5. **Real counts:** duplicates found per rule per pack, reported in the summary table.
 
 ## Risks
@@ -123,27 +154,51 @@ Plus a summary per pack: documents in, removed by H1, removed by H2, removed cro
 - *Survivor choice does not fix this.* `source_priority_v1.md` picks the better **copy** (licence, provenance, completeness), but the FineWeb risk is about how much **weight** popular content keeps in the mix, which any one-copy rule reduces.
 - *Mitigation:* within-pack dedup is the v1 default; the cross-pack pass is measured but applied only if E2 validates it. Each log row records the `stage`, so within-pack and cross-pack removals are counted separately, and each removed document points to its survivor, so cross-pack removals can be reversed. Every dedup scope decision is treated as an ablation, not a given (Session 3, §11).
 
-**2. Thresholds may not transfer to Indic text.** The thresholds are tested on the math and science packs only. Word 5-grams split on whitespace may behave differently on Indic scripts (agglutinative words, code-mixing, varied spacing), and methods tuned on English text are known to erase Indic content (Session 3, §8).
-- *Added check:* if Data B joins the cross-team pass, re-run the threshold check (similarity histogram and hand review either side of the threshold) on at least one Indic pack before applying H2 to Indic data, and report Indic removal rates separately.
+**2. Thresholds may not transfer to Indic text.** The thresholds are tested on the Data A packs (English, code, math, science) only. Word 5-grams split on whitespace may behave differently on Indic scripts (agglutinative words, code-mixing, varied spacing), and methods tuned on English text are known to erase Indic content (Session 3, §8).
+- *Required check:* the 38-pack job includes 22 Indic packs, which get the prose rules. Before H2 removals are applied to Indic data, run E4: the threshold check (histogram and hand review either side of 0.80) on at least one Indic pack, with Indic removal rates reported separately.
 
-**3. Benchmark contamination is not covered.** Dedup removes repeated documents within the training data. Exact and fuzzy matching against held-out benchmark sets is a separate evaluation-integrity step (Session 3, §12) and is **not** part of this design. Passing dedup does not mean the data is free of test leakage.
+**3. Benchmark contamination is not covered.** Dedup removes repeated documents within the training data. Exact and fuzzy matching against held-out benchmark sets is a separate evaluation-integrity step (Session 3, §12) and is **not** part of this design. Passing dedup does not mean the data is free of test leakage. (Train/held-out copies inside the sample are handled: `source_priority_v1.md` rule 0.)
+
+**4. Exact all-pairs scoring may not fit the code packs.** The English run took 845 s and 3.4 GB. Code shares much more boilerplate (imports, licence text, generated code), so far more pairs share a shingle and the matrix product grows. The all-pack overlap job will show it. If it does not fit, use the MinHash + LSH fallback for the affected family; the exact score of each candidate is unchanged.
 
 ## Experiments before final
 
-Run on the week-1 diagnosis packs (~500 docs each), where gold coverage is guaranteed. Who runs them depends on the Task 4 / Task 5 split (open question to the instructor); results come back into the final version of this file.
+E1 and E2 run on the Week-2 tokenizer sample v0 with `overlap.py` (Task 5: Aneesha, Narasimha Teja). E3 runs on hand-built pairs (`tests/test_overlap.py` covers the scoring). The harm check also runs on the week-1 diagnosis packs, where gold coverage is guaranteed. Results come back into the final version of this file.
 
 | # | Experiment | What is measured | What would change the design |
 |---|---|---|---|
-| E1 | **Threshold sweep** on the math and science packs: H2 at 0.70, 0.75, 0.80, 0.85, 0.90, 0.95 | Similarity histogram of candidate pairs; hand review of ~20 pairs just above and ~20 just below each proposed threshold; removals per threshold | Move a threshold if the gap between "same text" and "related text" sits elsewhere, or if hand review finds distinct documents above it |
+| E1 | **Threshold sweep** per family (English done; code, math, science after the all-pack run): pairs at 0.70, 0.75, 0.80, 0.85, 0.90, 0.95 | Jaccard histogram of all pairs; hand review of ~20 pairs just above and ~20 just below each proposed threshold; removals per threshold | Move a threshold if the gap between "same text" and "related text" sits elsewhere, or if hand review finds distinct documents above it |
 | E2 | **Within-pack vs cross-pack**: run the within-pack pass alone, then add the cross-pack pass | Removal counts per pack and per stage; harm check on each output separately | **Decides whether the cross-pack pass is applied.** Apply it only if it removes a modest share of each pack and no gold document; otherwise report it but keep within-pack dedup only (Risk 1) |
 | E3 | **Known-pair tests**: the duplicate and non-duplicate pairs listed in "How it was tested" | Every duplicate pair caught; every non-duplicate pair kept | If math problems differing only in a number are merged, tighten the math rule; if a known copy is missed, revisit normalisation or shingle size |
-| E4 | **Indic threshold check** (only if Data B joins): E1 on at least one Indic pack | Same as E1; Indic removal rate reported separately | Use separate Indic thresholds or shingling (e.g. character n-grams) if the English settings over- or under-remove (Risk 2) |
+| E4 | **Indic threshold check** (required: Indic packs are in the 38-pack job): E1 on at least one Indic pack | Same as E1; Indic removal rate reported separately | Use separate Indic thresholds or shingling (e.g. character n-grams) if the English settings over- or under-remove (Risk 2) |
 
-**Training ablation (not run in v1; budget-dependent).** The definitive test of dedup scope is to train small proxy models on the data after within-pack dedup only and after within- plus cross-pack dedup, and compare downstream scores (Session 3, §7 and §11). v1 does not run this; scope is checked by removal counts and the harm check only. If proxy-training budget becomes available, this is the first dedup experiment to run, because it is the only one that can show whether the wider scope helps or hurts the model.
+### Results so far: English packs (sample v0, train + heldout, 426,508 documents)
+
+From `jobs/logs/2026-11-04-overlap-en-local.txt`:
+
+| | Within pack | Cross pack | All |
+|---|---:|---:|---:|
+| Exact (H1) pairs | 16 | 0 | 16 |
+| Pairs at Jaccard ≥ 0.80 | 44 | 11 | 55 |
+
+- **H1:** 9 groups, 21 documents, all inside `en-nemotroncc`; removing all but one per group removes 12 documents.
+- **E1 (prose threshold):** pairs at or above 0.70: 135, 0.75: 90, **0.80: 55**, 0.85: 43, 0.90: 33, 0.95: 25. Hand review of pairs around 0.80 is still to do before the threshold is final.
+- **E2 (scope, English):** cross-pack dedup would remove **at most 11 of 426,508 documents** (11 cross-pack pairs at ≥ 0.80), about 0.003%. Risk 1 is negligible for English; whether to apply the cross-pack pass is decided per family once the all-pack run is in.
+- **Still to count:** train/held-out pairs (rule 0) and gold documents involved, from `overlap_pairs.csv`.
+
+### Results so far: five-pack local run (sample v0 parts, not cleaned)
+
+From `jobs/logs/2026-11-04-overlap-local/` (`code-rust`, `en-fineweb-edu`, `ind-hi-hplt`, `ind-mr-sangraha-v`, `math-finemath`; 183,976 documents; 571 s, 2.76 GiB):
+
+- **0 H1 groups; 372 qualifying H2 pairs: 371 within packs, 1 cross-pack** (`en-fineweb-edu` ↔ `math-finemath`).
+- Largest share: `code-rust`, 57 of 60,738 documents (0.09%) have a match in their own pack. Indic: `ind-hi-hplt` 2 of 8,840; `ind-mr-sangraha-v` 0.
+- This shows the scripts run on real data; it is **not** the final result (raw parts, 5 of 38 packs). The final numbers come from the TSAI 38-pack job.
+
+**Training ablation (not run in v1; budget-dependent).** The definitive test of dedup scope is to train small proxy models on the data after within-pack dedup only and after within- plus cross-pack dedup, and compare downstream scores (Session 3, §7 and §11). v1 does not run this; scope is checked by removal counts and the harm check only. If proxy-training budget becomes available, this is the first dedup experiment to run, because it is the only one that can show whether the wider scope helps or hurts the model. It is only worth running for a family where cross-pack dedup removes a measurable share (≥ 1% of a pack); for English it does not.
 
 ## Open questions for the team
 
-- Agree the three thresholds (0.80 / 0.85 / 0.90) after the 4 Nov test run.
-- Is 50 words the right minimum length for H2 on prose?
-- Does Data B join the cross-team pass for v1?
-- **TSAI to confirm:** is leaving out the translation half of H3 acceptable for v1? (Post the H3 scope statement in the dedup PR or wherever TSAI answers scope questions.)
+- Confirm 0.80 for prose after the hand review; agree 0.85 (code) and 0.90 (math) after the all-pack overlap run.
+- Is 50 words the right minimum length for H2 on prose? (Short template pages score 0.82–0.85.)
+- Who writes `dedup.py`: Task 4 or Task 5?
+- **Asked TSAI on PR #255:** H3 translation scope; Data B in the cross-team pass (the 38-pack job already includes it); pack order; held-out copies; remove list as the hand-off; folder location.
