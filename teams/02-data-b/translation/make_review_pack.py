@@ -2,17 +2,19 @@
 """make_review_pack.py - pick the translated documents our readers rate, and write one blank sheet per language.
 
 For each of the four sangraha-s packs (Hindi, Kannada, Tamil, Telugu) it picks N documents (default 50) and marks
-the first S of them (default 20) as shared: two readers rate the shared documents separately (agreement, task 7).
+the first S of them (default 25) as shared: two readers rate the shared documents separately (agreement, task 7).
+25 shared leaves room above the minimum of 20 that the agreement check needs.
 
 The pick is a hash ranking: each doc_id gets sha256("<seed>:<doc_id>"), and the N lowest hashes win. A rerun with
 the same seed and pack gives the same documents on any machine and any Python version, whatever the row order.
-Documents with empty text are never picked; --max-chars can also leave out very long ones (off by default).
+Documents with empty text, or longer than --max-chars (default 10000 characters), are never picked.
 
 The sheets hold IDs only: review_pack/<lang>.csv with doc_id, shared (yes/no), score (blank) and note (blank).
 Each reader copies the sheet to ratings/<lang>_<handle>.csv and fills in score (1 to 5) and note (codes and
 offsets only), which is the layout score_ratings.py reads.
 
-Usage:  python3 make_review_pack.py PACK_DIR [--out DIR] [--seed 212] [--n 50] [--shared 20] [--max-chars N]
+Usage:  python3 make_review_pack.py PACK_DIR [--out DIR] [--seed 212] [--n 50] [--shared 25] [--max-chars 10000]
+        The defaults give the committed sheets.
         PACK_DIR holds ind-hi-sangraha-s.parquet, ind-kn-sangraha-s.parquet, ind-ta-sangraha-s.parquet and
         ind-te-sangraha-s.parquet. Document text is never printed or written.
 Exit codes: 0 done, 2 could not run (a pack is missing, has duplicate doc_ids, or has too few documents).
@@ -66,8 +68,8 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, default=Path(__file__).resolve().parent / "review_pack")
     ap.add_argument("--seed", default="212")
     ap.add_argument("--n", type=int, default=50)
-    ap.add_argument("--shared", type=int, default=20)
-    ap.add_argument("--max-chars", type=int, help="leave out documents longer than this (default: no limit)")
+    ap.add_argument("--shared", type=int, default=25)
+    ap.add_argument("--max-chars", type=int, default=10000, help="leave out documents longer than this (default: 10000)")
     a = ap.parse_args(argv)
     if not 0 <= a.shared <= a.n:
         print(f"--shared {a.shared} must be between 0 and --n {a.n}", file=sys.stderr)
