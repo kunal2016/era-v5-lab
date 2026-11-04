@@ -14,23 +14,27 @@ folders are ignored. Input checksum verification is deferred; no manifest or SHA
 HOW TO RUN IT
 =============
 With the cleaner outputs under out/tokenizer_sample_v0_clean/ in the repository root. Python 3.9 or later with
-numpy, scipy and pyarrow (python3 -m pip install numpy scipy pyarrow). It needs no network and no keys, reads only its
+numpy, scipy, pyarrow and pygments (see requirements_overlap.txt). It needs no network and no keys, reads only its
 inputs and writes only to out/ in the repository root. Paths in the config are relative to the repository root, the
 job's working directory, so the script can also be started from any other folder.
 
-    python teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap_en.json
+    python teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
 
 CONFIG (JSON; keys starting with "_" are comments)
 ==================================================
   inputs              the cleaned output folder               (default out/tokenizer_sample_v0_clean)
   splits              train and/or heldout                     (default both)
   out                 the output folder, inside out/                             (default out/overlap)
-  floor               store and list the pairs at or above this Jaccard          (default 0.5)
+  floor               raw word-score reporting floor, above 0 and at most 0.80   (default 0.5)
   k, block, top       words per shingle, matrix rows per step, pairs printed     (default 5, 256, 20)
   max_output_mb       fail if the outputs are larger                             (default 50)
+  expected_packs      optional exact inventory check; [] discovers whatever is present
 
 WHAT IT WRITES (in out)
 =======================
+  overlap_matrix.csv     source x source shares of documents with at least one qualifying H1/H2 match
+  overlap_matrix_counts.csv  numerators and denominators for those shares; diagonal excludes self-matches
+  overlap_matches.csv    qualifying H1/H2 pairs; mixed domains must pass both domains' H2 rules
   overlap_pairs.csv       every pair at or above the floor, 1.0 included, highest first: id_a, id_b, jaccard, shared
                           5-grams, exact, and each document's pack, split, part, size and matrix row
   overlap_matrix.npz      the N x N matrix, for scipy.sparse.load_npz: symmetric, 1 on the diagonal, row i is row i of
@@ -45,18 +49,20 @@ WHAT IT WRITES (in out)
 import sys
 sys.dont_write_bytecode = True   # write only to ./out/: no __pycache__ beside the scripts
 
-import argparse, hashlib, json, platform, resource, time  # noqa: E402
+import argparse, csv, hashlib, json, platform, resource, time  # noqa: E402
 from collections import Counter  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from h1_sha256 import NORMALIZE_ID, h1_key, write_csv  # noqa: E402
 from jaccard_matrix import THRESHOLDS, shingles  # noqa: E402
+from overlap_report import write_matrix  # noqa: E402
+from overlap_rules import domain, qualifying_pairs  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[3]   # teams/01-data-a/dedup/overlap.py -> the repository root
 DEFAULTS = {"inputs": "out/tokenizer_sample_v0_clean",
             "splits": ["train", "heldout"], "out": "out/overlap", "floor": 0.5, "k": 5, "block": 256, "top": 20,
-            "max_output_mb": 50}
+            "max_output_mb": 50, "expected_packs": []}
 CHUNK = 2000   # documents per block of shingle digests while reading
 
 
@@ -68,12 +74,26 @@ def load_config(path):
     cfg = {**DEFAULTS, **{k: v for k, v in raw.items() if not k.startswith("_")}}
     if any(cfg[k] and Path(cfg[k]).is_absolute() for k in ("inputs", "out")):
         sys.exit("ERROR: inputs and out must be relative to the repository root")
-    if not 0 < cfg["floor"] <= 1:
-        sys.exit("ERROR: floor must be above 0 and at most 1; the histogram still counts every pair")
+    if not 0 < cfg["floor"] <= 0.80:
+        sys.exit("ERROR: floor must be above 0 and at most 0.80 to retain every H2 prose candidate")
     if not (REPO / cfg["out"]).resolve().is_relative_to((REPO / "out").resolve()):
         sys.exit(f"ERROR: out must be inside out/ in the repository root, not {cfg['out']}")
-    if not set(cfg["splits"]) <= {"train", "heldout"}:
+    if (not isinstance(cfg["splits"], list) or not cfg["splits"]
+            or any(s not in ("train", "heldout") for s in cfg["splits"])
+            or len(set(cfg["splits"])) != len(cfg["splits"])):
         sys.exit(f"ERROR: splits must be train and/or heldout, not {cfg['splits']}")
+    for name in ("k", "block"):
+        if type(cfg[name]) is not int or cfg[name] <= 0:
+            sys.exit(f"ERROR: {name} must be a positive integer")
+    if cfg["k"] != 5:
+        sys.exit("ERROR: k must be 5 for the H2 design rules")
+    if type(cfg["top"]) is not int or cfg["top"] < 0:
+        sys.exit("ERROR: top must be a nonnegative integer")
+    if not isinstance(cfg["max_output_mb"], (int, float)) or not 0 < cfg["max_output_mb"] <= 50:
+        sys.exit("ERROR: max_output_mb must be above 0 and at most 50 (JOB_REQUEST.md)")
+    expected = cfg["expected_packs"]
+    if not isinstance(expected, list) or any(not isinstance(p, str) or not p.strip() for p in expected) or len(set(expected)) != len(expected):
+        sys.exit("ERROR: expected_packs must be a list of distinct nonempty pack IDs")
     return cfg
 
 
@@ -87,6 +107,9 @@ def sha256_file(path):
 
 def find_parts(inputs, splits):
     """All Parquet files under the selected split folders; paths provide provenance only."""
+    for split in splits:
+        if not (inputs / split).is_dir():
+            sys.exit(f"ERROR: missing selected split folder: {inputs / split}")
     parts = [(split, str(path.relative_to(inputs / split)), path)
              for split in splits for path in sorted((inputs / split).rglob("*.parquet")) if path.is_file()]
     if not parts:
@@ -107,6 +130,10 @@ def read_file(path):
         for pack, doc_id, text in zip(*(batch.column(c).to_pylist() for c in columns)):
             if not isinstance(pack, str) or not pack.strip():
                 sys.exit(f"ERROR: {path} row {row} has invalid pack_id {pack!r}")
+            if not isinstance(doc_id, str) or not doc_id.strip():
+                sys.exit(f"ERROR: {path} row {row} has invalid doc_id {doc_id!r}")
+            if not isinstance(text, str):
+                sys.exit(f"ERROR: {path} row {row} has invalid text (expected string)")
             yield row, pack, doc_id, text
             row += 1
 
@@ -125,9 +152,10 @@ def main():
         import pyarrow as pa
         import pyarrow.parquet as pq
         import scipy
+        import pygments
         from scipy import sparse
     except ImportError:
-        sys.exit("ERROR: needs numpy, scipy and pyarrow: python3 -m pip install numpy scipy pyarrow")
+        sys.exit("ERROR: needs numpy, scipy, pyarrow and pygments: python3 -m pip install numpy scipy pyarrow pygments")
     t0 = time.time()
     inputs, out, splits = REPO / cfg["inputs"], REPO / cfg["out"], cfg["splits"]
     parts = find_parts(inputs, splits)
@@ -158,6 +186,11 @@ def main():
     sizes = np.array([d[6] for d in docs], dtype=np.int64)
     indptr = np.concatenate(([0], np.cumsum(sizes)))
     packs = sorted({d[0] for d in docs})
+    for pack in packs:
+        domain(pack)  # Refuse unsupported code-pack IDs before expensive scoring.
+    if cfg["expected_packs"] and set(packs) != set(cfg["expected_packs"]):
+        sys.exit(f"ERROR: pack inventory mismatch: missing={sorted(set(cfg['expected_packs']) - set(packs))}, "
+                 f"unexpected={sorted(set(packs) - set(cfg['expected_packs']))}")
     pack_index = {pack: i for i, pack in enumerate(packs)}
     pack_ix = np.array([pack_index[d[0]] for d in docs], dtype=np.int64)
     ids = [f"{d[0]}-{d[4]}" for d in docs]
@@ -215,6 +248,7 @@ def main():
     for t in THRESHOLDS:
         over[t] += len(a)
     hist[0] += total - sharing - len(a)
+    del X, XT, P  # Free the word index before the independent code-token pass.
 
     I, J, S, K = (np.concatenate(v) for v in kept)
     order = np.lexsort((J, I, -S))
@@ -252,14 +286,28 @@ def main():
     write_csv(out / "overlap_by_pack.csv", ["level", "pack_a", "pack_b", "pairs"],
               ([name, *pair.split(" x "), n] for name, grid in by_pack.items() for pair, n in grid.items()))
 
+    print("Applying H1/H2 rules; scoring code token pairs independently of raw word scores", flush=True)
+    match_counts = Counter()
+    def match_rows():
+        for x, y, rule, word_score, code_score in qualifying_pairs(parts, docs, I, J, S, exact, read_file, cfg["block"]):
+            stage = "within_pack" if docs[x][0] == docs[y][0] else "cross_pack"
+            match_counts[rule] += 1
+            yield [x, y, rule, stage, docs[x][0], docs[y][0], word_score, code_score]
+    write_csv(out / "overlap_matches.csv", ["row_a", "row_b", "rule", "stage", "pack_a", "pack_b",
+                                            "word_jaccard", "code_jaccard"], match_rows())
+    with (out / "overlap_matches.csv").open(newline="", encoding="utf-8") as f:
+        write_matrix(out, {i: d[0] for i, d in enumerate(docs)},
+                     ((int(p["row_a"]), int(p["row_b"])) for p in csv.DictReader(f)))
+
     written = ("overlap_pairs.csv", "overlap_matrix.npz", "overlap_docs.parquet", "overlap_by_pack.csv",
-               "overlap_histogram.csv")
+               "overlap_histogram.csv", "overlap_matches.csv", "overlap_matrix.csv", "overlap_matrix_counts.csv")
     files = {f: {"bytes": (out / f).stat().st_size, "sha256": sha256_file(out / f)} for f in written}
     output_bytes = sum(v["bytes"] for v in files.values())
     output_mb = round(output_bytes / (1 << 20), 1)
     h1 = [n for n in Counter(sha).values() if n > 1]
     per_split = Counter((d[0], d[1]) for d in docs)
     summary = {
+        "status": "complete",
         "config": cfg,
         "normalize_id": NORMALIZE_ID,
         "key": "h1_key of h1_sha256.py: normalize.match_key, then NFKC, casefold, whitespace runs to one space",
@@ -281,10 +329,18 @@ def main():
         "pairs_at_or_above": {f"{t:.2f}": over[t] for t in THRESHOLDS},
         "pairs_stored": len(S),
         "pairs_by_pack": by_pack,
+        "qualifying_pairs_by_rule": dict(match_counts),
+        "matrix_definition": "distinct documents in row source with another qualifying H1/H2 match in column source / row source documents",
+        "duplicate_rules": {"prose": "word Jaccard >= 0.80; both >= 50 words",
+                            "math": "word Jaccard >= 0.90; identical signed number multisets",
+                            "code": "token Jaccard >= 0.85; both >= 20 nonblank lines after comment removal",
+                            "mixed_domains": "both domains' rules must pass on both documents",
+                            "h1": "same H1 SHA256; bypasses H2 guards", "translations": "not detected"},
+        "pack_domains": {p: domain(p) for p in packs},
         "wall_seconds": round(time.time() - t0, 1),
         "peak_rss_mb": peak_rss_mb(),
         "versions": {"python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
-                     "pyarrow": pa.__version__, "platform": platform.platform()},
+                     "pyarrow": pa.__version__, "pygments": pygments.__version__, "platform": platform.platform()},
         "outputs": files,
         "output_mb": output_mb,
     }
@@ -294,13 +350,16 @@ def main():
     for name in ("0.80", "1.00", "exact"):
         print(f"\nPairs at {'Jaccard ' + name + ' and above' if name != 'exact' else 'exact (same H1 key)'}:")
         for pair, n in by_pack.get(name, {}).items():
-            print(f"  {pair:45} {n}")
+            if n:
+                print(f"  {pair:45} {n}")
     print(f"\nTop {min(cfg['top'], len(S))} pairs:")
     for x, y, s, e in list(zip(I.tolist(), J.tolist(), S.tolist(), exact.tolist()))[:cfg["top"]]:
         print(f"  {s:.4f}  {'exact ' if e else '      '}{ids[x]}  {ids[y]}")
     print(f"\nWrote {', '.join(files)} and overlap_summary.json to {out.relative_to(REPO)} ({output_mb} MB)")
-    if output_bytes > cfg["max_output_mb"] * (1 << 20):
-        sys.exit(f"ERROR: the outputs are {output_mb} MB, over max_output_mb {cfg['max_output_mb']}; raise floor")
+    if output_bytes + (out / "overlap_summary.json").stat().st_size > cfg["max_output_mb"] * (1 << 20):
+        summary["status"] = "failed_output_limit"
+        (out / "overlap_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        sys.exit(f"ERROR: the outputs are {output_mb} MB, over max_output_mb {cfg['max_output_mb']}; job failed")
 
 
 if __name__ == "__main__":

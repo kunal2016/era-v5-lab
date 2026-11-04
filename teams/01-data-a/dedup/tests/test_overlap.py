@@ -55,6 +55,8 @@ EXPECTED = {   # every pair at or above 0.5: (jaccard, exact)
 def make_sample(root, parts):
     """Write cleaned parts with embedded pack IDs; return the input root for the config."""
     base = root / "inputs" / "cleaned"
+    for split in ("train", "heldout"):
+        (base / split).mkdir(parents=True, exist_ok=True)
     for name, docs in parts.items():
         path = base / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -257,7 +259,7 @@ def test_invalid_embedded_pack_id_is_rejected(tmp_path, monkeypatch, pack_id):
     path.parent.mkdir(parents=True)
     pq.write_table(pa.Table.from_pylist([{"pack_id": pack_id, "doc_id": "a1", "text": BASE}]), path)
     with pytest.raises(SystemExit, match="row 0 has invalid pack_id"):
-        run(monkeypatch, tmp_path, make_config(tmp_path))
+        run(monkeypatch, tmp_path, make_config(tmp_path, splits=["train"]))
     assert not (tmp_path / "out").exists()
 
 
@@ -266,10 +268,11 @@ def test_missing_embedded_pack_id_is_rejected(tmp_path, monkeypatch):
     path.parent.mkdir(parents=True)
     pq.write_table(pa.Table.from_pylist([{"doc_id": "a1", "text": BASE}]), path)
     with pytest.raises(SystemExit, match="has no .*pack_id.* column"):
-        run(monkeypatch, tmp_path, make_config(tmp_path))
+        run(monkeypatch, tmp_path, make_config(tmp_path, splits=["train"]))
 
 
 def test_no_parquet_parts_is_an_error(tmp_path, monkeypatch):
+    make_sample(tmp_path, {})
     with pytest.raises(SystemExit, match="no Parquet parts"):
         run(monkeypatch, tmp_path, make_config(tmp_path))
 
@@ -288,6 +291,13 @@ def test_outputs_over_max_output_mb_fail_after_they_are_written(tmp_path, monkey
     ({"flor": 0.5}, "unknown keys .*'flor'"),
     ({"floor": 0}, "floor must be above 0"),
     ({"floor": 1.5}, "floor must be above 0"),
+    ({"floor": 0.81}, "floor must be above 0"),
+    ({"k": 4}, "k must be 5"),
+    ({"block": 0}, "block must be a positive integer"),
+    ({"splits": []}, "splits must be train and/or heldout"),
+    ({"splits": ["train", "train"]}, "splits must be train and/or heldout"),
+    ({"expected_packs": ["en-a", "en-a"]}, "expected_packs must be a list"),
+    ({"max_output_mb": 51}, "max_output_mb must be above 0 and at most 50"),
     ({"out": "results/t"}, "out must be inside out/"),
     ({"out": "out/../t"}, "out must be inside out/"),
     ({"inputs": "/tmp/sample_v0"}, "must be relative to the repository root"),
