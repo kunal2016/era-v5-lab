@@ -7,7 +7,7 @@ the row you want to see after a crash.
 
 Only metrics from the metric list are written; an unknown name (a typo, or a dropped metric such as
 `loss` or `loss_by_lane`) is skipped with one warning per name. `gpu_alloc_gb` (the name train.py uses; the value is GiB) is
-mapped to `gpu_alloc_gib`. The 10-second system metrics from G6 (`gpu_utilization`,
+mapped to `gpu_alloc_gib`, and `temp_c` (the G6 sampler's name) to `gpu_temp_c`. The 10-second system metrics from G6 (`gpu_utilization`,
 `gpu_memory_used`) have no step, so they are not written here.
 
 Three MoE metrics are worked out from `expert_load` when the trainer does not pass them. An expert's utilization is
@@ -20,6 +20,9 @@ its share of its layer's picks divided by the uniform share (1 / number of exper
 2-D array or tensor. Counts and shares give the same answer, since each layer is divided by its own total. Pass the
 picks of the whole optimizer step, summed over micro-batches and data-parallel ranks: one micro-batch is too small to
 call an expert dead.
+
+When `expert_load` is logged, `router_max_vio` (DeepSeek MaxVio, the largest over MoE layers) is
+computed from it and written in the same row, unless the caller passed it explicitly.
 
     with MetricsWriter("metrics.jsonl") as writer:
         for step in range(n):
@@ -39,12 +42,67 @@ FLUSH_EVERY = 10
 METRICS = frozenset({
     "loss_ntp", "loss_mtp", "lr", "tokens_per_second", "gpu_alloc_gib",
     "gradient_norm", "gradient_clipping_applied", "validation_loss",
-    "update_weight_ratio", "expert_load", "dead_experts_count", "dead_experts_by_layer", "expert_utilization_min",
+    "update_weight_ratio", "expert_load", "router_max_vio",
+    "dead_experts_count", "dead_experts_by_layer", "expert_utilization_min",
     "model_flops_utilization", "loader_wait_time",
+    "gpu_temp_c", "gpu_thermal_throttle",
+    "tokens_per_byte", "tokens_per_byte_by_lang",
 })
 
 # Names used by train.py that are written under a different name.
-ALIASES = {"gpu_alloc_gb": "gpu_alloc_gib"}
+ALIASES = {"gpu_alloc_gb": "gpu_alloc_gib", "temp_c": "gpu_temp_c"}
+
+
+def _max_vio(loads):
+    """DeepSeek MaxVio for one MoE layer: (max load - mean load) / mean load.
+
+    0.0 means every expert gets the same share; 1.0 means the busiest expert gets twice the
+    average. Returns NaN if any load is not finite or the mean is not positive.
+    """
+    loads = [float(x) for x in loads]
+    if not all(math.isfinite(x) for x in loads):
+        return float("nan")
+    mean = sum(loads) / len(loads)
+    if mean <= 0:
+        return float("nan")
+    return (max(loads) - mean) / mean
+
+
+def _layers(expert_load):
+    """Split expert_load into one list of loads per layer.
+
+    Accepts a flat list (one layer), a list of lists, or a dict {layer: list}, as plain Python,
+    NumPy or torch values. Empty layers are dropped.
+    """
+    if hasattr(expert_load, "tolist"):  # numpy array, torch tensor
+        expert_load = expert_load.tolist()
+    if isinstance(expert_load, dict):
+        layers = list(expert_load.values())
+    elif expert_load and all(isinstance(x, (list, tuple)) or getattr(x, "ndim", 0) >= 1 for x in expert_load):
+        layers = list(expert_load)
+    else:
+        layers = [expert_load]
+    layers = [x.tolist() if hasattr(x, "tolist") else x for x in layers]
+    return [list(x) for x in layers if len(x) > 0]
+
+
+def router_max_vio_per_layer(expert_load):
+    """MaxVio for each MoE layer in expert_load (see `_layers` for accepted shapes)."""
+    return [_max_vio(loads) for loads in _layers(expert_load)]
+
+
+def router_max_vio(expert_load):
+    """Routing imbalance for one step: the worst (largest) MaxVio over all MoE layers.
+
+    Returns None if expert_load has no layers. NaN in any layer makes the result NaN, so a
+    broken router is never hidden behind a healthy one.
+    """
+    per_layer = router_max_vio_per_layer(expert_load)
+    if not per_layer:
+        return None
+    if any(math.isnan(v) for v in per_layer):
+        return float("nan")
+    return max(per_layer)
 
 # An expert is dead below this fraction of the uniform share of its layer's picks.
 DEAD_EXPERT_SHARE = 0.1
@@ -134,6 +192,11 @@ class MetricsWriter:
                 self._warned.add(name)
                 print(f"metrics_writer: skipping unknown metric {name!r}", file=sys.stderr)
         metrics = {name: value for name, value in metrics.items() if name in METRICS}
+        # router_max_vio is derived from expert_load unless the caller passed it.
+        if metrics.get("expert_load") is not None and "router_max_vio" not in metrics:
+            vio = router_max_vio(metrics["expert_load"])
+            if vio is not None:
+                metrics["router_max_vio"] = vio
         row = {"step": step, "time": time.time()}
         nonfinite = False
         for name, value in metrics.items():
