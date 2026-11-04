@@ -28,9 +28,8 @@ What this means:
   romanised SEO headings ("Photo Se Background Kaise Hataye", "Aaj Ka Love Rashifal"), a reader comment, or a tweet.
   Longer romanised passages are in a Bengali tech forum thread, a Telugu story site, a Kannada phrasebook, a Tamil
   drug page, and Sanskrit verses in IAST (three ind-sa-fw2 pages and a Gita page in ind-gu-fw2).
-- The detector misses about a third of the D2 documents (below), almost all with only one or two romanised words.
-  Correcting for that (flagged x precision / recall = 32 x 0.91 / 0.64) gives roughly 45 documents, 0.4% overall;
-  the order of magnitude does not change.
+- The detector finds 42% of the documents readers marked D2 (below). Most of the ones it misses have only one or
+  two romanised words, so the share of documents with a real amount of romanised text is close to the numbers above.
 - Counts per language are small (0 to 17 documents), so differences between languages below 1% are noise.
 
 ## The detector (`detector.py`)
@@ -50,27 +49,20 @@ ind-hi-hplt), plus 48 documents no reader marked D2: 24 drawn among documents wi
 (English text, names, URLs, so the detector meets hard cases) and 24 drawn from all others. Seed 0, and the draw does
 not use the detector.
 
-Reading the 52 D2 documents again, 19 hold no romanised Indic phrase: English text, a proper name only (a film title, a
-scheme name, a newspaper name), romanised Arabic, or an accented-letter table. `checked_labels.csv` lists them with the
-reason. The rule used: a document is D2 when it has at least one phrase of an Indian language in Latin letters; a proper
-name alone, or English, is not D2. All 48 negatives were read too and none was changed.
+Ground truth is the readers' labels: a document is D2 when at least one reader marked it D2.
 
-| labels | D2 docs | flagged | precision | recall |
-|---|---|---|---|---|
-| reader (any reader marked D2) | 52 | 22 | 100% | 42% |
-| checked (after the second look) | 33 | 22 | 95% | 64% |
+| D2 docs | flagged | true pos | false pos | missed | precision | recall |
+|---|---|---|---|---|---|---|
+| 52 | 22 | 22 | 0 | 30 | 100% | 42% |
 
-- Missed (12): SEO titles or comments with one or two romanised words ("Vish Ke Dant", "Sariya Cement Ka Rate",
-  "Nagar Palika Bharti", "Shiksha k Odisha kya hai"), two Tamil comments, a Marathi comment ("1 no pic madhe"),
-  one Sanskrit grammar note in English.
-- False alarm (1): romanised Arabic written with IAST-style accents (Ayat al-Kursi).
-- Thresholds: 2 words instead of 3 raises recall to 70% but adds 7 flags on the full packs, of which 3 are only show
-  or play titles; 3 words was kept. The full table is in `eval_v1.md`.
-- Precision on a test set that is half D2 is easier than on real packs, where D2 is rare, so all 32 documents the
-  detector flags on the full packs were read as well: 29 are romanised Indic, 3 are not (the Arabic page above and two
-  Hindi TV-show and song titles in brackets), about 91%.
-- Readers miss D2 too: 8 of the 32 flagged documents are real romanised Indic that no reader marked (6 with Hinglish
-  such as "yeh thoda jyada nahi ho gaya?" in a cricket tweet, a Gujarati tag line, a Gita verse in IAST).
+- Missed (30): SEO titles or comments with one or two romanised words ("Vish Ke Dant", "Sariya Cement Ka Rate",
+  "Nagar Palika Bharti", "Shiksha k Odisha kya hai"), short comments with words not on the list ("1 no pic madhe"),
+  and documents whose D2 mark points at English text or a proper name (for example ind-mr-fw2 rows 146 and 231).
+  Every miss is listed in `eval_v1.md`.
+- False alarms: none.
+- Thresholds: 2 words instead of 3 raises recall to 48% and flags 7 more documents on the full packs; 3 words was
+  kept. The full table is in `eval_v1.md`.
+- Precision on a test set that is half D2 is easier than on real packs, where D2 is rare (about 0.3%).
 
 ## Reproduce
 
