@@ -433,7 +433,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "${ds}"
       },
-      "description": "Held-out validation loss (validation_loss, nats per scored token = val/nll_nats / val/scored_tokens from G5's evaluate()) at each validation run, as points, with the training loss_ntp per step as a thin line for comparison. Both are next-token loss in nats. A gap that keeps growing while loss_ntp falls means overfitting. Compare validation_loss only between runs with the same tokenizer.",
+      "description": "Held-out validation loss (validation_loss, nats per scored token) at each validation run, as points, with the training loss_ntp per step as a thin line for comparison. Read from validation_loss rows (written by metrics_writer.py) or, for G5 train_week2.py's own metrics.jsonl, worked out in the query as val/nll_nats / val/scored_tokens. Both are next-token loss in nats. A gap that keeps growing while loss_ntp falls means overfitting. Compare validation_loss only between runs with the same tokenizer.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -499,7 +499,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT step, concat(run_id, ' ', name) AS series, value FROM metrics_raw WHERE name IN ('validation_loss', 'loss_ntp') AND run_id IN ($run) AND value IS NOT NULL ORDER BY step, series",
+          "rawSql": "SELECT x AS step, series, y AS value FROM (SELECT step AS x, concat(run_id, ' ', name) AS series, value AS y FROM metrics_raw WHERE name IN ('validation_loss', 'loss_ntp') AND run_id IN ($run) AND value IS NOT NULL UNION ALL SELECT step AS x, concat(run_id, ' validation_loss') AS series, sumIf(value, name = 'val/nll_nats') / sumIf(value, name = 'val/scored_tokens') AS y FROM metrics_raw WHERE name IN ('val/nll_nats', 'val/scored_tokens') AND run_id IN ($run) AND value IS NOT NULL GROUP BY run_id, step HAVING countIf(name = 'val/nll_nats') = 1 AND countIf(name = 'val/scored_tokens') = 1 AND sumIf(value, name = 'val/scored_tokens') > 0) ORDER BY step, series",
           "refId": "A"
         }
       ],
