@@ -7,7 +7,7 @@ the row you want to see after a crash.
 
 Only metrics from the metric list are written; an unknown name (a typo, or a dropped metric such as
 `loss` or `loss_by_lane`) is skipped with one warning per name. `gpu_alloc_gb` (the name train.py uses; the value is GiB) is
-mapped to `gpu_alloc_gib`. The 10-second system metrics from G6 (`gpu_utilization`,
+mapped to `gpu_alloc_gib`, and `temp_c` (the G6 sampler's name) to `gpu_temp_c`. The 10-second system metrics from G6 (`gpu_utilization`,
 `gpu_memory_used`) have no step, so they are not written here.
 
     with MetricsWriter("metrics.jsonl") as writer:
@@ -30,10 +30,11 @@ METRICS = frozenset({
     "gradient_norm", "gradient_clipping_applied", "validation_loss",
     "update_weight_ratio", "expert_load",
     "model_flops_utilization", "loader_wait_time",
+    "gpu_temp_c", "gpu_thermal_throttle",
 })
 
 # Names used by train.py that are written under a different name.
-ALIASES = {"gpu_alloc_gb": "gpu_alloc_gib"}
+ALIASES = {"gpu_alloc_gb": "gpu_alloc_gib", "temp_c": "gpu_temp_c"}
 
 
 def _clean(value):
