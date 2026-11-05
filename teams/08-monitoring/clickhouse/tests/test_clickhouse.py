@@ -37,6 +37,31 @@ def test_parse_team5_and_team6_sources_offline():
     names = {r["name"] for r in p_g6["rows"]}
     assert {"step_ms", "mfu", "model_flops_utilization", "gpu_utilization", "gpu_memory_used"} <= names
 
+    # Verify Team 06 additive MFU fields (mfu_method, mfu_scope, participants, global_tokens_per_s, run-scope reason codes)
+    g6_v2_doc = json.loads(Path("teams/06-performance/results/modal_gpu/h200_v1.json").read_text(encoding="utf-8"))
+    g6_v2_doc["metrics"].update({
+        "mfu_method": "g6-v2",
+        "mfu_scope": "run",
+        "global_tokens_per_s": 190918.0,
+        "participants": {
+            "world_size": 2,
+            "peak_tflops_sum": 624.0,
+            "devices": [{"name": "NVIDIA A100-SXM4-80GB", "peak_tflops": 312.0}] * 2,
+        },
+    })
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as tmp_g6:
+        json.dump(g6_v2_doc, tmp_g6)
+        g6_path = Path(tmp_g6.name)
+    try:
+        p_g6_v2 = parse_source(str(g6_path))
+        by_n = {r["name"]: r["value"] for r in p_g6_v2["rows"]}
+        assert p_g6_v2["null_rows"] == 0
+        assert math.isclose(by_n["global_tokens_per_s"], 190918.0)
+        assert math.isclose(by_n["participants.world_size"], 2.0)
+        assert math.isclose(by_n["participants.peak_tflops_sum"], 624.0)
+    finally:
+        g6_path.unlink(missing_ok=True)
+
 
 def test_parse_eval_mini_v1_json_and_jsonl():
     sample_doc = {

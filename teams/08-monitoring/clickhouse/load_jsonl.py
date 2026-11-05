@@ -261,6 +261,7 @@ def _parse_jsonl_content(text: str, default_run_id: str, run_id_override: str | 
         skip_keys = {
             "step", "time", "timestamp", "run_id", "node_id", "rank", "local_rank",
             "schema_version", "event", "mfu_unavailable_reason", "hfu_unavailable_reason",
+            "mfu_method", "mfu_scope",
         }
         line_metrics = 0
         for k, v in rec.items():
@@ -389,7 +390,7 @@ def _parse_team6_run_json(text: str, default_run_id: str, run_id_override: str |
     # Summary KPIs from `metrics`
     metrics_sec = doc.get("metrics") if isinstance(doc.get("metrics"), dict) else {}
     for k in (
-        "tokens_per_step", "tokens_per_s", "model_flops_per_token",
+        "tokens_per_step", "tokens_per_s", "global_tokens_per_s", "model_flops_per_token",
         "hw_flops_per_token", "params_total", "params_active",
         "peak_tflops", "model_tflops_per_s", "mfu", "hfu",
     ):
@@ -399,6 +400,11 @@ def _parse_team6_run_json(text: str, default_run_id: str, run_id_override: str |
         add(summary_step, summary_dt, "model_flops_utilization", metrics_sec["mfu"])
     if "tokens_per_s" in metrics_sec:
         add(summary_step, summary_dt, "tokens_per_second", metrics_sec["tokens_per_s"])
+    parts = metrics_sec.get("participants")
+    if isinstance(parts, dict):
+        for pk in ("world_size", "peak_tflops_sum"):
+            if pk in parts:
+                add(summary_step, summary_dt, f"participants.{pk}", parts[pk])
 
     # Clean step & data wait summary stats
     for sec_name in ("step_ms", "data_ms"):
