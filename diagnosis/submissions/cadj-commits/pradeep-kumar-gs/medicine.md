@@ -16,7 +16,7 @@ Built from 500 labelled rows of 500 documents. One section for each disease labe
    ```
 
 3. **Action:** fix the text.
-4. **Harm test:** _not run: no gold set given (`--gold`)._ Proxy on this pack: it changes or drops 4 of the 422 documents you labelled clean.
+4. **Harm test:** gold set of 413 documents: 1 changed, 0 dropped (0.2%). **PASS** (limit 1%).
 5. **Side effects:**
    - Email-parsing tests lose their sample addresses.
    - Organisation addresses (a project's security or support mailbox) are replaced too.
@@ -40,7 +40,7 @@ Built from 500 labelled rows of 500 documents. One section for each disease labe
    ```
 
 3. **Action:** fix the text.
-4. **Harm test:** _not run: no gold set given (`--gold`)._ Proxy on this pack: it changes or drops 21 of the 422 documents you labelled clean.
+4. **Harm test:** gold set of 413 documents: 16 changed, 0 dropped (3.9%). **FAIL** (limit 1%).
 5. **Side effects:**
    - A module docstring that mentions a licence is removed with its other text.
    - Licence attribution must be kept in metadata (meta.license), not lost.
