@@ -164,7 +164,8 @@ def _run_docker(workdir: Path, entry: str, wall_s: float) -> str | None:
 
 # --- the reward --------------------------------------------------------------------------------
 
-def reward(task_dir: Path | str, completion: str, sandbox: str = "process") -> dict:
+def reward(task_dir: Path | str, completion: str, sandbox="process") -> dict:
+    """sandbox: "process", "docker", or a runner callable(workdir, entry, wall_s) -> error or None (rl/pool.py)."""
     task_dir = Path(task_dir)
     task = load_task(task_dir)
     out = {"task_id": task["id"], "reward": 0}
@@ -179,14 +180,15 @@ def reward(task_dir: Path | str, completion: str, sandbox: str = "process") -> d
     # The work folder is a fresh temp dir that holds the solution and the INPUTS only.
     with tempfile.TemporaryDirectory(prefix="g10rl-", ignore_cleanup_errors=True) as tmp:
         work = Path(tmp)
-        os.chmod(work, 0o777 if sandbox == "docker" else 0o700)
+        os.chmod(work, 0o700 if sandbox == "process" else 0o777)
         (work / "solution.py").write_text(code, encoding="utf-8")
         (work / "cases.json").write_text(
             json.dumps([{"args": cases[i].get("args", []), "kwargs": cases[i].get("kwargs", {})} for i in order]),
             encoding="utf-8")
         shutil.copyfile(CHILD, work / "_child.py")
         start = time.monotonic()
-        err = (_run_docker if sandbox == "docker" else _run_process)(work, task["entry_point"], wall_s)
+        runner = sandbox if callable(sandbox) else (_run_docker if sandbox == "docker" else _run_process)
+        err = runner(work, task["entry_point"], wall_s)
         seconds = round(time.monotonic() - start, 2)
         if err:
             return {**out, "reason": err, "seconds": seconds}
