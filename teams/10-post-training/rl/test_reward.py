@@ -41,10 +41,11 @@ SWE_ENV = "python-validators__validators-191"
 needs_swe_image = pytest.mark.skipif(not _has_image(f"g10-swe/{SWE_ENV}:v1"), reason="SWE env image missing")
 
 
-@pytest.fixture(autouse=True)
-def _reset_options():
+def setup_function(function):
     reward.configure()
-    yield
+
+
+def teardown_function(function):
     reward.configure()
 
 
@@ -63,10 +64,13 @@ def test_reward_dispatches_on_the_env_type_and_returns_score_and_info():
     assert seen == {"name": "thing-1", "output": "out"}
 
 
-@pytest.mark.parametrize("env_id", ["nope/x", "code", "code/", "code/../../etc", "code/a/b", "swe/.hidden", ""])
-def test_unknown_or_unsafe_env_ids_raise_instead_of_scoring_zero(env_id):
-    with pytest.raises(KeyError):
-        reward.reward(env_id, "out")
+UNSAFE_IDS = ["nope/x", "code", "code/", "code/../../etc", "code/a/b", "swe/.hidden", ""]
+
+
+def test_unknown_or_unsafe_env_ids_raise_instead_of_scoring_zero():
+    for env_id in UNSAFE_IDS:
+        with pytest.raises(KeyError):
+            reward.reward(env_id, "out")
 
 
 def test_a_missing_task_raises():

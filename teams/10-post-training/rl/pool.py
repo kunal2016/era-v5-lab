@@ -22,7 +22,6 @@ Use:
 """
 from __future__ import annotations
 
-import functools
 import importlib.util
 import os
 import queue
@@ -36,12 +35,17 @@ HERE = Path(__file__).resolve().parent
 CODE_IMAGE = os.environ.get("G10_RL_IMAGE", "python:3.12-slim")
 
 
-@functools.lru_cache(maxsize=None)
+_LOADED: dict[str, object] = {}
+
+
 def _load(name: str, path: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    """Load a sibling module by path once (a plain dict cache)."""
+    if name not in _LOADED:
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _LOADED[name] = mod
+    return _LOADED[name]
 
 
 def verifier_module():
