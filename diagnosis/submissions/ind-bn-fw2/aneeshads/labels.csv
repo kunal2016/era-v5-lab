@@ -47,7 +47,7 @@ doc_id,read,verdict,diseases,evidence,hex,note
 39781e2b3b664613,full,clean,,,,Accepted
 3983a89afb7dfda1,full,fix,C1,"""সূত্র: খালেজ টাইমস, গালফ নিউজ, আল আরাবিয়া"" at offset 729",,Acceptable with fix
 39a83529d646f458,full,clean,D3,"""left handed"" at offset 352",,Accepted
-3c0e338578d39683,full,fix,C1;D3,"""জেএমএস/জিকেএস"" at offset 2246|""ওয়ারড্রোব"" at offset 643",,Acceptable with fix
+3c0e338578d39683,full,fix,C1;D3,"""জেএমএস/জিকেএস"" at offset 2246 |""ওয়ারড্রোব"" at offset 643",,Acceptable with fix
 3f65eacb574f2b00,full,clean,,,,Accepted
 3f714f926687d616,full,clean,,,,Accepted
 3f910908c7b4bc62,full,fix,C1,"""স্ব.বা/বা"" at offset 633",,Acceptable with fix
