@@ -38,7 +38,7 @@ def test_parse_team5_and_team6_sources_offline():
     assert {"step_ms", "mfu", "model_flops_utilization", "gpu_utilization", "gpu_memory_used"} <= names
 
     # Verify Team 06 additive MFU fields (mfu_method, mfu_scope, participants, global_tokens_per_s, run-scope reason codes)
-    g6_v2_doc = json.loads(resolve_source_text("teams/06-performance/results/modal_gpu/h200_v1.json")[0])
+    g6_v2_doc = json.loads(resolve_source_text("teams/06-performance/results/modal_gpu/h200_v1.json")[2])
     g6_v2_doc["metrics"].update({
         "mfu_method": "g6-v2",
         "mfu_scope": "run",
