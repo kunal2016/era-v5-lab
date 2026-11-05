@@ -1,13 +1,13 @@
 # EXP-2: AdamW vs Muon at T2 (DRAFT, not sent)
 
-Updated 2026-11-03 with the lead's answers in G5 (cap 90 min, AdamW lr rule, metrics only, no checkpoint) and the provisional muon_lr 1e-2. Rebased 2026-11-04 onto main after #253 (quality-run test settings) merged; approval.status/evaluation.approved in runtime.yaml are still unset, so this stays a draft.
+Updated 2026-11-03 with the lead's answers in G5 (cap 90 min, AdamW lr rule, metrics only, no checkpoint) and the provisional muon_lr 1e-2. Rebased 2026-11-04 onto main after #253 (quality-run test settings) merged; approval.status/evaluation.approved in runtime.yaml are still unset, so this stays a draft. Rebased again 2026-11-05: PR #241 (Muon backend) merged 5 Nov — main now has Muon, so this job no longer needs anything outside main. TSAI proposed a shared EXP-1/Muon-screen training+held-out file (tokenizer sample v0-clean, train/heldout split, tokenizer teams/03-tokenizer/v0) 2h before this update; Shivanshu has not yet confirmed it, and approval.status/evaluation.approved are still unset, so this stays a draft.
 
 ```
 Team:            05-architecture
 Owner:           Vardhan Walavalkar (vpw)
 Lead approval:   shivman
 Question:        At T2 with the same budget, does Muon give lower held-out bits per byte than AdamW by more than the larger seed spread?
-Script:          teams/05-architecture/harness/train_week2.py   (on main since PR #190). The Muon backend is Deepjyoti Saha's PR #241 (commit ecd9cfd); this job needs #241 merged first.
+Script:          teams/05-architecture/harness/train_week2.py   (on main since PR #190). The Muon backend is Deepjyoti Saha's PR #241 (commit ecd9cfd), merged into main 5 Nov.
 Command:         for arm in exp2_adamw exp2_muon; do for seed in 1234 1235 1236; do
                    python teams/05-architecture/harness/train_week2.py --config teams/05-architecture/configs/arms/${arm}.yaml --tokenizer inputs/tokenizer.json --byte-table inputs/raw_table_P32.npz --train-data <TBD> --heldout-data teams/05-architecture/heldout_v1/data/heldout_v1.jsonl --heldout-sources teams/05-architecture/heldout_v1/data/heldout_v1_sources.jsonl --heldout-report teams/05-architecture/heldout_v1/heldout_report.json --heldout-sha256 teams/05-architecture/results/heldout_v1.sha256 --device cuda --seed ${seed} --out out/${arm}_s${seed}
                    rm -f out/${arm}_s${seed}/checkpoint.pt   # metrics only, see Outputs
@@ -27,12 +27,12 @@ Test log:        teams/05-architecture/jobs/2026-11-04-exp2-optimizer.log
 ```
 
 ## Open items before this can be sent
-1. **PR #241 merged** (Muon backend, Deepjyoti Saha). Plan rule: no script, no job request. It is rebased on main, 76 tests pass (Udit confirmed, also with #253), review pending.
-1a. **Quality-run gate:** #253 is merged (4 Nov) — rope_theta, norm_eps, mtp_weight and moe.bias are on main. Still open: `runtime.yaml` approval.status is still `pending` (needs `agreed` with a reference) and evaluation.approved is still `false`, plus one training file for all arms. Per Shivanshu (4 Nov), the EXP-1 job is not filed until those two remain unset — same blockers as the Muon screen.
-2. **`muon_lr`** is provisionally 1e-2 (Deepjyoti Saha's smoke-mode T1 screen, one seed). The official screen runs after #253 merges, `runtime.yaml` approval is set and the single training file is named. If it moves, update `exp2_muon.yaml` and the Config line.
-3. **AdamW lr** is the EXP-1 winner, or 0.001 and "not final". EXP-1 runs 1234 on 3 Nov, 1235 and 1236 on 4 Nov.
-4. **Date.** Lead (G5, 3 Nov): Wed 4 Nov 23:59 IST is for EXP-1 seeds. T2 EXP-2 runs come after EXP-1, so no fixed date for this request. Ask when to file.
-5. **Training data / mix** is unset. The request needs a named public dataset or sample pack under "Inputs".
+1. ~~**PR #241 merged**~~ — done. Merged into main 5 Nov (Instructor/TSAI), along with #304 (attn-4 gate settings); week-2 tests pass (101) with both. No longer a blocker.
+1a. **Quality-run gate:** #253 is merged (4 Nov) — rope_theta, norm_eps, mtp_weight and moe.bias are on main. Still open: `runtime.yaml` approval.status is still `pending` (needs `agreed` with a reference) and evaluation.approved is still `false`. TSAI proposed a concrete fix 5 Nov: training file = train split of the cleaned tokenizer sample v0-clean (all 38 packs), held-out = its heldout split, tokenizer = `teams/03-tokenizer/v0`; TSAI will publish the converted `train.jsonl`/`heldout.jsonl` and their sha256. Shivanshu (lead) has not yet confirmed this or named a different file. Per Shivanshu, the EXP-1 job is not filed until the approval fields and the shared file are set — same blockers as the Muon screen and this job.
+2. **`muon_lr`** is provisionally 1e-2 (Deepjyoti Saha's smoke-mode T1 screen, one seed). The official screen still needs the same two things as item 1a (approval fields set, shared training file named) — unaffected by #241 merging. If the official value moves, update `exp2_muon.yaml` and the Config line.
+3. **AdamW lr** is the EXP-1 winner, or 0.001 and "not final". Only one arm has a posted result so far: Varshith's `lr_1e-2` (PR #286, H200, 3 seeds, val/three_group_bpb 3.2618 mean) — Shivanshu has confirmed this is a record only, not the EXP-1 quality result, pending the same approval fields and shared training file as item 1a. EXP-1 is filed as one lead job for all five rates once those land; TSAI said (5 Nov) compute is ready as soon as Shivanshu confirms the training file.
+4. **Date.** Lead (G5, 3 Nov): Wed 4 Nov 23:59 IST was for EXP-1 seeds; that date passed with EXP-1 still unfiled (blocked on item 1a). T2 EXP-2 runs come after EXP-1, so no fixed date for this request yet. Ask when to file.
+5. **Training data / mix** is unset on this job, but TSAI's 5 Nov proposal (see item 1a) would resolve it for EXP-1/Muon-screen; once Shivanshu confirms, the same file is the natural choice for this job's "Inputs" line too.
 6. **Checkpoint deletion** (`rm -f`) is my workaround for the harness rule. Check with the lead and TSAI that a job command may delete it, or whether the harness should gain a quality-run option.
-7. **Muon step time on #241** is not measured. An L4 run of #241 would replace the 96 min projection, which came from my own backend.
+7. **Muon step time on #241** is not measured. Now that #241 is on main, a real run (not my own backend) would replace the 96 min projection.
 8. **Lead approval handle** `shivman` is read from the merged PR #188 branch name and the #197 merge. Confirm it.
