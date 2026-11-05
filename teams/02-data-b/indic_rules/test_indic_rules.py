@@ -29,7 +29,6 @@ ZWJ, ZWNJ = "‍", "‌"
 NUKTA = "़়਼઼଼఼಼"
 OTHER_PACK = "en-dclm"
 NEEDS_DATA = {  # rules that need a file we do not ship; skipped, with the reason in the report
-    "DB-F2-001": "needs the Itihasa test set (ITIHASA_TEST_SN), which is not in the repo",
 }
 
 # Made-up sentences: plain text, a word with ZWJ, a word with ZWNJ, and (where the script uses it) a nukta.
@@ -57,7 +56,7 @@ JUNK = [
 ]
 
 
-def test_docs(lang, pack):
+def make_docs(lang, pack):
     """A clean document and a dirty one for the rule's language, both NFC."""
     native = NATIVE[lang]
     base = SCRIPT_BASE[lang]
@@ -95,7 +94,7 @@ def check(rule):
     """[(check name, message)] of the problems found for one rule, and whether the rule acted on the test text."""
     bad, acted = [], False
     lang = rule.ORIGIN.split(", ")[0].split("-")[1]
-    docs = test_docs(lang, rule.ORIGIN.split(", ")[0])
+    docs = make_docs(lang, rule.ORIGIN.split(", ")[0])
     for doc in docs:
         other = dict(doc, pack_id=OTHER_PACK)
         try:

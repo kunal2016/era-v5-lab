@@ -1,8 +1,10 @@
 # medicine_indic: compiled Indic medicines (Data B)
 
-267 rules from 17 packs. Only rules with a pass on **their own pack's gold set at today's size** (`teams/02-data-b/gold/gold_coverage.csv` on main since `ea7b533`, the 3 Nov rebuild) are here: TSAI, #240, 4 Nov, only a result on today's gold counts. Every other medicine is in `rules_status.md`, with the reason it is not here yet; a rule without a result on today's gold is not rejected, it waits for the next spec.
+260 rules from 17 packs. Only rules with a pass on **their own pack's gold set at today's size** (`teams/02-data-b/gold/gold_coverage.csv` on main since `ea7b533`, the 3 Nov rebuild) are here: TSAI, #240, 4 Nov, only a result on today's gold counts. Every other medicine is in `rules_status.md`, with the reason it is not here yet; a rule without a result on today's gold is not rejected, it waits for the next spec.
 
 **Out of spec v1 by TSAI's rulings of 4 Nov** (each is in `rules_status.md` with its reason): rules that add a ZWJ by design, because for v1 the Gate 2 joiner check stays (`DB-G2-001`, `DB-G2-002`, and the G2 rules of PR #30 and PR #112, held for v2); a rule that fails on today's gold (`DB-F1-005`, 2 of 114); and rules that need benchmark text to run, which the eval firewall keeps out of the repo (`DB-F2-001`, `DB-F2-002`).
+
+**Out by TSAI's #240 review of 5 Nov:** a visarga used as a colon is clean, in every script, and in spec v1 no rule converts between a visarga and a colon, in either direction. Five rules whose only job is to turn a visarga into `:` wait for the next spec (`DB-G4-005`, `DB-G4-001`, `DB-A6-014`, `DB-A6-018`, and `DB-A6-012`, Tamil `ஃ`, which Unicode names the Tamil visarga), and so do two that turn `:` into a visarga in Sanskrit (`DB-A6-010`, `DB-A6-011`). Two rules keep their other job: Data B removed only their visarga-to-colon line, marked in the code, and re-ran them on today's gold (`DB-A6-004` keeps its danda fix, `DB-G1-006` its matra fix).
 
 Rule form: Data A's (`teams/01-data-a/spec_v1/sheets/medicine_english.md`, PR #194): `RULE_ID`, `CODE`, `ACTION`, `STAGE`, `STATUS`, `LANGS`, `ORIGIN`, `SOURCE`, `AUTHOR`; `medicine(doc) -> (action, text)`, `doc = {doc_id, text, url, lang_label, pack_id}`.
 
@@ -10,9 +12,9 @@ Rule form: Data A's (`teams/01-data-a/spec_v1/sheets/medicine_english.md`, PR #1
 
 Run order is section order, by Data A's stages: 10 characters (A, G1, G2, G4), 20 markup (B1 to B3), 30 drops (every rule whose action is drop), 35 strips (C, D, G3, H fixes), 40 data safety (B4, F1, F2).
 
-Each author's code is copied unchanged: every python block of their section, in order, exactly as `harm_test_indic.py` runs it. What is added is marked `# added by Data B`: `import re` where the author relied on the tool providing it, `_std` (copied from Data A), and the `medicine(doc)` wrapper with the pack guard.
+Each author's code is copied unchanged (except the two trims above): every python block of their section, in order, exactly as `harm_test_indic.py` runs it. What is added is marked `# added by Data B`: `import re` where the author relied on the tool providing it, `_std` (copied from Data A), and the `medicine(doc)` wrapper with the pack guard.
 
-**Action is read from the code, not only from the author's words** (Shankar's review, 4 Nov). A rule whose function can return True drops the document, so a rule the author called "fix" is labelled `drop` (it only says True or False) or `fix+drop` (it does both). A `keep` rule's wrapper always returns `("keep", text)`, whatever the author's function says. D3 is a label only (TSAI, 31 Oct), so a D3 rule is `keep`. `DB-D4-011` also gets the page URL, `_AUTHOR_RULE(doc["text"], doc.get("url"))`, so its host check runs; every other rule gets the text only, as the harm tool tested it.
+**Action is read from the code, not only from the author's words** (shankarpandala's review, 4 Nov). A rule whose function can return True drops the document, so a rule the author called "fix" is labelled `drop` (it only says True or False) or `fix+drop` (it does both). A `keep` rule's wrapper always returns `("keep", text)`, whatever the author's function says. D3 is a label only (TSAI, 31 Oct) and out of spec v1 as a fix (TSAI, #240 review, 5 Nov), so every D3 rule is `keep`, whatever its author's code does. `DB-D4-011` also gets the page URL, `_AUTHOR_RULE(doc["text"], doc.get("url"))`, so its host check runs; every other rule gets the text only, as the harm tool tested it.
 
 Harm results are **as each author reports them** in their `medicine.md` (on today's gold set), except the rules re-run on 3, 4 or 5 Nov on today's gold set: those say "re-run on today's gold", with who ran them and a link to the result. IDs never change once published; a new rule takes the next free number, and a rule that leaves the sheet keeps its ID in the registry.
 
@@ -62,7 +64,6 @@ One author reports the result on the language's combined gold set: PR #3 (`ind-t
 - ind-hi-hplt F1: `DB-F1-012`, `DB-F1-003`, `DB-F1-004`
 - ind-hi-hplt G1: `DB-G1-016`, `DB-G1-004`
 - ind-hi-indiccorp C3: `DB-C3-025`, `DB-C3-016`
-- ind-hi-sangraha-s A6: `DB-A6-018`, `DB-A6-019`
 - ind-hi-sangraha-s B2: `DB-B2-008`, `DB-B2-009`
 - ind-hi-sangraha-s B4: `DB-B4-008`, `DB-B4-010`
 - ind-hi-sangraha-s D4: `DB-D4-018`, `DB-D4-019`
@@ -84,7 +85,6 @@ One author reports the result on the language's combined gold set: PR #3 (`ind-t
 - ind-mr-sangraha-v A6: `DB-A6-021`, `DB-A6-009`
 - ind-mr-sangraha-v D3: `DB-D3-022`, `DB-D3-011`
 - ind-sa-fw2 A5: `DB-A5-007`, `DB-A5-008`
-- ind-sa-fw2 A6: `DB-A6-010`, `DB-A6-011`
 - ind-sa-fw2 C1: `DB-C1-013`, `DB-C1-014`
 - ind-sa-fw2 C3: `DB-C3-004`, `DB-C3-011`
 - ind-sa-fw2 C4: `DB-C4-010`, `DB-C4-011`
@@ -129,249 +129,242 @@ One author reports the result on the language's combined gold set: PR #3 (`ind-t
 | 22 | `DB-A6-017` | A6 Wrong or mixed script | fix | 10 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
 | 23 | `DB-A6-004` | A6 Wrong or mixed script | fix | 10 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
 | 24 | `DB-A6-005` | A6 Wrong or mixed script | fix | 10 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 25 | `DB-A6-018` | A6 Wrong or mixed script | fix | 10 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 26 | `DB-A6-006` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 27 | `DB-A6-016` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 28 | `DB-A6-007` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 29 | `DB-A6-008` | A6 Wrong or mixed script | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 30 | `DB-A6-021` | A6 Wrong or mixed script | fix | 10 | ind-mr-sangraha-v | 88 | 3.4% | avnishbm | #46 |
-| 31 | `DB-A6-009` | A6 Wrong or mixed script | fix | 10 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 32 | `DB-A6-010` | A6 Wrong or mixed script | fix | 10 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 33 | `DB-A6-011` | A6 Wrong or mixed script | fix | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 34 | `DB-A6-012` | A6 Wrong or mixed script | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 35 | `DB-A6-013` | A6 Wrong or mixed script | fix | 10 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 36 | `DB-A6-014` | A6 Wrong or mixed script | fix | 10 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 37 | `DB-G1-001` | G1 Cut at the vowel sign | fix | 10 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 38 | `DB-G1-015` | G1 Cut at the vowel sign | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 39 | `DB-G1-017` | G1 Cut at the vowel sign | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
-| 40 | `DB-G1-002` | G1 Cut at the vowel sign | fix | 10 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 41 | `DB-G1-003` | G1 Cut at the vowel sign | fix | 10 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 42 | `DB-G1-016` | G1 Cut at the vowel sign | fix | 10 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 43 | `DB-G1-004` | G1 Cut at the vowel sign | fix | 10 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 44 | `DB-G1-005` | G1 Cut at the vowel sign | fix | 10 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
-| 45 | `DB-G1-006` | G1 Cut at the vowel sign | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 46 | `DB-G1-007` | G1 Cut at the vowel sign | fix | 10 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 47 | `DB-G1-008` | G1 Cut at the vowel sign | fix | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 48 | `DB-G1-013` | G1 Cut at the vowel sign | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 49 | `DB-G1-009` | G1 Cut at the vowel sign | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 50 | `DB-G1-010` | G1 Cut at the vowel sign | fix | 10 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 51 | `DB-G1-014` | G1 Cut at the vowel sign | fix | 10 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 52 | `DB-G2-003` | G2 Lost ZWJ or ZWNJ | keep | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 53 | `DB-G4-006` | G4 Over-normalised | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 54 | `DB-G4-007` | G4 Over-normalised | fix | 10 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 55 | `DB-G4-005` | G4 Over-normalised | fix | 10 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 56 | `DB-G4-001` | G4 Over-normalised | fix | 10 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 57 | `DB-G4-002` | G4 Over-normalised | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 58 | `DB-G4-003` | G4 Over-normalised | fix | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 59 | `DB-G4-004` | G4 Over-normalised | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 60 | `DB-B2-001` | B2 HTML or XML tags | fix | 20 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
-| 61 | `DB-B2-002` | B2 HTML or XML tags | fix | 20 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 62 | `DB-B2-008` | B2 HTML or XML tags | fix+drop | 20 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 63 | `DB-B2-009` | B2 HTML or XML tags | fix | 20 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
-| 64 | `DB-B2-003` | B2 HTML or XML tags | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 65 | `DB-B2-006` | B2 HTML or XML tags | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 66 | `DB-B2-004` | B2 HTML or XML tags | fix | 20 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 67 | `DB-B2-007` | B2 HTML or XML tags | fix | 20 | ind-te-sangraha-s | 24 | 12.5% | murthyap63-a11y | #71 |
-| 68 | `DB-B2-005` | B2 HTML or XML tags | fix | 20 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 69 | `DB-B3-001` | B3 Ghost chat markers | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 70 | `DB-B3-002` | B3 Ghost chat markers | fix+drop | 20 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 71 | `DB-A3-003` | A3 Mojibake | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 72 | `DB-A3-004` | A3 Mojibake | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 73 | `DB-A4-001` | A4 Replacement characters | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 74 | `DB-A6-015` | A6 Wrong or mixed script | drop | 30 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 75 | `DB-A6-019` | A6 Wrong or mixed script | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
-| 76 | `DB-B4-008` | B4 Template and code junk in prose | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
-| 77 | `DB-C2-019` | C2 Repeated lines | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 78 | `DB-C3-001` | C3 Truncated document | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 79 | `DB-C3-002` | C3 Truncated document | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 80 | `DB-C3-025` | C3 Truncated document | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
-| 81 | `DB-C3-019` | C3 Truncated document | drop | 30 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
-| 82 | `DB-C3-003` | C3 Truncated document | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 83 | `DB-C3-004` | C3 Truncated document | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 84 | `DB-C3-020` | C3 Truncated document | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 85 | `DB-C4-001` | C4 Two documents joined | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 86 | `DB-C4-002` | C4 Two documents joined | drop | 30 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
-| 87 | `DB-C4-012` | C4 Two documents joined | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 88 | `DB-C4-003` | C4 Two documents joined | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 89 | `DB-C4-004` | C4 Two documents joined | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 90 | `DB-C4-005` | C4 Two documents joined | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 91 | `DB-C4-006` | C4 Two documents joined | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 92 | `DB-C5-021` | C5 Lists of keywords or links | drop | 30 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
-| 93 | `DB-C5-016` | C5 Lists of keywords or links | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 94 | `DB-C5-001` | C5 Lists of keywords or links | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 95 | `DB-C5-002` | C5 Lists of keywords or links | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 96 | `DB-C5-003` | C5 Lists of keywords or links | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 97 | `DB-C5-004` | C5 Lists of keywords or links | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 98 | `DB-C5-017` | C5 Lists of keywords or links | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 99 | `DB-C5-005` | C5 Lists of keywords or links | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 100 | `DB-C5-006` | C5 Lists of keywords or links | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 101 | `DB-C5-018` | C5 Lists of keywords or links | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 102 | `DB-D4-001` | D4 Bad machine translation | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 103 | `DB-D4-002` | D4 Bad machine translation | drop | 30 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 104 | `DB-D4-003` | D4 Bad machine translation | drop | 30 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 105 | `DB-D4-004` | D4 Bad machine translation | drop | 30 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 106 | `DB-D4-013` | D4 Bad machine translation | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 107 | `DB-D4-005` | D4 Bad machine translation | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 108 | `DB-D4-006` | D4 Bad machine translation | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 109 | `DB-D4-018` | D4 Bad machine translation | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 110 | `DB-D4-007` | D4 Bad machine translation | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 111 | `DB-D4-008` | D4 Bad machine translation | drop | 30 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 112 | `DB-D4-009` | D4 Bad machine translation | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 113 | `DB-D4-010` | D4 Bad machine translation | drop | 30 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 114 | `DB-D4-011` | D4 Bad machine translation | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 115 | `DB-D4-012` | D4 Bad machine translation | drop | 30 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 116 | `DB-D4-016` | D4 Bad machine translation | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 117 | `DB-D5-001` | D5 Translationese | drop | 30 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 118 | `DB-D5-004` | D5 Translationese | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 119 | `DB-F3-001` | F3 Harmful content | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 120 | `DB-F3-002` | F3 Harmful content | drop | 30 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 121 | `DB-F3-004` | F3 Harmful content | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 122 | `DB-F3-005` | F3 Harmful content | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 123 | `DB-F3-003` | F3 Harmful content | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 124 | `DB-G1-012` | G1 Cut at the vowel sign | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
-| 125 | `DB-G1-011` | G1 Cut at the vowel sign | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 126 | `DB-G3-003` | G3 Indic dropped by an English rule | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
-| 127 | `DB-G3-001` | G3 Indic dropped by an English rule | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 128 | `DB-C1-001` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 129 | `DB-C1-024` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | aneeshads | #256 |
-| 130 | `DB-C1-002` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 131 | `DB-C1-023` | C1 Boilerplate | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 132 | `DB-C1-003` | C1 Boilerplate | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 133 | `DB-C1-004` | C1 Boilerplate | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 134 | `DB-C1-005` | C1 Boilerplate | fix | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
-| 135 | `DB-C1-017` | C1 Boilerplate | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 136 | `DB-C1-006` | C1 Boilerplate | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 137 | `DB-C1-007` | C1 Boilerplate | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 138 | `DB-C1-018` | C1 Boilerplate | fix | 35 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
-| 139 | `DB-C1-008` | C1 Boilerplate | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
-| 140 | `DB-C1-009` | C1 Boilerplate | fix | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
-| 141 | `DB-C1-010` | C1 Boilerplate | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 142 | `DB-C1-019` | C1 Boilerplate | fix+drop | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
-| 143 | `DB-C1-011` | C1 Boilerplate | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 144 | `DB-C1-020` | C1 Boilerplate | fix | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
-| 145 | `DB-C1-012` | C1 Boilerplate | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 146 | `DB-C1-013` | C1 Boilerplate | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 147 | `DB-C1-014` | C1 Boilerplate | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 148 | `DB-C1-021` | C1 Boilerplate | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 149 | `DB-C1-015` | C1 Boilerplate | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 150 | `DB-C1-016` | C1 Boilerplate | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 151 | `DB-C1-022` | C1 Boilerplate | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 152 | `DB-C1-025` | C1 Boilerplate | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | oddjoker91 | #177 |
-| 153 | `DB-C2-001` | C2 Repeated lines | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 154 | `DB-C2-002` | C2 Repeated lines | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 155 | `DB-C2-020` | C2 Repeated lines | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 156 | `DB-C2-023` | C2 Repeated lines | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
-| 157 | `DB-C2-003` | C2 Repeated lines | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 158 | `DB-C2-014` | C2 Repeated lines | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 159 | `DB-C2-021` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 160 | `DB-C2-004` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 161 | `DB-C2-005` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 162 | `DB-C2-006` | C2 Repeated lines | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
-| 163 | `DB-C2-007` | C2 Repeated lines | fix | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
-| 164 | `DB-C2-008` | C2 Repeated lines | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 165 | `DB-C2-015` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
-| 166 | `DB-C2-009` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 167 | `DB-C2-022` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
-| 168 | `DB-C2-010` | C2 Repeated lines | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 169 | `DB-C2-011` | C2 Repeated lines | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 170 | `DB-C2-016` | C2 Repeated lines | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 171 | `DB-C2-012` | C2 Repeated lines | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 172 | `DB-C2-013` | C2 Repeated lines | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 173 | `DB-C2-017` | C2 Repeated lines | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | murthyap63-a11y | #71 |
-| 174 | `DB-C2-018` | C2 Repeated lines | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 175 | `DB-C3-005` | C3 Truncated document | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 176 | `DB-C3-006` | C3 Truncated document | fix | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
-| 177 | `DB-C3-015` | C3 Truncated document | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 178 | `DB-C3-022` | C3 Truncated document | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 179 | `DB-C3-007` | C3 Truncated document | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 180 | `DB-C3-016` | C3 Truncated document | fix+drop | 35 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
-| 181 | `DB-C3-023` | C3 Truncated document | fix | 35 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 182 | `DB-C3-008` | C3 Truncated document | fix+drop | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 183 | `DB-C3-017` | C3 Truncated document | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 184 | `DB-C3-018` | C3 Truncated document | fix+drop | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
-| 185 | `DB-C3-009` | C3 Truncated document | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 186 | `DB-C3-024` | C3 Truncated document | fix+drop | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
-| 187 | `DB-C3-010` | C3 Truncated document | fix+drop | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 188 | `DB-C3-011` | C3 Truncated document | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 189 | `DB-C3-021` | C3 Truncated document | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 190 | `DB-C3-012` | C3 Truncated document | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 191 | `DB-C3-013` | C3 Truncated document | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 192 | `DB-C3-014` | C3 Truncated document | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 193 | `DB-C4-015` | C4 Two documents joined | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 194 | `DB-C4-007` | C4 Two documents joined | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 195 | `DB-C4-016` | C4 Two documents joined | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 196 | `DB-C4-008` | C4 Two documents joined | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 197 | `DB-C4-009` | C4 Two documents joined | fix+drop | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 198 | `DB-C4-010` | C4 Two documents joined | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 199 | `DB-C4-011` | C4 Two documents joined | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 200 | `DB-C4-013` | C4 Two documents joined | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 201 | `DB-C4-014` | C4 Two documents joined | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 202 | `DB-C5-007` | C5 Lists of keywords or links | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 203 | `DB-C5-008` | C5 Lists of keywords or links | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 204 | `DB-C5-009` | C5 Lists of keywords or links | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 205 | `DB-C5-010` | C5 Lists of keywords or links | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 206 | `DB-C5-019` | C5 Lists of keywords or links | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 207 | `DB-C5-011` | C5 Lists of keywords or links | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
-| 208 | `DB-C5-012` | C5 Lists of keywords or links | fix+drop | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
-| 209 | `DB-C5-020` | C5 Lists of keywords or links | fix | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
-| 210 | `DB-C5-013` | C5 Lists of keywords or links | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 211 | `DB-C5-014` | C5 Lists of keywords or links | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 212 | `DB-C5-015` | C5 Lists of keywords or links | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 213 | `DB-D2-003` | D2 Romanised Indic | fix | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 214 | `DB-D2-001` | D2 Romanised Indic | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 215 | `DB-D2-002` | D2 Romanised Indic | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 216 | `DB-D3-001` | D3 Mixed language | keep | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
-| 217 | `DB-D3-002` | D3 Mixed language | keep | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
-| 218 | `DB-D3-021` | D3 Mixed language | keep | 35 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
-| 219 | `DB-D3-003` | D3 Mixed language | keep | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 220 | `DB-D3-004` | D3 Mixed language | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 221 | `DB-D3-005` | D3 Mixed language | fix | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
-| 222 | `DB-D3-015` | D3 Mixed language | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 223 | `DB-D3-020` | D3 Mixed language | fix | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 224 | `DB-D3-006` | D3 Mixed language | keep | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 225 | `DB-D3-007` | D3 Mixed language | keep | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 226 | `DB-D3-008` | D3 Mixed language | keep | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
-| 227 | `DB-D3-016` | D3 Mixed language | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
-| 228 | `DB-D3-009` | D3 Mixed language | keep | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 229 | `DB-D3-017` | D3 Mixed language | keep | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
-| 230 | `DB-D3-010` | D3 Mixed language | fix | 35 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 231 | `DB-D3-022` | D3 Mixed language | keep | 35 | ind-mr-sangraha-v | 88 | 3.4% | avnishbm | #46 |
-| 232 | `DB-D3-011` | D3 Mixed language | keep | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 233 | `DB-D3-012` | D3 Mixed language | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 234 | `DB-D3-013` | D3 Mixed language | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 235 | `DB-D3-018` | D3 Mixed language | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 236 | `DB-D3-014` | D3 Mixed language | keep | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
-| 237 | `DB-D3-019` | D3 Mixed language | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
-| 238 | `DB-D4-019` | D4 Bad machine translation | fix | 35 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
-| 239 | `DB-D4-014` | D4 Bad machine translation | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
-| 240 | `DB-D4-015` | D4 Bad machine translation | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
-| 241 | `DB-D4-017` | D4 Bad machine translation | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 242 | `DB-D5-003` | D5 Translationese | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
-| 243 | `DB-D5-002` | D5 Translationese | keep | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 244 | `DB-G3-002` | G3 Indic dropped by an English rule | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 245 | `DB-H3-001` | H3 The same content in another source or language | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 246 | `DB-H3-002` | H3 The same content in another source or language | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 247 | `DB-B4-009` | B4 Template and code junk in prose | fix | 40 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
-| 248 | `DB-B4-001` | B4 Template and code junk in prose | fix | 40 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 249 | `DB-B4-010` | B4 Template and code junk in prose | fix | 40 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
-| 250 | `DB-B4-002` | B4 Template and code junk in prose | fix | 40 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
-| 251 | `DB-B4-011` | B4 Template and code junk in prose | fix | 40 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
-| 252 | `DB-B4-003` | B4 Template and code junk in prose | fix | 40 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 253 | `DB-B4-004` | B4 Template and code junk in prose | fix | 40 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 254 | `DB-B4-007` | B4 Template and code junk in prose | fix | 40 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
-| 255 | `DB-B4-005` | B4 Template and code junk in prose | fix | 40 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
-| 256 | `DB-B4-006` | B4 Template and code junk in prose | fix | 40 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
-| 257 | `DB-F1-001` | F1 Personal data | fix | 40 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
-| 258 | `DB-F1-002` | F1 Personal data | fix | 40 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
-| 259 | `DB-F1-012` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
-| 260 | `DB-F1-003` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
-| 261 | `DB-F1-004` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
-| 262 | `DB-F1-011` | F1 Personal data | fix | 40 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
-| 263 | `DB-F1-006` | F1 Personal data | fix | 40 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
-| 264 | `DB-F1-007` | F1 Personal data | fix+drop | 40 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
-| 265 | `DB-F1-008` | F1 Personal data | fix | 40 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
-| 266 | `DB-F1-009` | F1 Personal data | fix | 40 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
-| 267 | `DB-F1-010` | F1 Personal data | fix | 40 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 25 | `DB-A6-006` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 26 | `DB-A6-016` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
+| 27 | `DB-A6-007` | A6 Wrong or mixed script | fix | 10 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 28 | `DB-A6-008` | A6 Wrong or mixed script | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 29 | `DB-A6-021` | A6 Wrong or mixed script | fix | 10 | ind-mr-sangraha-v | 88 | 3.4% | avnishbm | #46 |
+| 30 | `DB-A6-009` | A6 Wrong or mixed script | fix | 10 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 31 | `DB-A6-013` | A6 Wrong or mixed script | fix | 10 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 32 | `DB-G1-001` | G1 Cut at the vowel sign | fix | 10 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 33 | `DB-G1-015` | G1 Cut at the vowel sign | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 34 | `DB-G1-017` | G1 Cut at the vowel sign | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
+| 35 | `DB-G1-002` | G1 Cut at the vowel sign | fix | 10 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 36 | `DB-G1-003` | G1 Cut at the vowel sign | fix | 10 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 37 | `DB-G1-016` | G1 Cut at the vowel sign | fix | 10 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 38 | `DB-G1-004` | G1 Cut at the vowel sign | fix | 10 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 39 | `DB-G1-005` | G1 Cut at the vowel sign | fix | 10 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
+| 40 | `DB-G1-006` | G1 Cut at the vowel sign | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 41 | `DB-G1-007` | G1 Cut at the vowel sign | fix | 10 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 42 | `DB-G1-008` | G1 Cut at the vowel sign | fix | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 43 | `DB-G1-013` | G1 Cut at the vowel sign | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 44 | `DB-G1-009` | G1 Cut at the vowel sign | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 45 | `DB-G1-010` | G1 Cut at the vowel sign | fix | 10 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 46 | `DB-G1-014` | G1 Cut at the vowel sign | fix | 10 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 47 | `DB-G2-003` | G2 Lost ZWJ or ZWNJ | keep | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 48 | `DB-G4-006` | G4 Over-normalised | fix | 10 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 49 | `DB-G4-007` | G4 Over-normalised | fix | 10 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 50 | `DB-G4-002` | G4 Over-normalised | fix | 10 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 51 | `DB-G4-003` | G4 Over-normalised | fix | 10 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 52 | `DB-G4-004` | G4 Over-normalised | fix | 10 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 53 | `DB-B2-001` | B2 HTML or XML tags | fix | 20 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
+| 54 | `DB-B2-002` | B2 HTML or XML tags | fix | 20 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 55 | `DB-B2-008` | B2 HTML or XML tags | fix+drop | 20 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
+| 56 | `DB-B2-009` | B2 HTML or XML tags | fix | 20 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
+| 57 | `DB-B2-003` | B2 HTML or XML tags | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 58 | `DB-B2-006` | B2 HTML or XML tags | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
+| 59 | `DB-B2-004` | B2 HTML or XML tags | fix | 20 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 60 | `DB-B2-007` | B2 HTML or XML tags | fix | 20 | ind-te-sangraha-s | 24 | 12.5% | murthyap63-a11y | #71 |
+| 61 | `DB-B2-005` | B2 HTML or XML tags | fix | 20 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 62 | `DB-B3-001` | B3 Ghost chat markers | fix | 20 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 63 | `DB-B3-002` | B3 Ghost chat markers | fix+drop | 20 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
+| 64 | `DB-A3-003` | A3 Mojibake | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 65 | `DB-A3-004` | A3 Mojibake | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 66 | `DB-A4-001` | A4 Replacement characters | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 67 | `DB-A6-015` | A6 Wrong or mixed script | drop | 30 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 68 | `DB-A6-019` | A6 Wrong or mixed script | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
+| 69 | `DB-B4-008` | B4 Template and code junk in prose | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
+| 70 | `DB-C2-019` | C2 Repeated lines | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
+| 71 | `DB-C3-001` | C3 Truncated document | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 72 | `DB-C3-002` | C3 Truncated document | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 73 | `DB-C3-025` | C3 Truncated document | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
+| 74 | `DB-C3-019` | C3 Truncated document | drop | 30 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
+| 75 | `DB-C3-003` | C3 Truncated document | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 76 | `DB-C3-004` | C3 Truncated document | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 77 | `DB-C3-020` | C3 Truncated document | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 78 | `DB-C4-001` | C4 Two documents joined | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 79 | `DB-C4-002` | C4 Two documents joined | drop | 30 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
+| 80 | `DB-C4-012` | C4 Two documents joined | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 81 | `DB-C4-003` | C4 Two documents joined | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 82 | `DB-C4-004` | C4 Two documents joined | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 83 | `DB-C4-005` | C4 Two documents joined | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 84 | `DB-C4-006` | C4 Two documents joined | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 85 | `DB-C5-021` | C5 Lists of keywords or links | drop | 30 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
+| 86 | `DB-C5-016` | C5 Lists of keywords or links | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 87 | `DB-C5-001` | C5 Lists of keywords or links | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 88 | `DB-C5-002` | C5 Lists of keywords or links | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 89 | `DB-C5-003` | C5 Lists of keywords or links | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 90 | `DB-C5-004` | C5 Lists of keywords or links | drop | 30 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 91 | `DB-C5-017` | C5 Lists of keywords or links | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 92 | `DB-C5-005` | C5 Lists of keywords or links | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 93 | `DB-C5-006` | C5 Lists of keywords or links | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 94 | `DB-C5-018` | C5 Lists of keywords or links | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 95 | `DB-D4-001` | D4 Bad machine translation | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 96 | `DB-D4-002` | D4 Bad machine translation | drop | 30 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 97 | `DB-D4-003` | D4 Bad machine translation | drop | 30 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 98 | `DB-D4-004` | D4 Bad machine translation | drop | 30 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 99 | `DB-D4-013` | D4 Bad machine translation | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 100 | `DB-D4-005` | D4 Bad machine translation | drop | 30 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 101 | `DB-D4-006` | D4 Bad machine translation | drop | 30 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 102 | `DB-D4-018` | D4 Bad machine translation | drop | 30 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
+| 103 | `DB-D4-007` | D4 Bad machine translation | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 104 | `DB-D4-008` | D4 Bad machine translation | drop | 30 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 105 | `DB-D4-009` | D4 Bad machine translation | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 106 | `DB-D4-010` | D4 Bad machine translation | drop | 30 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 107 | `DB-D4-011` | D4 Bad machine translation | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 108 | `DB-D4-012` | D4 Bad machine translation | drop | 30 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 109 | `DB-D4-016` | D4 Bad machine translation | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 110 | `DB-D5-001` | D5 Translationese | drop | 30 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 111 | `DB-D5-004` | D5 Translationese | drop | 30 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 112 | `DB-F3-001` | F3 Harmful content | drop | 30 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 113 | `DB-F3-002` | F3 Harmful content | drop | 30 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 114 | `DB-F3-004` | F3 Harmful content | drop | 30 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 115 | `DB-F3-005` | F3 Harmful content | drop | 30 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 116 | `DB-F3-003` | F3 Harmful content | drop | 30 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 117 | `DB-G1-012` | G1 Cut at the vowel sign | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
+| 118 | `DB-G1-011` | G1 Cut at the vowel sign | drop | 30 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 119 | `DB-G3-003` | G3 Indic dropped by an English rule | drop | 30 | ind-hi-indiccorp | 425 | 0.7% | ranjani-cse | #11 |
+| 120 | `DB-G3-001` | G3 Indic dropped by an English rule | drop | 30 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 121 | `DB-C1-001` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 122 | `DB-C1-024` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | aneeshads | #256 |
+| 123 | `DB-C1-002` | C1 Boilerplate | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 124 | `DB-C1-023` | C1 Boilerplate | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 125 | `DB-C1-003` | C1 Boilerplate | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 126 | `DB-C1-004` | C1 Boilerplate | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 127 | `DB-C1-005` | C1 Boilerplate | fix | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
+| 128 | `DB-C1-017` | C1 Boilerplate | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 129 | `DB-C1-006` | C1 Boilerplate | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 130 | `DB-C1-007` | C1 Boilerplate | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 131 | `DB-C1-018` | C1 Boilerplate | fix | 35 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
+| 132 | `DB-C1-008` | C1 Boilerplate | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
+| 133 | `DB-C1-009` | C1 Boilerplate | fix | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
+| 134 | `DB-C1-010` | C1 Boilerplate | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 135 | `DB-C1-019` | C1 Boilerplate | fix+drop | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
+| 136 | `DB-C1-011` | C1 Boilerplate | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 137 | `DB-C1-020` | C1 Boilerplate | fix | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
+| 138 | `DB-C1-012` | C1 Boilerplate | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 139 | `DB-C1-013` | C1 Boilerplate | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 140 | `DB-C1-014` | C1 Boilerplate | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 141 | `DB-C1-021` | C1 Boilerplate | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 142 | `DB-C1-015` | C1 Boilerplate | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 143 | `DB-C1-016` | C1 Boilerplate | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 144 | `DB-C1-022` | C1 Boilerplate | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 145 | `DB-C1-025` | C1 Boilerplate | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | oddjoker91 | #177 |
+| 146 | `DB-C2-001` | C2 Repeated lines | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 147 | `DB-C2-002` | C2 Repeated lines | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 148 | `DB-C2-020` | C2 Repeated lines | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 149 | `DB-C2-023` | C2 Repeated lines | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
+| 150 | `DB-C2-003` | C2 Repeated lines | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 151 | `DB-C2-014` | C2 Repeated lines | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 152 | `DB-C2-021` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 153 | `DB-C2-004` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 154 | `DB-C2-005` | C2 Repeated lines | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 155 | `DB-C2-006` | C2 Repeated lines | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
+| 156 | `DB-C2-007` | C2 Repeated lines | fix | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
+| 157 | `DB-C2-008` | C2 Repeated lines | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 158 | `DB-C2-015` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
+| 159 | `DB-C2-009` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 160 | `DB-C2-022` | C2 Repeated lines | fix | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
+| 161 | `DB-C2-010` | C2 Repeated lines | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 162 | `DB-C2-011` | C2 Repeated lines | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 163 | `DB-C2-016` | C2 Repeated lines | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 164 | `DB-C2-012` | C2 Repeated lines | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 165 | `DB-C2-013` | C2 Repeated lines | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 166 | `DB-C2-017` | C2 Repeated lines | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | murthyap63-a11y | #71 |
+| 167 | `DB-C2-018` | C2 Repeated lines | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 168 | `DB-C3-005` | C3 Truncated document | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 169 | `DB-C3-006` | C3 Truncated document | fix | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
+| 170 | `DB-C3-015` | C3 Truncated document | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 171 | `DB-C3-022` | C3 Truncated document | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 172 | `DB-C3-007` | C3 Truncated document | fix | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 173 | `DB-C3-016` | C3 Truncated document | fix+drop | 35 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
+| 174 | `DB-C3-023` | C3 Truncated document | fix | 35 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
+| 175 | `DB-C3-008` | C3 Truncated document | fix+drop | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 176 | `DB-C3-017` | C3 Truncated document | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
+| 177 | `DB-C3-018` | C3 Truncated document | fix+drop | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
+| 178 | `DB-C3-009` | C3 Truncated document | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 179 | `DB-C3-024` | C3 Truncated document | fix+drop | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
+| 180 | `DB-C3-010` | C3 Truncated document | fix+drop | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 181 | `DB-C3-011` | C3 Truncated document | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 182 | `DB-C3-021` | C3 Truncated document | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 183 | `DB-C3-012` | C3 Truncated document | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 184 | `DB-C3-013` | C3 Truncated document | fix | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 185 | `DB-C3-014` | C3 Truncated document | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 186 | `DB-C4-015` | C4 Two documents joined | fix | 35 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 187 | `DB-C4-007` | C4 Two documents joined | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 188 | `DB-C4-016` | C4 Two documents joined | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 189 | `DB-C4-008` | C4 Two documents joined | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 190 | `DB-C4-009` | C4 Two documents joined | fix+drop | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 191 | `DB-C4-010` | C4 Two documents joined | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 192 | `DB-C4-011` | C4 Two documents joined | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 193 | `DB-C4-013` | C4 Two documents joined | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 194 | `DB-C4-014` | C4 Two documents joined | fix | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 195 | `DB-C5-007` | C5 Lists of keywords or links | fix | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 196 | `DB-C5-008` | C5 Lists of keywords or links | fix | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 197 | `DB-C5-009` | C5 Lists of keywords or links | fix | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 198 | `DB-C5-010` | C5 Lists of keywords or links | fix | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 199 | `DB-C5-019` | C5 Lists of keywords or links | fix+drop | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 200 | `DB-C5-011` | C5 Lists of keywords or links | fix | 35 | ind-kn-fw2 | 114 | 2.6% | LokeshJatangi | #63 |
+| 201 | `DB-C5-012` | C5 Lists of keywords or links | fix+drop | 35 | ind-kn-fw2 | 114 | 2.6% | keshavamurali | #47 |
+| 202 | `DB-C5-020` | C5 Lists of keywords or links | fix | 35 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
+| 203 | `DB-C5-013` | C5 Lists of keywords or links | fix | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 204 | `DB-C5-014` | C5 Lists of keywords or links | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 205 | `DB-C5-015` | C5 Lists of keywords or links | fix | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 206 | `DB-D2-003` | D2 Romanised Indic | fix | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 207 | `DB-D2-001` | D2 Romanised Indic | fix | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 208 | `DB-D2-002` | D2 Romanised Indic | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 209 | `DB-D3-001` | D3 Mixed language | keep | 35 | ind-bn-fw2 | 244 | 1.2% | AditeyaAItronics | #64 |
+| 210 | `DB-D3-002` | D3 Mixed language | keep | 35 | ind-bn-fw2 | 244 | 1.2% | sohamniyogi | #138 |
+| 211 | `DB-D3-021` | D3 Mixed language | keep | 35 | ind-bn-sangraha-v | 142 | 2.1% | pratik-2025 | #112 |
+| 212 | `DB-D3-003` | D3 Mixed language | keep | 35 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 213 | `DB-D3-004` | D3 Mixed language | keep | 35 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 214 | `DB-D3-005` | D3 Mixed language | keep | 35 | ind-hi-fw2 | 234 | 1.3% | raj-harit-v2 | #8 |
+| 215 | `DB-D3-015` | D3 Mixed language | keep | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 216 | `DB-D3-020` | D3 Mixed language | keep | 35 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 217 | `DB-D3-006` | D3 Mixed language | keep | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 218 | `DB-D3-007` | D3 Mixed language | keep | 35 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 219 | `DB-D3-008` | D3 Mixed language | keep | 35 | ind-kn-sangraha-s | 27 | 11.1% | millermuttu | #104 |
+| 220 | `DB-D3-016` | D3 Mixed language | keep | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
+| 221 | `DB-D3-009` | D3 Mixed language | keep | 35 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 222 | `DB-D3-017` | D3 Mixed language | keep | 35 | ind-mr-fw2 | 142 | 2.1% | adinathauti | #114 |
+| 223 | `DB-D3-010` | D3 Mixed language | keep | 35 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 224 | `DB-D3-022` | D3 Mixed language | keep | 35 | ind-mr-sangraha-v | 88 | 3.4% | avnishbm | #46 |
+| 225 | `DB-D3-011` | D3 Mixed language | keep | 35 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 226 | `DB-D3-012` | D3 Mixed language | keep | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 227 | `DB-D3-013` | D3 Mixed language | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 228 | `DB-D3-018` | D3 Mixed language | keep | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 229 | `DB-D3-014` | D3 Mixed language | keep | 35 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
+| 230 | `DB-D3-019` | D3 Mixed language | keep | 35 | ind-te-sangraha-v | 18 | 16.7% | SreekanthZipsy | #109 |
+| 231 | `DB-D4-019` | D4 Bad machine translation | fix | 35 | ind-hi-sangraha-s | 24 | 12.5% | tejaswivinnakota | #160 |
+| 232 | `DB-D4-014` | D4 Bad machine translation | fix | 35 | ind-kn-sangraha-s | 27 | 11.1% | subramanyanaik | #94 |
+| 233 | `DB-D4-015` | D4 Bad machine translation | fix | 35 | ind-kn-sangraha-v | 103 | 2.9% | Anusha-raju | #40 |
+| 234 | `DB-D4-017` | D4 Bad machine translation | fix | 35 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 235 | `DB-D5-003` | D5 Translationese | fix | 35 | ind-hi-fw2 | 234 | 1.3% | revantg | #23 |
+| 236 | `DB-D5-002` | D5 Translationese | keep | 35 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 237 | `DB-G3-002` | G3 Indic dropped by an English rule | fix | 35 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 238 | `DB-H3-001` | H3 The same content in another source or language | fix | 35 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 239 | `DB-H3-002` | H3 The same content in another source or language | keep | 35 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 240 | `DB-B4-009` | B4 Template and code junk in prose | fix | 40 | ind-bn-sangraha-v | 142 | 2.1% | aneeshads | #30 |
+| 241 | `DB-B4-001` | B4 Template and code junk in prose | fix | 40 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 242 | `DB-B4-010` | B4 Template and code junk in prose | fix | 40 | ind-hi-sangraha-s | 24 | 12.5% | rjvim | #106 |
+| 243 | `DB-B4-002` | B4 Template and code junk in prose | fix | 40 | ind-kn-sangraha-v | 103 | 2.9% | pyru | #25 |
+| 244 | `DB-B4-011` | B4 Template and code junk in prose | fix | 40 | ind-mr-fw2 | 142 | 2.1% | vpw | #43 |
+| 245 | `DB-B4-003` | B4 Template and code junk in prose | fix | 40 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 246 | `DB-B4-004` | B4 Template and code junk in prose | fix | 40 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 247 | `DB-B4-007` | B4 Template and code junk in prose | fix | 40 | ind-ta-sangraha-v | 141 | 2.1% | Hemaaaa04 | #57 |
+| 248 | `DB-B4-005` | B4 Template and code junk in prose | fix | 40 | ind-ta-sangraha-v | 141 | 2.1% | abinesh1 | #101 |
+| 249 | `DB-B4-006` | B4 Template and code junk in prose | fix | 40 | ind-te-sangraha-s | 24 | 12.5% | shankarpandala | #92 |
+| 250 | `DB-F1-001` | F1 Personal data | fix | 40 | ind-gu-fw2 | 80 | 3.8% | Nisarg189 | #18 |
+| 251 | `DB-F1-002` | F1 Personal data | fix | 40 | ind-gu-fw2 | 80 | 3.8% | vedang-patel-10 | #91 |
+| 252 | `DB-F1-012` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | gmrammohan15 | #70 |
+| 253 | `DB-F1-003` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | narasimhatejav | #170 |
+| 254 | `DB-F1-004` | F1 Personal data | fix | 40 | ind-hi-hplt | 62 | 4.8% | therahulbhati | #24 |
+| 255 | `DB-F1-011` | F1 Personal data | fix | 40 | ind-hi-indiccorp | 425 | 0.7% | rajiviyer | #13 |
+| 256 | `DB-F1-006` | F1 Personal data | fix | 40 | ind-mr-fw2 | 142 | 2.1% | thinktinkergreen | #50 |
+| 257 | `DB-F1-007` | F1 Personal data | fix+drop | 40 | ind-mr-sangraha-v | 88 | 3.4% | patilvijay23 | #19 |
+| 258 | `DB-F1-008` | F1 Personal data | fix | 40 | ind-sa-fw2 | 71 | 4.2% | dattatreyamanjunath | #45 |
+| 259 | `DB-F1-009` | F1 Personal data | fix | 40 | ind-sa-fw2 | 71 | 4.2% | swatibansal | #80 |
+| 260 | `DB-F1-010` | F1 Personal data | fix | 40 | ind-te-fw2 | 18 | 16.7% | sandeepkunkunuru | #3 |
 
 ## 1. `DB-A1-001` · A1 Invisible junk characters · fix · stage 10
 
@@ -422,7 +415,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section A1 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -471,7 +464,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section A1 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -519,7 +512,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
 5. **Side effects:** in the author's `medicine.md`, section A2 (PR #112).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -571,7 +564,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -692,7 +685,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -747,7 +740,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -801,7 +794,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -854,7 +847,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -902,7 +895,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -968,7 +961,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1099,7 +1092,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1148,7 +1141,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1197,7 +1190,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). This demonstrates no measured gol...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). This demonstrates no measured gold harm; it does not establish NFC-repair effectiveness on A5-positive documents.
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
@@ -1250,7 +1243,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1315,7 +1308,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section A5 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1372,7 +1365,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1422,7 +1415,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1602,14 +1595,14 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
 ## 23. `DB-A6-004` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-hi-hplt`. Source: section A6 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
+2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the removed line is marked in the code). Main function: `medicine_a6(text)`.
 
 ```python
 RULE_ID = "DB-A6-004"
@@ -1636,8 +1629,7 @@ def _danda(m):
 def medicine_a6(text):
     # Latin I or l typed for the danda after a Devanagari word: "हैI", "आया I", "हुआ l"
     t = _DANDA.sub(_danda, text)
-    # visarga typed for the colon: "महत्वपूर्ण हैः यह" -> "है:"
-    t = re.sub("(है|हैं|चाहिए)\u0903(?=\\s)", "\\1:", t)
+    # Data B removed one line here, the visarga-to-colon step (TSAI, #240 review, 5 Nov: a visarga used as a colon is clean)
     return t
 
 
@@ -1663,7 +1655,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 62 documents) by Data B rules owner (Pritish52718), 5 Nov, after Data B removed its visarga-to-colon line: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -1717,61 +1709,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 25. `DB-A6-018` · A6 Wrong or mixed script · fix · stage 10
-
-1. **Disease:** A6 Wrong or mixed script. Pack `ind-hi-sangraha-s`. Source: section A6 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
-
-```python
-RULE_ID = "DB-A6-018"
-CODE = "A6"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"hin_Deva"}
-ORIGIN = "ind-hi-sangraha-s"  # packs it runs on
-SOURCE = "ind-hi-sangraha-s"  # pack whose medicine this came from
-AUTHOR = "rjvim"  # PR #106 at c34130b
-
-import re
-_KEEP = re.compile("(\u092a\u094d\u0930\u093e\u092f|\u0905\u0924|\u092a\u0941\u0928|\u0938\u093e\u092e\u093e\u0928\u094d\u092f\u0924|\u092e\u0941\u0916\u094d\u092f\u0924|\u0938\u094d\u0935\u0924|\u0935\u093f\u0936\u0947\u0937\u0924|\u0935\u0938\u094d\u0924\u0941\u0924|\u0915\u094d\u0930\u092e\u0936|\u0905\u0902\u0924\u0924|\u092a\u094d\u0930\u093e\u0924|\u0926\u0941|\u0905\u0927|\u0928\u092e|\u092e\u0942\u0932\u0924|\u0938\u0902\u092d\u0935\u0924|\u092a\u0942\u0930\u094d\u0923\u0924|\u0938\u094d\u092a\u0937\u094d\u091f\u0924)$")
-_VISARGA = re.compile("(?<=[\u0915-\u0939\u093e-\u094c])\u0903(?=[ \t]*(?:\n|$)|[ ]+[\"0-9\u0900-\u097f])")
-
-def medicine_a6(text):
-    return _VISARGA.sub(lambda m: "\u0903" if _KEEP.search(text[max(0, m.start() - 10):m.start()]) else ":", text)
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = medicine_a6  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
-5. **Side effects:** in the author's `medicine.md`, section A6 (PR #106).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 26. `DB-A6-006` · A6 Wrong or mixed script · fix · stage 10
+## 25. `DB-A6-006` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-kn-sangraha-s`. Source: section A6 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `m3_half_translated(text)`.
@@ -1820,7 +1762,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 27. `DB-A6-016` · A6 Wrong or mixed script · fix · stage 10
+## 26. `DB-A6-016` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-kn-sangraha-s`. Source: section A6 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
 2. **Medicine:** the author's code, unchanged. Main function: `fix_latin_initials(text)`.
@@ -1884,11 +1826,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 28. `DB-A6-007` · A6 Wrong or mixed script · fix · stage 10
+## 27. `DB-A6-007` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-kn-sangraha-v`. Source: section A6 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
@@ -1951,7 +1893,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 29. `DB-A6-008` · A6 Wrong or mixed script · fix · stage 10
+## 28. `DB-A6-008` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-mr-fw2`. Source: section A6 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
@@ -1995,11 +1937,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 30. `DB-A6-021` · A6 Wrong or mixed script · fix · stage 10
+## 29. `DB-A6-021` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-mr-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-mr-sangraha-v__avnishbm__46.md` at `bbb104f` (TSAI ruling 3) of PR #46, section A6; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `fix_reviewed_ordinal_ocr(text)`.
@@ -2043,11 +1985,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (88 documents) by the author (PR #46; pinned gold = today's 88 doc_ids): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6604072712). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (88 documents) by the author (PR #46; pinned gold = today's 88 doc_ids): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6604072712). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #46).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 31. `DB-A6-009` · A6 Wrong or mixed script · fix · stage 10
+## 30. `DB-A6-009` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-mr-sangraha-v`. Source: section A6 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_a6(text)`.
@@ -2099,197 +2041,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Only mixed-digit conversion is co...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Only mixed-digit conversion is covered; other A6 subtypes require separate source-aware tests.
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 32. `DB-A6-010` · A6 Wrong or mixed script · fix · stage 10
-
-1. **Disease:** A6 Wrong or mixed script. Pack `ind-sa-fw2`. Source: section A6 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
-
-```python
-RULE_ID = "DB-A6-010"
-CODE = "A6"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"san_Deva"}
-ORIGIN = "ind-sa-fw2"  # packs it runs on
-SOURCE = "ind-sa-fw2"  # pack whose medicine this came from
-AUTHOR = "dattatreyamanjunath"  # PR #45 at b054835
-import re  # added by Data B: harm_test_indic.py gives every block `re`
-
-_D = "ऀ-ॿ"
-_CONS = "क-हक़-य़"
-_MAT = "ा-ौॢॣ"
-_ABBR = re.compile(r"(?:^|[\s(])(डा|डॉ|प्रो|डो|श्री|सं|पृ|ई|क्र|पं|मो|फो|दू)$")
-
-def medicine_a6(text):
-    def colon(m):
-        before = text[max(0, m.start() - 6):m.start()]
-        after = text[m.end():m.end() + 3].lstrip()
-        if _ABBR.search(before) or (after and after[0].isalpha() and not "ऀ" <= after[0] <= "ॿ"):
-            return m.group()
-        return "ः"
-    t = re.sub(f"(?<=[{_CONS}{_MAT}]):(?=[\\s।॥]|$)", colon, text)
-    t = re.sub(f"(?<=[{_CONS}{_MAT}ंः])[Ss](?=[{_CONS}])", "ऽ", t)
-    out = []
-    for line in t.split("\n"):
-        if not (line.startswith("|") or line.rstrip().endswith("|") and line.count("|") > 2):
-            line = re.sub(f"(?<=[{_D}]) ?\\|\\|(?=\\s|$)", " ॥", line)
-            line = re.sub(f"(?<=[{_D}]) ?\\|(?=\\s|$)", " ।", line)
-        line = re.sub(f"(?<=[{_D}]) ?I(?=\\s*$|\\s+[{_D}])", " ।", line)
-        line = re.sub(f"(?<=[{_D}])o(?=\\s)", "॰", line)
-        line = re.sub(f"(?<=[A-Za-z]{{3}})(?=[{_CONS}])|(?<=[{_D}])(?=[A-Za-z]{{3}})", " ", line)
-        out.append(line)
-    return "\n".join(out).translate({0x0946: 0x0947, 0x094A: 0x094B, 0x0931: 0x0930})
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = medicine_a6  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
-5. **Side effects:** in the author's `medicine.md`, section A6 (PR #45).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 33. `DB-A6-011` · A6 Wrong or mixed script · fix · stage 10
-
-1. **Disease:** A6 Wrong or mixed script. Pack `ind-sa-fw2`. Source: section A6 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
-2. **Medicine:** the author's code, unchanged. Main function: `fix_a6(text)`.
-
-```python
-RULE_ID = "DB-A6-011"
-CODE = "A6"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"san_Deva"}
-ORIGIN = "ind-sa-fw2"  # packs it runs on
-SOURCE = "ind-sa-fw2"  # pack whose medicine this came from
-AUTHOR = "swatibansal"  # PR #80 at 7af8541
-import re  # added by Data B: harm_test_indic.py gives every block `re`
-
-# character classes use \u escapes on purpose: a literal nukta letter is stored decomposed and would break the range
-DEVA_LETTER = r"\u0904-\u0939\u093D\u0950\u0958-\u0961\u0972-\u097F"    # letters incl. avagraha and OM
-DEVA_MARK = r"\u0900-\u0903\u093A-\u093C\u093E-\u094F\u0951-\u0957\u0962\u0963"    # matras, virama, nukta, bindus, visarga, accents
-BOUNDARY = r"[ \t\u00A0\r\n।॥]"    # space, tab, nbsp, newline, danda
-E_O_VOWELS = r"\u0946\u0947\u094A\u094B\u090E\u090F\u0912\u0913"    # matras ॆ े ॊ ो and letters ऎ ए ऒ ओ
-RE_A6_DANDA = re.compile(rf"(?<=[{DEVA_LETTER}{DEVA_MARK}])(I{{1,2}}|l{{1,2}})(?={BOUNDARY}|$)")
-RE_A6_AVAGRAHA = re.compile(rf"(?<=[{E_O_VOWELS}])[Ss](?=[{DEVA_LETTER}])")
-# ASCII ':' typed for visarga: right after a Devanagari letter or vowel sign, before a boundary or a Devanagari letter
-RE_A6_COLON = re.compile(rf"(?<=[{DEVA_LETTER}\u093A-\u093C\u093E-\u094F\u0962\u0963]):(?={BOUNDARY}|$|[{DEVA_LETTER}])")
-# ASCII '|' or '||' typed for danda or double danda: after a Devanagari word (an optional space before it is kept), before a boundary
-RE_A6_PIPE = re.compile(rf"(?<=[{DEVA_LETTER}{DEVA_MARK}])([ ]?)(\|{{1,2}})(?={BOUNDARY}|$)")
-
-RE_LATIN_LETTER = re.compile(r"[A-Za-z]")
-
-def _pipe_line(line):
-    if line.lstrip().startswith("|") or RE_LATIN_LETTER.search(line):    # wiki table row, or a title/menu line with Latin words
-        return line
-    return RE_A6_PIPE.sub(lambda m: m.group(1) + ("॥" if len(m.group(2)) == 2 else "।"), line)
-
-def fix_a6(text):
-    text = RE_A6_DANDA.sub(lambda m: "॥" if len(m.group(1)) == 2 else "।", text)
-    text = RE_A6_AVAGRAHA.sub("ऽ", text)
-    text = RE_A6_COLON.sub("ः", text)
-    return "\n".join(_pipe_line(l) for l in text.split("\n"))
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = fix_a6  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
-5. **Side effects:** in the author's `medicine.md`, section A6 (PR #80).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 34. `DB-A6-012` · A6 Wrong or mixed script · fix · stage 10
-
-1. **Disease:** A6 Wrong or mixed script. Pack `ind-ta-sangraha-v`. Source: section A6 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
-
-```python
-RULE_ID = "DB-A6-012"
-CODE = "A6"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"tam_Taml"}
-ORIGIN = "ind-ta-sangraha-v"  # packs it runs on
-SOURCE = "ind-ta-sangraha-v"  # pack whose medicine this came from
-AUTHOR = "abinesh1"  # PR #101 at f956e35
-
-import re
-
-def medicine_a6(text):
-    return re.sub("ஃ(?![க-ஹ])", ":", text)  # aytham before a space or line end is a lost colon
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = medicine_a6  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
-5. **Side effects:** in the author's `medicine.md`, section A6 (PR #101).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 35. `DB-A6-013` · A6 Wrong or mixed script · fix · stage 10
+## 31. `DB-A6-013` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-te-fw2`. Source: section A6 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `a6_lookalike(text)`.
@@ -2333,63 +2089,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 36. `DB-A6-014` · A6 Wrong or mixed script · fix · stage 10
-
-1. **Disease:** A6 Wrong or mixed script. Pack `ind-te-sangraha-s`. Source: section A6 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
-
-```python
-RULE_ID = "DB-A6-014"
-CODE = "A6"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"tel_Telu"}
-ORIGIN = "ind-te-sangraha-s"  # packs it runs on
-SOURCE = "ind-te-sangraha-s"  # pack whose medicine this came from
-AUTHOR = "shankarpandala"  # PR #92 at 2e61b3b
-import re  # added by Data B: harm_test_indic.py gives every block `re`
-
-_VISARGA_WORDS = {"అంతః", "ఆయుః", "ఉరః", "చేతః", "తపః", "తేజః", "నమః", "పయః", "పునః", "ప్రాతః", "భూః", "మనః", "యశః", "వచః", "శిరః", "శ్రీః", "స్వః"}
-
-def medicine_a6(text):
-    def fix(m):
-        word = m.group(1) + "ః"
-        return m.group(0) if word in _VISARGA_WORDS else m.group(1) + ":"
-    return re.sub(r"([\u0C00-\u0C02\u0C04-\u0C7F]*)ః(?=\n|$| [\"“‘'])", fix, text)
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = medicine_a6  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
-5. **Side effects:** in the author's `medicine.md`, section A6 (PR #92).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 37. `DB-G1-001` · G1 Cut at the vowel sign · fix · stage 10
+## 32. `DB-G1-001` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-bn-fw2`. Source: section G1 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -2435,11 +2139,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 38. `DB-G1-015` · G1 Cut at the vowel sign · fix · stage 10
+## 33. `DB-G1-015` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-bn-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_g1(text)`.
@@ -2489,7 +2193,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 39. `DB-G1-017` · G1 Cut at the vowel sign · fix · stage 10
+## 34. `DB-G1-017` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-bn-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-bn-sangraha-v__pratik-2025__112.md` at `bbb104f` (TSAI ruling 3) of PR #112, section G1; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `medicine_g1(text)`.
@@ -2533,11 +2237,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #112).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 40. `DB-G1-002` · G1 Cut at the vowel sign · fix · stage 10
+## 35. `DB-G1-002` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-gu-fw2`. Source: section G1 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -2592,11 +2296,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 41. `DB-G1-003` · G1 Cut at the vowel sign · fix · stage 10
+## 36. `DB-G1-003` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-gu-fw2`. Source: section G1 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -2647,7 +2351,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 42. `DB-G1-016` · G1 Cut at the vowel sign · fix · stage 10
+## 37. `DB-G1-016` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section G1; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_g1(text)`.
@@ -2707,11 +2411,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 43. `DB-G1-004` · G1 Cut at the vowel sign · fix · stage 10
+## 38. `DB-G1-004` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-hi-hplt`. Source: section G1 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -2758,11 +2462,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 44. `DB-G1-005` · G1 Cut at the vowel sign · fix · stage 10
+## 39. `DB-G1-005` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-kn-fw2`. Source: section G1 of `diagnosis/submissions/ind-kn-fw2/keshavamurali/medicine.md`, PR #47 at `2e62abd`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -2810,14 +2514,14 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 114 (0.00%). Dropped 0 of 114 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #47).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 45. `DB-G1-006` · G1 Cut at the vowel sign · fix · stage 10
+## 40. `DB-G1-006` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-mr-fw2`. Source: section G1 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the removed line is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-006"
@@ -2833,7 +2537,7 @@ import re  # added by Data B: harm_test_indic.py gives every block `re`
 
 def medicine_g1(text):
     text = re.sub(r'([\u0915-\u0939\u0958-\u095F])\s+([\u093E-\u094D\u0962\u0963])', r'\1\2', text)
-    return re.sub(r'([\u0966-\u096F0-9])\s*ः\s*([\u0966-\u096F0-9])', r'\1:\2', text)
+    return text  # Data B removed the visarga-to-colon step here (TSAI, #240 review, 5 Nov: a visarga used as a colon is clean)
 
 
 def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
@@ -2858,11 +2562,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Data B rules owner (Pritish52718), 5 Nov, after Data B removed its visarga-to-colon line: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 46. `DB-G1-007` · G1 Cut at the vowel sign · fix · stage 10
+## 41. `DB-G1-007` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-sa-fw2`. Source: section G1 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -2905,11 +2609,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 47. `DB-G1-008` · G1 Cut at the vowel sign · fix · stage 10
+## 42. `DB-G1-008` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-sa-fw2`. Source: section G1 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `fix_g1(text)`.
@@ -2961,11 +2665,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 48. `DB-G1-013` · G1 Cut at the vowel sign · fix · stage 10
+## 43. `DB-G1-013` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-ta-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -3025,11 +2729,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 49. `DB-G1-009` · G1 Cut at the vowel sign · fix · stage 10
+## 44. `DB-G1-009` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-ta-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -3077,11 +2781,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 50. `DB-G1-010` · G1 Cut at the vowel sign · fix · stage 10
+## 45. `DB-G1-010` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-te-fw2`. Source: section G1 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `g1_orphan_signs(text)`.
@@ -3125,11 +2829,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 51. `DB-G1-014` · G1 Cut at the vowel sign · fix · stage 10
+## 46. `DB-G1-014` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-te-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -3188,11 +2892,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 52. `DB-G2-003` · G2 Lost ZWJ or ZWNJ · keep · stage 10
+## 47. `DB-G2-003` · G2 Lost ZWJ or ZWNJ · keep · stage 10
 
 1. **Disease:** G2 Lost ZWJ or ZWNJ. Pack `ind-sa-fw2`. Source: section G2 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g2(text)`.
@@ -3242,11 +2946,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section G2 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 53. `DB-G4-006` · G4 Over-normalised · fix · stage 10
+## 48. `DB-G4-006` · G4 Over-normalised · fix · stage 10
 
 1. **Disease:** G4 Over-normalised. Pack `ind-bn-sangraha-v`. Source: section G4 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_g4(text)`.
@@ -3311,7 +3015,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G4 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 54. `DB-G4-007` · G4 Over-normalised · fix · stage 10
+## 49. `DB-G4-007` · G4 Over-normalised · fix · stage 10
 
 1. **Disease:** G4 Over-normalised. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section G4; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_g4(text)`.
@@ -3370,216 +3074,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section G4 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 55. `DB-G4-005` · G4 Over-normalised · fix · stage 10
-
-1. **Disease:** G4 Over-normalised. Pack `ind-kn-sangraha-s`. Source: section G4 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
-2. **Medicine:** the author's code, unchanged. Main function: `visarga_to_colon(text)`.
-
-```python
-RULE_ID = "DB-G4-005"
-CODE = "G4"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"kan_Knda"}
-ORIGIN = "ind-kn-sangraha-s"  # packs it runs on
-SOURCE = "ind-kn-sangraha-s"  # pack whose medicine this came from
-AUTHOR = "subramanyanaik"  # PR #94 at 338e2f9
-import re  # added by Data B: harm_test_indic.py gives every block `re`
-
-KN = "ಀ-೿"
-SANSKRIT_VISARGA = {"ಮೂಲತಃ","ಸ್ವತಃ","ಪುನಃ","ಬಹುಶಃ","ಭಾಗಶಃ","ಪ್ರಾಯಶಃ","ಕ್ರಮಶಃ","ಅಕ್ಷರಶಃ","ಸಾಮಾನ್ಯತಃ",
-    "ವಸ್ತುತಃ","ಮುಖ್ಯತಃ","ಸಂಪೂರ್ಣತಃ","ಪ್ರಧಾನತಃ","ಸ್ವಭಾವತಃ","ಸಂಭವತಃ","ಅಂತಃ","ಛಂದಃ","ನಮಃ","ಮನಃ",
-    "ಸಾಧಾರಣತಃ","ತತಃ","ಅತಃ","ದುಃ","ನಿಃ","ಪ್ರಾತಃ","ಶನೈಃ","ಇತಃ","ಸರ್ವತಃ","ಉಭಯತಃ","ಪರತಃ","ಆದಿತಃ",
-    "ಶತಶಃ","ಸಹಸ್ರಶಃ","ಏಕಶಃ"}
-VISARGA_WORD = re.compile(rf"[{KN}]*ಃ(?![{KN}])")                       # word-final only
-SANSKRIT_ADVERB = re.compile(r"[ಅ-ಹೞೠೡ][ತಶ]ಃ$")
-
-def visarga_to_colon(text):
-    def sub(m):
-        w = m.group()
-        return w if w in SANSKRIT_VISARGA or SANSKRIT_ADVERB.search(w) else w[:-1] + ":"
-    return VISARGA_WORD.sub(sub, text)
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = visarga_to_colon  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
-5. **Side effects:** in the author's `medicine.md`, section G4 (PR #94).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
-
-## 56. `DB-G4-001` · G4 Over-normalised · fix · stage 10
-
-1. **Disease:** G4 Over-normalised. Pack `ind-kn-sangraha-v`. Source: section G4 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g4(text)`.
-
-```python
-RULE_ID = "DB-G4-001"
-CODE = "G4"
-ACTION = "fix"
-STAGE = "10"
-STATUS = "CANDIDATE"
-LANGS = {"kan_Knda"}
-ORIGIN = "ind-kn-sangraha-v"  # packs it runs on
-SOURCE = "ind-kn-sangraha-v"  # pack whose medicine this came from
-AUTHOR = "pyru"  # PR #25 at 5eaa16e
-
-"""Find visarga (U+0C83) that stands for a colon.
-
-The Indic NLP normaliser (correct_visarga) rewrites ':' after an Indic letter as visarga, so a dateline
-'ಬೆಂಗಳೂರು:' becomes 'ಬೆಂಗಳೂರುಃ'. Real visarga words are a small closed set: Sanskrit adverbs in -ತಃ / -ಶಃ,
-a few words (ಪುನಃ, ನಮಃ, ...) and compound prefixes (ದುಃಖ, ನಿಃಸಂಶಯ, ಅಂತಃಕರಣ). Lines with a danda (। ॥) are
-treated as Sanskrit verse and left alone. PDF verse often writes the danda as '|' or '||': in a document where a
-visarga is followed by '|', or where two or more lines end in '|', every line with a '|' is left alone too.
-"""
-import re
-
-VIS, VIRAMA, AA_SIGN = chr(0x0C83), chr(0x0CCD), chr(0x0CBE)
-KN_BLOCK = chr(0x0C80) + "-" + chr(0x0CFF)                  # the Kannada block, for character classes
-JOINERS = chr(0x200C) + chr(0x200D)                          # ZWNJ, ZWJ
-KN = re.compile("[" + KN_BLOCK + "]")
-WORD_END = re.compile("[" + KN_BLOCK + JOINERS + "]+$")
-GENUINE_END = re.compile(r"(ತಃ|ಶಃ)$")
-GENUINE = {"ಪುನಃ", "ನಮಃ", "ಮನಃ", "ಅಂತಃ", "ಯಶಃ", "ತೇಜಃ", "ಶಿರಃ", "ಪ್ರಾತಃ", "ಉರಃ", "ಛಂದಃ", "ತಪಃ", "ಪಯಃ",
-           "ವಯಃ", "ನಭಃ", "ಅಧಃ", "ಪುರಃ", "ಬಹಿಃ", "ದುಃ", "ನಿಃ", "ಮುಹುಃ", "ಚಕ್ಷುಃ", "ಆಯುಃ", "ಧನುಃ", "ವಪುಃ",
-           "ಹವಿಃ", "ಜ್ಯೋತಿಃ", "ಶ್ರೇಯಃ", "ಮನಸಃ", "ರಜಃ", "ತಮಃ", "ಸ್ವಾಹಾಃ", "ಓಂನಮಃ", "ಸ್ವತಹಃ"}
-PIPE_AFTER_VIS = re.compile(VIS + r"[ \t]*\|")
-PREFIX = {"ದು", "ನಿ", "ಅಂತ", "ಮನ", "ತೇಜ", "ಪ್ರಾತ", "ಬಹಿ", "ಪುನ", "ಛಂದ", "ತಪ", "ಯಶ", "ಅಧ", "ಶಿರ", "ಸುದು",
-          "ಸರ್ವದು", "ಸುಖದು", "ಮನಸ್ತಾಪದು"}
-
-def colon_visargas(t, verse_min=2, verse_len=160):
-    """Return the offsets of every visarga in t that stands for a colon.
-
-    A line with verse_min or more candidates is taken as Sanskrit verse and skipped when it is short
-    (verse_len characters or less) or when most candidates end like a Sanskrit nominative (-aH after a
-    bare consonant, or -AH). Kannada prose with several colons ends them on vowel signs (ಹೇಳುತ್ತಾರೆಃ).
-    """
-    verse_doc = "।" in t or "॥" in t
-    by_line = {}
-    for i in _candidates(t):
-        start = t.rfind("\n", 0, i) + 1
-        if verse_doc and t[i - 1] != VIRAMA and " " in t[start:i].strip():
-            continue                                    # a document with verse: only first words and ್ಃ
-        by_line.setdefault(start, []).append(i)
-    out = []
-    for start, offs in by_line.items():
-        end = t.find("\n", start); end = len(t) if end < 0 else end
-        if len(offs) >= verse_min:
-            sanskrit = sum(1 for i in offs if t[i - 1] == AA_SIGN or 0x0C95 <= ord(t[i - 1]) <= 0x0CB9)
-            if end - start <= verse_len or sanskrit / len(offs) >= 0.75:
-                continue
-        out.extend(offs)
-    return out
-
-def _candidates(t):
-    out = []
-    pipe_verse = bool(PIPE_AFTER_VIS.search(t)) or sum(1 for l in t.split("\n") if l.rstrip().endswith("|")) >= 2
-    for m in re.finditer(VIS, t):
-        i = m.start()
-        line_start = t.rfind("\n", 0, i) + 1
-        line_end = t.find("\n", i); line_end = len(t) if line_end < 0 else line_end
-        if "।" in t[line_start:line_end] or "॥" in t[line_start:line_end]:
-            continue
-        if pipe_verse and "|" in t[line_start:line_end]:
-            continue                                    # verse with '|' as danda
-        p = t[i - 1] if i else " "
-        if p == VIRAMA:
-            out.append(i); continue
-        if not KN.match(p):
-            continue                                    # orphan visarga: G1, not a colon
-        w = WORD_END.search(t[:i]).group()
-        nx = t[i + 1] if i + 1 < len(t) else " "
-        if KN.match(nx):                                # visarga inside a word
-            if w in PREFIX or w.endswith(("ದು", "ನಿ")) or len(w) < 3:
-                continue
-            out.append(i); continue
-        if GENUINE_END.search(w + VIS) or (w + VIS) in GENUINE:
-            continue
-        out.append(i)
-    return out
-
-def fix(t):
-    """Medicine: turn colon-visarga back into ':'."""
-    pos = set(colon_visargas(t))
-    return "".join(":" if i in pos else c for i, c in enumerate(t))
-
-
-fix_visarga = fix
-DEC_SPLIT = re.compile(r"(?<=[^\d\n.])(\d{1,3})\. (\d{1,3})(?![\d.])")
-DOMAIN_SPLIT = re.compile(r"\b([A-Za-z0-9-]+)\. (com|in|org|net|gov|co|info|edu)\b")
-WWW_SPLIT = re.compile(r"\bwww\. (?=[A-Za-z0-9])")
-
-
-def fix_dot_split(t):
-    """G4: join a dot split by an inserted space inside a decimal, a clock time or a web address (3. 3, 10. 20,
-    newskadaba. com, www. vknews. in). A number at the start of a line (a list item '1. 5 ...') is left alone."""
-    t = WWW_SPLIT.sub("www.", t)
-    for _ in range(3):                                  # karnataka. gov. in needs two passes
-        t = DOMAIN_SPLIT.sub(r"\1.\2", t)
-    return DEC_SPLIT.sub(r"\1.\2", t)
-
-
-def fix_over_normalised(t):
-    """G4: undo the two marks of the earlier normaliser: visarga for a colon, then the dot split."""
-    return fix_dot_split(fix_visarga(t))
-
-
-def medicine_g4(text):
-    """The G4 rule, under the name that the harm tests look for: returns the fixed text."""
-    return fix_over_normalised(text)
-
-
-def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
-    # the author's result in the shared form: str -> fix/keep, None or True -> drop, False -> keep,
-    # ("drop", _) -> drop. An empty result is a drop: nothing of the document is left.
-    if out is None or out is True: return ("drop", text)
-    if out is False: return ("keep", text)
-    if isinstance(out, tuple):
-        if out[0] == "drop": return ("drop", text)
-        out = out[1]
-    if not out.strip(): return ("drop", text)
-    return ("fix" if out != text else "keep", out)
-
-_AUTHOR_RULE = medicine_g4  # added by Data B
-_PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
-
-
-def medicine(doc):  # added by Data B: runs only on the pack it was tested on
-    if doc.get("pack_id") not in _PACKS:
-        return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
-```
-
-3. **Action:** fix. **Runs on:** `ind-kn-sangraha-v` only.
-4. **Harm test (as the author reports it):** on the gold set (103 documents) it changes 0 and drops 0: 0.0%. Pass (at most 1 document or 1%, whichever is larger).
-5. **Side effects:** in the author's `medicine.md`, section G4 (PR #25).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
-
-## 57. `DB-G4-002` · G4 Over-normalised · fix · stage 10
+## 50. `DB-G4-002` · G4 Over-normalised · fix · stage 10
 
 1. **Disease:** G4 Over-normalised. Pack `ind-mr-fw2`. Source: section G4 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g4(text)`.
@@ -3631,11 +3130,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section G4 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 58. `DB-G4-003` · G4 Over-normalised · fix · stage 10
+## 51. `DB-G4-003` · G4 Over-normalised · fix · stage 10
 
 1. **Disease:** G4 Over-normalised. Pack `ind-sa-fw2`. Source: section G4 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g4(text)`.
@@ -3708,11 +3207,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section G4 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 59. `DB-G4-004` · G4 Over-normalised · fix · stage 10
+## 52. `DB-G4-004` · G4 Over-normalised · fix · stage 10
 
 1. **Disease:** G4 Over-normalised. Pack `ind-ta-sangraha-v`. Source: section G4 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g4(text)`.
@@ -3758,11 +3257,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section G4 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 60. `DB-B2-001` · B2 HTML or XML tags · fix · stage 20
+## 53. `DB-B2-001` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-hi-fw2`. Source: section B2 of `diagnosis/submissions/ind-hi-fw2/raj-harit-v2/medicine.md`, PR #8 at `2642f7b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -3814,11 +3313,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 234 (0.00%). Dropped 0 of 234 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #8).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 61. `DB-B2-002` · B2 HTML or XML tags · fix · stage 20
+## 54. `DB-B2-002` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-hi-hplt`. Source: section B2 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -3863,11 +3362,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 62. `DB-B2-008` · B2 HTML or XML tags · fix+drop · stage 20
+## 55. `DB-B2-008` · B2 HTML or XML tags · fix+drop · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-hi-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -3915,11 +3414,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #106).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 63. `DB-B2-009` · B2 HTML or XML tags · fix · stage 20
+## 56. `DB-B2-009` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-hi-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-hi-sangraha-s/tejaswivinnakota/medicine.md`, PR #160 at `88a8a20`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -3980,11 +3479,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #160).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 64. `DB-B2-003` · B2 HTML or XML tags · fix · stage 20
+## 57. `DB-B2-003` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-kn-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `m1_tags(text)`.
@@ -4035,7 +3534,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 65. `DB-B2-006` · B2 HTML or XML tags · fix · stage 20
+## 58. `DB-B2-006` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-kn-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
 2. **Medicine:** the author's code, unchanged. Main function: `strip_tag_text(text)`.
@@ -4087,11 +3586,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 66. `DB-B2-004` · B2 HTML or XML tags · fix · stage 20
+## 59. `DB-B2-004` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-te-fw2`. Source: section B2 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `b2_html(text)`.
@@ -4135,11 +3634,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 67. `DB-B2-007` · B2 HTML or XML tags · fix · stage 20
+## 60. `DB-B2-007` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-te-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-te-sangraha-s/murthyap63-a11y/medicine.md`, PR #71 at `eee57a7`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -4183,11 +3682,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/71#issuecomment-6605633586)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/71#issuecomment-6605633586)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #71).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 68. `DB-B2-005` · B2 HTML or XML tags · fix · stage 20
+## 61. `DB-B2-005` · B2 HTML or XML tags · fix · stage 20
 
 1. **Disease:** B2 HTML or XML tags. Pack `ind-te-sangraha-s`. Source: section B2 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b2(text)`.
@@ -4233,11 +3732,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section B2 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 69. `DB-B3-001` · B3 Ghost chat markers · fix · stage 20
+## 62. `DB-B3-001` · B3 Ghost chat markers · fix · stage 20
 
 1. **Disease:** B3 Ghost chat markers. Pack `ind-kn-sangraha-s`. Source: section B3 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `m2_ghost(text)`.
@@ -4285,7 +3784,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section B3 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 70. `DB-B3-002` · B3 Ghost chat markers · fix+drop · stage 20
+## 63. `DB-B3-002` · B3 Ghost chat markers · fix+drop · stage 20
 
 1. **Disease:** B3 Ghost chat markers. Pack `ind-kn-sangraha-s`. Source: section B3 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
 2. **Medicine:** the author's code, unchanged. Main function: `strip_mt_placeholders(text)`.
@@ -4349,11 +3848,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section B3 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 71. `DB-A3-003` · A3 Mojibake · drop · stage 30
+## 64. `DB-A3-003` · A3 Mojibake · drop · stage 30
 
 1. **Disease:** A3 Mojibake. Pack `ind-bn-fw2`. Source: section A3 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a3(text)`.
@@ -4409,11 +3908,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 72. `DB-A3-004` · A3 Mojibake · drop · stage 30
+## 65. `DB-A3-004` · A3 Mojibake · drop · stage 30
 
 1. **Disease:** A3 Mojibake. Pack `ind-kn-sangraha-v`. Source: section A3 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a3(text)`.
@@ -4495,7 +3994,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section A3 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 73. `DB-A4-001` · A4 Replacement characters · drop · stage 30
+## 66. `DB-A4-001` · A4 Replacement characters · drop · stage 30
 
 1. **Disease:** A4 Replacement characters. Pack `ind-sa-fw2`. Source: section A4 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a4(text)`.
@@ -4538,11 +4037,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section A4 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 74. `DB-A6-015` · A6 Wrong or mixed script · drop · stage 30
+## 67. `DB-A6-015` · A6 Wrong or mixed script · drop · stage 30
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-gu-fw2`. Source: section A6 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
@@ -4595,11 +4094,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 75. `DB-A6-019` · A6 Wrong or mixed script · drop · stage 30
+## 68. `DB-A6-019` · A6 Wrong or mixed script · drop · stage 30
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-hi-sangraha-s`. Source: section A6 of `diagnosis/submissions/ind-hi-sangraha-s/tejaswivinnakota/medicine.md`, PR #160 at `88a8a20`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_a6(text)`.
@@ -4658,11 +4157,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
 5. **Side effects:** in the author's `medicine.md`, section A6 (PR #160).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 76. `DB-B4-008` · B4 Template and code junk in prose · drop · stage 30
+## 69. `DB-B4-008` · B4 Template and code junk in prose · drop · stage 30
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-hi-sangraha-s`. Source: section B4 of `diagnosis/submissions/ind-hi-sangraha-s/tejaswivinnakota/medicine.md`, PR #160 at `88a8a20`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -4713,11 +4212,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #160).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 77. `DB-C2-019` · C2 Repeated lines · drop · stage 30
+## 70. `DB-C2-019` · C2 Repeated lines · drop · stage 30
 
 1. **Disease:** C2 Repeated lines. Pack `ind-hi-sangraha-s`. Source: section C2 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -4762,11 +4261,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #106).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 78. `DB-C3-001` · C3 Truncated document · drop · stage 30
+## 71. `DB-C3-001` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-bn-fw2`. Source: section C3 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -4816,11 +4315,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 79. `DB-C3-002` · C3 Truncated document · drop · stage 30
+## 72. `DB-C3-002` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-hplt`. Source: section C3 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -4866,11 +4365,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 80. `DB-C3-025` · C3 Truncated document · drop · stage 30
+## 73. `DB-C3-025` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-indiccorp`. Source: section C3 of `diagnosis/submissions/ind-hi-indiccorp/ranjani-cse/medicine.md`, PR #11 at `702e783`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -4926,7 +4425,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #11).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 81. `DB-C3-019` · C3 Truncated document · drop · stage 30
+## 74. `DB-C3-019` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-mr-fw2`. Source: section C3 of `diagnosis/submissions/ind-mr-fw2/adinathauti/medicine.md`, PR #114 at `22714bb`.
 2. **Medicine:** the author's code, unchanged. Main function: `should_drop_c3(text)`.
@@ -4971,11 +4470,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 82. `DB-C3-003` · C3 Truncated document · drop · stage 30
+## 75. `DB-C3-003` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-mr-fw2`. Source: section C3 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -5021,11 +4520,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 83. `DB-C3-004` · C3 Truncated document · drop · stage 30
+## 76. `DB-C3-004` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-sa-fw2`. Source: section C3 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -5079,11 +4578,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 84. `DB-C3-020` · C3 Truncated document · drop · stage 30
+## 77. `DB-C3-020` · C3 Truncated document · drop · stage 30
 
 1. **Disease:** C3 Truncated document. Pack `ind-te-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -5126,11 +4625,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 85. `DB-C4-001` · C4 Two documents joined · drop · stage 30
+## 78. `DB-C4-001` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-bn-fw2`. Source: section C4 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -5177,11 +4676,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 86. `DB-C4-002` · C4 Two documents joined · drop · stage 30
+## 79. `DB-C4-002` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-hi-fw2`. Source: section C4 of `diagnosis/submissions/ind-hi-fw2/raj-harit-v2/medicine.md`, PR #8 at `2642f7b`.
 2. **Medicine:** the author's code, unchanged. Main function: `flag_c4_trading_spam(text)`.
@@ -5234,11 +4733,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 234 (0.00%). Dropped 0 of 234 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #8).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 87. `DB-C4-012` · C4 Two documents joined · drop · stage 30
+## 80. `DB-C4-012` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-hi-fw2`. Source: section C4 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -5293,7 +4792,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 88. `DB-C4-003` · C4 Two documents joined · drop · stage 30
+## 81. `DB-C4-003` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-hi-hplt`. Source: section C4 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -5340,11 +4839,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 89. `DB-C4-004` · C4 Two documents joined · drop · stage 30
+## 82. `DB-C4-004` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-hi-hplt`. Source: section C4 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -5391,11 +4890,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 90. `DB-C4-005` · C4 Two documents joined · drop · stage 30
+## 83. `DB-C4-005` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-mr-fw2`. Source: section C4 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -5440,11 +4939,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 91. `DB-C4-006` · C4 Two documents joined · drop · stage 30
+## 84. `DB-C4-006` · C4 Two documents joined · drop · stage 30
 
 1. **Disease:** C4 Two documents joined. Pack `ind-te-fw2`. Source: section C4 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `c4_feed(text)`.
@@ -5489,11 +4988,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 92. `DB-C5-021` · C5 Lists of keywords or links · drop · stage 30
+## 85. `DB-C5-021` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-bn-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-bn-sangraha-v__pratik-2025__112.md` at `bbb104f` (TSAI ruling 3) of PR #112, section C5; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `medicine_c5(text)`.
@@ -5541,11 +5040,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #112).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 93. `DB-C5-016` · C5 Lists of keywords or links · drop · stage 30
+## 86. `DB-C5-016` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-hi-fw2`. Source: section C5 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5600,7 +5099,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 94. `DB-C5-001` · C5 Lists of keywords or links · drop · stage 30
+## 87. `DB-C5-001` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-hi-hplt`. Source: section C5 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5643,11 +5142,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 95. `DB-C5-002` · C5 Lists of keywords or links · drop · stage 30
+## 88. `DB-C5-002` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-hi-hplt`. Source: section C5 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5694,11 +5193,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 96. `DB-C5-003` · C5 Lists of keywords or links · drop · stage 30
+## 89. `DB-C5-003` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-kn-sangraha-v`. Source: section C5 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5756,7 +5255,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 97. `DB-C5-004` · C5 Lists of keywords or links · drop · stage 30
+## 90. `DB-C5-004` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-mr-fw2`. Source: section C5 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5799,11 +5298,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 98. `DB-C5-017` · C5 Lists of keywords or links · drop · stage 30
+## 91. `DB-C5-017` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-ta-sangraha-v`. Source: section C5 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5853,11 +5352,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 99. `DB-C5-005` · C5 Lists of keywords or links · drop · stage 30
+## 92. `DB-C5-005` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-ta-sangraha-v`. Source: section C5 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5902,11 +5401,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 100. `DB-C5-006` · C5 Lists of keywords or links · drop · stage 30
+## 93. `DB-C5-006` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-te-fw2`. Source: section C5 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -5966,11 +5465,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents) and full Telugu real gold set (`telugu_gold.csv`, 50 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 27; 46 documents in the 31 Oct snapshot):
+4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents) and full Telugu real gold set (`telugu_gold.csv`, 50 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 27; 46 documents in the 31 Oct snapshot): Own-pack gold (`ind-te-fw2`, 18 docs): Changed 0 of 18 (0.00%). Dropped 0 of 18 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 101. `DB-C5-018` · C5 Lists of keywords or links · drop · stage 30
+## 94. `DB-C5-018` · C5 Lists of keywords or links · drop · stage 30
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-te-sangraha-v`. Source: section C5 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5_drop(text)`.
@@ -6019,11 +5518,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 102. `DB-D4-001` · D4 Bad machine translation · drop · stage 30
+## 95. `DB-D4-001` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-bn-fw2`. Source: section D4 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6076,11 +5575,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 1. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 1. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 103. `DB-D4-002` · D4 Bad machine translation · drop · stage 30
+## 96. `DB-D4-002` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-bn-fw2`. Source: section D4 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(doc)`.
@@ -6131,11 +5630,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 104. `DB-D4-003` · D4 Bad machine translation · drop · stage 30
+## 97. `DB-D4-003` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-gu-fw2`. Source: section D4 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6188,11 +5687,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 105. `DB-D4-004` · D4 Bad machine translation · drop · stage 30
+## 98. `DB-D4-004` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-gu-fw2`. Source: section D4 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -6243,7 +5742,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 106. `DB-D4-013` · D4 Bad machine translation · drop · stage 30
+## 99. `DB-D4-013` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-hi-fw2`. Source: section D4 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6297,7 +5796,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 107. `DB-D4-005` · D4 Bad machine translation · drop · stage 30
+## 100. `DB-D4-005` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-hi-hplt`. Source: section D4 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6344,11 +5843,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 108. `DB-D4-006` · D4 Bad machine translation · drop · stage 30
+## 101. `DB-D4-006` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-hi-hplt`. Source: section D4 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6396,11 +5895,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 109. `DB-D4-018` · D4 Bad machine translation · drop · stage 30
+## 102. `DB-D4-018` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-hi-sangraha-s`. Source: section D4 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6448,11 +5947,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #106).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 110. `DB-D4-007` · D4 Bad machine translation · drop · stage 30
+## 103. `DB-D4-007` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-kn-sangraha-v`. Source: section D4 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6512,7 +6011,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 111. `DB-D4-008` · D4 Bad machine translation · drop · stage 30
+## 104. `DB-D4-008` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-mr-sangraha-v`. Source: section D4 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_d4(text)`.
@@ -6610,11 +6109,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** See the fresh results above. Positive-case scope: **20 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
+4. **Harm test (as the author reports it):** **PASS — 0 changed, 0 dropped / 88 gold documents (0.00%); ZWJ/ZWNJ audit PASS; normal-form audit PASS.** Positive-case scope: **20 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 112. `DB-D4-009` · D4 Bad machine translation · drop · stage 30
+## 105. `DB-D4-009` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-sa-fw2`. Source: section D4 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6662,11 +6161,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 113. `DB-D4-010` · D4 Bad machine translation · drop · stage 30
+## 106. `DB-D4-010` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-sa-fw2`. Source: section D4 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6721,11 +6220,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 114. `DB-D4-011` · D4 Bad machine translation · drop · stage 30
+## 107. `DB-D4-011` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-te-fw2`. Source: section D4 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `d4_machine_translation(text)`.
@@ -6775,11 +6274,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents), verified sibling pack gold set (`ind-te-sangraha-v_gold.csv`, 18 documents on `main` `ea7b533`, 27 on 2 Nov, 23 on 31 Oct), and Telugu real gold set (`telugu_gold.csv`, 50 documents on 2 Nov and 46 documents on 31 Oct):
+4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents), verified sibling pack gold set (`ind-te-sangraha-v_gold.csv`, 18 documents on `main` `ea7b533`, 27 on 2 Nov, 23 on 31 Oct), and Telugu real gold set (`telugu_gold.csv`, 50 documents on 2 Nov and 46 documents on 31 Oct): Own-pack gold (`ind-te-fw2`, 18 docs): Changed 0 of 18 (0.00%). Dropped 0 of 18 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 115. `DB-D4-012` · D4 Bad machine translation · drop · stage 30
+## 108. `DB-D4-012` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-te-sangraha-s`. Source: section D4 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6831,11 +6330,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 116. `DB-D4-016` · D4 Bad machine translation · drop · stage 30
+## 109. `DB-D4-016` · D4 Bad machine translation · drop · stage 30
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-te-sangraha-v`. Source: section D4 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -6878,11 +6377,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 117. `DB-D5-001` · D5 Translationese · drop · stage 30
+## 110. `DB-D5-001` · D5 Translationese · drop · stage 30
 
 1. **Disease:** D5 Translationese. Pack `ind-te-sangraha-s`. Source: section D5 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d5(text)`.
@@ -6927,11 +6426,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section D5 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 118. `DB-D5-004` · D5 Translationese · drop · stage 30
+## 111. `DB-D5-004` · D5 Translationese · drop · stage 30
 
 1. **Disease:** D5 Translationese. Pack `ind-te-sangraha-v`. Source: section D5 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d5(text)`.
@@ -6974,11 +6473,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section D5 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 119. `DB-F3-001` · F3 Harmful content · drop · stage 30
+## 112. `DB-F3-001` · F3 Harmful content · drop · stage 30
 
 1. **Disease:** F3 Harmful content. Pack `ind-bn-fw2`. Source: section F3 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f3(text)`.
@@ -7028,11 +6527,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section F3 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 120. `DB-F3-002` · F3 Harmful content · drop · stage 30
+## 113. `DB-F3-002` · F3 Harmful content · drop · stage 30
 
 1. **Disease:** F3 Harmful content. Pack `ind-bn-fw2`. Source: section F3 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f3(text)`.
@@ -7081,11 +6580,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section F3 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 121. `DB-F3-004` · F3 Harmful content · drop · stage 30
+## 114. `DB-F3-004` · F3 Harmful content · drop · stage 30
 
 1. **Disease:** F3 Harmful content. Pack `ind-hi-fw2`. Source: section F3 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f3(text)`.
@@ -7136,7 +6635,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section F3 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 122. `DB-F3-005` · F3 Harmful content · drop · stage 30
+## 115. `DB-F3-005` · F3 Harmful content · drop · stage 30
 
 1. **Disease:** F3 Harmful content. Pack `ind-ta-sangraha-v`. Source: section F3 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f3(text)`.
@@ -7179,11 +6678,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section F3 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 123. `DB-F3-003` · F3 Harmful content · drop · stage 30
+## 116. `DB-F3-003` · F3 Harmful content · drop · stage 30
 
 1. **Disease:** F3 Harmful content. Pack `ind-te-fw2`. Source: section F3 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `f3_harmful(text)`.
@@ -7230,11 +6729,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section F3 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 124. `DB-G1-012` · G1 Cut at the vowel sign · drop · stage 30
+## 117. `DB-G1-012` · G1 Cut at the vowel sign · drop · stage 30
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-hi-indiccorp`. Source: section G1 of `diagnosis/submissions/ind-hi-indiccorp/ranjani-cse/medicine.md`, PR #11 at `702e783`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -7286,7 +6785,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #11).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 125. `DB-G1-011` · G1 Cut at the vowel sign · drop · stage 30
+## 118. `DB-G1-011` · G1 Cut at the vowel sign · drop · stage 30
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-kn-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
@@ -7379,7 +6878,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 126. `DB-G3-003` · G3 Indic dropped by an English rule · drop · stage 30
+## 119. `DB-G3-003` · G3 Indic dropped by an English rule · drop · stage 30
 
 1. **Disease:** G3 Indic dropped by an English rule. Pack `ind-hi-indiccorp`. Source: section G3 of `diagnosis/submissions/ind-hi-indiccorp/ranjani-cse/medicine.md`, PR #11 at `702e783`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g3(text)`.
@@ -7435,7 +6934,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section G3 (PR #11).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 127. `DB-G3-001` · G3 Indic dropped by an English rule · drop · stage 30
+## 120. `DB-G3-001` · G3 Indic dropped by an English rule · drop · stage 30
 
 1. **Disease:** G3 Indic dropped by an English rule. Pack `ind-sa-fw2`. Source: section G3 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g3(text)`.
@@ -7490,11 +6989,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** drop. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section G3 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 128. `DB-C1-001` · C1 Boilerplate · fix · stage 35
+## 121. `DB-C1-001` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-bn-fw2`. Source: section C1 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -7566,11 +7065,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 129. `DB-C1-024` · C1 Boilerplate · fix · stage 35
+## 122. `DB-C1-024` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-bn-fw2`. Source: section C1 of `diagnosis/submissions/ind-bn-fw2/aneeshads/medicine.md`, PR #256 at `cab1175`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -7633,11 +7132,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 16279cf5d3db; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 244 documents (ind-bn-fw2 244), medicine.md sha256 16279cf5d3db; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 2 of 244 (0.82%). Dropped 0 of 244 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #256).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 130. `DB-C1-002` · C1 Boilerplate · fix · stage 35
+## 123. `DB-C1-002` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-bn-fw2`. Source: section C1 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -7696,11 +7195,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 131. `DB-C1-023` · C1 Boilerplate · fix · stage 35
+## 124. `DB-C1-023` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-bn-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c1(text)`.
@@ -7759,7 +7258,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 132. `DB-C1-003` · C1 Boilerplate · fix · stage 35
+## 125. `DB-C1-003` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-gu-fw2`. Source: section C1 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -7824,11 +7323,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 133. `DB-C1-004` · C1 Boilerplate · fix · stage 35
+## 126. `DB-C1-004` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-gu-fw2`. Source: section C1 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -7933,7 +7432,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 134. `DB-C1-005` · C1 Boilerplate · fix · stage 35
+## 127. `DB-C1-005` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-hi-fw2`. Source: section C1 of `diagnosis/submissions/ind-hi-fw2/raj-harit-v2/medicine.md`, PR #8 at `2642f7b`.
 2. **Medicine:** the author's code, unchanged. Main function: `strip_c1_lines(text)`.
@@ -8008,11 +7507,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 234 (0.00%). Dropped 0 of 234 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #8).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 135. `DB-C1-017` · C1 Boilerplate · fix · stage 35
+## 128. `DB-C1-017` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-hi-fw2`. Source: section C1 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8080,7 +7579,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 136. `DB-C1-006` · C1 Boilerplate · fix · stage 35
+## 129. `DB-C1-006` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-hi-hplt`. Source: section C1 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8135,11 +7634,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 137. `DB-C1-007` · C1 Boilerplate · fix · stage 35
+## 130. `DB-C1-007` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-hi-hplt`. Source: section C1 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8198,11 +7697,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 138. `DB-C1-018` · C1 Boilerplate · fix · stage 35
+## 131. `DB-C1-018` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-hi-indiccorp`. Source: section C1 of `diagnosis/submissions/ind-hi-indiccorp/rajiviyer/medicine.md`, PR #13 at `b03542e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8253,7 +7752,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #13).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 139. `DB-C1-008` · C1 Boilerplate · fix · stage 35
+## 132. `DB-C1-008` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-kn-fw2`. Source: section C1 of `diagnosis/submissions/ind-kn-fw2/LokeshJatangi/medicine.md`, PR #63 at `aeb79b8`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8329,11 +7828,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #63).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 140. `DB-C1-009` · C1 Boilerplate · fix · stage 35
+## 133. `DB-C1-009` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-kn-fw2`. Source: section C1 of `diagnosis/submissions/ind-kn-fw2/keshavamurali/medicine.md`, PR #47 at `2e62abd`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8429,11 +7928,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 114 (0.00%). Dropped 0 of 114 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #47).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 141. `DB-C1-010` · C1 Boilerplate · fix · stage 35
+## 134. `DB-C1-010` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-kn-sangraha-s`. Source: section C1 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `m4_footer(text)`.
@@ -8485,7 +7984,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 142. `DB-C1-019` · C1 Boilerplate · fix+drop · stage 35
+## 135. `DB-C1-019` · C1 Boilerplate · fix+drop · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-kn-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-kn-sangraha-v/Anusha-raju/medicine.md`, PR #40 at `f3d07a6`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8567,11 +8066,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-kn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #40).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 143. `DB-C1-011` · C1 Boilerplate · fix · stage 35
+## 136. `DB-C1-011` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-kn-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8637,7 +8136,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 144. `DB-C1-020` · C1 Boilerplate · fix · stage 35
+## 137. `DB-C1-020` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-mr-fw2`. Source: section C1 of `diagnosis/submissions/ind-mr-fw2/adinathauti/medicine.md`, PR #114 at `22714bb`.
 2. **Medicine:** the author's code, unchanged. Main function: `fix_c1(text)`.
@@ -8689,11 +8188,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 145. `DB-C1-012` · C1 Boilerplate · fix · stage 35
+## 138. `DB-C1-012` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-mr-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c1(text)`.
@@ -8756,11 +8255,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Verify independently that the nar...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Verify independently that the narrow matcher removes actual C1 boilerplate without deleting article content.
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 146. `DB-C1-013` · C1 Boilerplate · fix · stage 35
+## 139. `DB-C1-013` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-sa-fw2`. Source: section C1 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8818,11 +8317,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 147. `DB-C1-014` · C1 Boilerplate · fix · stage 35
+## 140. `DB-C1-014` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-sa-fw2`. Source: section C1 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -8941,11 +8440,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 148. `DB-C1-021` · C1 Boilerplate · fix · stage 35
+## 141. `DB-C1-021` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-ta-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -9010,11 +8509,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 149. `DB-C1-015` · C1 Boilerplate · fix · stage 35
+## 142. `DB-C1-015` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-ta-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -9064,11 +8563,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 150. `DB-C1-016` · C1 Boilerplate · fix · stage 35
+## 143. `DB-C1-016` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-te-fw2`. Source: section C1 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `c1_boilerplate(text)`.
@@ -9123,11 +8622,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 151. `DB-C1-022` · C1 Boilerplate · fix · stage 35
+## 144. `DB-C1-022` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-te-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -9184,11 +8683,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 152. `DB-C1-025` · C1 Boilerplate · fix · stage 35
+## 145. `DB-C1-025` · C1 Boilerplate · fix · stage 35
 
 1. **Disease:** C1 Boilerplate. Pack `ind-te-sangraha-v`. Source: section C1 of `diagnosis/submissions/ind-te-sangraha-v/oddjoker91/medicine.md`, PR #177 at `85b41e1`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c1(text)`.
@@ -9245,11 +8744,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (as the author reports it):** **PASS.** Official Data B harness on the current real 18-document gold set: changed 0/18 (0%), dropped 0/18, errors 0; ZWJ/ZWNJ and NFC/compatibility-character audits PASS. Gold and harness Git blobs are the same as reported for C6 above. Use the reproduction command above with `--rule C1`. Full-pac...
+4. **Harm test (as the author reports it):** **PASS.** Official Data B harness on the current real 18-document gold set: changed 0/18 (0%), dropped 0/18, errors 0; ZWJ/ZWNJ and NFC/compatibility-character audits PASS. Gold and harness Git blobs are the same as reported for C6 above. Use the reproduction command above with `--rule C1`. Full-pack in-memory check: 20/500 documents change, including 17 C1-labelled documents and three additional candidates requiring review. Eight synthetic scope tests pass (marker variants, mixed-language lines, Telugu-led bullets, line-window limit, empty-output guard and CRLF preservation). The active C6/C1/D3 pipeline is tested together; deferred candidates are excluded.
 5. **Side effects:** in the author's `medicine.md`, section C1 (PR #177).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 153. `DB-C2-001` · C2 Repeated lines · fix · stage 35
+## 146. `DB-C2-001` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-bn-fw2`. Source: section C2 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9301,11 +8800,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 154. `DB-C2-002` · C2 Repeated lines · fix · stage 35
+## 147. `DB-C2-002` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-bn-fw2`. Source: section C2 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9359,11 +8858,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 155. `DB-C2-020` · C2 Repeated lines · fix · stage 35
+## 148. `DB-C2-020` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-bn-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c2(text)`.
@@ -9428,7 +8927,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 156. `DB-C2-023` · C2 Repeated lines · fix · stage 35
+## 149. `DB-C2-023` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-bn-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-bn-sangraha-v__pratik-2025__112.md` at `bbb104f` (TSAI ruling 3) of PR #112, section C2; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `medicine_c2(text)`.
@@ -9482,11 +8981,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #112).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 157. `DB-C2-003` · C2 Repeated lines · fix · stage 35
+## 150. `DB-C2-003` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-gu-fw2`. Source: section C2 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -9541,7 +9040,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 158. `DB-C2-014` · C2 Repeated lines · fix · stage 35
+## 151. `DB-C2-014` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-hi-fw2`. Source: section C2 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9604,7 +9103,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 159. `DB-C2-021` · C2 Repeated lines · fix · stage 35
+## 152. `DB-C2-021` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section C2; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_c2(text)`.
@@ -9665,11 +9164,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 160. `DB-C2-004` · C2 Repeated lines · fix · stage 35
+## 153. `DB-C2-004` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-hi-hplt`. Source: section C2 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9717,11 +9216,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 161. `DB-C2-005` · C2 Repeated lines · fix · stage 35
+## 154. `DB-C2-005` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-hi-hplt`. Source: section C2 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9774,11 +9273,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 162. `DB-C2-006` · C2 Repeated lines · fix · stage 35
+## 155. `DB-C2-006` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-kn-fw2`. Source: section C2 of `diagnosis/submissions/ind-kn-fw2/LokeshJatangi/medicine.md`, PR #63 at `aeb79b8`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9851,11 +9350,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by Mallikarjun (millermuttu): changed 1, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by millermuttu: changed 1, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #63).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 163. `DB-C2-007` · C2 Repeated lines · fix · stage 35
+## 156. `DB-C2-007` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-kn-fw2`. Source: section C2 of `diagnosis/submissions/ind-kn-fw2/keshavamurali/medicine.md`, PR #47 at `2e62abd`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9926,11 +9425,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 114 (0.00%). Dropped 0 of 114 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #47).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 164. `DB-C2-008` · C2 Repeated lines · fix · stage 35
+## 157. `DB-C2-008` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-kn-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -9989,7 +9488,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 165. `DB-C2-015` · C2 Repeated lines · fix · stage 35
+## 158. `DB-C2-015` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-mr-fw2`. Source: section C2 of `diagnosis/submissions/ind-mr-fw2/adinathauti/medicine.md`, PR #114 at `22714bb`.
 2. **Medicine:** the author's code, unchanged. Main function: `fix_c2(text)`.
@@ -10040,11 +9539,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 166. `DB-C2-009` · C2 Repeated lines · fix · stage 35
+## 159. `DB-C2-009` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-mr-fw2`. Source: section C2 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10088,11 +9587,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 167. `DB-C2-022` · C2 Repeated lines · fix · stage 35
+## 160. `DB-C2-022` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-mr-fw2`. Source: section C2 of `diagnosis/submissions/ind-mr-fw2/vpw/medicine.md`, PR #43 at `58280e3`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10153,11 +9652,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #43).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 168. `DB-C2-010` · C2 Repeated lines · fix · stage 35
+## 161. `DB-C2-010` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-mr-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c2(text)`.
@@ -10213,11 +9712,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Verify on C2-positive documents t...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Verify on C2-positive documents that intended duplicates are removed with valid joins.
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 169. `DB-C2-011` · C2 Repeated lines · fix · stage 35
+## 162. `DB-C2-011` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-sa-fw2`. Source: section C2 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10277,11 +9776,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 170. `DB-C2-016` · C2 Repeated lines · fix · stage 35
+## 163. `DB-C2-016` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-ta-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10345,11 +9844,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 171. `DB-C2-012` · C2 Repeated lines · fix · stage 35
+## 164. `DB-C2-012` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-ta-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10393,11 +9892,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 172. `DB-C2-013` · C2 Repeated lines · fix · stage 35
+## 165. `DB-C2-013` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-te-fw2`. Source: section C2 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `c2_repeats(text)`.
@@ -10449,11 +9948,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 173. `DB-C2-017` · C2 Repeated lines · fix · stage 35
+## 166. `DB-C2-017` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-te-sangraha-s`. Source: section C2 of `diagnosis/submissions/ind-te-sangraha-s/murthyap63-a11y/medicine.md`, PR #71 at `eee57a7`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10498,11 +9997,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/71#issuecomment-6605633586)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/71#issuecomment-6605633586)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #71).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 174. `DB-C2-018` · C2 Repeated lines · fix · stage 35
+## 167. `DB-C2-018` · C2 Repeated lines · fix · stage 35
 
 1. **Disease:** C2 Repeated lines. Pack `ind-te-sangraha-v`. Source: section C2 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c2(text)`.
@@ -10557,11 +10056,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section C2 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 175. `DB-C3-005` · C3 Truncated document · fix · stage 35
+## 168. `DB-C3-005` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-bn-fw2`. Source: section C3 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10614,11 +10113,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 176. `DB-C3-006` · C3 Truncated document · fix · stage 35
+## 169. `DB-C3-006` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-fw2`. Source: section C3 of `diagnosis/submissions/ind-hi-fw2/raj-harit-v2/medicine.md`, PR #8 at `2642f7b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10672,11 +10171,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 234 (0.00%). Dropped 0 of 234 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #8).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 177. `DB-C3-015` · C3 Truncated document · fix · stage 35
+## 170. `DB-C3-015` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-fw2`. Source: section C3 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10727,7 +10226,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 178. `DB-C3-022` · C3 Truncated document · fix+drop · stage 35
+## 171. `DB-C3-022` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section C3; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_c3(text)`.
@@ -10782,11 +10281,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 179. `DB-C3-007` · C3 Truncated document · fix · stage 35
+## 172. `DB-C3-007` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-hplt`. Source: section C3 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10836,11 +10335,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 180. `DB-C3-016` · C3 Truncated document · fix+drop · stage 35
+## 173. `DB-C3-016` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-indiccorp`. Source: section C3 of `diagnosis/submissions/ind-hi-indiccorp/rajiviyer/medicine.md`, PR #13 at `b03542e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10900,7 +10399,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #13).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 181. `DB-C3-023` · C3 Truncated document · fix · stage 35
+## 174. `DB-C3-023` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-hi-sangraha-s`. Source: section C3 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -10955,11 +10454,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #106).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 182. `DB-C3-008` · C3 Truncated document · fix+drop · stage 35
+## 175. `DB-C3-008` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-kn-sangraha-s`. Source: section C3 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `m5_dangling_intro(text)`.
@@ -11010,7 +10509,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 183. `DB-C3-017` · C3 Truncated document · fix · stage 35
+## 176. `DB-C3-017` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-kn-sangraha-s`. Source: section C3 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
 2. **Medicine:** the author's code, unchanged. Main function: `trim_dangling_tail(text)`.
@@ -11088,11 +10587,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 184. `DB-C3-018` · C3 Truncated document · fix+drop · stage 35
+## 177. `DB-C3-018` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-kn-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-kn-sangraha-v/Anusha-raju/medicine.md`, PR #40 at `f3d07a6`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11156,11 +10655,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-kn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #40).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 185. `DB-C3-009` · C3 Truncated document · fix · stage 35
+## 178. `DB-C3-009` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-kn-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11224,7 +10723,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 186. `DB-C3-024` · C3 Truncated document · fix+drop · stage 35
+## 179. `DB-C3-024` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-mr-fw2`. Source: section C3 of `diagnosis/submissions/ind-mr-fw2/vpw/medicine.md`, PR #43 at `58280e3`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11274,11 +10773,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #43).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 187. `DB-C3-010` · C3 Truncated document · fix+drop · stage 35
+## 180. `DB-C3-010` · C3 Truncated document · fix+drop · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-mr-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c3(text)`.
@@ -11335,11 +10834,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** See the fresh results above. Positive-case scope: **2 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
+4. **Harm test (as the author reports it):** **PASS — 0 changed, 0 dropped / 88 gold documents (0.00%); ZWJ/ZWNJ audit PASS; normal-form audit PASS.** Positive-case scope: **2 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 188. `DB-C3-011` · C3 Truncated document · fix · stage 35
+## 181. `DB-C3-011` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-sa-fw2`. Source: section C3 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11397,11 +10896,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 189. `DB-C3-021` · C3 Truncated document · fix · stage 35
+## 182. `DB-C3-021` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-ta-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11454,11 +10953,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 190. `DB-C3-012` · C3 Truncated document · fix · stage 35
+## 183. `DB-C3-012` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-ta-sangraha-v`. Source: section C3 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11506,11 +11005,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 191. `DB-C3-013` · C3 Truncated document · fix · stage 35
+## 184. `DB-C3-013` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-te-fw2`. Source: section C3 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `c3_teaser(text)`.
@@ -11556,11 +11055,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 192. `DB-C3-014` · C3 Truncated document · fix · stage 35
+## 185. `DB-C3-014` · C3 Truncated document · fix · stage 35
 
 1. **Disease:** C3 Truncated document. Pack `ind-te-sangraha-s`. Source: section C3 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c3(text)`.
@@ -11608,11 +11107,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section C3 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 193. `DB-C4-015` · C4 Two documents joined · fix · stage 35
+## 186. `DB-C4-015` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-bn-sangraha-v`. Source: section C4 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c4(text)`.
@@ -11662,7 +11161,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 194. `DB-C4-007` · C4 Two documents joined · fix · stage 35
+## 187. `DB-C4-007` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-gu-fw2`. Source: section C4 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -11728,11 +11227,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 195. `DB-C4-016` · C4 Two documents joined · fix+drop · stage 35
+## 188. `DB-C4-016` · C4 Two documents joined · fix+drop · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section C4; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_c4(text)`.
@@ -11785,11 +11284,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 196. `DB-C4-008` · C4 Two documents joined · fix · stage 35
+## 189. `DB-C4-008` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-kn-sangraha-v`. Source: section C4 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -11856,7 +11355,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 197. `DB-C4-009` · C4 Two documents joined · fix+drop · stage 35
+## 190. `DB-C4-009` · C4 Two documents joined · fix+drop · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-mr-sangraha-v`. Source: section C4 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c4(text)`.
@@ -11919,11 +11418,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** See the fresh results above. Positive-case scope: **4 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
+4. **Harm test (as the author reports it):** **PASS — 0 changed, 0 dropped / 88 gold documents (0.00%); ZWJ/ZWNJ audit PASS; normal-form audit PASS.** Positive-case scope: **4 reviewed records excluded individually**; all other records stay unchanged for this rule. Contextual repairs are not covered.
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 198. `DB-C4-010` · C4 Two documents joined · fix · stage 35
+## 191. `DB-C4-010` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-sa-fw2`. Source: section C4 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -11969,11 +11468,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 1, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 1, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 199. `DB-C4-011` · C4 Two documents joined · keep · stage 35
+## 192. `DB-C4-011` · C4 Two documents joined · keep · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-sa-fw2`. Source: section C4 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -12035,11 +11534,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 200. `DB-C4-013` · C4 Two documents joined · fix · stage 35
+## 193. `DB-C4-013` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-ta-sangraha-v`. Source: section C4 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -12090,11 +11589,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 201. `DB-C4-014` · C4 Two documents joined · fix · stage 35
+## 194. `DB-C4-014` · C4 Two documents joined · fix · stage 35
 
 1. **Disease:** C4 Two documents joined. Pack `ind-te-sangraha-v`. Source: section C4 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c4(text)`.
@@ -12137,11 +11636,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section C4 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 202. `DB-C5-007` · C5 Lists of keywords or links · fix · stage 35
+## 195. `DB-C5-007` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-bn-fw2`. Source: section C5 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12203,11 +11702,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 203. `DB-C5-008` · C5 Lists of keywords or links · fix · stage 35
+## 196. `DB-C5-008` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-bn-fw2`. Source: section C5 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12262,11 +11761,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 204. `DB-C5-009` · C5 Lists of keywords or links · fix · stage 35
+## 197. `DB-C5-009` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-gu-fw2`. Source: section C5 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12318,11 +11817,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 205. `DB-C5-010` · C5 Lists of keywords or links · fix · stage 35
+## 198. `DB-C5-010` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-gu-fw2`. Source: section C5 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -12380,7 +11879,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 206. `DB-C5-019` · C5 Lists of keywords or links · fix+drop · stage 35
+## 199. `DB-C5-019` · C5 Lists of keywords or links · fix+drop · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section C5; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_c5(text)`.
@@ -12440,11 +11939,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 207. `DB-C5-011` · C5 Lists of keywords or links · fix · stage 35
+## 200. `DB-C5-011` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-kn-fw2`. Source: section C5 of `diagnosis/submissions/ind-kn-fw2/LokeshJatangi/medicine.md`, PR #63 at `aeb79b8`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12509,11 +12008,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 114 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/63#issuecomment-6631031605)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #63).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 208. `DB-C5-012` · C5 Lists of keywords or links · fix+drop · stage 35
+## 201. `DB-C5-012` · C5 Lists of keywords or links · fix+drop · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-kn-fw2`. Source: section C5 of `diagnosis/submissions/ind-kn-fw2/keshavamurali/medicine.md`, PR #47 at `2e62abd`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12583,11 +12082,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more.
+4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 114 (0.00%). Dropped 0 of 114 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #47).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 209. `DB-C5-020` · C5 Lists of keywords or links · fix · stage 35
+## 202. `DB-C5-020` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-mr-fw2`. Source: section C5 of `diagnosis/submissions/ind-mr-fw2/vpw/medicine.md`, PR #43 at `58280e3`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12654,11 +12153,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #43).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 210. `DB-C5-013` · C5 Lists of keywords or links · fix · stage 35
+## 203. `DB-C5-013` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-mr-sangraha-v`. Source: section C5 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_c5(text)`.
@@ -12710,11 +12209,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). The narrow tag-line rule does not...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). The narrow tag-line rule does not cover every C5 headline-list subtype; test positive-case coverage separately.
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 211. `DB-C5-014` · C5 Lists of keywords or links · fix · stage 35
+## 204. `DB-C5-014` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-sa-fw2`. Source: section C5 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12759,11 +12258,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 212. `DB-C5-015` · C5 Lists of keywords or links · fix · stage 35
+## 205. `DB-C5-015` · C5 Lists of keywords or links · fix · stage 35
 
 1. **Disease:** C5 Lists of keywords or links. Pack `ind-sa-fw2`. Source: section C5 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_c5(text)`.
@@ -12824,11 +12323,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section C5 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 213. `DB-D2-003` · D2 Romanised Indic · fix · stage 35
+## 206. `DB-D2-003` · D2 Romanised Indic · fix · stage 35
 
 1. **Disease:** D2 Romanised Indic. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section D2; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_d2(text)`.
@@ -12891,11 +12390,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section D2 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 214. `DB-D2-001` · D2 Romanised Indic · fix · stage 35
+## 207. `DB-D2-001` · D2 Romanised Indic · fix · stage 35
 
 1. **Disease:** D2 Romanised Indic. Pack `ind-hi-hplt`. Source: section D2 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d2(text)`.
@@ -12949,11 +12448,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section D2 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 215. `DB-D2-002` · D2 Romanised Indic · fix · stage 35
+## 208. `DB-D2-002` · D2 Romanised Indic · fix · stage 35
 
 1. **Disease:** D2 Romanised Indic. Pack `ind-sa-fw2`. Source: section D2 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d2(text)`.
@@ -13002,11 +12501,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section D2 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 216. `DB-D3-001` · D3 Mixed language · keep · stage 35
+## 209. `DB-D3-001` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-bn-fw2`. Source: section D3 of `diagnosis/submissions/ind-bn-fw2/AditeyaAItronics/medicine.md`, PR #64 at `840d13d`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13054,11 +12553,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/64#issuecomment-6631029184)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #64).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 217. `DB-D3-002` · D3 Mixed language · keep · stage 35
+## 210. `DB-D3-002` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-bn-fw2`. Source: section D3 of `diagnosis/submissions/ind-bn-fw2/sohamniyogi/medicine.md`, PR #138 at `8a50c48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13102,11 +12601,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-bn-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 244 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/138#issuecomment-6631028647)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #138).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 218. `DB-D3-021` · D3 Mixed language · keep · stage 35
+## 211. `DB-D3-021` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-bn-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-bn-sangraha-v__pratik-2025__112.md` at `bbb104f` (TSAI ruling 3) of PR #112, section D3; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `medicine_d3(text)`.
@@ -13152,11 +12651,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-bn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (142 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6605452413). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/112#issuecomment-6631062594
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #112).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 219. `DB-D3-003` · D3 Mixed language · keep · stage 35
+## 212. `DB-D3-003` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-gu-fw2`. Source: section D3 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13204,11 +12703,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 220. `DB-D3-004` · D3 Mixed language · fix · stage 35
+## 213. `DB-D3-004` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-gu-fw2`. Source: section D3 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -13216,7 +12715,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-004"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"guj_Gujr"}
@@ -13253,15 +12752,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
+3. **Action:** keep. **Runs on:** `ind-gu-fw2` only.
 4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 80 documents) by the author (vedang-patel-10), in the author's own words, not the tool output: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/blob/8723634/diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 221. `DB-D3-005` · D3 Mixed language · fix · stage 35
+## 214. `DB-D3-005` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-hi-fw2`. Source: section D3 of `diagnosis/submissions/ind-hi-fw2/raj-harit-v2/medicine.md`, PR #8 at `2642f7b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13269,7 +12768,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-005"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"hin_Deva"}
@@ -13311,15 +12810,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-hi-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more.
+3. **Action:** keep. **Runs on:** `ind-hi-fw2` only.
+4. **Harm test (as the author reports it):** gold set of 234 documents (ind-hi-fw2 234), medicine.md sha256 d98646f497e0; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 234 (0.00%). Dropped 0 of 234 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #8).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 222. `DB-D3-015` · D3 Mixed language · fix · stage 35
+## 215. `DB-D3-015` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-hi-fw2`. Source: section D3 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13327,7 +12826,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-015"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"hin_Deva"}
@@ -13363,15 +12862,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-hi-fw2` only.
+3. **Action:** keep. **Runs on:** `ind-hi-fw2` only.
 4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 234 documents) by Data B rules owner (Pritish52718): changed 1, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 223. `DB-D3-020` · D3 Mixed language · fix · stage 35
+## 216. `DB-D3-020` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section D3; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_d3(text)`.
@@ -13379,7 +12878,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-020"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"hin_Deva"}
@@ -13410,15 +12909,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+3. **Action:** keep. **Runs on:** `ind-hi-hplt` only.
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 224. `DB-D3-006` · D3 Mixed language · keep · stage 35
+## 217. `DB-D3-006` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-hi-hplt`. Source: section D3 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13466,11 +12965,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 225. `DB-D3-007` · D3 Mixed language · keep · stage 35
+## 218. `DB-D3-007` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-hi-hplt`. Source: section D3 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13515,11 +13014,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 226. `DB-D3-008` · D3 Mixed language · keep · stage 35
+## 219. `DB-D3-008` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-kn-sangraha-s`. Source: section D3 of `diagnosis/submissions/ind-kn-sangraha-s/millermuttu/medicine.md`, PR #104 at `5dfac48`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13571,7 +13070,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #104).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 227. `DB-D3-016` · D3 Mixed language · fix · stage 35
+## 220. `DB-D3-016` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-kn-sangraha-v`. Source: section D3 of `diagnosis/submissions/ind-kn-sangraha-v/Anusha-raju/medicine.md`, PR #40 at `f3d07a6`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13579,7 +13078,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-016"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"kan_Knda"}
@@ -13627,15 +13126,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-kn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
+3. **Action:** keep. **Runs on:** `ind-kn-sangraha-v` only.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #40).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 228. `DB-D3-009` · D3 Mixed language · keep · stage 35
+## 221. `DB-D3-009` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-kn-sangraha-v`. Source: section D3 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13688,7 +13187,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 229. `DB-D3-017` · D3 Mixed language · keep · stage 35
+## 222. `DB-D3-017` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-mr-fw2`. Source: section D3 of `diagnosis/submissions/ind-mr-fw2/adinathauti/medicine.md`, PR #114 at `22714bb`.
 2. **Medicine:** the author's code, unchanged. Main function: `has_d3(text)`.
@@ -13733,11 +13232,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/114#issuecomment-6605632895)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #114).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 230. `DB-D3-010` · D3 Mixed language · fix · stage 35
+## 223. `DB-D3-010` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-mr-fw2`. Source: section D3 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13745,7 +13244,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-010"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"mar_Deva"}
@@ -13776,15 +13275,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+3. **Action:** keep. **Runs on:** `ind-mr-fw2` only.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 231. `DB-D3-022` · D3 Mixed language · keep · stage 35
+## 224. `DB-D3-022` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-mr-sangraha-v`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-mr-sangraha-v__avnishbm__46.md` at `bbb104f` (TSAI ruling 3) of PR #46, section D3; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `preserve_contextual_mixing(text)`.
@@ -13827,11 +13326,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (88 documents) by the author (PR #46; pinned gold = today's 88 doc_ids): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6604072712). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (88 documents) by the author (PR #46; pinned gold = today's 88 doc_ids): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6604072712). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/46#issuecomment-6633827892
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #46).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 232. `DB-D3-011` · D3 Mixed language · keep · stage 35
+## 225. `DB-D3-011` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-mr-sangraha-v`. Source: section D3 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_d3(text)`.
@@ -13874,11 +13373,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Because this is an intentional no...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Because this is an intentional no-op, its PASS does not show that any D3-only `fix` records were corrected.
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 233. `DB-D3-012` · D3 Mixed language · fix · stage 35
+## 226. `DB-D3-012` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-sa-fw2`. Source: section D3 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -13886,7 +13385,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-012"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"san_Deva"}
@@ -13938,15 +13437,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+3. **Action:** keep. **Runs on:** `ind-sa-fw2` only.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 234. `DB-D3-013` · D3 Mixed language · keep · stage 35
+## 227. `DB-D3-013` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-sa-fw2`. Source: section D3 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -14034,11 +13533,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 235. `DB-D3-018` · D3 Mixed language · fix · stage 35
+## 228. `DB-D3-018` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-ta-sangraha-v`. Source: section D3 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -14046,7 +13545,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-018"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"tam_Taml"}
@@ -14077,15 +13576,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+3. **Action:** keep. **Runs on:** `ind-ta-sangraha-v` only.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 236. `DB-D3-014` · D3 Mixed language · keep · stage 35
+## 229. `DB-D3-014` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-te-fw2`. Source: section D3 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -14128,11 +13627,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents) and full Telugu real gold set (`telugu_gold.csv`, 50 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 27; 46 documents in the 31 Oct snapshot):
+4. **Harm test (as the author reports it):** own-pack real gold set (`ind-te-fw2_gold.csv`, 18 documents) and full Telugu real gold set (`telugu_gold.csv`, 50 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 27; 46 documents in the 31 Oct snapshot): Own-pack gold (`ind-te-fw2`, 18 docs): Changed 0 of 18 (0.00%). Dropped 0 of 18 (0.00%). **PASS**
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 237. `DB-D3-019` · D3 Mixed language · fix · stage 35
+## 230. `DB-D3-019` · D3 Mixed language · keep · stage 35
 
 1. **Disease:** D3 Mixed language. Pack `ind-te-sangraha-v`. Source: section D3 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d3(text)`.
@@ -14140,7 +13639,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```python
 RULE_ID = "DB-D3-019"
 CODE = "D3"
-ACTION = "fix"
+ACTION = "keep"
 STAGE = "35"
 STATUS = "CANDIDATE"
 LANGS = {"tel_Telu"}
@@ -14171,15 +13670,15 @@ _PACKS = frozenset(ORIGIN.split(", "))  # added by Data B
 def medicine(doc):  # added by Data B: runs only on the pack it was tested on
     if doc.get("pack_id") not in _PACKS:
         return ("keep", doc["text"])
-    return _std(_AUTHOR_RULE(doc["text"]), doc["text"])
+    return ("keep", doc["text"])  # added by Data B: a keep rule is a label only; the text is never changed or dropped
 ```
 
-3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+3. **Action:** keep. **Runs on:** `ind-te-sangraha-v` only.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
 5. **Side effects:** in the author's `medicine.md`, section D3 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 238. `DB-D4-019` · D4 Bad machine translation · fix · stage 35
+## 231. `DB-D4-019` · D4 Bad machine translation · fix · stage 35
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-hi-sangraha-s`. Source: section D4 of `diagnosis/submissions/ind-hi-sangraha-s/tejaswivinnakota/medicine.md`, PR #160 at `88a8a20`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -14247,11 +13746,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/160#issuecomment-6624130530)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #160).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 239. `DB-D4-014` · D4 Bad machine translation · fix · stage 35
+## 232. `DB-D4-014` · D4 Bad machine translation · fix · stage 35
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-kn-sangraha-s`. Source: section D4 of `diagnosis/submissions/ind-kn-sangraha-s/subramanyanaik/medicine.md`, PR #94 at `338e2f9`.
 2. **Medicine:** the author's code, unchanged. Main function: `strip_empty_brackets(text)`.
@@ -14297,11 +13796,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 27 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/94#issuecomment-6600887456)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #94).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 240. `DB-D4-015` · D4 Bad machine translation · fix · stage 35
+## 233. `DB-D4-015` · D4 Bad machine translation · fix · stage 35
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-kn-sangraha-v`. Source: section D4 of `diagnosis/submissions/ind-kn-sangraha-v/Anusha-raju/medicine.md`, PR #40 at `f3d07a6`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -14364,11 +13863,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 103 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/40#issuecomment-6600888144)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #40).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 241. `DB-D4-017` · D4 Bad machine translation · fix · stage 35
+## 234. `DB-D4-017` · D4 Bad machine translation · fix · stage 35
 
 1. **Disease:** D4 Bad machine translation. Pack `ind-ta-sangraha-v`. Source: section D4 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d4(text)`.
@@ -14421,11 +13920,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section D4 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 242. `DB-D5-003` · D5 Translationese · fix · stage 35
+## 235. `DB-D5-003` · D5 Translationese · fix · stage 35
 
 1. **Disease:** D5 Translationese. Pack `ind-hi-fw2`. Source: section D5 of `diagnosis/submissions/ind-hi-fw2/revantg/medicine.md`, PR #23 at `f1f39f5`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d5(text)`.
@@ -14478,7 +13977,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section D5 (PR #23).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 243. `DB-D5-002` · D5 Translationese · keep · stage 35
+## 236. `DB-D5-002` · D5 Translationese · keep · stage 35
 
 1. **Disease:** D5 Translationese. Pack `ind-hi-hplt`. Source: section D5 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_d5(text)`.
@@ -14521,11 +14020,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section D5 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 244. `DB-G3-002` · G3 Indic dropped by an English rule · fix · stage 35
+## 237. `DB-G3-002` · G3 Indic dropped by an English rule · fix · stage 35
 
 1. **Disease:** G3 Indic dropped by an English rule. Pack `ind-te-sangraha-s`. Source: section G3 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_g3(text)`.
@@ -14568,11 +14067,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section G3 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 245. `DB-H3-001` · H3 The same content in another source or language · fix · stage 35
+## 238. `DB-H3-001` · H3 The same content in another source or language · fix · stage 35
 
 1. **Disease:** H3 The same content in another source or language. Pack `ind-sa-fw2`. Source: section H3 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_h3(text)`.
@@ -14630,11 +14129,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section H3 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 246. `DB-H3-002` · H3 The same content in another source or language · keep · stage 35
+## 239. `DB-H3-002` · H3 The same content in another source or language · keep · stage 35
 
 1. **Disease:** H3 The same content in another source or language. Pack `ind-sa-fw2`. Source: section H3 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_h3(text)`.
@@ -14688,11 +14187,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** keep. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section H3 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 247. `DB-B4-009` · B4 Template and code junk in prose · fix · stage 40
+## 240. `DB-B4-009` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-bn-sangraha-v`. Source: section B4 of `diagnosis/submissions/ind-bn-sangraha-v/aneeshads/medicine.md`, PR #30 at `55d181e`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_b4(text)`.
@@ -14742,7 +14241,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #30).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 248. `DB-B4-001` · B4 Template and code junk in prose · fix · stage 40
+## 241. `DB-B4-001` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-gu-fw2`. Source: section B4 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -14793,7 +14292,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 249. `DB-B4-010` · B4 Template and code junk in prose · fix · stage 40
+## 242. `DB-B4-010` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-hi-sangraha-s`. Source: section B4 of `diagnosis/submissions/ind-hi-sangraha-s/rjvim/medicine.md`, PR #106 at `c34130b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -14839,11 +14338,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/106#issuecomment-6624130119)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #106).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 250. `DB-B4-002` · B4 Template and code junk in prose · fix · stage 40
+## 243. `DB-B4-002` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-kn-sangraha-v`. Source: section B4 of `diagnosis/submissions/ind-kn-sangraha-v/pyru/medicine.md`, PR #25 at `5eaa16e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -14899,7 +14398,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #25).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 251. `DB-B4-011` · B4 Template and code junk in prose · fix · stage 40
+## 244. `DB-B4-011` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-mr-fw2`. Source: section B4 of `diagnosis/submissions/ind-mr-fw2/vpw/medicine.md`, PR #43 at `58280e3`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -14954,11 +14453,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/43#issuecomment-6624476673)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #43).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 252. `DB-B4-003` · B4 Template and code junk in prose · fix · stage 40
+## 245. `DB-B4-003` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-mr-sangraha-v`. Source: section B4 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_b4(text)`.
@@ -15004,11 +14503,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Check B4-positive prose separatel...
+4. **Harm test (as the author reports it):** **PASS** — **0 changed, 0 dropped / 88 gold documents (0.00%)**; gold limit: 1 changed/dropped document. **ZWJ/ZWNJ audit: PASS** (0 affected documents with changed joiner counts). **Normal-form audit: PASS** (0 affected documents left NFC or lost a compatibility character). Check B4-positive prose separately so valid technical escape sequences remain intact.
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 253. `DB-B4-004` · B4 Template and code junk in prose · fix · stage 40
+## 246. `DB-B4-004` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-sa-fw2`. Source: section B4 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -15057,11 +14556,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 254. `DB-B4-007` · B4 Template and code junk in prose · fix · stage 40
+## 247. `DB-B4-007` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-ta-sangraha-v`. Source: section B4 of `diagnosis/submissions/ind-ta-sangraha-v/Hemaaaa04/medicine.md`, PR #57 at `27b1be2`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -15112,11 +14611,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/57#issuecomment-6605631700)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #57).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 255. `DB-B4-005` · B4 Template and code junk in prose · fix · stage 40
+## 248. `DB-B4-005` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-ta-sangraha-v`. Source: section B4 of `diagnosis/submissions/ind-ta-sangraha-v/abinesh1/medicine.md`, PR #101 at `f956e35`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -15159,11 +14658,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-ta-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 141 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/101#issuecomment-6631035406)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #101).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 256. `DB-B4-006` · B4 Template and code junk in prose · fix · stage 40
+## 249. `DB-B4-006` · B4 Template and code junk in prose · fix · stage 40
 
 1. **Disease:** B4 Template and code junk in prose. Pack `ind-te-sangraha-s`. Source: section B4 of `diagnosis/submissions/ind-te-sangraha-s/shankarpandala/medicine.md`, PR #92 at `2e61b3b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
@@ -15210,11 +14709,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-s` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by Shankar (shankarpandala): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `195f4ff`, 24 documents) by shankarpandala: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/92#issuecomment-6630255773)
 5. **Side effects:** in the author's `medicine.md`, section B4 (PR #92).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 257. `DB-F1-001` · F1 Personal data · fix · stage 40
+## 250. `DB-F1-001` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-gu-fw2`. Source: section F1 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15269,11 +14768,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 258. `DB-F1-002` · F1 Personal data · fix · stage 40
+## 251. `DB-F1-002` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-gu-fw2`. Source: section F1 of `diagnosis/submissions/ind-gu-fw2/vedang-patel-10/medicine.md`, PR #91 at `8723634`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine(text)`.
@@ -15327,7 +14826,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #91).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 259. `DB-F1-012` · F1 Personal data · fix · stage 40
+## 252. `DB-F1-012` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-hi-hplt`. Source: Data B's rewrite `teams/02-data-b/indic_rules/rewrites/ind-hi-hplt__gmrammohan15__70.md` at `f53185d` (TSAI ruling 3) of PR #70, section F1; the author's OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534.
 2. **Medicine:** the rewrite's code (what Data B changed is marked in it, and listed at the top of the rewrite). Main function: `cure_f1(text)`.
@@ -15382,11 +14881,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
+4. **Harm test (re-run on today's gold):** Data B's rewrite, run on today's gold set (62 documents) by Data B rules owner (Pritish52718): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6605450420). Author OK: https://github.com/theschoolofai/era-v5-lab/pull/70#issuecomment-6620889534
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #70).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 260. `DB-F1-003` · F1 Personal data · fix · stage 40
+## 253. `DB-F1-003` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-hi-hplt`. Source: section F1 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15434,11 +14933,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/170#issuecomment-6631030381)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #170).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 261. `DB-F1-004` · F1 Personal data · fix · stage 40
+## 254. `DB-F1-004` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-hi-hplt`. Source: section F1 of `diagnosis/submissions/ind-hi-hplt/therahulbhati/medicine.md`, PR #24 at `37652bf`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15493,11 +14992,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-hi-hplt` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 62 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/24#issuecomment-6631031034)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #24).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 262. `DB-F1-011` · F1 Personal data · fix · stage 40
+## 255. `DB-F1-011` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-hi-indiccorp`. Source: section F1 of `diagnosis/submissions/ind-hi-indiccorp/rajiviyer/medicine.md`, PR #13 at `b03542e`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15551,7 +15050,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #13).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 263. `DB-F1-006` · F1 Personal data · fix · stage 40
+## 256. `DB-F1-006` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-mr-fw2`. Source: section F1 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15595,11 +15094,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-mr-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 142 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/50#issuecomment-6631033972)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #50).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 264. `DB-F1-007` · F1 Personal data · fix+drop · stage 40
+## 257. `DB-F1-007` · F1 Personal data · fix+drop · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-mr-sangraha-v`. Source: section F1 of `diagnosis/submissions/ind-mr-sangraha-v/patilvijay23/medicine.md`, PR #19 at `07d884f`.
 2. **Medicine:** the author's code, unchanged. Main function: `cure_f1(text)`.
@@ -15743,11 +15242,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix+drop. **Runs on:** `ind-mr-sangraha-v` only.
-4. **Harm test (as the author reports it):** See the fresh results above. Positive-case scope: **12 reviewed records excluded individually**; no other pack records changed. The redaction helper alone changed **0/12** reviewed F1 records, so it has no demonstrated repair coverage on those cases. Synthetic checks cover supported fields; they do ...
+4. **Harm test (as the author reports it):** **PASS — 0 changed, 0 dropped / 88 gold documents (0.00%); ZWJ/ZWNJ audit PASS; normal-form audit PASS.** Positive-case scope: **12 reviewed records excluded individually**; no other pack records changed. The redaction helper alone changed **0/12** reviewed F1 records, so it has no demonstrated repair coverage on those cases. Synthetic checks cover supported fields; they do not establish real-data recall.
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #19).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
 
-## 265. `DB-F1-008` · F1 Personal data · fix · stage 40
+## 258. `DB-F1-008` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-sa-fw2`. Source: section F1 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
 2. **Medicine:** the author's code, unchanged. Main function: `medicine_f1(text)`.
@@ -15794,11 +15293,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with Mallikarjun's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 266. `DB-F1-009` · F1 Personal data · fix · stage 40
+## 259. `DB-F1-009` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-sa-fw2`. Source: section F1 of `diagnosis/submissions/ind-sa-fw2/swatibansal/medicine.md`, PR #80 at `7af8541`.
 2. **Medicine:** the author's code, unchanged. Main function: `fix_f1(text)`.
@@ -15846,11 +15345,11 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by Mallikarjun (millermuttu): changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 71 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/80#issuecomment-6631034640)
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #80).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
-## 267. `DB-F1-010` · F1 Personal data · fix · stage 40
+## 260. `DB-F1-010` · F1 Personal data · fix · stage 40
 
 1. **Disease:** F1 Personal data. Pack `ind-te-fw2`. Source: section F1 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
 2. **Medicine:** the author's code, unchanged. Main function: `f1_pii(text)`.
@@ -15894,6 +15393,6 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23):
+4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
 5. **Side effects:** in the author's `medicine.md`, section F1 (PR #3).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.

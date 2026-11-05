@@ -6,7 +6,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 
 | group | medicines |
 |---|---|
-| ready: passes on its own pack's gold set, at today's size | 250 |
+| ready: passes on its own pack's gold set, at today's size | 243 |
 | gold set empty, not testable | 27 |
 | ready: Data B's rewrite, OK'd by the author | 17 |
 | flag only: a note, not a rule (TSAI ruling 4) | 16 |
@@ -15,10 +15,11 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | in words only: no **Disease:** line and no python block (the harm tool cannot read it) | 10 |
 | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone | 6 |
 | rewrite by Data B: needs lists from the whole pack or the metadata, so it cannot run on a document alone | 5 |
-| held: adds a ZWJ by design; for spec v1 the Gate 2 joiner check stays, so it waits for v2 (TSAI, G2 4 Nov 14:20 IST) | 2 |
+| held: its only job is to turn a visarga used as a colon into ':'; TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script, so the rule waits for the next spec | 4 |
+| held: adds a ZWJ by design; for spec v1 the Gate 2 joiner check stays, so it waits for v2 (TSAI, G2 4 Nov 14:20 IST) | 3 |
+| held: it turns ':' into a visarga (Sanskrit); TSAI (#240, 5 Nov): in spec v1 no rule converts between a visarga and a colon, in either direction, so the rule waits for the next spec (a colon-to-visarga fix in Sanskrit can come back with its own harm test) | 2 |
 | not a rule: the author keeps D3 as a candidate (`_candidate_d3`), with no rule in code | 1 |
 | not a rule: the author's sheet says "Medicine: none"; cure_d3 was a tested candidate she rejected | 1 |
-| held: passes on today's gold, but it adds a ZWJ on purpose, so the joiner check flags every document it changes; held for Data A's decision | 1 |
 | rewrite by Data B fails on today's gold set of its pack | 1 |
 | held for spec v2: adds a ZWJ by design, and for v1 the Gate 2 joiner check stays (TSAI, G2 4 Nov) | 1 |
 | fails on today's gold set of its pack (re-run on 3 to 5 Nov) | 1 |
@@ -26,6 +27,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | held: untested: it needs the Itihasa test sentences (ITIHASA_TEST_SN), benchmark text that the eval firewall rule keeps out of the repo (G 4 Nov 12:19 IST); waits for the next spec | 1 |
 | not a rule: the author's G2 fixes the extraction step, not the text, so it has no rule in code | 1 |
 | held: untested: it needs the FLORES-200 / IN22 / Itihasa benchmark files, so its gold run cannot fire; waits for the next spec (TSAI, G2 5 Nov 08:32 IST) | 1 |
+| held: its only job is to turn ஃ into ':' (Unicode names ஃ the Tamil visarga); TSAI (#240, 5 Nov): in spec v1 no rule converts between a visarga and a colon, in either direction, so the rule waits for the next spec | 1 |
 | held: C6 is a new code; TSAI (G2 5 Nov) puts it in spec v1 once the code owner approves #177 after the label fixes | 1 |
 | held: D3 is a label only (TSAI, 31 Oct); the code-owner review asks to move it to a candidate for spec v2 | 1 |
 
@@ -39,21 +41,21 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-hi-fw2 | 234 | 14 | 0 | 0 |
 | ind-hi-hplt | 62 | 33 | 16 | 0 |
 | ind-hi-indiccorp | 425 | 6 | 1 | 0 |
-| ind-hi-sangraha-s | 24 | 10 | 0 | 0 |
+| ind-hi-sangraha-s | 24 | 9 | 1 | 0 |
 | ind-hi-sangraha-v | 0 | 0 | 8 | 0 |
 | ind-kn-fw2 | 114 | 7 | 2 | 0 |
-| ind-kn-sangraha-s | 27 | 13 | 0 | 0 |
-| ind-kn-sangraha-v | 103 | 16 | 0 | 0 |
+| ind-kn-sangraha-s | 27 | 12 | 1 | 0 |
+| ind-kn-sangraha-v | 103 | 15 | 1 | 0 |
 | ind-ml-fw2 | 0 | 0 | 3 | 0 |
 | ind-mr-fw2 | 142 | 20 | 8 | 0 |
 | ind-mr-sangraha-v | 88 | 13 | 7 | 0 |
 | ind-or-fw2 | 0 | 0 | 11 | 0 |
-| ind-sa-fw2 | 71 | 29 | 3 | 0 |
+| ind-sa-fw2 | 71 | 27 | 5 | 0 |
 | ind-ta-fw2 | 0 | 0 | 8 | 0 |
 | ind-ta-sangraha-s | 0 | 0 | 9 | 0 |
-| ind-ta-sangraha-v | 141 | 18 | 4 | 0 |
+| ind-ta-sangraha-v | 141 | 17 | 5 | 0 |
 | ind-te-fw2 | 18 | 12 | 4 | 0 |
-| ind-te-sangraha-s | 24 | 9 | 6 | 0 |
+| ind-te-sangraha-s | 24 | 8 | 7 | 0 |
 | ind-te-sangraha-v | 18 | 11 | 2 | 0 |
 
 ## Every medicine
@@ -95,7 +97,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-bn-sangraha-v | aneeshads | #30 | C4 | Two documents joined | ready: passes on its own pack's gold set, at today's size | `DB-C4-015` |
 | ind-bn-sangraha-v | aneeshads | #30 | D3 | Mixed language | not a rule: the author's sheet says "Medicine: none"; cure_d3 was a tested candidate she rejected |  |
 | ind-bn-sangraha-v | aneeshads | #30 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-015` |
-| ind-bn-sangraha-v | aneeshads | #30 | G2 | Lost ZWJ or ZWNJ | held: passes on today's gold, but it adds a ZWJ on purpose, so the joiner check flags every document it changes; held for Data A's decision |  |
+| ind-bn-sangraha-v | aneeshads | #30 | G2 | Lost ZWJ or ZWNJ | held: adds a ZWJ by design; for spec v1 the Gate 2 joiner check stays, so it waits for v2 (TSAI, G2 4 Nov 14:20 IST) |  |
 | ind-bn-sangraha-v | aneeshads | #30 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-006` |
 | ind-bn-sangraha-v | pratik-2025 | #112 | A2 | Control characters | ready: Data B's rewrite, OK'd by the author | `DB-A2-001` |
 | ind-bn-sangraha-v | pratik-2025 | #112 | A3 | Mojibake | no **Disease:** line and no python block (the harm tool cannot read it) |  |
@@ -200,7 +202,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-hi-indiccorp | ranjani-cse | #11 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-025` |
 | ind-hi-indiccorp | ranjani-cse | #11 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-012` |
 | ind-hi-indiccorp | ranjani-cse | #11 | G3 | Indic dropped by an English rule | ready: passes on its own pack's gold set, at today's size | `DB-G3-003` |
-| ind-hi-sangraha-s | rjvim | #106 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-018` |
+| ind-hi-sangraha-s | rjvim | #106 | A6 | Wrong or mixed script | held: its only job is to turn a visarga used as a colon into ':'; TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script, so the rule waits for the next spec |  |
 | ind-hi-sangraha-s | rjvim | #106 | B2 | HTML or XML tags | ready: passes on its own pack's gold set, at today's size | `DB-B2-008` |
 | ind-hi-sangraha-s | rjvim | #106 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-010` |
 | ind-hi-sangraha-s | rjvim | #106 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-019` |
@@ -239,7 +241,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-kn-sangraha-s | subramanyanaik | #94 | B3 | Ghost chat markers | ready: passes on its own pack's gold set, at today's size | `DB-B3-002` |
 | ind-kn-sangraha-s | subramanyanaik | #94 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-017` |
 | ind-kn-sangraha-s | subramanyanaik | #94 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-014` |
-| ind-kn-sangraha-s | subramanyanaik | #94 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-005` |
+| ind-kn-sangraha-s | subramanyanaik | #94 | G4 | Over-normalised | held: its only job is to turn a visarga used as a colon into ':'; TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script, so the rule waits for the next spec |  |
 | ind-kn-sangraha-v | Anusha-raju | #40 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-019` |
 | ind-kn-sangraha-v | Anusha-raju | #40 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-018` |
 | ind-kn-sangraha-v | Anusha-raju | #40 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-016` |
@@ -255,7 +257,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-kn-sangraha-v | pyru | #25 | D3 | Mixed language | ready: passes on its own pack's gold set, at today's size | `DB-D3-009` |
 | ind-kn-sangraha-v | pyru | #25 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-007` |
 | ind-kn-sangraha-v | pyru | #25 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-011` |
-| ind-kn-sangraha-v | pyru | #25 | G4 | Over-normalised | ready: passes on its own pack's gold set, at today's size | `DB-G4-001` |
+| ind-kn-sangraha-v | pyru | #25 | G4 | Over-normalised | held: its only job is to turn a visarga used as a colon into ':'; TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script, so the rule waits for the next spec |  |
 | ind-ml-fw2 | umeshnmenon | #116 | C1 | Boilerplate | gold set empty, not testable |  |
 | ind-ml-fw2 | umeshnmenon | #116 | C4 | Two documents joined | gold set empty, not testable |  |
 | ind-ml-fw2 | umeshnmenon | #116 | D3 | Mixed language | gold set empty, not testable |  |
@@ -320,7 +322,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-or-fw2 | Pritish52718 | #86 | G2 | Lost ZWJ or ZWNJ | gold set empty, not testable |  |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | A4 | Replacement characters | ready: passes on its own pack's gold set, at today's size | `DB-A4-001` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | A5 | Wrong normal form | ready: passes on its own pack's gold set, at today's size | `DB-A5-007` |
-| ind-sa-fw2 | dattatreyamanjunath | #45 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-010` |
+| ind-sa-fw2 | dattatreyamanjunath | #45 | A6 | Wrong or mixed script | held: it turns ':' into a visarga (Sanskrit); TSAI (#240, 5 Nov): in spec v1 no rule converts between a visarga and a colon, in either direction, so the rule waits for the next spec (a colon-to-visarga fix in Sanskrit can come back with its own harm test) |  |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-004` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-013` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-004` |
@@ -336,7 +338,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-sa-fw2 | dattatreyamanjunath | #45 | G3 | Indic dropped by an English rule | ready: passes on its own pack's gold set, at today's size | `DB-G3-001` |
 | ind-sa-fw2 | dattatreyamanjunath | #45 | H3 | The same content in another source or language | ready: passes on its own pack's gold set, at today's size | `DB-H3-001` |
 | ind-sa-fw2 | swatibansal | #80 | A5 | Wrong normal form | ready: passes on its own pack's gold set, at today's size | `DB-A5-008` |
-| ind-sa-fw2 | swatibansal | #80 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-011` |
+| ind-sa-fw2 | swatibansal | #80 | A6 | Wrong or mixed script | held: it turns ':' into a visarga (Sanskrit); TSAI (#240, 5 Nov): in spec v1 no rule converts between a visarga and a colon, in either direction, so the rule waits for the next spec (a colon-to-visarga fix in Sanskrit can come back with its own harm test) |  |
 | ind-sa-fw2 | swatibansal | #80 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-014` |
 | ind-sa-fw2 | swatibansal | #80 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-011` |
 | ind-sa-fw2 | swatibansal | #80 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-011` |
@@ -377,7 +379,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-ta-sangraha-v | Hemaaaa04 | #57 | D4 | Bad machine translation | ready: passes on its own pack's gold set, at today's size | `DB-D4-017` |
 | ind-ta-sangraha-v | Hemaaaa04 | #57 | F3 | Harmful content | ready: passes on its own pack's gold set, at today's size | `DB-F3-005` |
 | ind-ta-sangraha-v | Hemaaaa04 | #57 | G1 | Cut at the vowel sign | ready: passes on its own pack's gold set, at today's size | `DB-G1-013` |
-| ind-ta-sangraha-v | abinesh1 | #101 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-012` |
+| ind-ta-sangraha-v | abinesh1 | #101 | A6 | Wrong or mixed script | held: its only job is to turn ஃ into ':' (Unicode names ஃ the Tamil visarga); TSAI (#240, 5 Nov): in spec v1 no rule converts between a visarga and a colon, in either direction, so the rule waits for the next spec |  |
 | ind-ta-sangraha-v | abinesh1 | #101 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-005` |
 | ind-ta-sangraha-v | abinesh1 | #101 | C1 | Boilerplate | ready: passes on its own pack's gold set, at today's size | `DB-C1-015` |
 | ind-ta-sangraha-v | abinesh1 | #101 | C2 | Repeated lines | ready: passes on its own pack's gold set, at today's size | `DB-C2-012` |
@@ -413,7 +415,7 @@ TSAI (G2, 1 Nov): a rule stays out of spec v1 if, on Wed 4 Nov at 23:59 IST, its
 | ind-te-sangraha-s | murthyap63-a11y | #71 | C3 | Truncated document | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
 | ind-te-sangraha-s | murthyap63-a11y | #71 | D4 | Bad machine translation | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
 | ind-te-sangraha-s | murthyap63-a11y | #71 | D5 | Translationese | needs a reviewer's input (for example a list of verified fixes), so it cannot run on a document alone |  |
-| ind-te-sangraha-s | shankarpandala | #92 | A6 | Wrong or mixed script | ready: passes on its own pack's gold set, at today's size | `DB-A6-014` |
+| ind-te-sangraha-s | shankarpandala | #92 | A6 | Wrong or mixed script | held: its only job is to turn a visarga used as a colon into ':'; TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script, so the rule waits for the next spec |  |
 | ind-te-sangraha-s | shankarpandala | #92 | B2 | HTML or XML tags | ready: passes on its own pack's gold set, at today's size | `DB-B2-005` |
 | ind-te-sangraha-s | shankarpandala | #92 | B4 | Template and code junk in prose | ready: passes on its own pack's gold set, at today's size | `DB-B4-006` |
 | ind-te-sangraha-s | shankarpandala | #92 | C3 | Truncated document | ready: passes on its own pack's gold set, at today's size | `DB-C3-014` |
