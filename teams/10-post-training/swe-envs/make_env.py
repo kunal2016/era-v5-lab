@@ -288,6 +288,7 @@ def main(argv: list[str] | None = None) -> int:
         "timeout_s": 300,
         "FAIL_TO_PASS": [],
         "PASS_TO_PASS": [],
+        "quality_verdict": "unreviewed",  # set to keep / keep-flagged after a SWE-bench Verified style review
     }
     (env_dir / "env.json").write_text(json.dumps(env, indent=1) + "\n", encoding="utf-8")
     subprocess.run(["docker", "rmi", "-f", env["image"]], capture_output=True)

@@ -60,6 +60,37 @@ def test_patch_paths_lists_every_file_once():
     assert verify.patch_paths(DIFF) == ["CHANGES.rst", "pkg/core.py", "tests/test_core.py"]
 
 
+# Git quotes non-ASCII paths in octal (PR #27 review, point 3). "\340\244\271" is the UTF-8 for Devanagari "ha".
+QUOTED = ('diff --git "a/tests/\\340\\244\\271/conftest.py" "b/tests/\\340\\244\\271/conftest.py"\n'
+          "new file mode 100644\nindex 0000000..e69de29\n--- /dev/null\n"
+          '+++ "b/tests/\\340\\244\\271/conftest.py"\n@@ -0,0 +1 @@\n+x = 1\n')
+SPACED = ("diff --git a/pkg/a b.py b/pkg/a b.py\nindex 1111111..2222222 100644\n--- a/pkg/a b.py\t\n"
+          "+++ b/pkg/a b.py\t\n@@ -1 +1 @@\n-a\n+b\n")
+
+
+def test_patch_paths_reads_git_quoted_and_spaced_paths():
+    assert verify.patch_paths(QUOTED) == ["tests/\u0939/conftest.py"]
+    assert verify.patch_paths(SPACED) == ["pkg/a b.py"]  # no stray tab entry
+    assert verify.unquote_git_path('"a\\tb\\"c"') == 'a\tb"c'
+
+
+def test_numstat_paths_matches_our_parser():
+    got = verify.numstat_paths(QUOTED + SPACED)
+    if got is None:
+        pytest.skip("git not available")
+    assert got == ["pkg/a b.py", "tests/\u0939/conftest.py"]
+
+
+@pytest.mark.parametrize("patch,problem", [
+    ("diff --git a/x b/x\nnew file mode 120000\n", "symlink"),
+    ("diff --git a/x b/x\nnew file mode 160000\n", "submodule"),
+    ("diff --git a/x.bin b/x.bin\nGIT binary patch\nliteral 3\n", "binary"),
+])
+def test_patch_problems_flags_symlinks_submodules_and_binaries(patch, problem):
+    assert any(problem in p for p in verify.patch_problems(patch))
+    assert verify.patch_problems(DIFF) == []
+
+
 @pytest.mark.parametrize("path,expected", [
     ("tests/test_core.py", True), ("test/helpers.py", True), ("pkg/test_utils.py", True),
     ("pkg/core_test.go", True), ("conftest.py", True), ("src/pkg/conftest.py", True), ("tox.ini", True),
@@ -91,6 +122,33 @@ def test_parse_junit_counts_failures_errors_and_skips_as_not_passed():
         "tests.test_core::test_err": False, "tests.test_core.TestK::test_skip[1]": False}
 
 
+def test_parse_junit_a_test_listed_twice_passes_only_if_both_pass():
+    xml = """<testsuites><testsuite>
+      <testcase classname="t" name="a"><failure message="x"/></testcase>
+      <testcase classname="t" name="a"/>
+    </testsuite></testsuites>"""
+    assert verify.parse_junit(xml) == {"t::a": False}
+
+
+def test_parse_go_json_a_later_forged_pass_does_not_win():
+    stream = "\n".join(json.dumps(e) for e in [
+        {"Action": "fail", "Package": "m", "Test": "TestA"},
+        {"Action": "pass", "Package": "m", "Test": "TestA"},
+    ])
+    assert verify.parse_go_json(stream) == {"m::TestA": False}
+
+
+@pytest.mark.parametrize("line,counts", [
+    ("1 failed, 7 passed in 0.12s", {"failed": 1, "passed": 7}),
+    ("==== 2 failed, 5 passed, 1 xpassed, 3 warnings in 1.05 seconds ====",
+     {"failed": 2, "passed": 5, "xpassed": 1, "warning": 3}),
+    ("1 failed, 2 errors in 0.5s (0:00:00)", {"failed": 1, "error": 2}),
+    ("collected 8 items", None),
+])
+def test_parse_pytest_summary(line, counts):
+    assert verify.parse_pytest_summary(line) == counts
+
+
 def test_parse_go_json_reads_test_level_events_only():
     stream = "\n".join(json.dumps(e) for e in [
         {"Action": "run", "Package": "m/semver", "Test": "TestA"},
@@ -110,16 +168,83 @@ ENV = {"instance_id": "toy__toy-1", "repo": "toy/toy", "image": "g10-swe/toy__to
 
 
 def test_container_script_restores_test_files_before_applying_hidden_tests():
-    script = verify.container_script(ENV, with_candidate=True)
+    script = verify.container_script(ENV, with_candidate=True, token="abc123")
     apply_candidate = script.index("/patches/candidate.patch")
     restore = script.index("git checkout -q HEAD --")
     apply_tests = script.index("/patches/test.patch")
-    assert apply_candidate < restore < apply_tests
-    assert "timeout 60 python -m pytest" in script and "--junitxml=" in script
+    sentinel = script.index("> test_abc123.py")
+    assert apply_candidate < restore < apply_tests < sentinel
+    assert "timeout 60 python -m pytest -q tests/test_core.py test_abc123.py --junitxml=/tmp/g10_abc123.out" in script
+
+
+def test_container_script_adds_a_go_sentinel_in_the_test_package():
+    env = {**ENV, "language": "go", "test_files": ["pkg/version_test.go"], "test_cmd": "go test -json -count=1 ./pkg"}
+    script = verify.container_script(env, with_candidate=True, token="abc123")
+    assert "pkg/zabc123_test.go" in script and "func TestZabc123(t *testing.T)" in script
+    assert "sed -n" in script and "pkg/version_test.go" in script
 
 
 def test_container_script_without_candidate_skips_candidate_apply():
     assert "candidate.patch" not in verify.container_script(ENV, with_candidate=False)
+
+
+# --- report integrity (PR #27 review, point 1) -------------------------------------------------
+
+SENT = verify.sentinel(ENV, "abc123")
+HONEST = {"tests.test_core::test_add": True, "tests.test_core::test_import": True, "test_abc123::test_abc123": False}
+
+
+def test_check_report_accepts_an_honest_run():
+    assert verify.check_report(HONEST, SENT, 1, "1 failed, 2 passed in 0.1s", "python") is None
+
+
+@pytest.mark.parametrize("results,exit_code,summary,problem", [
+    ({k: True for k in HONEST if "abc123" not in k}, 1, "1 failed, 2 passed in 0.1s", "missing"),  # forged file
+    ({**HONEST, "test_abc123::test_abc123": True}, 1, "3 passed in 0.1s", "reported as passed"),  # flipped all
+    (HONEST, 0, "1 failed, 2 passed in 0.1s", "exit code 0"),                                     # os._exit(0)
+    (HONEST, 1, "2 failed, 1 passed in 0.1s", "pytest printed 1"),                              # flipped one
+    (HONEST, 1, "", "no pytest summary"),
+])
+def test_check_report_catches_forged_reports(results, exit_code, summary, problem):
+    assert problem in verify.check_report(results, SENT, exit_code, summary, "python")
+
+
+def _docker_output(junit: str, exit_code: int, summary: str) -> str:
+    return (f"@@G10_EXIT {exit_code}@@\n{verify.REPORT_START}\n{junit}\n{verify.REPORT_END}\n"
+            f"{verify.SUMMARY_START}\n{summary}\n{verify.SUMMARY_END}\n")
+
+
+def test_run_side_rejects_the_junit_file_rewritten_by_an_atexit_hook(env_dir, monkeypatch):
+    """The attack from the PR #27 review: the candidate rewrites the report with every wanted test passing."""
+    forged = ('<testsuites><testsuite name="x"><testcase classname="tests.test_core" name="test_add"/>'
+              '<testcase classname="tests.test_core" name="test_import"/></testsuite></testsuites>')
+
+    class Proc:
+        stdout, stderr = _docker_output(forged, 1, "2 failed, 1 passed in 0.1s"), ""
+
+    monkeypatch.setattr(verify.subprocess, "run", lambda *a, **k: Proc())
+    out = verify.run_side(env_dir, ENV, "diff --git a/pkg/core.py b/pkg/core.py\n")
+    assert "error" in out and "sentinel" in out["error"]
+
+
+def test_run_side_drops_the_sentinel_from_honest_results(env_dir, monkeypatch):
+    monkeypatch.setattr(verify.uuid, "uuid4", lambda: type("U", (), {"hex": "abc123" + "0" * 26})())
+    junit = ('<testsuites><testsuite><testcase classname="tests.test_core" name="test_add"/>'
+             '<testcase classname="tests.test_core" name="test_import"/>'
+             '<testcase classname="test_abc123000000" name="test_abc123000000"><failure message="x"/></testcase>'
+             '</testsuite></testsuites>')
+
+    class Proc:
+        stdout, stderr = _docker_output(junit, 1, "1 failed, 2 passed in 0.1s"), ""
+
+    monkeypatch.setattr(verify.subprocess, "run", lambda *a, **k: Proc())
+    out = verify.run_side(env_dir, ENV, None)
+    assert out["results"] == {"tests.test_core::test_add": True, "tests.test_core::test_import": True}
+
+
+def test_docker_runs_with_process_and_privilege_limits():
+    for flag in ("--network=none", "--pids-limit=256", "--cap-drop=ALL", "--security-opt=no-new-privileges"):
+        assert flag in verify.DOCKER_LIMITS
 
 
 # --- reward -----------------------------------------------------------------------------------
@@ -153,6 +278,19 @@ def test_reward_rejects_a_patch_that_edits_test_files(env_dir, monkeypatch):
 def test_reward_rejects_conftest_edits(env_dir, monkeypatch):
     monkeypatch.setattr(verify, "run_side", lambda *a: pytest.fail("must not run tests"))
     patch = "diff --git a/conftest.py b/conftest.py\n--- a/conftest.py\n+++ b/conftest.py\n@@ -0,0 +1 @@\n+x=1\n"
+    assert verify.reward(env_dir, patch)["reward"] == 0
+
+
+def test_reward_rejects_a_test_file_under_a_non_ascii_folder(env_dir, monkeypatch):
+    monkeypatch.setattr(verify, "run_side", lambda *a: pytest.fail("must not run tests"))
+    gold, _ = verify.split_patch(DIFF)
+    out = verify.reward(env_dir, gold + QUOTED)
+    assert out["reward"] == 0 and "tests/\u0939/conftest.py" in out["reason"]
+
+
+def test_reward_rejects_a_symlink(env_dir, monkeypatch):
+    monkeypatch.setattr(verify, "run_side", lambda *a: pytest.fail("must not run tests"))
+    patch = "diff --git a/pkg/link b/pkg/link\nnew file mode 120000\n--- /dev/null\n+++ b/pkg/link\n@@ -0,0 +1 @@\n+../tests\n"
     assert verify.reward(env_dir, patch)["reward"] == 0
 
 
@@ -299,3 +437,12 @@ def test_shipped_env_is_complete_and_human_sourced(env_dir):
     assert all(verify.is_test_path(p) for p in test_paths)
     assert not any(verify.is_test_path(p) for p in gold_paths)
     assert "@sha256:" in env["base_image"]
+    assert env["quality_verdict"] in ("keep", "keep-flagged")
+    assert (env["quality_verdict"] == "keep-flagged") == bool(env.get("quality_note"))
+
+
+def test_flagged_envs_match_the_review():
+    flagged = {d.name for d in ENV_DIRS
+               if json.loads((d / "env.json").read_text(encoding="utf-8"))["quality_verdict"] == "keep-flagged"}
+    assert flagged == {"python-poetry__tomlkit-221", "python-poetry__tomlkit-236", "python-validators__validators-191",
+                       "scrapy__w3lib-136", "scrapy__w3lib-196"}

@@ -7,7 +7,10 @@ passes it, exactly like the hand-picked ones.
 Why SWE-rebench content passes the 3 Nov rule (arXiv 2505.20411, sections 2.1 to 2.4): the problem statement
 is the GitHub issue, and patch and test_patch come from the merged PR, all from permissively licensed repos.
 Qwen2.5-72B-Instruct only wrote install recipes and quality labels (metadata). We rebuild every environment
-ourselves and do not use those recipes or labels. Confirm with TSAI before training on imported rows.
+ourselves and do not use those recipes or labels.
+
+TSAI answer (4 Nov): allowed, using only the human parts (issue, patch, tests), with every env rebuilt and
+gold-checked by us, and the CC-BY-4.0 attribution kept in licences/licence_table.md. Pre-2023 rows are fine.
 
 Filters (keep_row):
   - issue created before 2023-01-01 (fewer agent-written PRs, see research notes)
