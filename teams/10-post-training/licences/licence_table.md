@@ -187,13 +187,6 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
   - Proposal: keep the permissive-licensed files (Apache-2.0, MIT, BSD). Keep each file's path and licence in a per-file manifest for attribution, because the `E4` cleaning medicine removes repeated licence headers from the text.
   - Flag the GPL/LGPL files for TSAI and drop them by default: the TSAI data rule lets in permissive licences and CC-BY-SA with attribution, and GPL/LGPL is neither. The licence follows the file, not the corpus (same finding as `code-go`, section 10).
 
-### 4b. Soma Korada — Code and step verification (`sft-code-swe-zero-openhands`, `sft-math-openr1-math-raw`, `sft-chat-puffin`, `rl-code-leetcodedataset`, `rl-math-processbench`)
-
-- **Sets:** five new rows, in the Stage 1 and Stage 2 tables and sections below. Licences checked against each dataset card on 3 Nov 2026.
-- **Decisions:** `TSAI reserves` for `sft-code-swe-zero-openhands` and `sft-math-openr1-math-raw`; `excluded` for `sft-chat-puffin` (GPT-4 output); `needs TSAI decision` for `rl-code-leetcodedataset` (pending until the test-input generator is known); `excluded` from training for `rl-math-processbench` (eval only, G9 evaluation probe).
-- **Open points for TSAI:** whether R1 traces over NuminaMath-1.5 questions (`sft-math-openr1-math-raw`) are permitted while NuminaMath-1.5 itself is excluded; IP sign-off on LeetCode problem text (`rl-code-leetcodedataset`).
-- **Updated 5 Nov 2026** after review on PR #29 (RaviNaik, thinkTinkerGreen).
-
 ### 5. Ashish Kamble — Dataset section *(placeholder for PR to `g10-week1-post-training`)*
 
 - **Set:** *(TBD via PR)*
@@ -868,7 +861,7 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Decision:** `TSAI reserves`
 - **Our opinion:** use. Same generator as `sft-code-swe-rebench-openhands`. The Claude-vs-Qwen audit is clean.
 - **Audit (3 Nov 2026):** the dataset has no per-row field naming the generating model, so every row was checked. All 64 parquet shards, 318,115 trajectories (SWE-Fixer-Train-110K 128,628; SWE-Gym-Raw 128,176; SWE-rebench 51,808; R2E-Gym-Subset 9,503). Every row has the same OpenHands system prompt and the same four tools (`str_replace_editor`, `execute_bash`, `think`, `finish`). No `model_patch` carries a `Co-Authored-By: Claude` or "Generated with Claude Code" line, and no assistant or system message identifies the model as Claude. Four trajectories matched the identity pattern; all are about Anthropic's own API (mlflow, haystack), which is repo subject matter, not the generator. Repo licences: Apache-2.0 129,074; MIT 94,262; BSD-3-Clause 78,484; BSD-2-Clause 15,472; MIT-0 820; BSD-3-Clause-Clear 3. The check is keyword-based and cannot detect Claude text with no identity or attribution marker. The card's "BSD-2-Claude" is a typo for BSD-2-Clause.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
+- **Added by:** SomaKorada07 (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
 
 ### `sft-math-openr1-math-raw` — OpenR1-Math-Raw
 
@@ -881,7 +874,7 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Decision:** `TSAI reserves`
 - **Decision note:** inherits NuminaMath-1.5 overlap; keep rows with a passing `correctness` flag. Same decision as `sft-math-openr1-math` (the 220k set), which carries the same NuminaMath-1.5 note.
 - **Our opinion:** use, check. The R1 traces are clean, but the questions come from NuminaMath-1.5, which is `excluded` above because of its GPT-4-Turbo and untraceable sources. TSAI should rule whether R1 traces over those questions are permitted, or whether only the filtered `sft-math-openr1-math` set is kept.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Hugging Face cards read on 3 Nov 2026.
+- **Added by:** SomaKorada07 (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Hugging Face cards read on 3 Nov 2026.
 
 ### `sft-chat-puffin` — Puffin
 
@@ -893,7 +886,7 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Generator model:** GPT-4 (OpenAI, proprietary closed) writes every response in 3,000 multi-turn conversations with real humans.
 - **Decision:** `excluded` — TSAI Week 2 rule: text made by closed OpenAI models is out.
 - **Our opinion:** excluded for the same reason as `sft-code-magicoder-oss`. The Apache-2.0 tag does not remove the OpenAI terms on GPT-4 output.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
+- **Added by:** SomaKorada07 (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
 
 ## Stage 2: Preference optimization and RLVR, candidate sets
 
@@ -1262,7 +1255,7 @@ Verifiable-answer and test-based sets for RL (math, code, SWE tasks). Each entry
 - **Generator model:** Unknown for the test inputs. The paper (arXiv 2504.14655, Figures 4 and 5) prompts "the LLM" for about 100+ inputs per problem and does not name the model; the GitHub README does not name it either. Test outputs come from canonical solutions taken from GitHub repos (fspv/python-leetcode, doocs/leetcode, walkccc/LeetCode) and checked on LeetCode. The paper's SFT responses were written by Qwen2.5-Coder-32B-Instruct (Apache-2.0, open weights).
 - **Decision:** `needs TSAI decision` — pending until the test-input generator is known. If it was a closed OpenAI model, this matches `sft-rl-code-rstar-coder`, excluded for GPT-4o-made test-input generators. Question to be asked on the authors' GitHub repo.
 - **Our opinion:** do not enter the RLVR pipeline until (1) the generator is known, (2) Team 9 runs a 13-gram decontamination audit, and (3) TSAI signs off on the LeetCode problem text. Problems before July 2024 are the training split and later ones the test split, so the decontamination check matters for both.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper and GitHub README read on 5 Nov 2026.
+- **Added by:** SomaKorada07 (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper and GitHub README read on 5 Nov 2026.
 
 ### `rl-math-processbench` — ProcessBench
 
@@ -1274,7 +1267,7 @@ Verifiable-answer and test-based sets for RL (math, code, SWE tasks). Each entry
 - **Generator model:** Not on the card. The paper (arXiv 2412.06559, Table 4) names 12 solution generators: Meta-Llama-3-8B/70B-Instruct and Llama-3.1-8B/70B-Instruct (Llama Community Licences), and Qwen2-1.5B/7B/72B, Qwen2.5-1.5B/7B/72B and Qwen2.5-Math-7B/72B Instruct. Step errors are labelled by human experts with doctoral-level maths (three to five per solution). Qwen2.5-72B-Instruct only checked final answers and split solutions into steps.
 - **Decision:** `excluded` from training — eval only, not training data. Assigned to Team 9 (Evaluation) as an evaluation probe, with a G9 decontamination check. Not part of the RL training mix.
 - **Our opinion:** use only to evaluate a verifier or PRM. It is a benchmark built from gsm8k, MATH, OlympiadBench and Omni-MATH problems, and part of it was written by Llama models, so it must not be ingested as training data.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper read on 5 Nov 2026.
+- **Added by:** SomaKorada07 (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper read on 5 Nov 2026.
 
 ## Strategy v0
 
