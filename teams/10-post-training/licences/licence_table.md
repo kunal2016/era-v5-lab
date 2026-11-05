@@ -94,7 +94,7 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | sft-math-nemotron-sft-math-v4 | [nvidia/Nemotron-SFT-Math-v4](https://huggingface.co/datasets/nvidia/Nemotron-SFT-Math-v4) | English / Mathematics | DeepSeek-V4-Pro (MIT, open weights) writes all solutions; problems are human-written (AoPS, Math StackExchange) and only solutions that match the reference answer are kept | cc-by-4.0 (AoPS-derived), cc-by-sa-4.0 (Math StackExchange-derived) (Hub tags; share-alike on part, attribution needed) | allowed (CC-BY-SA, attribution needed) |
 | sft-math-nemotron-proofs-v3-sft | [nvidia/Nemotron-Math-Proofs-v3-SFT](https://huggingface.co/datasets/nvidia/Nemotron-Math-Proofs-v3-SFT) | English / Mathematics (proofs) | DeepSeek-V4-Pro (MIT, open weights) writes the proof, refinement, verification and meta-verification traces; problems are human-written AoPS proof problems | cc-by-4.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
 | sft-code-swe-zero-openhands | [nvidia/SWE-Zero-openhands-trajectories](https://huggingface.co/datasets/nvidia/SWE-Zero-openhands-trajectories) | Code (agent trajectories) | Qwen3-Coder-480B-A35B-Instruct (Apache-2.0, open weights) via OpenHands; audit of all 318,115 rows found no Claude data | cc-by-4.0 (Hub tag; attribution required; per-repo licences all permissive) | TSAI reserves |
-| sft-math-openr1-math-raw | [open-r1/OpenR1-Math-Raw](https://huggingface.co/datasets/open-r1/OpenR1-Math-Raw) | English / Mathematics | DeepSeek-R1 (MIT, open weights) writes the traces; Llama-3.3-70B-Instruct (Llama 3.3 Community Licence) is used only as a verifier | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
+| sft-math-openr1-math-raw | [open-r1/OpenR1-Math-Raw](https://huggingface.co/datasets/open-r1/OpenR1-Math-Raw) | English / Mathematics | DeepSeek-R1 (MIT, open weights) writes the traces; Llama-3.3-70B-Instruct (Llama 3.3 Community Licence) is used only as a verifier | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves (inherits NuminaMath-1.5 overlap; keep rows with a passing `correctness` flag) |
 | sft-chat-puffin | [LDJnr/Puffin](https://huggingface.co/datasets/LDJnr/Puffin) | English / Chat | GPT-4 (OpenAI, proprietary closed) writes every response | apache-2.0 (Hub tag; the OpenAI terms on GPT-4 output still apply) | excluded |
 
 ### Stage 2: Preference optimization and RLVR
@@ -122,8 +122,8 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | rl-safety-hh-rlhf | [Anthropic/hh-rlhf](https://huggingface.co/datasets/Anthropic/hh-rlhf) | English | Anthropic 52B context-distilled / RLHF models (Anthropic, proprietary closed) | MIT | excluded |
 | rl-safety-alignment-faking | [Anthropic/alignment-faking-rl](https://huggingface.co/datasets/Anthropic/alignment-faking-rl) | English | Anthropic Claude 3.5 Sonnet / Opus 3 / Sonnet 4 (Anthropic, proprietary closed) | CC-BY-4.0 (body link; Hub tag is cc) | excluded |
 | rl-code-code-contests | [deepmind/code_contests](https://huggingface.co/datasets/deepmind/code_contests) | Code (competitive; Python, C++, Java) | none (human problems and human solutions scraped from Codeforces, AtCoder, CodeChef, Aizu and HackerEarth; extra tests are made by programmatic mutation of existing inputs and checked against known-correct solutions, no LLM) | cc-by-4.0 (Hub tag; commercial use permitted per tag; upstream site content scraped) | TSAI reserves |
-| rl-code-leetcodedataset | [newfacade/LeetCodeDataset](https://huggingface.co/datasets/newfacade/LeetCodeDataset) | Code (Python) | Not stated on the card (papers arXiv 2504.14655 and 2409.06957); check how the test cases were made | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
-| rl-math-processbench | [Qwen/ProcessBench](https://huggingface.co/datasets/Qwen/ProcessBench) | English / Mathematics (step verification) | Not stated on the card; solutions come from open models and steps are expert-labelled per the paper (arXiv 2412.06559); check before use | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
+| rl-code-leetcodedataset | [newfacade/LeetCodeDataset](https://huggingface.co/datasets/newfacade/LeetCodeDataset) | Code (Python) | Unknown for test inputs (an unnamed "LLM" wrote them, arXiv 2504.14655, Figs 4–5); outputs come from human canonical solutions; SFT responses by Qwen2.5-Coder-32B-Instruct (Apache-2.0) | apache-2.0 (Hub tag); MIT on GitHub; problem text belongs to LeetCode | pending (test-input generator unknown) |
+| rl-math-processbench | [Qwen/ProcessBench](https://huggingface.co/datasets/Qwen/ProcessBench) | English / Mathematics (step verification) | Not on the card; the paper (arXiv 2412.06559, Table 4) names 12 Qwen2/Qwen2.5 and Llama-3/3.1 Instruct models; step errors labelled by human experts | apache-2.0 (Hub tag) | eval only, not training data (G9 evaluation probe) |
 
 ---
 
@@ -190,8 +190,9 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 ### 4b. Soma Korada — Code and step verification (`sft-code-swe-zero-openhands`, `sft-math-openr1-math-raw`, `sft-chat-puffin`, `rl-code-leetcodedataset`, `rl-math-processbench`)
 
 - **Sets:** five new rows, in the Stage 1 and Stage 2 tables and sections below. Licences checked against each dataset card on 3 Nov 2026.
-- **Decisions:** `TSAI reserves` for four, `excluded` for Puffin (GPT-4 output).
-- **Open points for TSAI:** `sft-math-openr1-math-raw` inherits NuminaMath-1.5 problems, which are excluded; `rl-code-leetcodedataset` uses LeetCode's problem text.
+- **Decisions:** `TSAI reserves` for `sft-code-swe-zero-openhands` and `sft-math-openr1-math-raw`; `excluded` for `sft-chat-puffin` (GPT-4 output); `pending` for `rl-code-leetcodedataset` (test-input generator unknown); `eval only, not training data` for `rl-math-processbench`.
+- **Open points for TSAI:** whether R1 traces over NuminaMath-1.5 questions (`sft-math-openr1-math-raw`) are permitted while NuminaMath-1.5 itself is excluded; IP sign-off on LeetCode problem text (`rl-code-leetcodedataset`).
+- **Updated 5 Nov 2026** after review on PR #29 (RaviNaik, thinkTinkerGreen).
 
 ### 5. Ashish Kamble — Dataset section *(placeholder for PR to `g10-week1-post-training`)*
 
@@ -878,8 +879,9 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Licence:** `apache-2.0` — Hugging Face tag read on 3 Nov 2026. A tag is not legal clearance.
 - **Generator model:** DeepSeek-R1 (MIT, open weights) writes 1 to 8 traces per problem (516,499 problems, 1,209,403 traces). Two verifiers check them: Math Verify and Llama-3.3-70B-Instruct as judge (Llama 3.3 Community Licence; it only labels, it writes no training text).
 - **Decision:** `TSAI reserves`
-- **Our opinion:** use, check. The problems come from NuminaMath-1.5, which is `excluded` above because of its GPT-4-Turbo and untraceable sources. `sft-math-openr1-math` (the filtered 220k set) is accepted, so TSAI should say whether the raw set is held to the same line. Keep only rows with a passing `correctness` flag.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
+- **Decision note:** inherits NuminaMath-1.5 overlap; keep rows with a passing `correctness` flag. Same decision as `sft-math-openr1-math` (the 220k set), which carries the same NuminaMath-1.5 note.
+- **Our opinion:** use, check. The R1 traces are clean, but the questions come from NuminaMath-1.5, which is `excluded` above because of its GPT-4-Turbo and untraceable sources. TSAI should rule whether R1 traces over those questions are permitted, or whether only the filtered `sft-math-openr1-math` set is kept.
+- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Hugging Face cards read on 3 Nov 2026.
 
 ### `sft-chat-puffin` — Puffin
 
@@ -1255,24 +1257,24 @@ Verifiable-answer and test-based sets for RL (math, code, SWE tasks). Each entry
 - **Stage:** RL
 - **Set:** `rl-code-leetcodedataset`
 - **Language:** Code (Python)
-- **Source:** [`newfacade/LeetCodeDataset`](https://huggingface.co/datasets/newfacade/LeetCodeDataset)
-- **Licence:** `apache-2.0` — Hugging Face tag read on 3 Nov 2026. A tag is not legal clearance.
-- **Generator model:** Not stated on the card. The papers (arXiv 2504.14655, 2409.06957) may say how the test cases were made; check.
-- **Decision:** `TSAI reserves`
-- **Our opinion:** use, check. Verified tests suit RLVR. The Apache-2.0 tag covers the dataset, but the problem statements are LeetCode's text, so ask TSAI whether that is acceptable. Send to G9 (Evaluation) for a decontamination test, since LeetCode problems overlap with code benchmarks.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
+- **Source:** [`newfacade/LeetCodeDataset`](https://huggingface.co/datasets/newfacade/LeetCodeDataset); code and README on [GitHub](https://github.com/newfacade/LeetCodeDataset)
+- **Licence:** `apache-2.0` — Hugging Face tag read on 3 Nov 2026. The GitHub repo says MIT. The problem text belongs to LeetCode and the card is silent on that, so upstream rights need checking (same note as `rl-code-code-contests`). A tag is not legal clearance.
+- **Generator model:** Unknown for the test inputs. The paper (arXiv 2504.14655, Figures 4 and 5) prompts "the LLM" for about 100+ inputs per problem and does not name the model; the GitHub README does not name it either. Test outputs come from canonical solutions taken from GitHub repos (fspv/python-leetcode, doocs/leetcode, walkccc/LeetCode) and checked on LeetCode. The paper's SFT responses were written by Qwen2.5-Coder-32B-Instruct (Apache-2.0, open weights).
+- **Decision:** `pending` — until the test-input generator is known. If it was a closed OpenAI model, this matches `sft-rl-code-rstar-coder`, excluded for GPT-4o-made test-input generators. Question to be asked on the authors' GitHub repo.
+- **Our opinion:** do not enter the RLVR pipeline until (1) the generator is known, (2) Team 9 runs a 13-gram decontamination audit, and (3) TSAI signs off on the LeetCode problem text. Problems before July 2024 are the training split and later ones the test split, so the decontamination check matters for both.
+- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper and GitHub README read on 5 Nov 2026.
 
 ### `rl-math-processbench` — ProcessBench
 
-- **Stage:** RL (step verification)
+- **Stage:** Evaluation (step verification); listed in the RL table only as a candidate verifier or PRM benchmark
 - **Set:** `rl-math-processbench`
 - **Language:** English / Mathematics
 - **Source:** [`Qwen/ProcessBench`](https://huggingface.co/datasets/Qwen/ProcessBench)
 - **Licence:** `apache-2.0` — Hugging Face tag read on 3 Nov 2026. A tag is not legal clearance.
-- **Generator model:** Not stated on the card. The paper (arXiv 2412.06559) describes solutions from open models with expert step labels; check before use.
-- **Decision:** `TSAI reserves`
-- **Our opinion:** use as a verifier or PRM benchmark, not as training data. It is an evaluation set built from gsm8k, MATH, OlympiadBench and Omni-MATH problems, so it goes to G9 (Evaluation) for a decontamination test before any use.
-- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026). Hugging Face cards read on 3 Nov 2026.
+- **Generator model:** Not on the card. The paper (arXiv 2412.06559, Table 4) names 12 solution generators: Meta-Llama-3-8B/70B-Instruct and Llama-3.1-8B/70B-Instruct (Llama Community Licences), and Qwen2-1.5B/7B/72B, Qwen2.5-1.5B/7B/72B and Qwen2.5-Math-7B/72B Instruct. Step errors are labelled by human experts with doctoral-level maths (three to five per solution). Qwen2.5-72B-Instruct only checked final answers and split solutions into steps.
+- **Decision:** `eval only, not training data` — assigned to Team 9 (Evaluation) as an evaluation probe, with a G9 decontamination check. Not part of the RL training mix.
+- **Our opinion:** use only to evaluate a verifier or PRM. It is a benchmark built from gsm8k, MATH, OlympiadBench and Omni-MATH problems, and part of it was written by Llama models, so it must not be ingested as training data.
+- **Added by:** Soma Korada (Week 2 rotation, 4 Nov 2026; updated 5 Nov after review). Paper read on 5 Nov 2026.
 
 ## Strategy v0
 
