@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from check_rows import run_selftest, verify_source  # noqa: E402
-from load_jsonl import _read_source_text, ch_Exec, ensure_schema, load_source, parse_source  # noqa: E402
+from load_jsonl import ch_Exec, ensure_schema, load_source, parse_source, resolve_source_text  # noqa: E402
 
 
 def _ch_available() -> bool:
@@ -38,7 +38,7 @@ def test_parse_team5_and_team6_sources_offline():
     assert {"step_ms", "mfu", "model_flops_utilization", "gpu_utilization", "gpu_memory_used"} <= names
 
     # Verify Team 06 additive MFU fields (mfu_method, mfu_scope, participants, global_tokens_per_s, run-scope reason codes)
-    g6_v2_doc = json.loads(_read_source_text("teams/06-performance/results/modal_gpu/h200_v1.json")[0])
+    g6_v2_doc = json.loads(resolve_source_text("teams/06-performance/results/modal_gpu/h200_v1.json")[0])
     g6_v2_doc["metrics"].update({
         "mfu_method": "g6-v2",
         "mfu_scope": "run",
