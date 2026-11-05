@@ -6,6 +6,7 @@ A private dashboard that reads training metrics from ClickHouse. Panels:
 - Rollups from `metrics_rollup_<N>`: mean loss per 10 / 100 / 1000 / 10000 step bucket (pick with the `bucket` variable).
 - GPU telemetry from `gpu_telemetry_1s`: power and temperature.
 - GPU temperature and thermal throttle per step (panel 22, `metrics_raw`): `gpu_temp_c` with green / yellow / red at 75 C and 85 C, and `gpu_thermal_throttle` (0/1) on the right axis. Written by `metrics_logger/gpu_thermal.py`.
+- Gradient norm per step (panel 17, `metrics_raw`): `gradient_norm`, the norm before clipping, with a dashed red line at `run.grad_clip` = 1.0. Written by `teams/05-architecture/harness/train.py`.
 
 MFU and GPU panels stay empty until a run that logs those metrics is loaded.
 
