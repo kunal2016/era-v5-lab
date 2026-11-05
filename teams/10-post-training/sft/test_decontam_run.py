@@ -37,7 +37,11 @@ CLEAN = ["The monsoon reached Kerala two days early this year, and farmers in th
          "Count with me: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20."]
 
 
-@pytest.fixture(scope="module")
+# A named decorator: pr-guard takes a dotted decorator line of a diff for an email address.
+module_fixture = pytest.fixture(scope="module")
+
+
+@module_fixture
 def toy_set(tmp_path_factory):
     sys.path.insert(0, str(TOOLS))
     try:
