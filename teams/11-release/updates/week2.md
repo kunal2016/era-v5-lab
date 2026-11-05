@@ -8,17 +8,13 @@ The teams of the ERA V5 lab built on their first week of work and started new ta
 ## The teams
 
 - **Data A:** Data A added rules for Indian languages to the cleaner and fixed the masking of personal data. TSAI ran the cleaner on the tokenizer sample.
-- **Data B:** <text from the team>
 - **Tokenizer:** Tokenizer trained several candidate tokenizers on the tokenizer sample, and TSAI rebuilt one of them and got the same result.
-- **KE2:** <text from the team. The first time, say in a few words what KE2 is.>
-- **Architecture:** <text from the team>
-- **Performance:** <text from the team>
-- **Infrastructure:** <text from the team>
+- **Performance:** Performance compared ways to run the mixture-of-experts layer, put together its speed evidence, and recorded the result of its baseline timing job.
 - **Monitoring:** Monitoring built a metric store, a dashboard for the training run and checkpoint alarms, and a node health check with Infrastructure.
-- **Evaluation:** <text from the team>
-- **Post-training:** <text from the team>
+- **Evaluation:** Evaluation added lab canary strings and a canary scanner to its test files. It prepared new agent benchmarks for fingerprinting and fixed how Indic scores are averaged.
+- **Post-training:** Post-training mapped chat markers to tokenizer slots, built a chat-format converter with loss masks, audited dataset licences, and proposed a fine-tuning mix.
 - **Release:** Release merged the first weekly update after TSAI approved it, wrote the model card outline, and drafted the report outline.
-- **Quantization:** <text from the team>
+- **Quantization:** Quantization recorded a checksum for each output file.
 
 ## Next week
 
@@ -46,17 +42,17 @@ How to fill it:
 | Team | Text received | Lead OK | Source |
 |---|---|---|---|
 | Data A | Yes | no (waiting for OK on the new wording) | [#244](https://github.com/theschoolofai/era-v5-lab/pull/244) (open) |
-| Data B | no | no | |
+| Data B | no | no (line left out this week) | |
 | Tokenizer | Yes | no (waiting for OK on the new wording) | [#183](https://github.com/theschoolofai/era-v5-lab/pull/183), [#195](https://github.com/theschoolofai/era-v5-lab/pull/195), [#218](https://github.com/theschoolofai/era-v5-lab/pull/218) |
-| KE2 | no | no | |
-| Architecture | Yes | no (waiting for a new sentence) | [#180](https://github.com/theschoolofai/era-v5-lab/pull/180), [#197](https://github.com/theschoolofai/era-v5-lab/pull/197) |
-| Performance | no | no | |
-| Infrastructure | no | no | |
+| KE2 | no | no (line left out this week) | |
+| Architecture | Yes | no (line left out this week) | [#180](https://github.com/theschoolofai/era-v5-lab/pull/180), [#197](https://github.com/theschoolofai/era-v5-lab/pull/197) |
+| Performance | Yes | no (waiting for OK on the new wording) | [fork #53](https://github.com/vaibh27/era-v5-lab/pull/53), [fork #54](https://github.com/vaibh27/era-v5-lab/pull/54), [#239](https://github.com/theschoolofai/era-v5-lab/pull/239) (open) |
+| Infrastructure | no | no (line left out this week) | |
 | Monitoring | Yes | Yes | [#119](https://github.com/theschoolofai/era-v5-lab/pull/119), [#250](https://github.com/theschoolofai/era-v5-lab/pull/250) (open), [#260](https://github.com/theschoolofai/era-v5-lab/pull/260), [#248](https://github.com/theschoolofai/era-v5-lab/pull/248), [#262](https://github.com/theschoolofai/era-v5-lab/pull/262), [#266](https://github.com/theschoolofai/era-v5-lab/pull/266), [#278](https://github.com/theschoolofai/era-v5-lab/pull/278), [#136](https://github.com/theschoolofai/era-v5-lab/pull/136) (open), [#125](https://github.com/theschoolofai/era-v5-lab/pull/125) (open) |
-| Evaluation | no | no | |
-| Post-training | no | no | |
+| Evaluation | Yes | no (waiting for OK on the new wording) | [#193](https://github.com/theschoolofai/era-v5-lab/pull/193), [#184](https://github.com/theschoolofai/era-v5-lab/pull/184), [#280](https://github.com/theschoolofai/era-v5-lab/pull/280), [#192](https://github.com/theschoolofai/era-v5-lab/pull/192), [#300](https://github.com/theschoolofai/era-v5-lab/pull/300) |
+| Post-training | Yes | Yes | [#178](https://github.com/theschoolofai/era-v5-lab/pull/178), [#173](https://github.com/theschoolofai/era-v5-lab/pull/173) |
 | Release | Yes | Yes | [#142](https://github.com/theschoolofai/era-v5-lab/pull/142), [#152](https://github.com/theschoolofai/era-v5-lab/pull/152), [#234](https://github.com/theschoolofai/era-v5-lab/pull/234), [#237](https://github.com/theschoolofai/era-v5-lab/pull/237), [#264](https://github.com/theschoolofai/era-v5-lab/pull/264) |
-| Quantization | no | no | |
+| Quantization | Yes | no (waiting for OK on the new wording) | [#221](https://github.com/theschoolofai/era-v5-lab/pull/221) (open) |
 
 - [x] `check_style.py` gives 0 errors
 - [ ] Every number in the text has TSAI approval
