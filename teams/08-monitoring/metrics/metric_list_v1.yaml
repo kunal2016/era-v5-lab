@@ -58,16 +58,17 @@ metrics:
 - name: gradient_norm
   unit: gradient_units
   cadence: Every training step
-  source: Not written yet. train.py already calculates it (clip_grad_norm_) but does not log it. Proposed for G5
-    to log.
+  source: G5 train_week2.py, one row per step in metrics.jsonl. The value that clip_grad_norm_ returns.
   notes: Size of all gradients combined, before clipping. To confirm for real runs - combining across GPUs.
 # Clipping on most steps is worth checking. The threshold may be wrong or training may be unstable.
 - name: gradient_clipping_applied
   unit: boolean
   cadence: Every training step
-  source: Not written yet. Proposed for G5 to work out from gradient_norm and the clipping threshold
-    (run.grad_clip).
-  notes: True when gradient_norm is above the threshold and the gradients were scaled down.
+  source: G5 train_week2.py writes it as true / false (gradient_norm > run.grad_clip). metrics_writer.py stores it as
+    1 / 0, and works it out when the trainer passes gradient_norm and grad_clip (the threshold) instead.
+  notes: 1 when gradient_norm is above the threshold and clip_grad_norm_ scaled the gradients down, else 0. Equal to
+    the threshold is 0. No value when gradient_norm is NaN or the threshold is missing. Grafana panel 19 shows the
+    share of clipped steps per step bucket; clipping on most steps is worth checking.
 # How big each update is compared with the weights. Very large may mean unstable training; very small may mean
 # learning has stalled.
 - name: update_weight_ratio

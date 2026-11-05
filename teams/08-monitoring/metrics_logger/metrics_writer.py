@@ -10,6 +10,12 @@ Only metrics from the metric list are written; an unknown name (a typo, or a dro
 mapped to `gpu_alloc_gib`, and `temp_c` (the G6 sampler's name) to `gpu_temp_c`. The 10-second system metrics from G6 (`gpu_utilization`,
 `gpu_memory_used`) have no step, so they are not written here.
 
+`gradient_clipping_applied` (0 / 1) is worked out from `gradient_norm` (the value clip_grad_norm_ returns, before
+clipping) when the trainer also passes `grad_clip`, the threshold: 1 when gradient_norm > grad_clip. The threshold is
+not stored. A flag the trainer passes itself wins, and a True / False flag is stored as 1 / 0.
+
+    writer.write(step, loss_ntp=..., gradient_norm=norm, grad_clip=cfg["run"]["grad_clip"])
+
 Three MoE metrics are worked out from `expert_load` when the trainer does not pass them. An expert's utilization is
 its share of its layer's picks divided by the uniform share (1 / number of experts): 1.0 is a fair share, 0 is never picked.
 - `dead_experts_count`: routed experts, over all MoE layers, with utilization below 0.1.
@@ -145,6 +151,26 @@ def dead_experts_count(expert_load, share=DEAD_EXPERT_SHARE):
     return None if stats is None else stats["dead_experts_count"]
 
 
+def gradient_clipping_applied(gradient_norm, grad_clip):
+    """1 when clip_grad_norm_ scaled the gradients down (gradient_norm > grad_clip), else 0; None when it cannot be told.
+
+    gradient_norm is the value clip_grad_norm_ returns: the total norm before clipping. grad_clip is the threshold
+    (run.grad_clip). An infinite norm counts as clipped. A NaN norm, or a missing, non-finite or non-positive
+    threshold, gives None, so the row gets no flag instead of a wrong one.
+    """
+    if gradient_norm is None or grad_clip is None or isinstance(grad_clip, bool):
+        return None
+    if hasattr(gradient_norm, "item"):  # numpy / torch scalar
+        gradient_norm = gradient_norm.item()
+    try:
+        norm, clip = float(gradient_norm), float(grad_clip)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(norm) or not math.isfinite(clip) or clip <= 0:
+        return None
+    return int(norm > clip)
+
+
 def _clean(value):
     """Return (JSON-safe value, whether any non-finite number was found).
 
@@ -185,6 +211,15 @@ class MetricsWriter:
         data_ms = metrics.pop("data_ms", None)
         if "loader_wait_time" not in metrics and data_ms is not None:
             metrics["loader_wait_time"] = float(data_ms) / 1000.0
+        # gradient_clipping_applied is worked out from gradient_norm and grad_clip (the threshold, not stored).
+        # A flag passed by the trainer wins; a bool (G5's train_week2.py writes one) is stored as 0 / 1.
+        grad_clip = metrics.pop("grad_clip", None)
+        if metrics.get("gradient_clipping_applied") is not None:
+            metrics["gradient_clipping_applied"] = int(bool(metrics["gradient_clipping_applied"]))
+        else:
+            flag = gradient_clipping_applied(metrics.get("gradient_norm"), grad_clip)
+            if flag is not None:
+                metrics["gradient_clipping_applied"] = flag
         metrics = {ALIASES.get(name, name): value for name, value in metrics.items()}
         # The MoE metrics are worked out from expert_load; a value passed by the trainer wins.
         if metrics.get("expert_load") is not None:
