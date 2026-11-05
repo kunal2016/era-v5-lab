@@ -87,10 +87,15 @@ metrics:
 # The main check in this list that the model improves on data it has not trained on. Helps spot overfitting.
 - name: validation_loss
   unit: nats
-  cadence: Each validation run
-  source: G5 evaluation script; not written by train.py.
-  notes: Loss on a fixed validation dataset for a given checkpoint. To confirm with G5 - who produces it, how it
-    is calculated and how often it runs.
+  cadence: Each validation run - G5 train_week2.py runs it at step 0, every run.eval_every_steps steps and at the
+    last step, so only those rows have it
+  source: G5 train_week2.py, from week2.evaluation.evaluate() in the same metrics.jsonl row, as val/nll_nats (the
+    summed loss) and val/scored_tokens. metrics_writer.py works out validation_loss = val/nll_nats /
+    val/scored_tokens.
+  notes: Mean loss in nats per scored token on G5's fixed held-out set (15 slices in official runs), the same quantity as
+    loss_ntp on training batches, so the two are compared on one axis (Grafana panel 20). Equal to
+    ln(val/perplexity). G5's main held-out number is val/bpb (bits per byte), which does not depend on the
+    tokenizer; validation_loss does, so compare it only between runs with the same tokenizer.
 
 # --- System metrics; G6 to supply ---
 # Are the GPUs busy? Low values may mean GPU time is being wasted.

@@ -429,6 +429,104 @@
       "type": "trend"
     },
     {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "Held-out validation loss (validation_loss, nats per scored token) at each validation run, as points, with the training loss_ntp per step as a thin line for comparison. Read from validation_loss rows (written by metrics_writer.py) or, for G5 train_week2.py's own metrics.jsonl, worked out in the query as val/nll_nats / val/scored_tokens. Both are next-token loss in nats. A gap that keeps growing while loss_ntp falls means overfitting. Compare validation_loss only between runs with the same tokenizer.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "nats per token",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "decimals": 3,
+          "unit": "none",
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*validation_loss.*"
+            },
+            "properties": [
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 7
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.spanNulls",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 84
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT x AS step, series, y AS value FROM (SELECT step AS x, concat(run_id, ' ', name) AS series, value AS y FROM metrics_raw WHERE name IN ('validation_loss', 'loss_ntp') AND run_id IN ($run) AND value IS NOT NULL UNION ALL SELECT step AS x, concat(run_id, ' validation_loss') AS series, sumIf(value, name = 'val/nll_nats') / sumIf(value, name = 'val/scored_tokens') AS y FROM metrics_raw WHERE name IN ('val/nll_nats', 'val/scored_tokens') AND run_id IN ($run) AND value IS NOT NULL GROUP BY run_id, step HAVING countIf(name = 'val/nll_nats') = 1 AND countIf(name = 'val/scored_tokens') = 1 AND sumIf(value, name = 'val/scored_tokens') > 0) ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "Validation loss (validation_loss, with loss_ntp)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
