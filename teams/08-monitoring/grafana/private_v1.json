@@ -1344,6 +1344,112 @@
         }
       ],
       "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "gradient_norm per optimizer step: the L2 norm of all gradients before clipping (the return value of clip_grad_norm_ in teams/05-architecture/harness/train.py and train_week2.py). The dashed red line is run.grad_clip = 1.0, the value in all Team 5 configs. Above the line, the trainer scales the gradients down on that step. A sudden spike often comes before a loss spike.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "gradient norm",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "decimals": 3,
+          "min": 0,
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1.0
+              }
+            ]
+          },
+          "displayName": "${__field.labels.run_id}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 76
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'gradient_norm' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "Gradient norm (gradient_norm, before clipping)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
     }
   ],
   "refresh": "",
