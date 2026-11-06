@@ -53,7 +53,8 @@ def _same(recs, key, what):
     return json.loads(vals.pop())
 
 
-def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref=""):
+def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref="", title="SFT decontamination report",
+                 out_rel="teams/10-post-training/sft/decontam_report.md"):
     names = [r["set"] for r in recs]
     if len(names) != len(set(names)):
         raise ReportError("a set appears twice in the records")
@@ -76,9 +77,10 @@ def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref=""):
     rows_in = sum(r["rows_in"] for r in recs)
     removed = sum(r["rows_removed"] for r in recs)
     kept = sum(r["rows_kept"] for r in recs)
+    title_flag = "" if title == "SFT decontamination report" else f' --title "{title}"'
     L = []
     a = L.append
-    a("# SFT decontamination report")
+    a(f"# {title}")
     a("")
     a(f"Run for G10 on {days[0] if len(days) == 1 else days[0] + ' to ' + days[-1]}. Every set was "
       f"checked against Team 9's benchmark fingerprints **{recs[0]['fingerprints']}** with the **full set** "
@@ -192,7 +194,7 @@ def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref=""):
     a("```")
     a("python teams/10-post-training/sft/decontam_run.py --set <set-id> --input <set>.jsonl --out-dir decontam_out")
     a("python teams/10-post-training/sft/decontam_report.py --records decontam_out --out "
-      "teams/10-post-training/sft/decontam_report.md --sets <set-id> ...")
+      f"{out_rel} --sets <set-id> ...{title_flag}")
     a("```")
     a("")
     a("## 7. Sets not run yet")
@@ -236,10 +238,15 @@ def main(argv=None):
     ap.add_argument("--tools-ref", default="", help="commit of lab main that holds Team 9's tools "
                                                     "(default: the commit found by decontam_run.py)")
     ap.add_argument("--expect-sha", default=PINNED_SET_SHA256)
+    ap.add_argument("--title", default="SFT decontamination report", help="report heading (e.g. for the RL sets)")
     args = ap.parse_args(argv)
     try:
         pending = json.loads(Path(args.pending).read_text(encoding="utf-8")) if args.pending else {}
-        md = build_report(load_records(args.records, args.sets), pending, args.expect_sha, args.tools_ref)
+        repo = Path(__file__).resolve().parents[3]
+        out = Path(args.out).resolve()
+        out_rel = out.relative_to(repo).as_posix() if out.is_relative_to(repo) else out.name
+        md = build_report(load_records(args.records, args.sets), pending, args.expect_sha, args.tools_ref,
+                          title=args.title, out_rel=out_rel)
     except (ReportError, OSError, json.JSONDecodeError) as e:
         print(f"decontam_report: {e}", file=sys.stderr)
         return 1
