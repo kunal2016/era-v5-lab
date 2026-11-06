@@ -53,6 +53,8 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | sft-indic-aya-collection-other | [CohereLabs/aya_collection](https://huggingface.co/datasets/CohereLabs/aya_collection) (all 19 translated datasets and the other templated subsets) | 101 languages | NLLB-3.3B (CC-BY-NC-4.0, non-commercial) machine translation; upstream English generator models not stated on the card | apache-2.0 (Hub tag) | excluded |
 | sft-indic-aya-dataset | [CohereLabs/aya_dataset](https://huggingface.co/datasets/CohereLabs/aya_dataset) | Multilingual incl. Indic | none (human-written annotations; no model generator) | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
 | sft-indic-indic-align | [ai4bharat/indic-align](https://huggingface.co/datasets/ai4bharat/indic-align) | 14 Indic languages | Llama-2-70B-Chat (Llama 2 Community Licence, use restrictions) for many parts; Mistral-7B (Apache-2.0) in some parts | cc-by-4.0 (Hub tag; commercial use permitted per tag) | excluded |
+| sft-indic-indic-align-oasst-t | [ai4bharat/indic-align](https://huggingface.co/datasets/ai4bharat/indic-align) | 14 Indic languages (`OpenAssistant_T` subset only) | none for the text (human-written OpenAssistant v1 conversations); translated with IndicTrans2 (MIT, open weights) | cc-by-4.0 (Hub tag); source oasst1 apache-2.0 | TSAI reserves |
+| sft-indic-indic-align-dolly-t | [ai4bharat/indic-align](https://huggingface.co/datasets/ai4bharat/indic-align) | 14 Indic languages (`Dolly_T` subset only) | none for the text (human-written databricks-dolly-15k); translated with IndicTrans2 (MIT, open weights) | cc-by-4.0 (Hub tag); source dolly cc-by-sa-3.0 (share-alike, attribution needed) | allowed (CC-BY-SA, attribution needed) |
 | sft-indic-samvaad-hi | [sarvamai/samvaad-hi-v1](https://huggingface.co/datasets/sarvamai/samvaad-hi-v1) | Hindi, English, Hinglish | Unknown (not stated on the card or in Sarvam's announcement) | apache-2.0 (Hub tag; commercial use permitted per tag) | excluded |
 | sft-indic-code-oss-codes-coding | [oss-codes/Coding-Conversational-Dataset-Indic](https://huggingface.co/datasets/oss-codes/Coding-Conversational-Dataset-Indic) | Indic (Hindi, Tamil, ...) + code | Unknown (not stated; the card is empty) | mit (Hub tag; commercial use permitted per tag) | excluded |
 | sft-indic-code-oss-codes-cs | [oss-codes/Computer-Science-Conversational-Dataset-Indic](https://huggingface.co/datasets/oss-codes/Computer-Science-Conversational-Dataset-Indic) | Indic + computer science | Unknown (not stated; the card is empty) | mit (Hub tag; commercial use permitted per tag) | excluded |
@@ -71,7 +73,7 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 | sft-science-nemotron-science | [nvidia/Nemotron-Science-v1](https://huggingface.co/datasets/nvidia/Nemotron-Science-v1) | English / Science | gpt-oss-120b (Apache-2.0, open weights) | cc-by-4.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
 | sft-openhermes-2.5 | [teknium/OpenHermes-2.5](https://huggingface.co/datasets/teknium/OpenHermes-2.5) | English / Multi-domain | GPT-4 (OpenAI, proprietary closed), Mixtral-8x7B (Apache-2.0), and Llama (Llama licence) | apache-2.0 (Hub tag; commercial use permitted per tag) | excluded |
 | sft-tulu3-filtered | [allenai/tulu-3-sft-mixture](https://huggingface.co/datasets/allenai/tulu-3-sft-mixture) | English / Multi-domain | Llama-3.1-70B / Llama-3.1-405B (Llama 3.1 Community Licence) and GPT-4o (OpenAI, closed) | odc-by (Hub tag; commercial use permitted per tag) | excluded |
-| sft-dolly-15k | [databricks/databricks-dolly-15k](https://huggingface.co/datasets/databricks/databricks-dolly-15k) | English | none (human-written by Databricks employees; no model generator) | cc-by-sa-4.0 (Hub tag; share-alike, attribution needed) | allowed (CC-BY-SA, attribution needed) |
+| sft-dolly-15k | [databricks/databricks-dolly-15k](https://huggingface.co/datasets/databricks/databricks-dolly-15k) | English | none (human-written by Databricks employees; no model generator) | cc-by-sa-3.0 (Hub tag; share-alike, attribution needed) | allowed (CC-BY-SA, attribution needed) |
 | sft-lmsys-chat-1m | [lmsys/lmsys-chat-1m](https://huggingface.co/datasets/lmsys/lmsys-chat-1m) | Multilingual | Closed & Llama models in Chatbot Arena (custom non-standard LMSYS agreement) | LMSYS Agreement (custom terms, not standard permissive) | excluded |
 | sft-bespoke-stratos-17k | [bespokelabs/Bespoke-Stratos-17k](https://huggingface.co/datasets/bespokelabs/Bespoke-Stratos-17k) | English / STEM Reasoning | DeepSeek-R1 (MIT, open weights) | apache-2.0 (Hub tag; commercial use permitted per tag) | TSAI reserves |
 | sft-numinamath-tir | [AI-MO/NuminaMath-TIR](https://huggingface.co/datasets/AI-MO/NuminaMath-TIR) | English / Python Math Tools | GPT-4 (OpenAI, proprietary closed) generated Python tool-integrated reasoning traces | apache-2.0 (Hub tag; commercial use permitted per tag) | excluded |
@@ -220,6 +222,7 @@ Three stages. Sets marked `excluded` stay in the table with the reason and are n
 - **Language:** `Hindi` (`hin_Deva`)
 - **Source:** HPLT 3.0 monolingual, sorted release: `data.hplt-project.org/three/sorted/hin_Deva` (web crawl from Internet Archive and Common Crawl; catalogue at `hplt-project.org/datasets/v3.0`)
 - **Licence:** `CC0-1.0` for the **packaging only**. HPLT's Terms of Use: "We do not own any of the text from which these text data has been extracted" and "We license the actual packaging of these text data under the Creative Commons CC0 license". The underlying web text keeps its original copyright (no per-document licence is given). HPLT 3.0 filters robots.txt opt-outs and removes sources on a takedown request in the next release.
+- **Generator model:** none (web crawl). The pages are written by their publishers, not by a model chosen for this set; a single page may still be machine-translated or model-written, which the diagnosis codes (D4, D5) mark row by row.
 - **Decision:** `TSAI reserves`. Commercial use of the collection is allowed (CC0). For the web text itself, treat it like every other web-crawl source: honour robots.txt opt-outs and takedown requests, keep each document's source URL so it can be removed, and do not redistribute raw text.
 
 ### 9. Ranjani Chandrasekaran — Indic web (`ind-hi-indiccorp`)
@@ -498,8 +501,31 @@ Twenty-three sets in the two stage sections are `excluded`: eleven earlier ones 
 - **Licence:** `cc-by-4.0` — Hugging Face tag read on 29 Oct 2026. A tag is not legal clearance.
 - **Generator model:** Llama-2-70B-Chat for many parts (Llama), plus translated human prompts; Mistral-7B in some parts
 - **Decision:** `excluded` — TSAI rule in the G10 chat (30 Oct): data made by closed OpenAI, Anthropic, Google or Llama models stays excluded. Applied by us to this set. Reason: Many responses are Llama-2-70B-Chat outputs (Llama).
-- **Our opinion:** excluded under that rule. Ask TSAI if a partial use (for example only the human-written parts) is acceptable.
+- **Our opinion:** excluded under that rule. The two subsets whose text is human-written are listed separately below (`sft-indic-indic-align-oasst-t`, `sft-indic-indic-align-dolly-t`); every other subset stays excluded.
 - **Details and 20-row sample:** [ai4bharat__indic-align](https://github.com/RaviNaik/ERA/tree/main/v5/capstone/team10-datasets/ai4bharat__indic-align)
+
+### `sft-indic-indic-align-oasst-t` — indic-align, `OpenAssistant_T` subset
+
+- **Stage:** SFT
+- **Set:** `sft-indic-indic-align-oasst-t`
+- **Language:** 14 Indic languages, native script and romanised. G10 uses the native-script columns of the ten proposal languages (`hin_Deva`, `mar_Deva`, `tam_Taml`, `tel_Telu`, `kan_Knda`, `ben_Beng`, `guj_Gujr`, `mal_Mlym`, `ory_Orya`, `pan_Guru`).
+- **Source:** [`ai4bharat/indic-align`](https://huggingface.co/datasets/ai4bharat/indic-align), file `indicalign-instruct/oasst/oasst.parquet` (19,909 conversations). The card: "Translated and Romanised version of OpenAssistant v1".
+- **Licence:** `cc-by-4.0` (Hub tag of indic-align) — read on 6 Nov 2026. The source [`OpenAssistant/oasst1`](https://huggingface.co/datasets/OpenAssistant/oasst1) is `apache-2.0`. A tag is not legal clearance.
+- **Generator model:** None for the text: oasst1 prompts and replies are written by human volunteers. Translation: IndicTrans2 (AI4Bharat, open weights, `mit` on [`ai4bharat/indictrans2-en-indic-1B`](https://huggingface.co/ai4bharat/indictrans2-en-indic-1B)). Not a Llama, closed or use-restricted model.
+- **Decision:** `TSAI reserves`
+- **Our opinion:** use. It is the only multi-turn, human-written Indic chat set that passes the rule: 12,686 of 19,909 conversations have two or more assistant turns. Machine translation errors are visible (product names translated literally, for example the SID sound chip as "side sound chip"; one number changed in the Urdu column), so do not use it for translation quality. In the `_Latn` columns the turn order is not reliable; use native script only. `sft/convert.py` takes one language per conversation (by `doc_id`), so the ten translations of one conversation are not all trained.
+- **Details:** converted with `sft/convert.py --set sft-indic-indic-align-oasst-t`: 19,909 of 19,909 rows written, 0 skipped, all at effort `1k`; content sha256 of the full run `d672b433316d…`. `sft/decontam_run.py` on 6 Nov, fingerprints v2 full set (`set_sha256 2826a3b8…`): 9 flagged (`in22_conv`, `hle`), 0 canary, 19,900 kept, every reconciliation check passed.
+
+### `sft-indic-indic-align-dolly-t` — indic-align, `Dolly_T` subset
+
+- **Stage:** SFT
+- **Set:** `sft-indic-indic-align-dolly-t`
+- **Language:** 14 Indic languages, native script and romanised (same columns as above)
+- **Source:** [`ai4bharat/indic-align`](https://huggingface.co/datasets/ai4bharat/indic-align), file `indicalign-instruct/dolly/Dolly.parquet` (15,011 rows). The card: "Translated and Romanised version of Dolly-15K".
+- **Licence:** `cc-by-4.0` (Hub tag of indic-align) — read on 6 Nov 2026. The source [`databricks/databricks-dolly-15k`](https://huggingface.co/datasets/databricks/databricks-dolly-15k) is `cc-by-sa-3.0`: share-alike, attribution needed. A tag is not legal clearance.
+- **Generator model:** None for the text (human-written by Databricks employees). Translation: IndicTrans2 (`mit`, open weights).
+- **Decision:** `allowed (CC-BY-SA, attribution needed)`, as for `sft-dolly-15k`
+- **Our opinion:** use only the rows that never had a context. The translation drops Dolly's `context` field: of the 4,456 Dolly rows with a context passage, 4,455 appear in `Dolly_T` with the question only (1,765 `closed_qa`, 1,504 `information_extraction`, 1,186 `summarization`). Trained as they are, they teach answers about a passage the model never sees. About 10,500 rows remain. In the `_Latn` columns the answer comes before the question. No `convert.py` adapter yet: the filter needs the original Dolly file to find the context rows.
 
 ### `sft-indic-samvaad-hi` — samvaad-hi-v1
 
