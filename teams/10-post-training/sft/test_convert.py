@@ -46,6 +46,30 @@ INDIC_ALIGN = {
        for col in convert.INDIC_ALIGN_COLUMNS},
 }
 
+NEMOTRON_TOOLS = {
+    "uuid": "u1",
+    "tools": [{"type": "function", "function": {"name": "get_balance", "parameters": {"type": "object"}}}],
+    "messages": [
+        {"role": "system", "content": ""},
+        {"role": "user", "content": "Balance of address A?"},
+        {"role": "assistant", "content": "", "reasoning_content": "Call the tool.",
+         "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "get_balance", "arguments": {"address": "A"}}}]},
+        {"role": "tool", "content": {"balance": "0.1"}, "tool_call_id": "c1"},
+        {"role": "assistant", "content": "It is 0.1.", "tool_calls": None, "reasoning_content": "Report it."},
+    ],
+}
+NEMOTRON_MATH = {
+    "uuid": "m1", "tools": [],
+    "messages": [
+        {"role": "user", "content": "What is 1+1?", "reasoning_content": None, "tool_calls": []},
+        {"role": "assistant", "content": "2", "reasoning_content": "Add.", "tool_calls": []},
+    ],
+}
+CASCADE = {"messages": [{"role": "user", "content": "Fix the bug. Reply in a <think> and </think> block."},
+                        {"role": "assistant", "content": "<think>\nLook at the diff.\n</think>\nPatch applied."}]}
+OPENCODE = {"id": "o1", "input": "Sum two ints.", "output": "<think>\nRead, add.\n</think>\n\nprint(a + b)"}
+DOLLY = {"instruction": "Name a colour.", "context": "Think of the sky.", "response": "Blue."}
+
 
 def one(set_id: str, row: dict) -> tuple[dict, dict]:
     lines, manifest = convert.convert(set_id, [row], None, None)
@@ -63,6 +87,13 @@ def trained_text(sample: dict) -> list[str]:
     ("sft-code-swe-rebench-openhands", SWE),
     ("sft-indic-aya-dataset", AYA),
     ("sft-indic-indic-align-oasst-t", INDIC_ALIGN),
+    ("sft-code-nemotron-cuda", NEMOTRON_TOOLS),
+    ("sft-agentic-nemotron-agentic-v1", NEMOTRON_TOOLS),
+    ("sft-agentic-nemotron-sft-agentic-v2-tool-calling", NEMOTRON_TOOLS),
+    ("sft-math-nemotron-math-v2", NEMOTRON_MATH),
+    ("sft-code-nemotron-cascade-swe", CASCADE),
+    ("sft-code-opencodereasoning", OPENCODE),
+    ("sft-dolly-15k", DOLLY),
 ])
 def test_every_adapter_renders_and_parses_back(set_id, row):
     sample, manifest = one(set_id, row)
@@ -271,3 +302,41 @@ def test_hf_rows_refuses_a_page_from_the_wrong_offset(monkeypatch):
     monkeypatch.setattr(convert.urllib.request, "urlopen", lambda *a, **k: Page(body))
     with pytest.raises(RuntimeError, match="got row_idx 700"):
         list(convert.hf_rows("a/b", "default", "train", 800, 1))
+
+
+def test_nemotron_chat_drops_empty_system_keeps_think_and_tool_turn():
+    sample, _ = one("sft-agentic-nemotron-agentic-v1", NEMOTRON_TOOLS)
+    assert "Tools:" in sample["text"] and "get_balance" in sample["text"]
+    assert '"balance": "0.1"' in sample["text"]
+    spans = trained_text(sample)
+    assert spans[0].startswith(T["think"]) and "Call the tool." in spans[0]
+    assert spans[-1].endswith(f"It is 0.1.{T['im_end']}")
+
+
+def test_nemotron_chat_fills_empty_tool_turn():
+    row = json.loads(json.dumps(NEMOTRON_TOOLS))
+    row["messages"][3]["content"] = ""
+    sample, _ = one("sft-code-nemotron-cuda", row)
+    assert "(no output)" in sample["text"]
+
+
+def test_cascade_and_opencode_think_blocks_go_to_think_span():
+    for set_id, row, thought in (("sft-code-nemotron-cascade-swe", CASCADE, "Look at the diff."),
+                                 ("sft-code-opencodereasoning", OPENCODE, "Read, add.")):
+        sample, _ = one(set_id, row)
+        assert thought in trained_text(sample)[0] and "<think>" not in sample["text"]
+
+
+def test_opencode_without_think_is_skipped():
+    lines, manifest = convert.convert("sft-code-opencodereasoning", [dict(OPENCODE, output="print(a)")], None, None)
+    assert lines == [] and list(manifest["skipped"]) == ["output does not start with one <think>...</think> block"]
+
+
+def test_dolly_puts_context_after_instruction():
+    sample, _ = one("sft-dolly-15k", DOLLY)
+    assert "Name a colour.\n\nThink of the sky." in sample["text"]
+
+
+def test_cascade_prompt_tag_names_are_bracketed():
+    sample, _ = one("sft-code-nemotron-cascade-swe", CASCADE)
+    assert "Reply in a [think] and [/think] block." in sample["text"]

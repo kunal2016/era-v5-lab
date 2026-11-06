@@ -30,6 +30,7 @@ import argparse
 import bisect
 import hashlib
 import http.client
+import io
 import importlib.util
 import json
 import re
@@ -171,6 +172,88 @@ def indic_align_t(row: dict) -> list[dict]:
             for thread in threads for i, text in enumerate(thread)]
 
 
+# --- adapters for the nvidia / open-r1 families (reasoning_content, tool_calls, tool turns) -----
+
+def _text(value) -> str:
+    """Message or tool content as text: JSON objects (some tool results) are written out as JSON."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+def nemotron_chat(row: dict) -> list[dict]:
+    """Rows with `messages` of role/content plus optional reasoning_content, tool_calls and tool turns.
+
+    Covers Nemotron CUDA, Agentic v1/v2 (tool calling), Math v2/v4/Proofs, Science and the
+    Instruction-Following sets. An empty system turn is dropped.
+    """
+    messages: list[dict] = []
+    for message in row["messages"]:
+        role, content = message["role"], _text(message.get("content"))
+        if role == "system" and not content.strip():
+            continue
+        if role == "assistant":
+            out: dict = {"role": "assistant", "content": content}
+            think = message.get("reasoning_content") or message.get("reasoning")
+            if think:
+                out["think"] = str(think).strip()
+            calls = [{"function": c["function"], "id": c.get("id")} for c in message.get("tool_calls") or []]
+            if calls:
+                out["tool_calls"] = calls
+            if not content.strip() and not calls and not think:
+                raise Skip("assistant turn is empty")
+            messages.append(out)
+        elif role == "tool":
+            # Commands with no output come back empty; render.py needs a non-empty tool turn.
+            messages.append({"role": "tool", "content": content if content.strip() else "(no output)"})
+        else:
+            messages.append({"role": role, "content": content})
+    if row.get("tools") and messages and messages[0]["role"] == "system":
+        tools = json.dumps(row["tools"], ensure_ascii=False, sort_keys=True)
+        messages[0] = {"role": "system", "content": f"{messages[0]['content']}\n\nTools:\n{tools}"}
+    elif row.get("tools"):
+        tools = json.dumps(row["tools"], ensure_ascii=False, sort_keys=True)
+        messages.insert(0, {"role": "system", "content": f"Tools:\n{tools}"})
+    return messages
+
+
+def think_tag_messages(row: dict) -> list[dict]:
+    """`messages` or `conversations` whose assistant turns carry one leading <think>...</think> block
+    (Nemotron Cascade SWE, Nemotron Terminal)."""
+    source = row.get("messages") or row.get("conversations")
+    messages = []
+    for message in source:
+        if message["role"] != "assistant":
+            # The Cascade prompts end with a sentence naming the tags; render.py refuses the literal
+            # tags in content, so the sentence is written with square brackets.
+            text = message["content"].replace("</think>", "[/think]").replace("<think>", "[think]")
+            messages.append({"role": message["role"], "content": text})
+            continue
+        hit = _THINK.fullmatch(message["content"])
+        messages.append(
+            {"role": "assistant", "think": hit[1].strip(), "content": hit[2]} if hit
+            else {"role": "assistant", "content": message["content"]}
+        )
+    return messages
+
+
+def opencodereasoning(row: dict) -> list[dict]:
+    hit = _THINK.fullmatch(row["output"])
+    if not hit:
+        raise Skip("output does not start with one <think>...</think> block")
+    return [
+        {"role": "user", "content": row["input"]},
+        {"role": "assistant", "think": hit[1].strip(), "content": hit[2]},
+    ]
+
+
+def dolly(row: dict) -> list[dict]:
+    prompt = f"{row['instruction']}\n\n{row['context']}".strip() if row.get("context") else row["instruction"]
+    return [{"role": "user", "content": prompt}, {"role": "assistant", "content": row["response"]}]
+
+
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
@@ -184,6 +267,13 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
         indic_align_t, "doc_id", ("OpenAssistant_T", "train"), None,
         "one native-script column per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
     ),
+    "sft-code-nemotron-cuda": (nemotron_chat, "", ("file", "data/train.jsonl"), None, ""),
+    "sft-agentic-nemotron-agentic-v1": (nemotron_chat, "uuid", ("file", "data/tool_calling.jsonl"), None, "tool_calling file"),
+    "sft-agentic-nemotron-sft-agentic-v2-tool-calling": (nemotron_chat, "", ("file", "data/tool_calling.jsonl"), None, ""),
+    "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "data/high.part_00.jsonl"), None, "first high-reasoning part"),
+    "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_repair.jsonl"), None, "swe_repair file"),
+    "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "split_0/train-00000-of-00005.parquet"), None, "first shard"),
+    "sft-dolly-15k": (dolly, "", ("file", "databricks-dolly-15k.jsonl"), None, ""),
 }
 
 
@@ -195,7 +285,7 @@ def licence_row(set_id: str, table: Path = LICENCE_TABLE) -> dict:
     for line in stage1.splitlines():
         cells = [c.strip() for c in re.split(r"(?<!\\)\|", line)[1:-1]]
         if len(cells) == 6 and cells[0] == set_id:
-            source = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", cells[1])
+            source = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", cells[1]).split(" (")[0]
             return {"set": set_id, "source": source, "language": cells[2], "generator_model": cells[3],
                     "licence": cells[4], "decision": cells[5]}
     raise SystemExit(f"{set_id} is not in the Stage 1 table of {table}")
@@ -381,12 +471,84 @@ def hf_rows(dataset: str, config: str, split: str, offset: int, n: int) -> Itera
             yield item["row"]
 
 
+class _RangeFile(io.RawIOBase):
+    """Read-only, seekable view of a remote file through HTTP range requests (for parquet footers and row groups)."""
+
+    def __init__(self, url: str):
+        self.url, self.pos = url, 0
+        request = urllib.request.Request(url, headers={"Range": "bytes=0-0"})
+        with urllib.request.urlopen(request, timeout=120) as r:
+            self.size = int(r.headers["Content-Range"].rsplit("/", 1)[1])
+
+    def readable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return True
+
+    def tell(self) -> int:
+        return self.pos
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        self.pos = (offset, self.pos + offset, self.size + offset)[whence]
+        return self.pos
+
+    def readinto(self, buffer) -> int:
+        want = min(len(buffer), self.size - self.pos)
+        if want <= 0:
+            return 0
+        for attempt in range(5):
+            try:
+                request = urllib.request.Request(self.url, headers={"Range": f"bytes={self.pos}-{self.pos + want - 1}"})
+                with urllib.request.urlopen(request, timeout=120) as r:
+                    data = r.read()
+                break
+            except (OSError, http.client.HTTPException):
+                if attempt == 4:
+                    raise
+                time.sleep(5 * (attempt + 1))
+        buffer[: len(data)] = data
+        self.pos += len(data)
+        return len(data)
+
+
+def hf_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]:
+    """First rows of one data file in a public Hugging Face dataset repo (.jsonl or .parquet), read from the start.
+
+    Only the bytes needed are fetched: a .jsonl is streamed and closed after the last row, a .parquet is read
+    row group by row group through range requests. Rows are never truncated, unlike the datasets-server API.
+    """
+    url = f"https://huggingface.co/datasets/{dataset}/resolve/main/{urllib.parse.quote(path)}"
+    taken = 0
+    if path.endswith(".parquet"):
+        import pyarrow.parquet as pq
+
+        pf = pq.ParquetFile(io.BufferedReader(_RangeFile(url), buffer_size=4 << 20))
+        for batch in pf.iter_batches(batch_size=64):
+            for row in batch.to_pylist():
+                if taken >= offset + n:
+                    return
+                if taken >= offset:
+                    yield row
+                taken += 1
+        return
+    with urllib.request.urlopen(url, timeout=120) as r:
+        for line in r:
+            if taken >= offset + n:
+                return
+            if taken >= offset:
+                yield json.loads(line)
+            taken += 1
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--set", required=True, choices=sorted(ADAPTERS))
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--input", type=Path, help="local .parquet or .jsonl with the set's own columns")
     src.add_argument("--hf-rows", type=int, help="fetch this many rows from the Hugging Face datasets-server")
+    src.add_argument("--hf-file", type=int, metavar="N",
+                     help="read N rows from the set's own file in the Hub repo (ranged download, no row-size limit)")
     ap.add_argument("--hf-offset", type=int, default=0)
     ap.add_argument("--limit", type=int, help="stop after this many selected rows")
     ap.add_argument("--tokenizer", help="tokenizer.json for real token counts, input_ids and loss_mask")
@@ -397,11 +559,15 @@ def main() -> None:
     check_allowed(meta)
     if a.input:
         rows, where = read_rows(a.input), f"file {a.input.name}"
+    elif a.hf_file:
+        _, path = ADAPTERS[a.set][2]
+        rows = hf_file_rows(meta["source"], path, a.hf_offset, a.hf_file)
+        where = f"hub file {meta['source']} {path} rows {a.hf_offset}..{a.hf_offset + a.hf_file - 1}"
     else:
         config, split = ADAPTERS[a.set][2]
         rows = hf_rows(meta["source"], config, split, a.hf_offset, a.hf_rows)
         where = f"datasets-server {meta['source']} {config}/{split} rows {a.hf_offset}..{a.hf_offset + a.hf_rows - 1}"
-    lines, manifest = convert(a.set, rows, a.limit, a.tokenizer, a.hf_offset if a.hf_rows else 0)
+    lines, manifest = convert(a.set, rows, a.limit, a.tokenizer, a.hf_offset if (a.hf_rows or a.hf_file) else 0)
     manifest["input"] = where
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_bytes("".join(lines).encode("utf-8"))
