@@ -1352,3 +1352,10 @@ For Team 11's public model card, datasheet, and release compliance ledger:
      2. **Llama models & use-restriction licences (`OpenRAIL-M`):** `StarCoder2` (`bigcode/self-oss-instruct-sc2-exec-filter-50k` — BigCode OpenRAIL-M makes a model trained on its output a derivative carrying its use restrictions), `indic-align` (Llama-2-70B), `OpenMathInstruct-2` (Llama-3.1-405B), `tulu-3-sft-mixture` (Llama-3.1), `Nemotron-Post-Training-Dataset-v1` (Llama-3.3), `Nemotron-Safety-Guard-Dataset-v3` (Llama jury + Google Translate), `Big-Math-RL-Verified` (Llama-3.1), `Skywork-Reward-Preference-80K-v0.2` (Llama-3 Magpie), `community-alignment-dataset` (Llama candidates), `CodeFeedback-Filtered-Instruction` (GPT-3.5/4 + Qwen-72B non-Apache-2.0).
      3. **Unknown / unstated generator models on the dataset card:** `Nemotron-SFT-Competitive-Programming-v2`, `Nemotron-SFT-SWE-v3`, `Nemotron-SFT-Agentic-v2` (search & customer-service parts), `samvaad-hi-v1`, `oss-codes/*`, `glaive-function-calling-v2`, `Nemotron-SFT-Safety-v2`, `R2E-Gym-Subset`, `DAPO-Math-17k`, `distilabel-math-dpo`.
 
+
+### Ranjani Chandrasekaran — RL sets (week 2)
+
+| Set | Source | Language | Generator model | Licence | Decision |
+|---|---|---|---|---|---|
+| rl-synthetic2 | PrimeIntellect/SYNTHETIC-2-RL | English / Math, Code, Reasoning | DeepSeek-R1-0528 (MIT, open weights) for reasoning traces; Qwen3-32B, Qwen3-4B and DeepSeek-R1-0528-Qwen3-8B (Apache-2.0/MIT) for difficulty annotations | apache-2.0 | TSAI reserves |
+| rl-skywork-or1 | PrimeIntellect/Skywork-OR1-RL-Data | English / Mathematics | DeepSeek-R1-Distill-Qwen 1.5B, 7B, 32B (open weights, derived from MIT-licensed DeepSeek-R1) for difficulty annotations | apache-2.0 | TSAI reserves |
