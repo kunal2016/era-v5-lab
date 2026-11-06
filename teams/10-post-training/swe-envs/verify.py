@@ -300,33 +300,48 @@ def image_ref(env: dict) -> str:
     return env["image"] if not PLATFORM else f"{env['image']}-{PLATFORM.rsplit('/', 1)[-1]}"
 
 
-def run_side(env_dir: Path, env: dict, candidate: str | None) -> dict:
-    """Run the hidden tests once on base (+ candidate). Returns {"results": {...}} or {"error": ...}."""
-    token = uuid.uuid4().hex[:12]
+def docker_run(env: dict, script: str, files: dict[str, bytes], timeout_s: float) -> tuple[str, str]:
+    """Default executor: a fresh `docker run --rm` per run, with `files` mounted read-only at /patches.
+
+    An executor takes (env, script, files, timeout_s), runs `script` with bash in the env image with `files` at
+    /patches, and returns (stdout, stderr). It raises TimeoutError on timeout. rl/pool.py provides a pooled one.
+    """
     with tempfile.TemporaryDirectory(prefix="g10swe-") as tmp:
         pdir = Path(tmp)
-        (pdir / "test.patch").write_bytes((env_dir / "test.patch").read_bytes())
-        if candidate is not None:
-            (pdir / "candidate.patch").write_bytes(candidate.encode("utf-8"))  # bytes: no CRLF change
+        for fname, data in files.items():
+            (pdir / fname).write_bytes(data)  # bytes: no CRLF change
         name = f"g10swe-{uuid.uuid4().hex[:12]}"
         cmd = ["docker", "run", "--rm", "--name", name, *DOCKER_LIMITS,
                *(["--platform", PLATFORM] if PLATFORM else []),
-               "-v", f"{pdir}:/patches:ro", image_ref(env), "bash", "-c",
-               container_script(env, candidate is not None, token)]
-        start = time.monotonic()
+               "-v", f"{pdir}:/patches:ro", image_ref(env), "bash", "-c", script]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(env.get("timeout_s", 300)) + 60)
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
         except subprocess.TimeoutExpired:
             subprocess.run(["docker", "kill", name], capture_output=True)
-            return {"error": "timeout"}
-        seconds = time.monotonic() - start
-    out = proc.stdout
+            raise TimeoutError
+    return proc.stdout, proc.stderr
+
+
+def run_side(env_dir: Path, env: dict, candidate: str | None, executor=None) -> dict:
+    """Run the hidden tests once on base (+ candidate). Returns {"results": {...}} or {"error": ...}."""
+    token = uuid.uuid4().hex[:12]
+    files = {"test.patch": (env_dir / "test.patch").read_bytes()}
+    if candidate is not None:
+        files["candidate.patch"] = candidate.encode("utf-8")
+    start = time.monotonic()
+    try:
+        stdout, stderr = (executor or docker_run)(env, container_script(env, candidate is not None, token), files,
+                                                  int(env.get("timeout_s", 300)) + 60)
+    except TimeoutError:
+        return {"error": "timeout"}
+    seconds = time.monotonic() - start
+    out = stdout
     if APPLY_FAIL in out:
         return {"error": "candidate patch does not apply"}
     if TEST_PATCH_FAIL in out:
         return {"error": "test.patch does not apply"}
     if REPORT_START not in out:
-        return {"error": "no report: " + (out + proc.stderr)[-500:]}
+        return {"error": "no report: " + (out + stderr)[-500:]}
     m = EXIT_RE.search(out)
     exit_code = int(m.group(1)) if m else None
     if exit_code == 124:
@@ -367,7 +382,8 @@ def ensure_image(env_dir: Path, env: dict) -> str:
 
 # --- reward and gold check ------------------------------------------------------------------
 
-def reward(env_dir: Path, candidate: str) -> dict:
+def reward(env_dir: Path, candidate: str, executor=None) -> dict:
+    """executor: None for a fresh `docker run` per call, or a pooled executor from rl/pool.py."""
     env = load_env(env_dir)
     problems = patch_problems(candidate)
     if problems:
@@ -377,7 +393,7 @@ def reward(env_dir: Path, candidate: str) -> dict:
     if touched:
         return {"instance_id": env["instance_id"], "reward": 0, "reason": f"patch edits test files: {touched}"}
     ensure_image(env_dir, env)
-    side = run_side(env_dir, env, candidate)
+    side = run_side(env_dir, env, candidate, executor)
     if "error" in side:
         return {"instance_id": env["instance_id"], "reward": 0, "reason": side["error"]}
     wanted = env["FAIL_TO_PASS"] + env["PASS_TO_PASS"]

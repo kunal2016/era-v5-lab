@@ -261,7 +261,7 @@ def env_dir(tmp_path):
 
 
 def _fake(monkeypatch, before: dict, after: dict, image="sha256:abc"):
-    def run_side(env_dir, env, candidate):
+    def run_side(env_dir, env, candidate, executor=None):
         return {"results": dict(before if candidate is None else after), "seconds": 0.5}
 
     monkeypatch.setattr(verify, "run_side", run_side)
@@ -341,7 +341,7 @@ def test_gold_check_fails_when_p2p_breaks_after_gold(env_dir, monkeypatch):
 def test_gold_check_catches_a_flaky_run(env_dir, monkeypatch):
     calls = {"n": 0}
 
-    def run_side(env_dir, env, candidate):
+    def run_side(env_dir, env, candidate, executor=None):
         calls["n"] += 1
         flaky_pass = calls["n"] != 3  # the second "before" run is different
         if candidate is None:

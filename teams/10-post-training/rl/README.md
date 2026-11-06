@@ -28,3 +28,31 @@ A task is a folder `tasks/<task_id>/` (the folder name equals `id`):
 A case is `{"args": [...], "kwargs": {...}, "expected": <json value>}`, or `{"args": [...], "raises": "ValueError"}` when the function must raise. Expected values are plain JSON; a returned tuple is compared as a list.
 
 Rules for the dataset: tasks must be original (not taken from HumanEval, MBPP or any benchmark), the reference solution must score 1, and the hidden tests must not appear in the prompt. Run the repository's decontamination check on the prompts before merging.
+
+## One reward entry point and the warm pool (`reward.py`, `pool.py`)
+
+TSAI (5 Nov, on PR #30): one wrapper `reward(env_id, output)` that returns a score and an info dict, with each environment registered under its env_id, and a warm container pool with one worker per CPU core.
+
+```python
+import importlib.util
+spec = importlib.util.spec_from_file_location("reward", "teams/10-post-training/rl/reward.py")
+reward = importlib.util.module_from_spec(spec); spec.loader.exec_module(reward)
+
+score, info = reward.reward("code/parse_duration", completion)       # rl/tasks/<task_id>, this verifier
+score, info = reward.reward("swe/pallets__click-1934", patch_text)   # swe-envs/<instance_id>, swe-envs/verify.py
+
+with reward._pool().CodePool(workers=8) as cp:                        # warm pool for code tasks
+    reward.configure(code_runner=cp.runner)
+    ...
+```
+
+- `register("<type>", checker)` adds an environment type. An unknown or unsafe env_id raises `KeyError`. It never scores 0 silently, because a silent 0 looks like a real failure to the trainer.
+- **Code pool:** one long-lived container per worker, with the same limits as the `docker` sandbox, reused for a batch of rollouts. After every rollout the pool:
+  - empties `/tmp` and the work folder;
+  - kills every process the candidate left behind (PID 1 is a small reaper, so killed processes cannot linger as zombies);
+  - recycles the container after a timeout, a failed cleanup or 200 uses.
+
+  The expected answers still never enter the container.
+- **SWE envs are not pooled.** Their tests write into the repository, so a reused container could carry a planted change into the next rollout. Pre-started single-use containers measured slower than plain parallel `docker run --rm` (see the bench). So each SWE rollout gets a fresh container, and the trainer runs them in parallel. `swe-envs/verify.py` accepts an `executor`, so a safe reusable design can plug in later.
+- Throughput: `results/reward_pool_bench.md` (`python rl/bench_pool.py --write results/reward_pool_bench.md`).
+- Every reference solution and gold patch scores 1, and every wrong answer scores 0: `python rl/reward.py --check-all [--pool]`.
