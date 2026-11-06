@@ -254,6 +254,61 @@ def dolly(row: dict) -> list[dict]:
     return [{"role": "user", "content": prompt}, {"role": "assistant", "content": row["response"]}]
 
 
+def openmathreasoning(row: dict) -> list[dict]:
+    if row.get("inference_mode") != "cot":
+        raise Skip("tool-integrated (non-cot) solution")
+    hit = _THINK.fullmatch(row["generated_solution"])
+    if not hit:
+        raise Skip("solution does not start with one <think>...</think> block")
+    return [{"role": "user", "content": row["problem"]},
+            {"role": "assistant", "think": hit[1].strip(), "content": hit[2]}]
+
+
+def openr1_math_raw(row: dict) -> list[dict]:
+    """Problem plus the first generation; the Raw set has no `messages`."""
+    hit = _THINK.fullmatch(row["generations"][0] or "")
+    if not hit:
+        raise Skip("first generation does not start with one <think>...</think> block")
+    return [{"role": "user", "content": row["problem"]},
+            {"role": "assistant", "think": hit[1].strip(), "content": hit[2]}]
+
+
+_SHAREGPT_ROLE = {"human": "user", "gpt": "assistant", "system": "system"}
+
+
+def sharegpt_think(row: dict) -> list[dict]:
+    """OpenThoughts3: `conversations` of from/value; the gpt turn opens with <think> ... </think>."""
+    messages = []
+    for turn in row["conversations"]:
+        role = _SHAREGPT_ROLE[turn["from"]]
+        if role != "assistant":
+            messages.append({"role": role, "content": turn["value"]})
+            continue
+        hit = _THINK.fullmatch(turn["value"])
+        if not hit:
+            # In OpenThoughts3 most unmatched turns open <think> and never close it (cut-off reasoning).
+            raise Skip("assistant turn is not one <think>...</think> block (reasoning not closed)")
+        messages.append({"role": "assistant", "think": hit[1].strip(), "content": hit[2]})
+    return messages
+
+
+def opencodereasoning_2(row: dict) -> list[dict]:
+    # Most questions are withheld upstream and stored as "-"; without the question there is no prompt.
+    if row["question"].strip() in ("", "-"):
+        raise Skip("question is withheld upstream (stored as '-')")
+    hit = _THINK.fullmatch(row["r1_generation"])
+    if not hit:
+        raise Skip("generation does not start with one <think>...</think> block")
+    return [{"role": "user", "content": row["question"]},
+            {"role": "assistant", "think": hit[1].strip(), "content": hit[2]}]
+
+
+def nemotron_chat_nonempty(row: dict) -> list[dict]:
+    if not row.get("messages"):
+        raise Skip("row has no messages (statement only)")
+    return nemotron_chat(row)
+
+
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
@@ -272,7 +327,17 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-agentic-nemotron-sft-agentic-v2-tool-calling": (nemotron_chat, "", ("file", "data/tool_calling.jsonl"), None, ""),
     "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "data/high.part_00.jsonl"), None, "first high-reasoning part"),
     "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_repair.jsonl"), None, "swe_repair file"),
-    "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "split_0/train-00000-of-00005.parquet"), None, "first shard"),
+    "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "split_0/train-00000-of-00030.parquet"), None, "first shard"),
+    "sft-math-nemotron-sft-math-v4": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00012.parquet"), None, "first shard"),
+    "sft-rl-math-openmathreasoning": (openmathreasoning, "", ("file", "data/cot-00000-of-00144.parquet"), None, "first cot shard"),
+    "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "all/default-00000-of-00010.parquet"), None, "first shard"),
+    "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "data/train-00000-of-00039.parquet"), None, "first shard, first generation"),
+    "sft-stem-code-openthoughts3": (sharegpt_think, "", ("file", "data/train-00000-of-00120.parquet"), None, "first shard"),
+    "sft-code-opencodereasoning-2": (opencodereasoning_2, "id", ("file", "train/python/train-00000-of-00070.parquet"), None, "python, first shard"),
+    "sft-science-nemotron-science": (nemotron_chat, "uuid", ("file", "data/MCQ.jsonl"), None, "MCQ file"),
+    "sft-chat-nemotron-if-v1": (nemotron_chat, "uuid", ("file", "data/structured_outputs.jsonl"), None, "structured_outputs file"),
+    "sft-chat-nemotron-if-v2": (nemotron_chat, "uuid", ("file", "data/reasoning_on.jsonl"), None, "reasoning_on file"),
+    "sft-math-nemotron-proofs": (nemotron_chat_nonempty, "uuid", ("file", "data/lean.jsonl"), None, "lean file"),
     "sft-dolly-15k": (dolly, "", ("file", "databricks-dolly-15k.jsonl"), None, ""),
 }
 

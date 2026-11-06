@@ -71,6 +71,13 @@ OPENCODE = {"id": "o1", "input": "Sum two ints.", "output": "<think>\nRead, add.
 DOLLY = {"instruction": "Name a colour.", "context": "Think of the sky.", "response": "Blue."}
 
 
+OMR = {"problem": "2+2?", "inference_mode": "cot", "generated_solution": "<think>\nAdd.\n</think>\n\\boxed{4}"}
+OPENR1_RAW = {"problem": "2+2?", "generations": ["<think>\nAdd.\n</think>\nFour."]}
+OT3 = {"conversations": [{"from": "human", "value": "Sum?"}, {"from": "gpt", "value": "<think> Add them. </think> The sum."}]}
+OCR2 = {"id": "q1", "question": "Print 1.", "r1_generation": "<think>\nprint it\n</think>\nprint(1)"}
+OPENR1 = {"uuid": "r1", "messages": CASCADE["messages"]}
+
+
 def one(set_id: str, row: dict) -> tuple[dict, dict]:
     lines, manifest = convert.convert(set_id, [row], None, None)
     assert len(lines) == 1, manifest["skipped"]
@@ -94,6 +101,16 @@ def trained_text(sample: dict) -> list[str]:
     ("sft-code-nemotron-cascade-swe", CASCADE),
     ("sft-code-opencodereasoning", OPENCODE),
     ("sft-dolly-15k", DOLLY),
+    ("sft-math-nemotron-sft-math-v4", NEMOTRON_MATH),
+    ("sft-rl-math-openmathreasoning", OMR),
+    ("sft-math-openr1-math", OPENR1),
+    ("sft-math-openr1-math-raw", OPENR1_RAW),
+    ("sft-stem-code-openthoughts3", OT3),
+    ("sft-code-opencodereasoning-2", OCR2),
+    ("sft-science-nemotron-science", NEMOTRON_MATH),
+    ("sft-chat-nemotron-if-v1", NEMOTRON_MATH),
+    ("sft-chat-nemotron-if-v2", NEMOTRON_TOOLS),
+    ("sft-math-nemotron-proofs", NEMOTRON_MATH),
 ])
 def test_every_adapter_renders_and_parses_back(set_id, row):
     sample, manifest = one(set_id, row)
@@ -340,3 +357,20 @@ def test_dolly_puts_context_after_instruction():
 def test_cascade_prompt_tag_names_are_bracketed():
     sample, _ = one("sft-code-nemotron-cascade-swe", CASCADE)
     assert "Reply in a [think] and [/think] block." in sample["text"]
+
+
+@pytest.mark.parametrize("set_id,row,reason", [
+    ("sft-rl-math-openmathreasoning", dict(OMR, inference_mode="tir"), "tool-integrated (non-cot) solution"),
+    ("sft-code-opencodereasoning-2", dict(OCR2, question="-"), "question is withheld upstream (stored as '-')"),
+    ("sft-math-nemotron-proofs", {"uuid": "p", "messages": []}, "row has no messages (statement only)"),
+    ("sft-math-openr1-math-raw", dict(OPENR1_RAW, generations=["no think"]),
+     "first generation does not start with one <think>...</think> block"),
+])
+def test_new_adapters_skip_with_reason(set_id, row, reason):
+    lines, manifest = convert.convert(set_id, [row], None, None)
+    assert lines == [] and manifest["skipped"] == {reason: 1}
+
+
+def test_openthoughts_think_with_inline_spaces():
+    sample, _ = one("sft-stem-code-openthoughts3", OT3)
+    assert "Add them." in trained_text(sample)[0] and "The sum." in trained_text(sample)[0]
