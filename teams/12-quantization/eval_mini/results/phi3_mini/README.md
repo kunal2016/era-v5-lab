@@ -22,8 +22,8 @@ question with the per-item scores only; the benchmark `target` and `response` ar
   MMLU 69.3/69.5, GSM8K 74.5/74.5, TruthfulQA 57.0/57.0 (no-cache/cached). 10 of 1,870 items flip (ARC 6, HellaSwag 1, MMLU 3). So the
   0.0786 comes from the cached path (reused prefix, small continuation batch) and flips a few near-tie items; the cause inside the
   quantized kernels is not proven. The scores in `runs.csv` are from the cached run.
-- **Model fields in `summary.json`.** `run_mini_gguf.py` writes the OLMoE default into `run_meta.model` and `run_meta.model_revision`.
-  **I corrected those two fields in the committed files** (to `microsoft/Phi-3-mini-4k-instruct` and the revision above) and added
-  `run_meta.fields_corrected_by_hand` with the original values. Nothing else in the two files was changed. The unmodified output is in
-  the Kaggle version above. `run_mini_gguf.py` itself still has the bug.
+- **Model fields in `summary.json`.** `run_mini_gguf.py` writes the OLMoE default into `run_meta.model`, `run_meta.model_revision`
+  and the same two fields of every record. **I corrected them in the committed files** (to `microsoft/Phi-3-mini-4k-instruct` and the
+  revision above), in `run_meta` and in all 8 records of each file, and added `run_meta.fields_corrected_by_hand`. Nothing else in the
+  two files was changed. The unmodified output is in the Kaggle version above. `run_mini_gguf.py` itself still has the bug.
 - `gen_tok_s` is not measured and is empty in `runs.csv`.

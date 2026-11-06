@@ -16,17 +16,13 @@
   "load_s": 1.3,
   "g9_harness_sha256": "e91bd8b37975d098",
   "fields_corrected_by_hand": {
-   "what": "model and model_revision were written as the OLMoE default by run_mini_gguf.py; set to the model that ran (see environment.json settings)",
-   "original_values": {
-    "model": "allenai/OLMoE-1B-7B-0924",
-    "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5"
-   }
+   "what": "model and model_revision were written as the OLMoE default by run_mini_gguf.py, in run_meta and in every record; set to the model that ran (see environment.json settings)"
   }
  },
  "records": [
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 500,
@@ -49,8 +45,8 @@
    "task_version": 1.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 500,
@@ -73,8 +69,8 @@
    "task_version": 1.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 400,
@@ -97,8 +93,8 @@
    "task_version": 1.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 400,
@@ -121,8 +117,8 @@
    "task_version": 1.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 10,
@@ -145,8 +141,8 @@
    "task_version": "2"
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 200,
@@ -169,8 +165,8 @@
    "task_version": 3.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 200,
@@ -193,8 +189,8 @@
    "task_version": 3.0
   },
   {
-   "model": "allenai/OLMoE-1B-7B-0924",
-   "model_revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+   "model": "microsoft/Phi-3-mini-4k-instruct",
+   "model_revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
    "dtype": "Q4_K_M",
    "profile": "mini",
    "limit": 200,
