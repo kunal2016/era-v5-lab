@@ -15,10 +15,10 @@ Task 1 of Data B's week 2 (#211). It hands Data B's Indic cleaning rules to Data
 A rule is in when it passes the harm test on **its own pack's gold set at today's size**: the gold sets rebuilt on
 3 Nov (#222, main `ea7b533`; `teams/02-data-b` is the same on `195f4ff`), unchanged on main since. TSAI (#240, 4 Nov
 17:47 IST): only a result on today's gold counts.
-- 192 rules: re-run on today's gold set and passed: 137 by millermuttu, 39 by the Data B rules owner (Pritish52718),
+- 194 rules: re-run on today's gold set and passed: 135 by millermuttu, 43 by the Data B rules owner (Pritish52718),
   6 by shankarpandala, and 10 by the author of #91 (the author's own run, written in words, not the tool's output).
   Each result is linked in its rule.
-- 51 rules: the author's own `medicine.md` reports a pass on today's gold set.
+- 49 rules: the author's own `medicine.md` reports a pass on today's gold set.
 - 17 rules: Data B's rewrites of #70 (10), #112 (5) and #46 (2), run on today's gold set and OK'd by their authors.
 
 Every rule's harm line shows its changed and dropped counts and its result.
@@ -49,6 +49,15 @@ From the 262 published on 4 Nov: 262 − 5 out (2 that add a ZWJ, #63 F1, 2 F2) 
   62) and `DB-G1-006` (#50, its matra fix; 0 of 142). The rules were found by running every rule on made-up text in
   its own script, once with a visarga used as a colon and once with `:` in its place. On 5 Nov, none of the 260
   converts either way.
+- A visarga used as a colon is clean also with a space before it (TSAI's #240 re-review, 5 Nov). `DB-G1-002` (#18,
+  Gujarati) and `DB-G1-010` (#3, Telugu) deleted a lone sign after a space, the visarga included (`અમદાવાદ ઃ` became
+  `અમદાવાદ`). Data B took the visarga out of each rule's set of signs to delete, marked in the code, and re-ran them on
+  today's gold: 0 of 80 and 0 of 18 changed.
+- TSAI's follow-up: a visarga, with or without the space before it, stays as written. `DB-G1-005` (#47, Kannada),
+  `DB-G1-007` (#45, Sanskrit) and `DB-G1-014` (#109, Telugu) removed the space before a lone sign, the visarga
+  included (`ಬೆಂಗಳೂರು ಃ` became `ಬೆಂಗಳೂರುಃ`). Data B took the visarga out of the set of signs each one joins to the
+  word before, marked in the code, and re-ran them on today's gold: 0 of 114, 0 of 71 and 0 of 18 changed. On made-up text
+  in each rule's script, with and without a space before the visarga, no rule changes it now.
 - D3 is out of spec v1 as a fix, so every D3 rule is `keep`: nine rules that were labelled `fix` are now `keep`
   (`DB-D3-004`, `-005`, `-010`, `-012`, `-015`, `-016`, `-018`, `-019`, `-020`). Their authors can move a rule to
   another code if it passes again under that code.
@@ -65,7 +74,9 @@ waits for the next spec.
 - The label card: `RULE_ID`, `CODE`, `ACTION`, `STAGE`, `STATUS`, `LANGS`, `ORIGIN`, `SOURCE`, `AUTHOR` (with the PR
   number and commit).
 - The author's code, unchanged: every python block of their section, in order, exactly as `harm_test_indic.py` runs it.
-  Two rules are the exception: `DB-A6-004` and `DB-G1-006` have one line removed by Data B, marked in the code.
+  Seven rules are the exception, each marked in the code: `DB-A6-004` and `DB-G1-006` have one line removed by Data B;
+  `DB-G1-002` and `DB-G1-010` have the visarga taken out of their orphan-sign set; `DB-G1-005`, `DB-G1-007` and
+  `DB-G1-014` have it taken out of the set of signs they join to the word before.
 - Lines marked `# added by Data B`: `import re` where the author relied on the harm tool providing it, `_std` (copied
   from Data A), and `medicine(doc)`. The guard in `medicine(doc)` runs a rule only on the pack it was tested on.
 - `ACTION` is checked against the code (shankarpandala's review, 4 Nov). A rule whose function can return True drops the
@@ -99,7 +110,7 @@ HTML, mojibake, a made-up email). Joiners are written as `‍` and `‌`. It che
 | 6 | Nukta | a fixed document has a different number of nukta signs (counted after NFD) |
 | 7 | Second run | running the rule again on its output changes it again |
 
-**Result on 5 Nov 2026, all 260 rules: 260 pass, 0 fail, 0 skipped** (`python -m pytest test_indic_rules.py`: 2 passed,
+**Result on 6 Nov 2026, all 260 rules: 260 pass, 0 fail, 0 skipped** (`python -m pytest test_indic_rules.py`: 2 passed,
 no error). (On 4 Nov `DB-F2-001` was skipped because it needs
 the Itihasa test set; it is now out of spec v1.) The test was checked on 8 made-up rules, 5 of them broken on purpose (check 2; check 4 twice,
 a joiner removed and a joiner added; check 5; check 7): it caught all 5 and passed the 3 good ones, one of which deletes
@@ -114,8 +125,8 @@ because each targets something of its own pack, so checks 4 to 7 had nothing to 
 joiner and normal-form audit is part of each author's harm run on their pack's gold set (`harm_test_indic.py`).
 
 ## Limits
-- For 51 rules, the harm result is as the author reports it, on today's gold set; 192 were re-run on today's gold on
-  3 to 5 Nov, and each says who ran it. Data A's integration check re-runs every rule on the current gold.
+- For 49 rules, the harm result is as the author reports it, on today's gold set; 194 were re-run on today's gold on
+  3 to 6 Nov, and each says who ran it. Data A's integration check re-runs every rule on the current gold.
 - **Our mistake, fixed 5 Nov:** up to 4 Nov this README and the sheet said the authors' results were on "the gold of
   2 Nov", but the sizes we checked them against were those of 31 Oct (shankarpandala found it on #240). Every rule now
   has a result at today's size.

@@ -4,7 +4,7 @@
 
 **Out of spec v1 by TSAI's rulings of 4 Nov** (each is in `rules_status.md` with its reason): rules that add a ZWJ by design, because for v1 the Gate 2 joiner check stays (`DB-G2-001`, `DB-G2-002`, and the G2 rules of PR #30 and PR #112, held for v2); a rule that fails on today's gold (`DB-F1-005`, 2 of 114); and rules that need benchmark text to run, which the eval firewall keeps out of the repo (`DB-F2-001`, `DB-F2-002`).
 
-**Out by TSAI's #240 review of 5 Nov:** a visarga used as a colon is clean, in every script, and in spec v1 no rule converts between a visarga and a colon, in either direction. Five rules whose only job is to turn a visarga into `:` wait for the next spec (`DB-G4-005`, `DB-G4-001`, `DB-A6-014`, `DB-A6-018`, and `DB-A6-012`, Tamil `ஃ`, which Unicode names the Tamil visarga), and so do two that turn `:` into a visarga in Sanskrit (`DB-A6-010`, `DB-A6-011`). Two rules keep their other job: Data B removed only their visarga-to-colon line, marked in the code, and re-ran them on today's gold (`DB-A6-004` keeps its danda fix, `DB-G1-006` its matra fix).
+**Out by TSAI's #240 review of 5 Nov:** a visarga used as a colon is clean, in every script, and in spec v1 no rule converts between a visarga and a colon, in either direction. Five rules whose only job is to turn a visarga into `:` wait for the next spec (`DB-G4-005`, `DB-G4-001`, `DB-A6-014`, `DB-A6-018`, and `DB-A6-012`, Tamil `ஃ`, which Unicode names the Tamil visarga), and so do two that turn `:` into a visarga in Sanskrit (`DB-A6-010`, `DB-A6-011`). Two rules keep their other job: Data B removed only their visarga-to-colon line, marked in the code, and re-ran them on today's gold (`DB-A6-004` keeps its danda fix, `DB-G1-006` its matra fix). A visarga used as a colon is clean also with a space before it (TSAI's #240 re-review, 5 Nov), so in `DB-G1-002` (Gujarati) and `DB-G1-010` (Telugu), which delete a lone sign after a space, Data B took the visarga out of the set of signs they delete, marked in the code, and re-ran them on today's gold. TSAI's follow-up: a visarga, with or without the space before it, stays as written, so Data B also took it out of the set of signs that `DB-G1-005` (Kannada), `DB-G1-007` (Sanskrit) and `DB-G1-014` (Telugu) join to the word before, and re-ran them.
 
 Rule form: Data A's (`teams/01-data-a/spec_v1/sheets/medicine_english.md`, PR #194): `RULE_ID`, `CODE`, `ACTION`, `STAGE`, `STATUS`, `LANGS`, `ORIGIN`, `SOURCE`, `AUTHOR`; `medicine(doc) -> (action, text)`, `doc = {doc_id, text, url, lang_label, pack_id}`.
 
@@ -12,7 +12,7 @@ Rule form: Data A's (`teams/01-data-a/spec_v1/sheets/medicine_english.md`, PR #1
 
 Run order is section order, by Data A's stages: 10 characters (A, G1, G2, G4), 20 markup (B1 to B3), 30 drops (every rule whose action is drop), 35 strips (C, D, G3, H fixes), 40 data safety (B4, F1, F2).
 
-Each author's code is copied unchanged (except the two trims above): every python block of their section, in order, exactly as `harm_test_indic.py` runs it. What is added is marked `# added by Data B`: `import re` where the author relied on the tool providing it, `_std` (copied from Data A), and the `medicine(doc)` wrapper with the pack guard.
+Each author's code is copied unchanged (except the seven trims above): every python block of their section, in order, exactly as `harm_test_indic.py` runs it. What is added is marked `# added by Data B`: `import re` where the author relied on the tool providing it, `_std` (copied from Data A), and the `medicine(doc)` wrapper with the pack guard.
 
 **Action is read from the code, not only from the author's words** (shankarpandala's review, 4 Nov). A rule whose function can return True drops the document, so a rule the author called "fix" is labelled `drop` (it only says True or False) or `fix+drop` (it does both). A `keep` rule's wrapper always returns `("keep", text)`, whatever the author's function says. D3 is a label only (TSAI, 31 Oct) and out of spec v1 as a fix (TSAI, #240 review, 5 Nov), so every D3 rule is `keep`, whatever its author's code does. `DB-D4-011` also gets the page URL, `_AUTHOR_RULE(doc["text"], doc.get("url"))`, so its host check runs; every other rule gets the text only, as the harm tool tested it.
 
@@ -1602,7 +1602,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ## 23. `DB-A6-004` · A6 Wrong or mixed script · fix · stage 10
 
 1. **Disease:** A6 Wrong or mixed script. Pack `ind-hi-hplt`. Source: section A6 of `diagnosis/submissions/ind-hi-hplt/narasimhatejav/medicine.md`, PR #170 at `4aaf84b`.
-2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the removed line is marked in the code). Main function: `medicine_a6(text)`.
+2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the change is marked in the code). Main function: `medicine_a6(text)`.
 
 ```python
 RULE_ID = "DB-A6-004"
@@ -2244,7 +2244,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ## 35. `DB-G1-002` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-gu-fw2`. Source: section G1 of `diagnosis/submissions/ind-gu-fw2/Nisarg189/medicine.md`, PR #18 at `9184235`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with the visarga taken out of its orphan-sign set by Data B (TSAI (#240 re-review, 5 Nov): a visarga used as a colon is clean, also with a space before it; the change is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-002"
@@ -2259,7 +2259,7 @@ AUTHOR = "Nisarg189"  # PR #18 at 9184235
 
 import re
 GU_SIGN = "\u0A81-\u0A83\u0ABC-\u0ACD"      # dependent signs, nukta, virama
-GU_VOWEL_SIGN = "\u0ABE-\u0ACC\u0A81-\u0A83"
+GU_VOWEL_SIGN = "\u0ABE-\u0ACC\u0A81\u0A82"  # Data B took the visarga (U+0A83) out of this set (TSAI, #240 re-review, 5 Nov: a visarga used as a colon is clean, also with a space before it)
 def _fix(old, new):
     return (new, "keep" if new == old else "fix")
 
@@ -2296,7 +2296,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-gu-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `724eec3`, 80 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/18#issuecomment-6631029749)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 80 documents) by Data B rules owner (Pritish52718), 5 Nov, after Data B took the visarga out of its orphan-sign set: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #18).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -2469,7 +2469,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ## 39. `DB-G1-005` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-kn-fw2`. Source: section G1 of `diagnosis/submissions/ind-kn-fw2/keshavamurali/medicine.md`, PR #47 at `2e62abd`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with the visarga taken out of the set of signs it joins to the word before, by Data B (TSAI (#240 follow-up): a visarga, with or without a space before it, stays as written; the change is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-005"
@@ -2485,7 +2485,7 @@ import re  # added by Data B: harm_test_indic.py gives every block `re`
 
 import unicodedata
 
-G1 = re.compile(r'([\u0C80-\u0CFF]) ([\u0CBE-\u0CCD\u0CD5\u0CD6\u0C82\u0C83])')
+G1 = re.compile(r'([\u0C80-\u0CFF]) ([\u0CBE-\u0CCD\u0CD5\u0CD6\u0C82])')  # Data B took the visarga (U+0C83) out of this set (TSAI, #240 follow-up: a visarga, with or without a space before it, stays as written)
 
 def medicine_g1(text):
     out = G1.sub(r'\1\2', text)
@@ -2514,14 +2514,14 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-kn-fw2` only.
-4. **Harm test (as the author reports it):** gold set of 114 documents (ind-kn-fw2 114), medicine.md sha256 6662c45c666a; rule: changed or dropped at most 1% or 1 document, whichever is more. Changed 0 of 114 (0.00%). Dropped 0 of 114 (0.00%). **PASS**
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 114 documents) by Data B rules owner (Pritish52718), 6 Nov, after Data B took the visarga out of the set of signs it joins: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #47).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
+6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
 ## 40. `DB-G1-006` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-mr-fw2`. Source: section G1 of `diagnosis/submissions/ind-mr-fw2/thinktinkergreen/medicine.md`, PR #50 at `0d85486`.
-2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the removed line is marked in the code). Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with one line removed by Data B (TSAI (#240 review, 5 Nov): a visarga used as a colon is clean, in every script; the change is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-006"
@@ -2569,7 +2569,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ## 41. `DB-G1-007` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-sa-fw2`. Source: section G1 of `diagnosis/submissions/ind-sa-fw2/dattatreyamanjunath/medicine.md`, PR #45 at `b054835`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with the visarga taken out of the set of signs it joins to the word before, by Data B (TSAI (#240 follow-up): a visarga, with or without a space before it, stays as written; the change is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-007"
@@ -2584,7 +2584,7 @@ AUTHOR = "dattatreyamanjunath"  # PR #45 at b054835
 import re  # added by Data B: harm_test_indic.py gives every block `re`
 
 def medicine_g1(text):
-    return re.sub("(?<=[ऀ-ॿ])[ \t \n]+(?=[ा-ौॢॣँ-ः्])", "", text)
+    return re.sub("(?<=[ऀ-ॿ])[ \t \n]+(?=[ा-ौॢॣँ-ं्])", "", text)  # Data B took the visarga (U+0903) out of this set (TSAI, #240 follow-up: a visarga, with or without a space before it, stays as written)
 
 
 def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
@@ -2609,7 +2609,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-sa-fw2` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 5 Nov: changed 0, dropped 0. **PASS** (PR #240 summary; agrees with millermuttu's 15 PASS, #240 issuecomment-6631039341)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 71 documents) by Data B rules owner (Pritish52718), 6 Nov, after Data B took the visarga out of the set of signs it joins: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #45).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
@@ -2788,7 +2788,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ## 45. `DB-G1-010` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-te-fw2`. Source: section G1 of `diagnosis/submissions/ind-te-fw2/sandeepkunkunuru/medicine.md`, PR #3 at `a74df32`.
-2. **Medicine:** the author's code, unchanged. Main function: `g1_orphan_signs(text)`.
+2. **Medicine:** the author's code with the visarga taken out of its orphan-sign set by Data B (TSAI (#240 re-review, 5 Nov): a visarga used as a colon is clean, also with a space before it; the change is marked in the code). Main function: `g1_orphan_signs(text)`.
 
 ```python
 RULE_ID = "DB-G1-010"
@@ -2802,7 +2802,7 @@ SOURCE = "ind-te-fw2"  # pack whose medicine this came from
 AUTHOR = "sandeepkunkunuru"  # PR #3 at a74df32
 import re  # added by Data B: harm_test_indic.py gives every block `re`
 
-G1_RX = re.compile(r"(?m)(^|\s)[ా-ౖఁ-ఃౢౣ]+")
+G1_RX = re.compile(r"(?m)(^|\s)[ా-ౖఁ-ంౢౣ]+")  # Data B took the visarga (U+0C03) out of this set (TSAI, #240 re-review, 5 Nov: a visarga used as a colon is clean, also with a space before it)
 def g1_orphan_signs(t, url=None):
     return G1_RX.sub(r"\1", t)
 
@@ -2829,14 +2829,14 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-fw2` only.
-4. **Harm test (as the author reports it):** real Telugu gold set (`telugu_gold.csv`, 46 documents across `ind-te-fw2` 18, `ind-te-sangraha-s` 5, `ind-te-sangraha-v` 23): Changed 0 of 46 (0.00%). Dropped 0 of 46 (0.00%). **PASS** On its own pack (`ind-te-fw2`, all 18 of today's gold documents are in the 46): changed 0 of 18, dropped 0 of 18.
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Data B rules owner (Pritish52718), 5 Nov, after Data B took the visarga out of its orphan-sign set: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #3).
-6. **Spec v1:** status CANDIDATE, reviewer pending. Harm not re-run by Data B.
+6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
 ## 46. `DB-G1-014` · G1 Cut at the vowel sign · fix · stage 10
 
 1. **Disease:** G1 Cut at the vowel sign. Pack `ind-te-sangraha-v`. Source: section G1 of `diagnosis/submissions/ind-te-sangraha-v/SreekanthZipsy/medicine.md`, PR #109 at `694029b`.
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_g1(text)`.
+2. **Medicine:** the author's code with the visarga taken out of the set of signs it joins to the word before, by Data B (TSAI (#240 follow-up): a visarga, with or without a space before it, stays as written; the change is marked in the code). Main function: `medicine_g1(text)`.
 
 ```python
 RULE_ID = "DB-G1-014"
@@ -2855,7 +2855,7 @@ _G1 = set(
     list(range(0x0C3E, 0x0C45))
     + list(range(0x0C46, 0x0C49))
     + list(range(0x0C4A, 0x0C4D))
-    + [0x0C4D, 0x0C55, 0x0C56, 0x0C62, 0x0C63, 0x0C02, 0x0C03]
+    + [0x0C4D, 0x0C55, 0x0C56, 0x0C62, 0x0C63, 0x0C02]  # Data B took the visarga (U+0C03) out of this set (TSAI, #240 follow-up: a visarga, with or without a space before it, stays as written)
 )
 
 def medicine_g1(text: str) -> str:
@@ -2892,7 +2892,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 ```
 
 3. **Action:** fix. **Runs on:** `ind-te-sangraha-v` only.
-4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by millermuttu: changed 0, dropped 0. **PASS** (https://github.com/theschoolofai/era-v5-lab/pull/109#issuecomment-6605632264)
+4. **Harm test (re-run on today's gold):** re-run on today's gold set (main `ea7b533`, 18 documents) by Data B rules owner (Pritish52718), 6 Nov, after Data B took the visarga out of the set of signs it joins: changed 0, dropped 0. **PASS** (PR #240 summary)
 5. **Side effects:** in the author's `medicine.md`, section G1 (PR #109).
 6. **Spec v1:** status CANDIDATE, reviewer pending. Harm re-run on today's gold set.
 
