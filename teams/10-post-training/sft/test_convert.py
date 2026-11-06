@@ -87,6 +87,11 @@ TERMINAL = {"conversations": [{"role": "user", "content": "ls?"},
                               {"role": "assistant", "content": "<think>\nList.\n</think>\nls -la"}]}
 
 
+OASST_THREAD = {"id": "t1", "lang": "en", "messages": [
+    {"role": "user", "text": "Hi?"}, {"role": "assistant", "text": "Hello."}, {"role": "user", "text": "Bye?"},
+    {"role": "assistant", "text": "Bye."}]}
+
+
 def one(set_id: str, row: dict) -> tuple[dict, dict]:
     lines, manifest = convert.convert(set_id, [row], None, None)
     assert len(lines) == 1, manifest["skipped"]
@@ -394,3 +399,26 @@ def test_bespoke_thought_and_solution_blocks_split():
 def test_swe_zero_without_patch_is_skipped():
     lines, manifest = convert.convert("sft-code-swe-zero-openhands", [dict(SWE_ZERO, model_patch="")], None, None)
     assert lines == [] and manifest["skipped"] == {"trajectory has no model_patch": 1}
+
+
+def test_oasst2_thread_must_end_on_assistant():
+    row = dict(OASST_THREAD, messages=OASST_THREAD["messages"][:3])
+    lines, manifest = convert.convert("sft-oasst2", [row], None, None)
+    assert lines == [] and manifest["skipped"] == {"thread does not end on an assistant reply": 1}
+
+
+def _msg(mid, parent, role, text, rank=None, **kw):
+    return dict({"message_id": mid, "parent_id": parent, "role": role, "text": text, "rank": rank, "lang": "en",
+                 "deleted": False, "synthetic": False, "tree_state": "ready_for_export"}, **kw)
+
+
+def test_oasst2_build_follows_best_ranked_reply_and_drops_bad_rows():
+    rows = [_msg("p", None, "prompter", "Q"),
+            _msg("a1", "p", "assistant", "second", rank=1), _msg("a0", "p", "assistant", "best", rank=0),
+            _msg("a2", "p", "assistant", "gone", rank=0, deleted=True),
+            _msg("u1", "a0", "prompter", "more?", rank=0), _msg("a3", "u1", "assistant", "yes", rank=0),
+            _msg("x", None, "prompter", "unexported", tree_state="growing"),
+            _msg("s", None, "prompter", "synthetic", synthetic=True)]
+    (thread,) = list(convert.oasst2_build(rows, 0, 10))
+    assert [m["text"] for m in thread["messages"]] == ["Q", "best", "more?", "yes"]
+    assert thread["id"] == "p"

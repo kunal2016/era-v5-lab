@@ -346,6 +346,53 @@ def swe_zero(row: dict) -> list[dict]:
     return messages
 
 
+def oasst2_thread(row: dict) -> list[dict]:
+    """One root-to-leaf thread built by `oasst2_threads`; roles are already user / assistant."""
+    if not row["messages"] or row["messages"][-1]["role"] != "assistant":
+        raise Skip("thread does not end on an assistant reply")
+    return [{"role": m["role"], "content": m["text"]} for m in row["messages"]]
+
+
+def oasst2_threads(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]:
+    """Read the oasst2 parquet from the Hub and rebuild threads (see `oasst2_build`)."""
+    import pyarrow.parquet as pq
+
+    pf = pq.ParquetFile(io.BufferedReader(_RangeFile(f"https://huggingface.co/datasets/{dataset}/resolve/main/{urllib.parse.quote(path)}"),
+                                          buffer_size=4 << 20))
+    yield from oasst2_build((m for batch in pf.iter_batches(batch_size=4096) for m in batch.to_pylist()), offset, n)
+
+
+def oasst2_build(messages: Iterable[dict], offset: int, n: int) -> Iterator[dict]:
+    """OpenAssistant oasst2 stores one message per row. Rebuild threads: for each prompt, follow only the
+    best-ranked (rank 0, or unranked when alone) reply at every step, one thread per prompt.
+    Deleted, synthetic and non-exported trees are left out."""
+    by_parent: dict[str | None, list[dict]] = {}
+    for m in messages:
+        if m["deleted"] or m["synthetic"] or m["tree_state"] != "ready_for_export":
+            continue
+        by_parent.setdefault(m["parent_id"], []).append(m)
+
+    def best(children: list[dict]) -> dict | None:
+        ranked = sorted(children, key=lambda c: (c["rank"] is None, c["rank"] if c["rank"] is not None else 0, c["message_id"]))
+        return ranked[0] if ranked else None
+
+    count = 0
+    for root in sorted(by_parent.get(None, []), key=lambda m: m["message_id"]):
+        thread = [root]
+        while True:
+            nxt = best(by_parent.get(thread[-1]["message_id"], []))
+            if nxt is None:
+                break
+            thread.append(nxt)
+        count += 1
+        if count <= offset:
+            continue
+        yield {"id": root["message_id"], "lang": root["lang"],
+               "messages": [{"role": "user" if m["role"] == "prompter" else "assistant", "text": m["text"]} for m in thread]}
+        if count >= offset + n:
+            return
+
+
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
@@ -380,6 +427,14 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-code-nemotron-terminal": (think_tag_messages, "", ("file", "dataset_adapters/code.parquet"), None, "code adapter file"),
     "sft-science-nemotron-science-v2": (nemotron_chat, "uuid", ("file", "syn_mcq.jsonl"), None, "syn_mcq file"),
     "sft-code-nemotron-opencode": (nemotron_chat, "uuid", ("file", "agent_skills/data.jsonl"), None, "agent_skills file"),
+    "sft-indic-indic-align-dolly-t": (
+        indic_align_t, "doc_id", ("file", "indicalign-instruct/dolly/Dolly.parquet"), None,
+        "one native-script column per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
+    ),
+    "sft-science-glm51-phd": (sharegpt_think, "id", ("file", "PHD-Science.jsonl"), None, "PHD-Science config"),
+    "sft-math-nemotron-proofs-v3-sft": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00010.jsonl"), None, "first part"),
+    "sft-oasst2": (oasst2_thread, "id", ("oasst2", "data/train-00000-of-00001-88ba0162028a73fc.parquet"), None,
+                   "best-ranked reply at each step; not deleted, not synthetic, ready_for_export trees"),
     "sft-dolly-15k": (dolly, "", ("file", "databricks-dolly-15k.jsonl"), None, ""),
 }
 
@@ -667,8 +722,9 @@ def main() -> None:
     if a.input:
         rows, where = read_rows(a.input), f"file {a.input.name}"
     elif a.hf_file:
-        _, path = ADAPTERS[a.set][2]
-        rows = hf_file_rows(meta["source"], path, a.hf_offset, a.hf_file)
+        kind, path = ADAPTERS[a.set][2]
+        reader = oasst2_threads if kind == "oasst2" else hf_file_rows
+        rows = reader(meta["source"], path, a.hf_offset, a.hf_file)
         where = f"hub file {meta['source']} {path} rows {a.hf_offset}..{a.hf_offset + a.hf_file - 1}"
     else:
         config, split = ADAPTERS[a.set][2]
