@@ -309,6 +309,43 @@ def nemotron_chat_nonempty(row: dict) -> list[dict]:
     return nemotron_chat(row)
 
 
+_BESPOKE = re.compile(r"\s*<\|begin_of_thought\|>(.*?)<\|end_of_thought\|>\s*<\|begin_of_solution\|>(.*?)<\|end_of_solution\|>\s*", re.S)
+
+
+def bespoke_stratos(row: dict) -> list[dict]:
+    """Thought and solution blocks of Bespoke-Stratos become the think span and the answer.
+
+    The row's `system` prompt only explains those blocks, so it is not carried over.
+    """
+    messages = []
+    for turn in row["conversations"]:
+        if turn["from"] == "user":
+            messages.append({"role": "user", "content": turn["value"]})
+            continue
+        hit = _BESPOKE.fullmatch(turn["value"])
+        if not hit:
+            raise Skip("assistant turn is not one thought block followed by one solution block")
+        messages.append({"role": "assistant", "think": hit[1].strip(), "content": hit[2].strip()})
+    return messages
+
+
+def swe_zero(row: dict) -> list[dict]:
+    """OpenHands trajectories without a tool list or a resolved flag; rows with no final patch are left out."""
+    if not (row.get("model_patch") or "").strip():
+        raise Skip("trajectory has no model_patch")
+    messages = []
+    for message in row["trajectory"]:
+        role, content = message["role"], _text(message.get("content"))
+        if role == "assistant":
+            calls = [{"function": c["function"], "id": c.get("id")} for c in message.get("tool_calls") or []]
+            messages.append({"role": "assistant", "content": content, **({"tool_calls": calls} if calls else {})})
+        elif role == "tool":
+            messages.append({"role": "tool", "content": content if content.strip() else "(no output)"})
+        else:
+            messages.append({"role": role, "content": content})
+    return messages
+
+
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
@@ -338,6 +375,11 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-chat-nemotron-if-v1": (nemotron_chat, "uuid", ("file", "data/structured_outputs.jsonl"), None, "structured_outputs file"),
     "sft-chat-nemotron-if-v2": (nemotron_chat, "uuid", ("file", "data/reasoning_on.jsonl"), None, "reasoning_on file"),
     "sft-math-nemotron-proofs": (nemotron_chat_nonempty, "uuid", ("file", "data/lean.jsonl"), None, "lean file"),
+    "sft-bespoke-stratos-17k": (bespoke_stratos, "", ("file", "data/train-00000-of-00001.parquet"), None, ""),
+    "sft-code-swe-zero-openhands": (swe_zero, "trajectory_id", ("file", "data/train-00000-of-00064.parquet"), None, "first shard"),
+    "sft-code-nemotron-terminal": (think_tag_messages, "", ("file", "dataset_adapters/code.parquet"), None, "code adapter file"),
+    "sft-science-nemotron-science-v2": (nemotron_chat, "uuid", ("file", "syn_mcq.jsonl"), None, "syn_mcq file"),
+    "sft-code-nemotron-opencode": (nemotron_chat, "uuid", ("file", "agent_skills/data.jsonl"), None, "agent_skills file"),
     "sft-dolly-15k": (dolly, "", ("file", "databricks-dolly-15k.jsonl"), None, ""),
 }
 

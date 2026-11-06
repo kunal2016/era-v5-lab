@@ -78,6 +78,15 @@ OCR2 = {"id": "q1", "question": "Print 1.", "r1_generation": "<think>\nprint it\
 OPENR1 = {"uuid": "r1", "messages": CASCADE["messages"]}
 
 
+BESPOKE = {"system": "Think first.", "conversations": [
+    {"from": "user", "value": "2+2?"},
+    {"from": "assistant", "value": "<|begin_of_thought|>\n\nAdd.\n\n<|end_of_thought|>\n\n<|begin_of_solution|>\n\n4\n\n<|end_of_solution|>"}]}
+SWE_ZERO = {"trajectory_id": "z1", "model_patch": "diff --git a/x b/x",
+            "trajectory": [dict(m, tool_calls=m.get("tool_calls")) for m in SWE["trajectory"]]}
+TERMINAL = {"conversations": [{"role": "user", "content": "ls?"},
+                              {"role": "assistant", "content": "<think>\nList.\n</think>\nls -la"}]}
+
+
 def one(set_id: str, row: dict) -> tuple[dict, dict]:
     lines, manifest = convert.convert(set_id, [row], None, None)
     assert len(lines) == 1, manifest["skipped"]
@@ -374,3 +383,14 @@ def test_new_adapters_skip_with_reason(set_id, row, reason):
 def test_openthoughts_think_with_inline_spaces():
     sample, _ = one("sft-stem-code-openthoughts3", OT3)
     assert "Add them." in trained_text(sample)[0] and "The sum." in trained_text(sample)[0]
+
+
+def test_bespoke_thought_and_solution_blocks_split():
+    sample, _ = one("sft-bespoke-stratos-17k", BESPOKE)
+    assert "<|begin_of" not in sample["text"].replace(T["think"], "") and "Think first." not in sample["text"]
+    assert trained_text(sample)[0] == f"{T['think']}\nAdd.\n{T['think_end']}\n4{T['im_end']}"
+
+
+def test_swe_zero_without_patch_is_skipped():
+    lines, manifest = convert.convert("sft-code-swe-zero-openhands", [dict(SWE_ZERO, model_patch="")], None, None)
+    assert lines == [] and manifest["skipped"] == {"trajectory has no model_patch": 1}
