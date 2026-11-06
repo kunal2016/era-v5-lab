@@ -92,6 +92,9 @@ OASST_THREAD = {"id": "t1", "lang": "en", "messages": [
     {"role": "assistant", "text": "Bye."}]}
 
 
+AYA_COLLECTION = {"id": 1, "inputs": "ఈ రిడిల్ కి జవాబు ఇవ్వు​", "targets": "సమాధానం", "language": "tel"}
+
+
 def one(set_id: str, row: dict) -> tuple[dict, dict]:
     lines, manifest = convert.convert(set_id, [row], None, None)
     assert len(lines) == 1, manifest["skipped"]
@@ -422,3 +425,10 @@ def test_oasst2_build_follows_best_ranked_reply_and_drops_bad_rows():
     (thread,) = list(convert.oasst2_build(rows, 0, 10))
     assert [m["text"] for m in thread["messages"]] == ["Q", "best", "more?", "yes"]
     assert thread["id"] == "p"
+
+
+def test_aya_collection_strips_zero_width_space_and_skips_empty_targets():
+    sample, _ = one("sft-indic-aya-collection", AYA_COLLECTION)
+    assert "\u200b" not in sample["text"]
+    lines, manifest = convert.convert("sft-indic-aya-collection", [dict(AYA_COLLECTION, targets=" ")], None, None)
+    assert lines == [] and manifest["skipped"] == {"empty input or target": 1}

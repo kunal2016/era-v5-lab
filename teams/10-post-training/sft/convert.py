@@ -393,6 +393,39 @@ def oasst2_build(messages: Iterable[dict], offset: int, n: int) -> Iterator[dict
             return
 
 
+AYA_COLLECTION_SUBSETS = tuple(
+    f"templated_{name}/train-00000-of-00001.parquet"
+    for name in ("bengali_news", "hindi_headline", "hindi_news", "indic_paraphrase", "indic_sentiment", "tamil_stories",
+                 "tamil_thirukkural", "telugu_food", "telugu_jokes", "telugu_news", "telugu_poems", "telugu_riddles")
+)
+
+
+def aya_collection(row: dict) -> list[dict]:
+    if not row["inputs"].strip() or not row["targets"].strip():
+        raise Skip("empty input or target")
+    return [
+        {"role": "user", "content": text_prep.prepare_text(row["inputs"])},
+        {"role": "assistant", "content": text_prep.prepare_text(row["targets"])},
+    ]
+
+
+def aya_collection_rows(dataset: str, _path: str, offset: int, n: int) -> Iterator[dict]:
+    """The 12 Indic templated subsets, an equal share of `n` rows from the start of each (offset applies per subset)."""
+    share = max(1, n // len(AYA_COLLECTION_SUBSETS))
+    for path in AYA_COLLECTION_SUBSETS:
+        for attempt in range(4):
+            try:
+                rows = list(hf_file_rows(dataset, path, offset, share))
+                break
+            except OSError:  # URLError and connection resets on the Hub
+                if attempt == 3:
+                    raise
+                time.sleep(5 * (attempt + 1))
+        for row in rows:
+            row["subset"] = path.split("/")[0]
+            yield row
+
+
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
@@ -435,6 +468,8 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-math-nemotron-proofs-v3-sft": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00010.jsonl"), None, "first part"),
     "sft-oasst2": (oasst2_thread, "id", ("oasst2", "data/train-00000-of-00001-88ba0162028a73fc.parquet"), None,
                    "best-ranked reply at each step; not deleted, not synthetic, ready_for_export trees"),
+    "sft-indic-aya-collection": (aya_collection, "", ("aya", ""), None,
+                                 "12 templated Indic subsets, equal share of rows from the start of each"),
     "sft-dolly-15k": (dolly, "", ("file", "databricks-dolly-15k.jsonl"), None, ""),
 }
 
@@ -723,7 +758,7 @@ def main() -> None:
         rows, where = read_rows(a.input), f"file {a.input.name}"
     elif a.hf_file:
         kind, path = ADAPTERS[a.set][2]
-        reader = oasst2_threads if kind == "oasst2" else hf_file_rows
+        reader = {"oasst2": oasst2_threads, "aya": aya_collection_rows}.get(kind, hf_file_rows)
         rows = reader(meta["source"], path, a.hf_offset, a.hf_file)
         where = f"hub file {meta['source']} {path} rows {a.hf_offset}..{a.hf_offset + a.hf_file - 1}"
     else:
