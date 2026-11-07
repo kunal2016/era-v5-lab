@@ -213,6 +213,18 @@ def test_report_lists_sets_and_refuses_mixed_hashes(tmp_path, toy_set):
         rep.build_report(recs + recs2, pending={}, expect_sha=recs[0]["set_sha256"])
 
 
+def test_report_title_and_output_path_for_another_stage(tmp_path, toy_set):
+    go(tmp_path, toy_set, [("a/0", CLEAN[0])], "seta")
+    recs = rep.load_records(tmp_path / "out")
+    sft = rep.build_report(recs, pending={}, expect_sha=recs[0]["set_sha256"])
+    assert sft.startswith("# SFT decontamination report")
+    assert "--out teams/10-post-training/sft/decontam_report.md --sets <set-id> ...\n" in sft  # default unchanged
+    rl = rep.build_report(recs, pending={}, expect_sha=recs[0]["set_sha256"], title="RL decontamination report",
+                          out_rel="teams/10-post-training/rl/decontam_report.md")
+    assert rl.startswith("# RL decontamination report")
+    assert '--out teams/10-post-training/rl/decontam_report.md --sets <set-id> ... --title "RL decontamination report"' in rl
+
+
 def test_report_refuses_different_tools(tmp_path, toy_set):
     go(tmp_path, toy_set, [("a/0", CLEAN[0])], "seta")
     recs = rep.load_records(tmp_path / "out")
