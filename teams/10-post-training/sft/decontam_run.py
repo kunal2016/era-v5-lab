@@ -32,9 +32,11 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections import Counter
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -275,6 +277,208 @@ def run_set(set_id, inputs, out_dir, tools=DEFAULT_TOOLS, id_field="id", text_fi
     return record
 
 
+def _norm_line(line):
+    return line if line.endswith(b"\n") else line + b"\n"
+
+
+def walk_reused(src, clean, id_field, work):
+    """One pass over an input and its clean file (a byte-exact subsequence of the input).
+
+    Returns (kept rows, removed ids, file with the removed rows). A clean file that is not a subsequence of the
+    input is an error: nothing about its rows could be trusted then. Nothing but the (small) removed rows is copied.
+    """
+    work.mkdir(parents=True, exist_ok=True)
+    removed_file = work / "removed.jsonl"
+    removed_ids, kept = [], 0
+    with open(src, "rb") as sf, open(clean, "rb") as cf, open(removed_file, "wb") as rf:
+        cit = (_norm_line(ln) for ln in cf if ln.strip())
+        nxt = next(cit, None)
+        for line in sf:
+            if not line.strip():
+                continue
+            line = _norm_line(line)
+            if nxt is not None and line == nxt:
+                kept += 1
+                nxt = next(cit, None)
+            else:
+                rf.write(line)
+                removed_ids.append(str(json.loads(line)[id_field]))
+        if nxt is not None:
+            raise RunError("the clean file is not a byte-exact subsequence of the input")
+    return kept, removed_ids, removed_file
+
+
+def line_ranges(path, parts):
+    """Byte ranges (start, end) of about equal size that begin and end on line boundaries."""
+    size = Path(path).stat().st_size
+    cuts = [0]
+    with open(path, "rb") as f:
+        for i in range(1, parts):
+            f.seek(max(size * i // parts, cuts[-1]))
+            f.readline()  # up to the next line start
+            cuts.append(min(f.tell(), size))
+    cuts.append(size)
+    return [(a, b) for a, b in zip(cuts, cuts[1:]) if b > a]
+
+
+def _feed(fifo, path, start, end):
+    """Write the lines of path[start:end] into a named pipe (blocks until a reader opens it)."""
+    try:
+        with open(fifo, "wb") as out, open(path, "rb") as f:
+            f.seek(start)
+            left = end - start
+            while left > 0:
+                chunk = f.read(min(1 << 20, left))
+                if not chunk:
+                    break
+                out.write(chunk)
+                left -= len(chunk)
+    except BrokenPipeError:
+        pass  # the tool stopped reading: its own exit code reports the problem
+
+
+def read_ids_range(args):
+    """The ids of the rows of path[start:end]."""
+    path, start, end, id_field = args
+    ids = []
+    with open(path, "rb") as f:
+        f.seek(start)
+        while f.tell() < end:
+            line = f.readline()
+            if not line:
+                break
+            if line.strip():
+                ids.append(str(json.loads(line)[id_field]))
+    return ids
+
+
+def _check_range(tools, work, n, path, start, end, id_field, text_field, fp_args):
+    """Run the checker and then the canary scan on path[start:end] without copying it: each tool reads a pipe."""
+    import threading
+    results = []
+    for tool in ("decontam_check.py", "canary_scan.py"):
+        fifo = work / f"range-{n:03d}-{tool[:-3]}.jsonl"  # the suffix tells the tools how to read it
+        os.mkfifo(fifo)
+        t = threading.Thread(target=_feed, args=(fifo, path, start, end), daemon=True)
+        t.start()
+        try:
+            res = run_tool(tools, tool, [fifo, "--id-field", id_field, "--text-field", text_field, *fp_args])
+        finally:
+            if t.is_alive():  # the tool died before opening the pipe
+                try:
+                    os.close(os.open(fifo, os.O_RDONLY | os.O_NONBLOCK))
+                except OSError:
+                    pass
+            t.join(timeout=60)
+            fifo.unlink()
+        results.append(res)
+    (rc, out, err), (crc, cout, cerr) = results
+    if rc != 0:
+        last = err.strip().splitlines()[-1] if err.strip() else ""
+        raise RunError(f"decontam_check.py exited {rc} on range {n}: {last}")
+    return parse_check(out, err), parse_canary(crc, cout, cerr)
+
+
+def _check_and_canary(tools, path, id_field, text_field, fp_args):
+    args = [path, "--id-field", id_field, "--text-field", text_field, *fp_args]
+    rc, out, err = run_tool(tools, "decontam_check.py", args)
+    if rc != 0:
+        last = err.strip().splitlines()[-1] if err.strip() else ""
+        raise RunError(f"decontam_check.py exited {rc} on {Path(path).name}: {last}")
+    check = parse_check(out, err)
+    crc, cout, cerr = run_tool(tools, "canary_scan.py", args)
+    return check, parse_canary(crc, cout, cerr)
+
+
+def run_set_reuse(set_id, input_path, out_dir, tools=DEFAULT_TOOLS, id_field="id", text_field="text",
+                  fingerprints=None, expect_sha=PINNED_SET_SHA256, workers=8):
+    """Finish a run whose clean file exists but whose record was never written (the process was stopped).
+
+    The removed rows are input minus clean (the clean file must be a byte-exact subsequence of the input). Those
+    rows alone get the full-set checker and the canary scan, which must account for every one of them. The clean
+    file is cut into `workers` byte ranges, streamed through pipes (no copy on disk) into the same two tools in parallel and must give 0 flagged and
+    0 canary. Together this is the same guarantee as the one-process run, in a fraction of the time.
+    """
+    tools = Path(tools).resolve()
+    out_dir = Path(out_dir).resolve()
+    inp = Path(input_path).resolve()
+    clean = out_dir / f"{set_id}.clean.jsonl"
+    for need in ("decontam_check.py", "canary_scan.py"):
+        if not (tools / need).is_file():
+            raise RunError(f"{tools / need} not found")
+    if inp.suffix != ".jsonl" or not inp.is_file() or not clean.is_file():
+        raise RunError("reuse needs a .jsonl input and the existing <set>.clean.jsonl in --out-dir")
+    fingerprints = str(Path(fingerprints).resolve()) if fingerprints else None
+    fp_args = ["--fingerprints", fingerprints] if fingerprints else []
+    work = out_dir / f".work-{set_id}"
+    try:
+        kept, removed_ids, removed_file = walk_reused(inp, clean, id_field, work)
+        ranges = line_ranges(clean, workers)
+        with ProcessPoolExecutor(min(workers, len(ranges))) as pp:
+            range_ids = list(pp.map(read_ids_range, [(clean, a, b, id_field) for a, b in ranges]))
+        all_ids = removed_ids + [i for ids in range_ids for i in ids]
+        dup = [i for i, c in Counter(all_ids).items() if c > 1]
+        with ThreadPoolExecutor(max(1, workers) + 1) as tp:
+            removed_job = tp.submit(_check_and_canary, tools, removed_file, id_field, text_field, fp_args)
+            range_jobs = [tp.submit(_check_range, tools, work, n, clean, a, b, id_field, text_field, fp_args)
+                          for n, (a, b) in enumerate(ranges)]
+            results = [removed_job.result(), *[j.result() for j in range_jobs]]
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    (rcheck, rcanary), shard_res = results[0], results[1:]
+    for check, _ in results:
+        if check["scope"] != "full set":
+            raise RunError(f"the checker ran a partial scope ({check['scope']}); only the full set counts")
+        if expect_sha and check["set_sha256"] != expect_sha:
+            raise RunError(f"set_sha256 {check['set_sha256']} is not the expected {expect_sha}")
+    if len({c["set_sha256"] for c, _ in results}) != 1:
+        raise RunError("the shards were checked against different fingerprint sets")
+    set_folder = fingerprints or str(tools.parent / "fingerprints" / rcheck["version"])
+    benchmarks = fingerprint_benchmarks(set_folder)
+
+    flagged_ids = set(rcheck["flagged"])
+    canary_ids = {h["doc_id"] for h in rcanary["hits"]}
+    removed = set(removed_ids)
+    shard_docs = sum(c["docs"] for c, _ in shard_res)
+    shard_flagged = sum(c["flagged_count"] for c, _ in shard_res)
+    shard_canary = sum(len(k["hits"]) for _, k in shard_res)
+    checks = {
+        "ids_unique": not dup,
+        "docs_match_checker": rcheck["docs"] == len(removed_ids) == rcanary["docs"],
+        "flagged_ids_in_input": flagged_ids <= removed,
+        "canary_ids_in_input": canary_ids <= removed,
+        "flagged_count_matches": rcheck["flagged_count"] == len(flagged_ids),
+        "rows_in_eq_kept_plus_removed": len(all_ids) == kept + len(removed_ids),
+        "canary_scan_complete": all(k["files_skipped"] == 0 and k["exit"] in (0, 1) for _, k in results),
+        "every_removed_row_is_hit": removed == (flagged_ids | canary_ids),
+        "clean_file_flags_0": (shard_flagged == 0 and shard_canary == 0 and shard_docs == kept
+                               and sum(k["docs"] for _, k in shard_res) == kept),
+    }
+    record = {
+        "set": set_id,
+        "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "fingerprints": rcheck["version"], "set_sha256": rcheck["set_sha256"], "scope": rcheck["scope"],
+        "benchmarks": benchmarks,
+        "tools": tool_info(tools),
+        "inputs": [{"name": inp.name, "bytes": inp.stat().st_size, "sha256": sha256_file(inp)}],
+        "rows_in": len(all_ids), "rows_flagged": len(flagged_ids), "rows_canary": len(canary_ids),
+        "rows_removed": len(removed_ids), "rows_kept": kept,
+        "by_benchmark": rcheck["by_benchmark"],
+        "flagged": rcheck["flagged"],
+        "canary": {"exit": rcanary["exit"], "docs_with_canary": rcanary["docs_with_canary"],
+                   "hits": rcanary["hits"], "files_skipped": 0},
+        "clean": [{"name": clean.name, "sha256": sha256_file(clean)}],
+        "recheck_on_clean": {"docs": shard_docs, "flagged": shard_flagged, "canary_hits": shard_canary,
+                             "shards": len(shard_res), "set_sha256": rcheck["set_sha256"]},
+        "reused_clean": True,
+        "duplicate_ids": len(dup),
+        "checks": checks, "ok": all(checks.values()) and not canary_ids,
+    }
+    (out_dir / f"{set_id}.record.json").write_text(json.dumps(record, indent=1, ensure_ascii=False) + "\n",
+                                                   encoding="utf-8")
+    return record
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--set", required=True, dest="set_id", help="set id from licences/licence_table.md")
@@ -287,12 +491,22 @@ def main(argv=None):
     ap.add_argument("--expect-sha", default=PINNED_SET_SHA256, help="expected set_sha256 ('' to skip, test only)")
     ap.add_argument("--no-recheck", action="store_true",
                     help="skip the second pass over the clean file (decontam_report.py then refuses the record)")
+    ap.add_argument("--reuse-clean", action="store_true",
+                    help="finish a stopped run: take <set>.clean.jsonl from --out-dir, check the removed rows, and "
+                         "check the clean file in parallel pieces (one .jsonl input)")
+    ap.add_argument("--workers", type=int, default=8, help="parallel shards with --reuse-clean")
     args = ap.parse_args(argv)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", args.set_id):
         ap.error("--set must be a plain set id (letters, digits, '.', '_', '-')")
     try:
-        rec = run_set(args.set_id, args.input, args.out_dir, args.tools, args.id_field, args.text_field,
-                      args.fingerprints, args.expect_sha, not args.no_recheck)
+        if args.reuse_clean:
+            if len(args.input) != 1:
+                ap.error("--reuse-clean takes one input file")
+            rec = run_set_reuse(args.set_id, args.input[0], args.out_dir, args.tools, args.id_field,
+                                args.text_field, args.fingerprints, args.expect_sha, args.workers)
+        else:
+            rec = run_set(args.set_id, args.input, args.out_dir, args.tools, args.id_field, args.text_field,
+                          args.fingerprints, args.expect_sha, not args.no_recheck)
     except (RunError, OSError, json.JSONDecodeError) as e:
         print(f"{args.set_id}: {e}", file=sys.stderr)
         return 2

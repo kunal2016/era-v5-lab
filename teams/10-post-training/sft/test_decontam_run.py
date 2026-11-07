@@ -243,3 +243,57 @@ def test_report_sets_filter_skips_old_records(tmp_path, toy_set):
     assert [r["set"] for r in rep.load_records(tmp_path / "out", ["setb"])] == ["setb"]
     with pytest.raises(rep.ReportError, match="no record for"):
         rep.load_records(tmp_path / "out", ["setc"])
+
+
+def _stopped_run(tmp_path, toy_set, rows):
+    """A finished run whose record is then deleted, as if the process had been stopped before writing it."""
+    src = write_rows(tmp_path / "rs.jsonl", rows)
+    full = run.run_set("rs", [src], tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None)
+    (tmp_path / "out" / "rs.record.json").unlink()
+    return src, full
+
+
+def test_reuse_clean_gives_the_same_record_as_a_full_run(tmp_path, toy_set):
+    rows = [(f"s/{i}", t) for i, t in enumerate(CLEAN * 3)] + [("s/90", "Solve. " + COPY), ("s/91", "x " + COPY)]
+    src, full = _stopped_run(tmp_path, toy_set, rows)
+    rec = run.run_set_reuse("rs", src, tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None, workers=3)
+    assert rec["ok"] and all(rec["checks"].values()) and rec["reused_clean"]
+    for k in ("rows_in", "rows_flagged", "rows_canary", "rows_removed", "rows_kept", "by_benchmark", "set_sha256"):
+        assert rec[k] == full[k]
+    assert rec["flagged"] == full["flagged"] and rec["clean"] == full["clean"]
+    assert rec["recheck_on_clean"]["shards"] == 3 and rec["recheck_on_clean"]["flagged"] == 0
+    assert not (tmp_path / "out" / ".work-rs").exists()
+
+
+def test_reuse_clean_rejects_a_clean_file_that_is_not_from_the_input(tmp_path, toy_set):
+    src, _ = _stopped_run(tmp_path, toy_set, [("s/0", CLEAN[0]), ("s/1", COPY)])
+    clean = tmp_path / "out" / "rs.clean.jsonl"
+    clean.write_bytes(clean.read_bytes() + (json.dumps({"id": "z", "text": CLEAN[1]}) + "\n").encode())
+    with pytest.raises(run.RunError, match="subsequence"):
+        run.run_set_reuse("rs", src, tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None, workers=2)
+
+
+def test_reuse_clean_fails_when_a_kept_row_is_flagged(tmp_path, toy_set):
+    src = write_rows(tmp_path / "rs.jsonl", [("s/0", CLEAN[0]), ("s/1", "Solve. " + COPY)])
+    out = tmp_path / "out"
+    out.mkdir()
+    shutil_copy = (tmp_path / "rs.jsonl").read_bytes()
+    (out / "rs.clean.jsonl").write_bytes(shutil_copy)  # a "clean" file that still holds the flagged row
+    rec = run.run_set_reuse("rs", src, out, TOOLS, fingerprints=str(toy_set), expect_sha=None, workers=2)
+    assert not rec["ok"] and rec["checks"]["clean_file_flags_0"] is False
+
+
+def test_reuse_clean_when_the_run_removed_a_canary_row(tmp_path, toy_set):
+    src, full = _stopped_run(tmp_path, toy_set, [("s/0", CLEAN[0]), ("s/1", "notes " + CANARY + " end"), ("s/2", CLEAN[1])])
+    rec = run.run_set_reuse("rs", src, tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None, workers=2)
+    assert rec["rows_canary"] == 1 and rec["rows_kept"] == 2 and rec["checks"]["every_removed_row_is_hit"]
+    assert CANARY not in json.dumps(rec)
+
+
+def test_report_marks_full_and_sampled_sets(tmp_path, toy_set):
+    go(tmp_path, toy_set, [("s/0", CLEAN[0])], name="aaa")
+    go(tmp_path, toy_set, [("s/0", CLEAN[1])], name="bbb")
+    recs = rep.load_records(tmp_path / "out")
+    md = rep.build_report(recs, {}, expect_sha=None, full={"aaa"})
+    assert "| `aaa` | full set |" in md and "| `bbb` | sample |" in md and "not cleared as a whole" in md
+    assert "Run on" not in rep.build_report(recs, {}, expect_sha=None)

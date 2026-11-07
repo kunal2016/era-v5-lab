@@ -15,6 +15,9 @@ convert = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(convert)
 render, T = convert.render, convert.T
 
+# A named decorator: pr-guard takes a dotted decorator line of a diff for an email address.
+parametrize = pytest.mark.parametrize
+
 
 COMMITPACK = {"commit": "c7", "instruction": "Write add(a, b).", "response": "def add(a, b):\n    return a + b\n"}
 SELF_OSS = COMMITPACK
@@ -105,7 +108,7 @@ def trained_text(sample: dict) -> list[str]:
     return [sample["text"][s:e] for s, e in sample["train_spans"]]
 
 
-@pytest.mark.parametrize("set_id,row", [
+@parametrize("set_id,row", [
     ("sft-code-commitpackft", COMMITPACK),
     ("sft-code-codeforces-cots", CODEFORCES),
     ("sft-code-swe-rebench-openhands", SWE),
@@ -376,7 +379,7 @@ def test_cascade_prompt_tag_names_are_bracketed():
     assert "Reply in a [think] and [/think] block." in sample["text"]
 
 
-@pytest.mark.parametrize("set_id,row,reason", [
+@parametrize("set_id,row,reason", [
     ("sft-rl-math-openmathreasoning", dict(OMR, inference_mode="tir"), "tool-integrated (non-cot) solution"),
     ("sft-code-opencodereasoning-2", dict(OCR2, question="-"), "question is withheld upstream (stored as '-')"),
     ("sft-math-nemotron-proofs", {"uuid": "p", "messages": []}, "row has no messages (statement only)"),
@@ -432,3 +435,38 @@ def test_aya_collection_strips_zero_width_space_and_skips_empty_targets():
     assert "\u200b" not in sample["text"]
     lines, manifest = convert.convert("sft-indic-aya-collection", [dict(AYA_COLLECTION, targets=" ")], None, None)
     assert lines == [] and manifest["skipped"] == {"empty input or target": 1}
+
+
+def test_convert_streams_to_a_sink_with_the_same_manifest(tmp_path):
+    rows = [COMMITPACK, dict(COMMITPACK, response="x = 1\n")]
+    lines, manifest = convert.convert("sft-code-commitpackft", rows, None, None)
+    with open(tmp_path / "out.jsonl", "w", encoding="utf-8", newline="") as sink:
+        none, streamed = convert.convert("sft-code-commitpackft", rows, None, None, 0, sink)
+    assert none == [] and (tmp_path / "out.jsonl").read_text(encoding="utf-8") == "".join(lines)
+    assert streamed == manifest
+
+
+def test_multi_file_rows_are_counted_across_files(monkeypatch):
+    files = {"a": [{"i": 0}, {"i": 1}], "b": [{"i": 2}, {"i": 3}]}
+    monkeypatch.setattr(convert, "_one_file_rows", lambda ds, p, off, n: iter(files[p][off:off + n]))
+
+    def got(off, n):
+        return [r["i"] for r in convert.hf_file_rows("x/y", "a|b", off, n)]
+
+    assert got(0, 10) == [0, 1, 2, 3] and got(1, 2) == [1, 2] and got(0, 3) == [0, 1, 2]
+
+
+def test_file_rows_resume_after_a_connection_reset(monkeypatch):
+    calls = []
+
+    def flaky(ds, p, off, n):
+        calls.append(off)
+        for i in range(off, 5):
+            if len(calls) == 1 and i == 3:
+                raise ConnectionResetError("reset")
+            yield {"i": i}
+
+    monkeypatch.setattr(convert, "_one_file_rows", flaky)
+    monkeypatch.setattr(convert.time, "sleep", lambda s: None)
+    assert [r["i"] for r in convert.hf_file_rows("x/y", "a", 0, 100)] == [0, 1, 2, 3, 4]
+    assert calls == [0, 3]

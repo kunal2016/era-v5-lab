@@ -429,10 +429,10 @@ def aya_collection_rows(dataset: str, _path: str, offset: int, n: int) -> Iterat
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
     "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
-    "sft-code-codeforces-cots": (codeforces_cots, "id", ("solutions", "train"), None, ""),
-    "sft-code-swe-rebench-openhands": (swe_rebench_openhands, "trajectory_id", ("default", "train"), None, ""),
+    "sft-code-codeforces-cots": (codeforces_cots, "id", ("file", "glob:solutions/"), None, "solutions config"),
+    "sft-code-swe-rebench-openhands": (swe_rebench_openhands, "trajectory_id", ("file", "trajectories.parquet"), None, ""),
     "sft-indic-aya-dataset": (
-        aya_dataset, "", ("default", "train"),
+        aya_dataset, "", ("file", "data/train-00000-of-00001.parquet"),
         lambda row: row["language_code"] in AYA_INDIC, "language_code in " + ",".join(sorted(AYA_INDIC)),
     ),
     "sft-indic-indic-align-oasst-t": (
@@ -445,7 +445,7 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "data/high.part_00.jsonl"), None, "first high-reasoning part"),
     "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_repair.jsonl"), None, "swe_repair file"),
     "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "split_0/train-00000-of-00030.parquet"), None, "first shard"),
-    "sft-math-nemotron-sft-math-v4": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00012.parquet"), None, "first shard"),
+    "sft-math-nemotron-sft-math-v4": (nemotron_chat, "uuid", ("file", "glob:data/"), None, "all 12 shards"),
     "sft-rl-math-openmathreasoning": (openmathreasoning, "", ("file", "data/cot-00000-of-00144.parquet"), None, "first cot shard"),
     "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "all/default-00000-of-00010.parquet"), None, "first shard"),
     "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "data/train-00000-of-00039.parquet"), None, "first shard, first generation"),
@@ -553,9 +553,12 @@ def convert_row(messages: list[dict], count: Callable[[str], int]) -> tuple[str,
 
 
 def convert(
-    set_id: str, rows: Iterable[dict], limit: int | None, tokenizer_path: str | None, first_index: int = 0
+    set_id: str, rows: Iterable[dict], limit: int | None, tokenizer_path: str | None, first_index: int = 0, sink=None
 ) -> tuple[list[str], dict]:
     """Convert up to `limit` selected rows. Returns (JSONL lines, manifest).
+
+    With `sink` (a text file open for writing) the lines are written there as they are made and the returned
+    list is empty, so a large set does not have to fit in memory; the manifest is the same.
 
     A row's id is `<set>/<row index in the source split>` (`first_index` is the index of the first
     row given), so ids stay unique when a source repeats its own ids (codeforces-cots has several
@@ -582,6 +585,8 @@ def convert(
         counter = "estimate: UTF-8 bytes / 4 (no tokenizer given)"
 
     lines: list[str] = []
+    written = 0
+    digest = hashlib.sha256()
     skipped: Counter = Counter()
     efforts: Counter = Counter()
     scanned = taken = tokens = trained = 0
@@ -610,7 +615,13 @@ def convert(
                 sample["loss_mask"] = token_mask(spans, enc.offsets)
                 tokens += len(enc.ids)
                 trained += sum(sample["loss_mask"])
-            lines.append(json.dumps(sample, ensure_ascii=False) + "\n")
+            line = json.dumps(sample, ensure_ascii=False) + "\n"
+            written += 1
+            digest.update(line.encode("utf-8"))
+            if sink is not None:
+                sink.write(line)
+            else:
+                lines.append(line)
         if limit and taken >= limit:
             break
 
@@ -618,10 +629,10 @@ def convert(
         **meta,
         "rows_scanned": scanned,
         "rows_in": taken,
-        "rows": len(lines),
+        "rows": written,
         "skipped": dict(skipped.most_common()),
         "effort": {e: efforts[e] for e in EFFORTS},
-        "content_sha256": hashlib.sha256("".join(lines).encode("utf-8")).hexdigest(),
+        "content_sha256": digest.hexdigest(),
         "effort_counter": counter,
         "selection": select_note or "all rows",
     }
@@ -709,7 +720,53 @@ class _RangeFile(io.RawIOBase):
         return len(data)
 
 
+def expand_paths(dataset: str, spec: str) -> list[str]:
+    """`a|b` is a list of files; `glob:dir/` is every .parquet or .jsonl file directly under that prefix."""
+    if spec.startswith("glob:"):
+        prefix = spec[5:]
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(f"https://huggingface.co/api/datasets/{dataset}/tree/main?recursive=1", timeout=60) as r:
+                    tree = json.load(r)
+                break
+            except OSError:
+                if attempt == 3:
+                    raise
+                time.sleep(5 * (attempt + 1))
+        names = sorted(x["path"] for x in tree if x["path"].startswith(prefix) and x["path"].endswith((".parquet", ".jsonl")))
+        if not names:
+            raise SystemExit(f"no data files under {prefix} in {dataset}")
+        return names
+    return spec.split("|")
+
+
 def hf_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]:
+    """Rows of one or several data files (see `expand_paths`), counted across the files in order.
+
+    A connection reset in the middle of a file is retried from the row where it stopped.
+    """
+    skipped = left = 0
+    for each in expand_paths(dataset, path):
+        done = 0
+        for attempt in range(8):
+            try:
+                for row in _one_file_rows(dataset, each, done, n):
+                    done += 1
+                    if skipped < offset:
+                        skipped += 1
+                        continue
+                    yield row
+                    left += 1
+                    if left >= n:
+                        return
+                break
+            except OSError:  # URLError, connection reset, short read
+                if attempt == 7:
+                    raise
+                time.sleep(10 * (attempt + 1))
+
+
+def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]:
     """First rows of one data file in a public Hugging Face dataset repo (.jsonl or .parquet), read from the start.
 
     Only the bytes needed are fetched: a .jsonl is streamed and closed after the last row, a .parquet is read
@@ -765,10 +822,10 @@ def main() -> None:
         config, split = ADAPTERS[a.set][2]
         rows = hf_rows(meta["source"], config, split, a.hf_offset, a.hf_rows)
         where = f"datasets-server {meta['source']} {config}/{split} rows {a.hf_offset}..{a.hf_offset + a.hf_rows - 1}"
-    lines, manifest = convert(a.set, rows, a.limit, a.tokenizer, a.hf_offset if (a.hf_rows or a.hf_file) else 0)
-    manifest["input"] = where
     a.out.parent.mkdir(parents=True, exist_ok=True)
-    a.out.write_bytes("".join(lines).encode("utf-8"))
+    with open(a.out, "w", encoding="utf-8", newline="") as sink:
+        _, manifest = convert(a.set, rows, a.limit, a.tokenizer, a.hf_offset if (a.hf_rows or a.hf_file) else 0, sink)
+    manifest["input"] = where
     Path(f"{a.out}.manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k: manifest[k] for k in ("set", "rows_in", "rows", "skipped", "effort", "content_sha256")}, ensure_ascii=False))
 
