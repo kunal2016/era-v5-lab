@@ -21,8 +21,8 @@ The findings are in `reading_math-finemath_pyru.csv`: one row per finding, 184 r
   the point in the cleaned text where the rule removed the text (`p-p`).
 - **quote:** left empty in every row. The sample holds personal data, so no document text goes into the repo;
   `why` is written in my own words.
-- **Earlier read:** PR #27 on patilvijay23/era-v5-lab read a different 100 (picked with `random.sample`). Only
-  1 doc is in both samples (`2842cc032aca51f3`).
+- **Replaces PR #27** on patilvijay23/era-v5-lab, which read a different 100 picked with `random.sample` and is now
+  closed. Only 1 doc is in both samples (`2842cc032aca51f3`).
 
 ## Findings table
 
@@ -103,8 +103,8 @@ Two or more docs out of 100 is at or above the 1% bar, so the first eight go to 
 | `DA-C2-001` | real lines that repeat by design. In `f85486e0d9ad0a50` it deleted 30 survey trial lines, leaving 8 trials empty. In `3bc7339b3365a201` it deleted 7 of 8 copies of a curve equation, including a working step and the line a later reply points to. | 2 |
 | `DA-D3-005` | 98 formula and number lines (hypotheses, test statistics, data values) in `1eadf4cf278db7e6`. The PDF text is cp1251 mojibake, so its Greek letters and signs count as Cyrillic. | 1 |
 
-PR #27's sample also found `DA-C2-001` harm (program output and numbered-problem lines in 4 docs), so the line rule
-has now deleted real content in 6 of the 200 math-finemath docs read.
+The earlier, closed read of a different 100 (PR #27) also saw `DA-C2-001` delete program output and numbered-problem
+lines in 4 docs.
 
 ## Open questions for the lead
 
@@ -112,12 +112,11 @@ has now deleted real content in 6 of the 200 math-finemath docs read.
    cannot repair cp1251, D3 deletes those lines as Cyrillic, and that is where the harm in `1eadf4cf278db7e6` comes
    from.
 2. **C2 line rule:** limit it (for example skip lines with digits or `$`, or lines inside numbered items)? It harms 2
-   docs here and 4 in PR #27's sample.
+   docs here, and 4 more in the earlier read.
 3. **C1:** allow an optional markdown heading prefix in the whole-line phrases, and run the reply-view block pattern
    before the line filter?
 4. **Listing, template, SEO and AI-written pages:** drop them by rule, or leave them to the quality filter?
 5. **quote column:** left empty because of the personal-data rule. Is that fine for the consolidation?
-6. **PR #27:** close it now that this sample replaces it, or keep it as the second 100 for math-finemath?
 
 ## Doc IDs read (reading order = shuffle order)
 
