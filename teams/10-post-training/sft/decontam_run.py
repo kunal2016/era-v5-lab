@@ -182,7 +182,7 @@ def fingerprint_benchmarks(folder):
 
 
 def run_set(set_id, inputs, out_dir, tools=DEFAULT_TOOLS, id_field="id", text_field="text",
-            fingerprints=None, expect_sha=PINNED_SET_SHA256, recheck=True):
+            fingerprints=None, expect_sha=PINNED_SET_SHA256, recheck=True, drop_clean=False):
     """Run, filter and reconcile one set. Returns the record (also written to <set>.record.json)."""
     tools = Path(tools).resolve()
     out_dir = Path(out_dir).resolve()
@@ -272,6 +272,10 @@ def run_set(set_id, inputs, out_dir, tools=DEFAULT_TOOLS, id_field="id", text_fi
         "duplicate_ids": len(dup),
         "checks": checks, "ok": all(checks.values()) and not canary_ids,
     }
+    if drop_clean:  # the record keeps their sha256; the rows are only needed for the second pass above
+        for c in clean_files:
+            c.unlink()
+        record["clean_files_deleted"] = True
     (out_dir / f"{set_id}.record.json").write_text(json.dumps(record, indent=1, ensure_ascii=False) + "\n",
                                                    encoding="utf-8")
     return record
@@ -479,6 +483,60 @@ def run_set_reuse(set_id, input_path, out_dir, tools=DEFAULT_TOOLS, id_field="id
     return record
 
 
+def merge_records(set_id, shard_records, extra_checks=None, out_dir=None):
+    """One record for a set that was run in parts (each part has its own record from `run_set`).
+
+    The parts must come from the same fingerprint set, the same tools and the same benchmark list, and every part
+    must be ok. Counts add up; flagged documents and canary hits are joined. `extra_checks` are added to the
+    checks (for example that the parts cover the whole source and have disjoint ids); the record is ok only if
+    all of them hold.
+    """
+    recs = list(shard_records)
+    if not recs:
+        raise RunError("no shard records to merge")
+    for key in ("fingerprints", "set_sha256", "scope", "benchmarks", "tools"):
+        if len({json.dumps(r[key], sort_keys=True) for r in recs}) != 1:
+            raise RunError(f"the parts carry different {key}: run them again with the same tools")
+    flagged, by_bench, hits = {}, Counter(), []
+    for r in recs:
+        if set(flagged) & set(r["flagged"]):
+            raise RunError("the same document id is flagged in two parts")
+        flagged.update(r["flagged"])
+        by_bench.update(r["by_benchmark"])
+        hits += r["canary"]["hits"]
+    checks = {k: all(r["checks"].get(k, False) for r in recs) for k in sorted({k for r in recs for k in r["checks"]})}
+    checks.update(extra_checks or {})
+    rec = recs[0]
+    merged = {
+        "set": set_id,
+        "run_at": max(r["run_at"] for r in recs),
+        "fingerprints": rec["fingerprints"], "set_sha256": rec["set_sha256"], "scope": rec["scope"],
+        "benchmarks": rec["benchmarks"], "tools": rec["tools"],
+        "inputs": [i for r in recs for i in r["inputs"]],
+        "rows_in": sum(r["rows_in"] for r in recs), "rows_flagged": sum(r["rows_flagged"] for r in recs),
+        "rows_canary": sum(r["rows_canary"] for r in recs), "rows_removed": sum(r["rows_removed"] for r in recs),
+        "rows_kept": sum(r["rows_kept"] for r in recs),
+        "by_benchmark": dict(by_bench), "flagged": flagged,
+        "canary": {"exit": max(r["canary"]["exit"] for r in recs),
+                   "docs_with_canary": sum(r["canary"]["docs_with_canary"] for r in recs),
+                   "hits": hits, "files_skipped": sum(r["canary"]["files_skipped"] for r in recs)},
+        "clean": [c for r in recs for c in r["clean"]],
+        "recheck_on_clean": {"docs": sum(r["recheck_on_clean"]["docs"] for r in recs),
+                             "flagged": sum(r["recheck_on_clean"]["flagged"] for r in recs),
+                             "set_sha256": rec["set_sha256"]},
+        "parts": len(recs),
+        "clean_files_deleted": all(r.get("clean_files_deleted") for r in recs),
+        "duplicate_ids": sum(r["duplicate_ids"] for r in recs),
+        "checks": checks,
+    }
+    merged["ok"] = all(checks.values()) and merged["rows_canary"] == 0 and all(r["ok"] for r in recs)
+    if out_dir:
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        (Path(out_dir) / f"{set_id}.record.json").write_text(
+            json.dumps(merged, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    return merged
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--set", required=True, dest="set_id", help="set id from licences/licence_table.md")
@@ -491,6 +549,8 @@ def main(argv=None):
     ap.add_argument("--expect-sha", default=PINNED_SET_SHA256, help="expected set_sha256 ('' to skip, test only)")
     ap.add_argument("--no-recheck", action="store_true",
                     help="skip the second pass over the clean file (decontam_report.py then refuses the record)")
+    ap.add_argument("--drop-clean", action="store_true",
+                    help="delete the clean file(s) once the record is written (the record keeps their sha256)")
     ap.add_argument("--reuse-clean", action="store_true",
                     help="finish a stopped run: take <set>.clean.jsonl from --out-dir, check the removed rows, and "
                          "check the clean file in parallel pieces (one .jsonl input)")
@@ -506,7 +566,7 @@ def main(argv=None):
                                 args.text_field, args.fingerprints, args.expect_sha, args.workers)
         else:
             rec = run_set(args.set_id, args.input, args.out_dir, args.tools, args.id_field, args.text_field,
-                          args.fingerprints, args.expect_sha, not args.no_recheck)
+                          args.fingerprints, args.expect_sha, not args.no_recheck, args.drop_clean)
     except (RunError, OSError, json.JSONDecodeError) as e:
         print(f"{args.set_id}: {e}", file=sys.stderr)
         return 2

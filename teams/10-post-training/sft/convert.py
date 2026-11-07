@@ -43,6 +43,7 @@ from typing import Callable, Iterable, Iterator
 
 TEAM = Path(__file__).resolve().parents[1]
 LICENCE_TABLE = TEAM / "licences" / "licence_table.md"
+BYTES_READ = 0  # bytes fetched from the Hub by this process (progress reporting)
 
 
 def _load(name: str, path: Path):
@@ -264,6 +265,12 @@ def openmathreasoning(row: dict) -> list[dict]:
             {"role": "assistant", "think": hit[1].strip(), "content": hit[2]}]
 
 
+def _raw_verified(row: dict) -> bool:
+    """Licence table: keep OpenR1-Math-Raw rows with a passing correctness flag (here: the first generation's)."""
+    ok = ((row.get("correctness") or {}).get("llama_verification") or [False])[0]
+    return ok is True
+
+
 def openr1_math_raw(row: dict) -> list[dict]:
     """Problem plus the first generation; the Raw set has no `messages`."""
     hit = _THINK.fullmatch(row["generations"][0] or "")
@@ -443,12 +450,15 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-agentic-nemotron-agentic-v1": (nemotron_chat, "uuid", ("file", "data/tool_calling.jsonl"), None, "tool_calling file"),
     "sft-agentic-nemotron-sft-agentic-v2-tool-calling": (nemotron_chat, "", ("file", "data/tool_calling.jsonl"), None, ""),
     "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "data/high.part_00.jsonl"), None, "first high-reasoning part"),
-    "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_repair.jsonl"), None, "swe_repair file"),
-    "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "split_0/train-00000-of-00030.parquet"), None, "first shard"),
+    "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_localization.jsonl|swe_repair.jsonl|swe_testgen.jsonl"), None,
+        "all three files (localization, repair, testgen)"),
+    "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "glob:split_0/"), None,
+        "split_0, all 30 shards (split_1 withholds the questions)"),
     "sft-math-nemotron-sft-math-v4": (nemotron_chat, "uuid", ("file", "glob:data/"), None, "all 12 shards"),
     "sft-rl-math-openmathreasoning": (openmathreasoning, "", ("file", "data/cot-00000-of-00144.parquet"), None, "first cot shard"),
-    "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "all/default-00000-of-00010.parquet"), None, "first shard"),
-    "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "data/train-00000-of-00039.parquet"), None, "first shard, first generation"),
+    "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "glob:all/train-"), None, "config all, 20 shards"),
+    "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "glob:data/"), _raw_verified,
+        "all 39 shards; first generation, rows whose first generation passes llama_verification"),
     "sft-stem-code-openthoughts3": (sharegpt_think, "", ("file", "data/train-00000-of-00120.parquet"), None, "first shard"),
     "sft-code-opencodereasoning-2": (opencodereasoning_2, "id", ("file", "train/python/train-00000-of-00070.parquet"), None, "python, first shard"),
     "sft-science-nemotron-science": (nemotron_chat, "uuid", ("file", "data/MCQ.jsonl"), None, "MCQ file"),
@@ -553,7 +563,7 @@ def convert_row(messages: list[dict], count: Callable[[str], int]) -> tuple[str,
 
 
 def convert(
-    set_id: str, rows: Iterable[dict], limit: int | None, tokenizer_path: str | None, first_index: int = 0, sink=None
+    set_id: str, rows: Iterable[dict], limit: int | None, tokenizer_path: str | None, first_index: int = 0, sink=None, progress=None
 ) -> tuple[list[str], dict]:
     """Convert up to `limit` selected rows. Returns (JSONL lines, manifest).
 
@@ -590,8 +600,12 @@ def convert(
     skipped: Counter = Counter()
     efforts: Counter = Counter()
     scanned = taken = tokens = trained = 0
+    last_report = time.monotonic()
     for index, row in enumerate(rows):
         scanned += 1
+        if progress and scanned % 500 == 0 and time.monotonic() - last_report >= 2:
+            last_report = time.monotonic()
+            progress(scanned, written)
         if select and not select(row):
             continue
         taken += 1
@@ -715,8 +729,10 @@ class _RangeFile(io.RawIOBase):
                 if attempt == 4:
                     raise
                 time.sleep(5 * (attempt + 1))
+        global BYTES_READ
         buffer[: len(data)] = data
         self.pos += len(data)
+        BYTES_READ += len(data)
         return len(data)
 
 
@@ -760,7 +776,7 @@ def hf_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]
                     if left >= n:
                         return
                 break
-            except OSError:  # URLError, connection reset, short read
+            except (OSError, http.client.HTTPException):  # URLError, connection reset, short read, IncompleteRead
                 if attempt == 7:
                     raise
                 time.sleep(10 * (attempt + 1))
@@ -787,12 +803,54 @@ def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dic
                 taken += 1
         return
     with urllib.request.urlopen(url, timeout=120) as r:
+        global BYTES_READ
         for line in r:
+            BYTES_READ += len(line)
             if taken >= offset + n:
                 return
             if taken >= offset:
-                yield json.loads(line)
+                try:
+                    if not line.endswith(b"\n") and not r.isclosed():
+                        raise ValueError("line cut short")
+                    yield json.loads(line)
+                except ValueError as exc:  # a connection that drops mid-line gives a cut-off last line: retry
+                    raise OSError(f"truncated download in {path} at row {taken}: {exc}") from None
             taken += 1
+
+
+class RollingSink:
+    """Write JSONL lines into `<prefix>.partNNNN.jsonl` files of about `mb` MB each.
+
+    A part is written under a `.tmp` name and renamed when it is complete, so a reader that looks for `*.jsonl`
+    only ever sees whole parts (and a part never ends inside a line).
+    """
+
+    def __init__(self, prefix: Path, mb: float):
+        self.prefix, self.limit, self.n, self.size, self.f = Path(prefix), int(mb * 1e6), 0, 0, None
+        self.parts: list[Path] = []
+
+    def _open(self):
+        self.f = open(f"{self.prefix}.part{self.n:04d}.jsonl.tmp", "w", encoding="utf-8", newline="")
+        self.size = 0
+
+    def _close(self):
+        if self.f:
+            self.f.close()
+            final = Path(f"{self.prefix}.part{self.n:04d}.jsonl")
+            Path(f"{final}.tmp").rename(final)
+            self.parts.append(final)
+            self.f, self.n = None, self.n + 1
+
+    def write(self, line: str) -> None:
+        if self.f is None:
+            self._open()
+        self.f.write(line)
+        self.size += len(line.encode("utf-8"))
+        if self.size >= self.limit:
+            self._close()
+
+    def close(self) -> None:
+        self._close()
 
 
 def main() -> None:
@@ -807,6 +865,10 @@ def main() -> None:
     ap.add_argument("--limit", type=int, help="stop after this many selected rows")
     ap.add_argument("--tokenizer", help="tokenizer.json for real token counts, input_ids and loss_mask")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--file-spec", help="with --hf-file: read this file (or `a|b` list) instead of the set's whole source")
+    ap.add_argument("--index-base", type=int, help="ids start at <set>/<this number> (for parallel runs on file groups)")
+    ap.add_argument("--roll-mb", type=float, help="write <out>.partNNNN.jsonl parts of about this size instead of one file")
+    ap.add_argument("--progress", type=Path, help="rewrite this JSON file every few seconds with rows and bytes read")
     a = ap.parse_args()
 
     meta = licence_row(a.set)
@@ -815,6 +877,7 @@ def main() -> None:
         rows, where = read_rows(a.input), f"file {a.input.name}"
     elif a.hf_file:
         kind, path = ADAPTERS[a.set][2]
+        path = a.file_spec or path
         reader = {"oasst2": oasst2_threads, "aya": aya_collection_rows}.get(kind, hf_file_rows)
         rows = reader(meta["source"], path, a.hf_offset, a.hf_file)
         where = f"hub file {meta['source']} {path} rows {a.hf_offset}..{a.hf_offset + a.hf_file - 1}"
@@ -823,10 +886,29 @@ def main() -> None:
         rows = hf_rows(meta["source"], config, split, a.hf_offset, a.hf_rows)
         where = f"datasets-server {meta['source']} {config}/{split} rows {a.hf_offset}..{a.hf_offset + a.hf_rows - 1}"
     a.out.parent.mkdir(parents=True, exist_ok=True)
-    with open(a.out, "w", encoding="utf-8", newline="") as sink:
-        _, manifest = convert(a.set, rows, a.limit, a.tokenizer, a.hf_offset if (a.hf_rows or a.hf_file) else 0, sink)
+    first = a.index_base if a.index_base is not None else (a.hf_offset if (a.hf_rows or a.hf_file) else 0)
+
+    def report(scanned: int, written: int) -> None:
+        if a.progress:
+            tmp = Path(f"{a.progress}.tmp")
+            tmp.write_text(json.dumps({"rows_scanned": scanned, "rows": written, "bytes_read": BYTES_READ,
+                                       "at": time.time()}), encoding="utf-8")
+            tmp.replace(a.progress)
+
+    if a.roll_mb:
+        sink = RollingSink(a.out, a.roll_mb)
+        _, manifest = convert(a.set, rows, a.limit, a.tokenizer, first, sink, report)
+        sink.close()
+        manifest["parts"] = [p.name for p in sink.parts]
+        manifest_path = Path(f"{a.out}.manifest.json")
+    else:
+        with open(a.out, "w", encoding="utf-8", newline="") as sink:
+            _, manifest = convert(a.set, rows, a.limit, a.tokenizer, first, sink, report)
+        manifest_path = Path(f"{a.out}.manifest.json")
+    report(manifest["rows_scanned"], manifest["rows"])
     manifest["input"] = where
-    Path(f"{a.out}.manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    manifest["index_base"] = first
+    manifest_path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({k: manifest[k] for k in ("set", "rows_in", "rows", "skipped", "effort", "content_sha256")}, ensure_ascii=False))
 
 

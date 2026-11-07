@@ -75,7 +75,8 @@ DOLLY = {"instruction": "Name a colour.", "context": "Think of the sky.", "respo
 
 
 OMR = {"problem": "2+2?", "inference_mode": "cot", "generated_solution": "<think>\nAdd.\n</think>\n\\boxed{4}"}
-OPENR1_RAW = {"problem": "2+2?", "generations": ["<think>\nAdd.\n</think>\nFour."]}
+OPENR1_RAW = {"problem": "2+2?", "generations": ["<think>\nAdd.\n</think>\nFour."],
+              "correctness": {"llama_verification": [True]}}
 OT3 = {"conversations": [{"from": "human", "value": "Sum?"}, {"from": "gpt", "value": "<think> Add them. </think> The sum."}]}
 OCR2 = {"id": "q1", "question": "Print 1.", "r1_generation": "<think>\nprint it\n</think>\nprint(1)"}
 OPENR1 = {"uuid": "r1", "messages": CASCADE["messages"]}
@@ -470,3 +471,37 @@ def test_file_rows_resume_after_a_connection_reset(monkeypatch):
     monkeypatch.setattr(convert.time, "sleep", lambda s: None)
     assert [r["i"] for r in convert.hf_file_rows("x/y", "a", 0, 100)] == [0, 1, 2, 3, 4]
     assert calls == [0, 3]
+
+
+def test_rolling_sink_writes_whole_parts(tmp_path):
+    sink = convert.RollingSink(tmp_path / "set", 0.00005)  # 50 bytes
+    for i in range(7):
+        sink.write(json.dumps({"id": i}) + "\n")
+    assert not list(tmp_path.glob("*.tmp")) or len(list(tmp_path.glob("*.tmp"))) <= 1
+    sink.close()
+    parts = sorted(tmp_path.glob("set.part*.jsonl"))
+    assert len(parts) > 1 and not list(tmp_path.glob("*.tmp"))
+    assert [json.loads(ln)["id"] for p in parts for ln in p.read_text().splitlines()] == list(range(7))
+
+
+def test_progress_callback_and_index_base():
+    seen = []
+    rows = [{"instruction": f"q{i}", "context": "", "response": f"a{i}", "category": "x"} for i in range(1500)]
+    lines, manifest = convert.convert("sft-dolly-15k", rows, None, None, first_index=5_000, progress=lambda s, w: seen.append((s, w)))
+    assert json.loads(lines[0])["id"] == "sft-dolly-15k/5000" and json.loads(lines[-1])["id"] == "sft-dolly-15k/6499"
+    assert manifest["rows"] == 1500 and (not seen or seen[-1][0] <= 1500)
+
+
+def test_openr1_raw_keeps_only_rows_whose_first_generation_passed():
+    select = convert.ADAPTERS["sft-math-openr1-math-raw"][3]
+    assert select({"correctness": {"llama_verification": [True, False]}})
+    assert not select({"correctness": {"llama_verification": [False, True]}})
+    assert not select({"correctness": {}}) and not select({})
+
+
+def test_full_set_sources_of_the_five_sets():
+    spec = {s: convert.ADAPTERS[s][2][1] for s in ("sft-code-nemotron-cascade-swe", "sft-code-opencodereasoning",
+                                                   "sft-math-openr1-math", "sft-math-openr1-math-raw")}
+    assert spec["sft-code-nemotron-cascade-swe"].count("|") == 2
+    assert spec["sft-code-opencodereasoning"] == "glob:split_0/" and spec["sft-math-openr1-math"] == "glob:all/train-"
+    assert spec["sft-math-openr1-math-raw"] == "glob:data/"

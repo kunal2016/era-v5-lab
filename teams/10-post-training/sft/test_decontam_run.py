@@ -309,3 +309,39 @@ def test_report_marks_full_and_sampled_sets(tmp_path, toy_set):
     md = rep.build_report(recs, {}, expect_sha=None, full={"aaa"})
     assert "| `aaa` | full set |" in md and "| `bbb` | sample |" in md and "not cleared as a whole" in md
     assert "Run on" not in rep.build_report(recs, {}, expect_sha=None)
+
+
+def test_drop_clean_deletes_the_file_but_keeps_its_hash(tmp_path, toy_set):
+    src = write_rows(tmp_path / "d.jsonl", [("s/0", CLEAN[0]), ("s/1", "x " + COPY)])
+    rec = run.run_set("d", [src], tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None, drop_clean=True)
+    assert rec["ok"] and rec["clean_files_deleted"] and rec["clean"][0]["sha256"]
+    assert not (tmp_path / "out" / "d.clean.jsonl").exists()
+    assert rec["recheck_on_clean"]["flagged"] == 0  # the second pass ran before the file was deleted
+
+
+def test_merged_parts_equal_one_run(tmp_path, toy_set):
+    rows = [(f"s/{i}", t) for i, t in enumerate(CLEAN * 2)] + [("s/90", "Solve. " + COPY), ("s/91", "x " + COPY)]
+    whole = write_rows(tmp_path / "w.jsonl", rows)
+    full = run.run_set("w", [whole], tmp_path / "out", TOOLS, fingerprints=str(toy_set), expect_sha=None)
+    parts = []
+    for n, chunk in enumerate((rows[:3], rows[3:7], rows[7:])):
+        f = write_rows(tmp_path / f"p{n}.jsonl", chunk)
+        parts.append(run.run_set(f"w.p{n}", [f], tmp_path / "parts", TOOLS, fingerprints=str(toy_set), expect_sha=None))
+    merged = run.merge_records("w", parts, {"parts_cover_source": True}, tmp_path / "merged")
+    for k in ("rows_in", "rows_flagged", "rows_canary", "rows_removed", "rows_kept", "by_benchmark", "flagged"):
+        assert merged[k] == full[k]
+    assert merged["ok"] and merged["parts"] == 3 and merged["checks"]["parts_cover_source"]
+    assert merged["recheck_on_clean"]["docs"] == full["recheck_on_clean"]["docs"]
+    assert (tmp_path / "merged" / "w.record.json").is_file()
+    assert rep.build_report([merged], {}, expect_sha=None)  # the report accepts a merged record
+
+
+def test_merge_refuses_parts_from_different_tools_or_with_a_failure(tmp_path, toy_set):
+    a = write_rows(tmp_path / "a.jsonl", [("a/0", CLEAN[0])])
+    b = write_rows(tmp_path / "b.jsonl", [("b/0", "notes " + CANARY + " end")])
+    ra = run.run_set("a", [a], tmp_path / "o", TOOLS, fingerprints=str(toy_set), expect_sha=None)
+    rb = run.run_set("b", [b], tmp_path / "o", TOOLS, fingerprints=str(toy_set), expect_sha=None)
+    assert not run.merge_records("ab", [ra, rb])["ok"]  # a canary in one part makes the whole set fail
+    rc = dict(ra, tools={"files": {}, "git_commit": "other"})
+    with pytest.raises(run.RunError, match="different tools"):
+        run.merge_records("ac", [ra, rc])
