@@ -54,7 +54,7 @@ def _same(recs, key, what):
 
 
 def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref="", title="SFT decontamination report",
-                 out_rel="teams/10-post-training/sft/decontam_report.md"):
+                 out_rel="teams/10-post-training/sft/decontam_report.md", full=None):
     names = [r["set"] for r in recs]
     if len(names) != len(set(names)):
         raise ReportError("a set appears twice in the records")
@@ -99,14 +99,22 @@ def build_report(recs, pending, expect_sha=PINNED_SET_SHA256, tools_ref="", titl
     a("")
     a("## 1. Result per set")
     a("")
-    a("| Set | Rows in | Flagged | Canary | Removed | Rows kept | Clean file sha256 |")
-    a("|---|---:|---:|---:|---:|---:|---|")
+    col = "" if full is None else " Run on |"
+    a(f"| Set |{col} Rows in | Flagged | Canary | Removed | Rows kept | Clean file sha256 |")
+    a("|---|" + ("" if full is None else "---|") + "---:|---:|---:|---:|---:|---|")
     for r in recs:
         clean = ", ".join(f"`{c['sha256'][:12]}…`" for c in r["clean"])
-        a(f"| `{r['set']}` | {r['rows_in']:,} | {r['rows_flagged']:,} | {r['rows_canary']:,} | "
+        how = "" if full is None else (" full set |" if r["set"] in full else " sample |")
+        a(f"| `{r['set']}` |{how} {r['rows_in']:,} | {r['rows_flagged']:,} | {r['rows_canary']:,} | "
           f"{r['rows_removed']:,} ({pct(r['rows_removed'], r['rows_in'])}) | {r['rows_kept']:,} | {clean} |")
-    a(f"| **Total** | **{rows_in:,}** | **{sum(r['rows_flagged'] for r in recs):,}** | "
+    a(f"| **Total** |{'' if full is None else ' |'} **{rows_in:,}** | **{sum(r['rows_flagged'] for r in recs):,}** | "
       f"**{sum(r['rows_canary'] for r in recs):,}** | **{removed:,}** ({pct(removed, rows_in)}) | **{kept:,}** | |")
+    if full is not None:
+        nf = sum(r["set"] in full for r in recs)
+        a("")
+        a(f"**Run on** says what was checked: *full set* is every row the converter produced from the whole "
+          f"source ({nf} sets); *sample* is the first rows of a split only ({len(recs) - nf} sets), "
+          "and is not cleared as a whole.")
     a("")
     a("A row that is both flagged and carries a canary counts once in Removed.")
     a("")
@@ -238,6 +246,7 @@ def main(argv=None):
     ap.add_argument("--tools-ref", default="", help="commit of lab main that holds Team 9's tools "
                                                     "(default: the commit found by decontam_run.py)")
     ap.add_argument("--expect-sha", default=PINNED_SET_SHA256)
+    ap.add_argument("--full-sets", nargs="+", help="sets that were run on every row; the others are listed as samples")
     ap.add_argument("--title", default="SFT decontamination report", help="report heading (e.g. for the RL sets)")
     args = ap.parse_args(argv)
     try:
@@ -246,7 +255,8 @@ def main(argv=None):
         out = Path(args.out).resolve()
         out_rel = out.relative_to(repo).as_posix() if out.is_relative_to(repo) else out.name
         md = build_report(load_records(args.records, args.sets), pending, args.expect_sha, args.tools_ref,
-                          title=args.title, out_rel=out_rel)
+                          title=args.title, out_rel=out_rel,
+                          full=set(args.full_sets) if args.full_sets is not None else None)
     except (ReportError, OSError, json.JSONDecodeError) as e:
         print(f"decontam_report: {e}", file=sys.stderr)
         return 1
