@@ -266,7 +266,8 @@ def render_markdown(class_rows: list[dict], dense_rows: list[dict], summary: dic
         f"Margin: {summary['definition']}. The pair is the class's lowest-margin token and its rival "
         "(rival may be in another class). Bytes: (token length, rival length, positions with equal bytes). "
         "fp32 / bf16 columns: class minimum with codes stored in that precision, minus the fp64 minimum "
-        "(exact float64 arithmetic). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.",
+        "(exact float64 arithmetic). Same pair: yes, swapped (the same two tokens in the other direction) "
+        "or no (another pair; check its margin). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.",
         "",
         "| script class | tokens | min margin (fp64) | token → rival | bytes (L, L′, shared) "
         "| fp32 − fp64 | bf16 − fp64 | same pair | bf16 steps |",
@@ -275,13 +276,19 @@ def render_markdown(class_rows: list[dict], dense_rows: list[dict], summary: dic
     for r in ref:
         c = r["script_class"]
         r32, r16 = by["fp32", c], by["bf16", c]
-        same = all((x["token_id"], x["rival_id"]) == (r["token_id"], r["rival_id"]) for x in (r32, r16))
+        pairs = [(x["token_id"], x["rival_id"]) for x in (r32, r16)]
+        if all(p == (r["token_id"], r["rival_id"]) for p in pairs):
+            same = "yes"
+        elif all(set(p) == {r["token_id"], r["rival_id"]} for p in pairs):
+            same = "swapped"  # the same two tokens; equal fp64 margins, rounding picked the other direction
+        else:
+            same = "no"
         lines.append(
             f"| {c} | {r['n_tokens']:,} | {r['min_margin']:.6f} "
             f"| {_code(r['token_text'])} ({r['token_id']}) → {_code(r['rival_text'])} ({r['rival_id']}) "
             f"| {r['token_len']}, {r['rival_len']}, {r['overlap']} "
             f"| {r32['min_margin'] - r['min_margin']:+.2e} | {r16['min_margin'] - r['min_margin']:+.2e} "
-            f"| {'yes' if same else 'no'} | {r['bf16_steps']:.1f} |"
+            f"| {same} | {r['bf16_steps']:.1f} |"
         )
     lines += [
         "",

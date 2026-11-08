@@ -94,3 +94,19 @@ def test_duplicate_rows_fail_the_gate(make_byte_table):
     _, _, summary = bmm.run(t, ["A", "A", "A"], worst_k=1)
     assert summary["gate_all_positive"] is False
     assert summary["precisions"]["fp64"]["n_nonpositive"] == 2
+
+
+def test_markdown_marks_a_reversed_pair_as_swapped(make_byte_table):
+    t = make_byte_table([b"ab", b"abc", b"zz"], P=4)
+    fp64 = bmm.class_minima(["A", "A", "B"], sm([0.1, 0.1, 0.5], [1, 0, 0]), t)
+    fp32 = bmm.class_minima(["A", "A", "B"], sm([0.2, 0.1, 0.5], [1, 0, 0], "fp32"), t)
+    bf16 = bmm.class_minima(["A", "A", "B"], sm([0.1, 0.1, 0.5], [1, 0, 0], "bf16"), t)
+    dense = {m: {"n_queries": 0, "n_wrong": 0, "n_ties": 0, "min_margin": 0.0, "max_abs_delta_vs_fp64": 0.0}
+             for m in dc.MODES}  # fmt: skip
+    summary = {"P": 4, "table_kind": "raw", "table_sha256": "0" * 64, "vocab_size": 3, "exhaustive": True,
+               "gate_all_positive": True, "definition": "d", "dense": dense}  # fmt: skip
+    md = bmm.render_markdown(fp64 + fp32 + bf16, [], summary)
+    row_a = next(line for line in md.splitlines() if line.startswith("| A |"))
+    row_b = next(line for line in md.splitlines() if line.startswith("| B |"))
+    assert "| swapped |" in row_a  # fp64 picks 0 -> 1, fp32 picks 1 -> 0: the same two tokens
+    assert "| yes |" in row_b

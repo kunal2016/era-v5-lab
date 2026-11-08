@@ -4,15 +4,15 @@
 
 Table `b3f5476ec6ae…`, tokenizer `01d968a7970b…`, V = 131,072, exhaustive: yes, gate: PASS.
 
-Margin: self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the whole vocabulary; equals decode_ref's margin whenever t decodes to itself; <= 0 means a tie or a wrong decode. The pair is the class's lowest-margin token and its rival (rival may be in another class). Bytes: (token length, rival length, positions with equal bytes). fp32 / bf16 columns: class minimum with codes stored in that precision, minus the fp64 minimum (exact float64 arithmetic). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.
+Margin: self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the whole vocabulary; equals decode_ref's margin whenever t decodes to itself; <= 0 means a tie or a wrong decode. The pair is the class's lowest-margin token and its rival (rival may be in another class). Bytes: (token length, rival length, positions with equal bytes). fp32 / bf16 columns: class minimum with codes stored in that precision, minus the fp64 minimum (exact float64 arithmetic). Same pair: yes, swapped (the same two tokens in the other direction) or no (another pair; check its margin). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.
 
 | script class | tokens | min margin (fp64) | token → rival | bytes (L, L′, shared) | fp32 − fp64 | bf16 − fp64 | same pair | bf16 steps |
 |---|--:|--:|---|---|--:|--:|---|--:|
-| Code/Structure | 4,275 | 0.015809 | ``                                  `` (50346) → ``                                 `` (83647) | 32, 31, 31 | +0.00e+00 | +2.01e-08 | no | 4.0 |
-| Latin | 107,453 | 0.028234 | ``  unterschiedliche `` (112024) → ``  unterschiedlichen `` (111303) | 17, 18, 17 | +1.11e-16 | +3.11e-09 | no | 7.2 |
+| Code/Structure | 4,275 | 0.015809 | ``                                  `` (50346) → ``                                 `` (83647) | 32, 31, 31 | +0.00e+00 | +2.01e-08 | swapped | 4.0 |
+| Latin | 107,453 | 0.028234 | ``  unterschiedliche `` (112024) → ``  unterschiedlichen `` (111303) | 17, 18, 17 | +1.11e-16 | +3.11e-09 | swapped | 7.2 |
 | Partial-UTF8[Devanagari] | 26 | 0.031813 | ``  निर्\xe0\xa4 `` (65748) → ``  निर्म `` (61199) | 15, 16, 15 | +3.33e-16 | +1.82e-09 | yes | 8.1 |
 | Devanagari | 4,138 | 0.031813 | ``  सिर्फ `` (44736) → ``  सिर्\xe0\xa4 `` (120200) | 16, 15, 15 | -4.44e-16 | +1.82e-09 | yes | 8.1 |
-| Mixed | 530 | 0.033967 | `` ’informations `` (93823) → `` ’information `` (96773) | 15, 14, 14 | +0.00e+00 | +6.10e-09 | no | 8.7 |
+| Mixed | 530 | 0.033967 | `` ’informations `` (93823) → `` ’information `` (96773) | 15, 14, 14 | +0.00e+00 | +6.10e-09 | swapped | 8.7 |
 | Telugu | 1,467 | 0.037160 | `` ుకున్నారు `` (54136) → `` ుతున్నారు `` (55825) | 27, 27, 26 | +0.00e+00 | -9.65e-10 | yes | 9.5 |
 | Bengali | 2,257 | 0.039290 | ``  অভিন `` (57432) → ``  অভি\xe0\xa6 `` (111887) | 13, 12, 12 | +3.33e-16 | +1.00e-08 | yes | 10.1 |
 | Gujarati | 1,803 | 0.039290 | ``  વર્ષ `` (29237) → ``  વર્\xe0\xaa `` (44409) | 13, 12, 12 | +3.33e-16 | +1.00e-08 | yes | 10.1 |
