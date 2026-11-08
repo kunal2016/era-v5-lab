@@ -159,3 +159,71 @@ def self_margins(
             o["rival"][where] = rival
             o["k"][where] = k[rows, rival]
     return {p: SelfMargins(p, ids.copy(), o["self"], o["margin"], o["rival"], o["k"]) for p, o in out.items()}
+
+
+class TwoValueError(ValueError):
+    """A code is not two-valued, so the closed-form scores would not apply to it."""
+
+
+def two_values(codes: np.ndarray, lengths: np.ndarray, *, first_id: int = 0) -> tuple[np.ndarray, np.ndarray]:
+    """Per-row ``(high, low)`` of codes ``(n, D)`` with ``lengths`` (n,), as float64.
+
+    A row is valid when every entry is its maximum or its minimum and exactly L entries equal the
+    maximum (with high > low), or when L == 0 and the row is all zeros. Otherwise this raises
+    :class:`TwoValueError` naming the token ID (``first_id`` + row index).
+    """
+    codes = np.asarray(codes, dtype=np.float64)
+    lengths = np.asarray(lengths, dtype=np.int64)
+    high, low = codes.max(axis=1), codes.min(axis=1)
+    is_high = codes == high[:, None]
+    two = (is_high | (codes == low[:, None])).all(axis=1)
+    valid = np.where(
+        lengths > 0,
+        two & (is_high.sum(axis=1) == lengths) & (high > low),
+        ~codes.any(axis=1),
+    )
+    if not valid.all():
+        row = int(np.flatnonzero(~valid)[0])
+        raise TwoValueError(
+            f"token {first_id + row}: code is not two-valued with {int(lengths[row])} high cells "
+            f"({int(is_high[row].sum())} cells at the maximum, {np.unique(codes[row]).size} distinct values)"
+        )
+    return high, low
+
+
+def codec_values(table: ByteTable, precision: str, *, chunk_rows: int = 2048) -> CodeValues:
+    """Per-token values of the codes held in ``precision``.
+
+    ``fp64`` is :func:`exact_values`. ``fp32`` reads the upstream float32 ``kronecker_codec`` output
+    (``ke2.codec.encode_ids``, what G5 gets); ``bf16`` reads that output after
+    ``.to(torch.bfloat16)`` (round to nearest even). Every code is checked to be two-valued.
+    """
+    if precision not in PRECISIONS:
+        raise ValueError(f"unknown precision {precision!r}; expected one of {PRECISIONS}")
+    if precision == "fp64":
+        return exact_values(table)
+    if chunk_rows < 1:
+        raise ValueError("chunk_rows must be positive")
+    import torch
+
+    from ke2.codec import encode_ids
+
+    V = table.vocab_size
+    lengths = table.lengths.astype(np.int64)
+    high, low = np.empty(V), np.empty(V)
+    for start in range(0, V, chunk_rows):
+        ids = np.arange(start, min(start + chunk_rows, V))
+        codes = encode_ids(ids, table)
+        if precision == "bf16":
+            codes = codes.to(torch.bfloat16)
+        high[ids], low[ids] = two_values(codes.double().numpy(), lengths[ids], first_id=start)
+    return CodeValues(precision, table.pos_dim, CHAR_DIM, lengths, high, low)
+
+
+def value_pairs_per_length(values: CodeValues) -> dict[int, int]:
+    """Number of distinct ``(high, low)`` pairs among the tokens of each length present."""
+    out: dict[int, int] = {}
+    for L in np.unique(values.lengths).tolist():
+        sel = values.lengths == L
+        out[int(L)] = len(set(zip(values.high[sel].tolist(), values.low[sel].tolist(), strict=True)))
+    return out

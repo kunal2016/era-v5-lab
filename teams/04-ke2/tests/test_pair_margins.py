@@ -8,12 +8,13 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "margins"))
 
 import decode_ref as dr
 import pair_margins as pm
-from ke2.codec import encode_f64
+from ke2.codec import encode_f64, encode_ids
 
 # Aliases: pr-guard's email check misreads dotted pytest decorators as addresses.
 fixture = pytest.fixture
@@ -80,3 +81,35 @@ def test_real_raw_p32_sample_matches_decode_ref(raw32, tb):
     sm = pm.self_margins(raw32, [pm.exact_values(raw32)], query_ids=ids)["fp64"]
     np.testing.assert_allclose(sm.margins, dr.decode(ct.codes(ids), ct).margins, rtol=0, atol=1e-12)
     assert (sm.margins > 0).all()
+
+
+def test_two_values_reads_high_and_low_per_row():
+    high, low = pm.two_values(np.array([[5.0, -1.0, -1.0, 5.0], [-2.0, -2.0, 3.0, -2.0]]), np.array([2, 1]))
+    assert high.tolist() == [5.0, 3.0] and low.tolist() == [-1.0, -2.0]
+
+
+@parametrize("row, length", [([5.0, -1.0, -1.5, 5.0], 2), ([5.0, -1.0, -1.0, -1.0], 2)])
+def test_two_values_rejects_codes_that_are_not_two_valued(row, length):
+    with pytest.raises(pm.TwoValueError, match="token 7"):
+        pm.two_values(np.array([row]), np.array([length]), first_id=7)
+
+
+def test_codec_values_follow_the_upstream_codec(synthetic_p8):
+    t = synthetic_p8
+    exact, f32, b16 = (pm.codec_values(t, p, chunk_rows=7) for p in pm.PRECISIONS)
+    assert (f32.precision, b16.precision) == ("fp32", "bf16")
+    np.testing.assert_allclose(f32.high, exact.high, rtol=1e-5)
+    np.testing.assert_allclose(f32.low, exact.low, rtol=1e-5)
+    codes = encode_ids(np.arange(t.vocab_size), t).to(torch.bfloat16).double().numpy()
+    assert np.array_equal(b16.high, codes.max(axis=1)) and np.array_equal(b16.low, codes.min(axis=1))
+    assert (np.abs(b16.high / exact.high - 1) <= 2.0**-8).all()
+
+
+def test_codec_values_rejects_an_unknown_precision(synthetic_p8):
+    with pytest.raises(ValueError, match="precision"):
+        pm.codec_values(synthetic_p8, "fp16")
+
+
+def test_value_pairs_per_length_counts_distinct_pairs():
+    v = pm.CodeValues("fp32", 4, 256, np.array([1, 1, 2]), np.array([3.0, 3.5, 2.0]), np.array([-0.1, -0.1, -0.2]))
+    assert pm.value_pairs_per_length(v) == {1: 2, 2: 1}
