@@ -8,7 +8,7 @@ Margin: self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the
 
 | script class | tokens | min margin (fp64) | token → rival | bytes (L, L′, shared) | fp32 − fp64 | bf16 − fp64 | same pair | bf16 steps |
 |---|--:|--:|---|---|--:|--:|---|--:|
-| Code/Structure | 4,275 | 0.015809 | ``                                  `` (50346) → ``                                 `` (83647) | 32, 31, 31 | +0.00e+00 | +2.01e-08 | swapped | 4.0 |
+| Code/Structure | 4,275 | 0.015809 | ␠×32 (50346) → ␠×31 (83647) | 32, 31, 31 | +0.00e+00 | +2.01e-08 | swapped | 4.0 |
 | Latin | 107,453 | 0.028234 | ``  unterschiedliche `` (112024) → ``  unterschiedlichen `` (111303) | 17, 18, 17 | +1.11e-16 | +3.11e-09 | swapped | 7.2 |
 | Partial-UTF8[Devanagari] | 26 | 0.031813 | ``  निर्\xe0\xa4 `` (65748) → ``  निर्म `` (61199) | 15, 16, 15 | +3.33e-16 | +1.82e-09 | yes | 8.1 |
 | Devanagari | 4,138 | 0.031813 | ``  सिर्फ `` (44736) → ``  सिर्\xe0\xa4 `` (120200) | 16, 15, 15 | -4.44e-16 | +1.82e-09 | yes | 8.1 |
@@ -47,10 +47,10 @@ Margin: self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the
 
 ## Dense scorer check
 
-The lowest-margin tokens of every class (union over precisions), decoded against the whole vocabulary with dense matrix products. `fp32`: fp32 codes and arithmetic. `bf16_fp32acc`: bf16 codes, fp32 accumulation. `bf16_out`: as `bf16_fp32acc` with each dot product rounded to bf16 (a GEMM with bf16 output). Δ is against the exact fp64 margin of the same token.
+The lowest-margin tokens of every class (union over precisions), decoded against the whole vocabulary with dense matrix products. `fp32`: fp32 codes and arithmetic. `bf16_fp32acc`: bf16 codes, fp32 accumulation. `bf16_out`: as `bf16_fp32acc` with each dot product rounded to bf16 (a GEMM with bf16 output). Δ is the dense margin minus the exact fp64 margin of the same token; negative means margin lost.
 
-| mode | queries | wrong | ties | min margin | max abs Δ vs fp64 |
-|---|--:|--:|--:|--:|--:|
-| `fp32` | 110 | 0 | 0 | 0.015795 | 2.58e-04 |
-| `bf16_fp32acc` | 110 | 0 | 0 | 0.015795 | 2.56e-04 |
-| `bf16_out` | 110 | 0 | 0 | 0.012127 | 5.26e-03 |
+| mode | queries | wrong | ties | min margin | largest loss (min Δ) | largest gain (max Δ) |
+|---|--:|--:|--:|--:|--:|--:|
+| `fp32` | 110 | 0 | 0 | 0.015795 | -5.32e-05 | +2.58e-04 |
+| `bf16_fp32acc` | 110 | 0 | 0 | 0.015795 | -2.56e-04 | +9.20e-05 |
+| `bf16_out` | 110 | 0 | 0 | 0.012127 | -5.26e-03 | +3.54e-03 |

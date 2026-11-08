@@ -7,14 +7,17 @@ Full generated table: [results/min_margin/min_margin_P32.md](results/min_margin/
 
 - The smallest margin anywhere in the vocabulary is **0.015809**: a run of 32 spaces next to a
   run of 31 spaces (Code/Structure). Among the Indic scripts the smallest is Devanagari at
-  0.031813, and the Latin minimum is 0.028234. Every one of the 131,072 tokens decodes to itself, in
-  every precision.
+  0.031813, and the Latin minimum is 0.028234. With exact scoring, every one of the 131,072
+  tokens decodes to itself in all three storage precisions. The 110 tokens re-checked with
+  reduced-precision scoring also all decode to themselves.
 - **Storing** the codes in fp32 or bf16 changes margins by at most 6.7e-16 (fp32) and 6.2e-8
-  (bf16). It never changes which pair is closest.
-- **Scoring** in reduced precision is what costs margin. fp32 arithmetic moves margins by up to
-  2.6e-4. If the scores themselves are rounded to bf16, they move by up to 5.3e-3, and the
-  tightest margin drops from 0.0158 to 0.0121 (−23%). Ranking bf16 codes by raw dot product
-  instead of cosine costs about the same (0.0124).
+  (bf16). It changes a class's closest pair only where several pairs have exactly the same fp64
+  margin.
+- **Scoring** in reduced precision is what moves margins. fp32 arithmetic moves them between
+  −5.3e-5 and +2.6e-4. bf16 inputs with fp32 accumulation move them between −2.6e-4 and +9.2e-5,
+  so they lose about 5× more than fp32. If the scores themselves are rounded to bf16, margins move
+  between −5.3e-3 and +3.5e-3, and the tightest margin drops from 0.0158 to 0.0121 (−23%).
+  Ranking bf16 codes by raw dot product instead of cosine costs about the same (0.0124).
 - No checked token decoded wrongly or tied in any mode. The tightest pair is 4 bf16 steps wide
   (one step = 2⁻⁸ ≈ 0.0039 near 1.0), so a fast decoder should keep fp32 scores.
 
@@ -55,7 +58,7 @@ below is one of two shapes:
   `ుకున్నారు` → `ుతున్నారు`.
 
 For most Indic scripts the closest rival of a word is a **partial-UTF-8 fragment**: the same word
-minus its last byte, which cuts the final character in half (` वर्ष` → ` वर्\xe0\xaa`). These
+minus its last byte, which cuts the final character in half (` सिर्फ` → ` सिर्\xe0\xa4`). These
 fragments are real vocabulary entries. Their margins are healthy (≥ 0.031), but they are the
 nearest thing a predicted vector can drift to.
 
@@ -102,26 +105,34 @@ Every code is still two-valued after rounding. In fp32 and bf16, all tokens of t
 also share the same two values, so rounding rescales codes per length without changing their
 shape. Cosine ignores scale, which is why stored precision barely moves the margin.
 
-Five class rows report a different pair under fp32 or bf16. Four are the same two tokens in the
-other direction ("swapped" in the generated table): a pair's margin is the same seen from either
-token, and rounding broke the tie the other way. The fifth (Other, bf16) is a different pair with
-the same shape (7, 8, 7) and the same fp64 margin, chosen by a 6e-10 difference.
+Five (class, precision) rows report a different pair under fp32 or bf16. Four are the same two
+tokens in the other direction (Code/Structure, Latin and Mixed: "swapped" in the generated table).
+A pair's margin is the same seen from either token, and rounding broke the tie the other way. The
+fifth (Other, bf16) is another pair in the mirror shape (8, 7, 7) with the same fp64 margin. bf16
+rounding left the two directions about 2e-16 apart, and the lowest-ID rule then picked among
+exactly tied pairs. No class's closest pair changes beyond these exact fp64 ties.
 
 ### Scoring: where the margin goes
 
 110 tokens (the 3 lowest-margin tokens of each class, over all three storage precisions), each
 scored against all 131,072 candidates:
 
-| mode | wrong | ties | min margin | largest change vs exact |
-|---|--:|--:|--:|--:|
-| `fp32` | 0 | 0 | 0.015795 | 2.6e-4 |
-| `bf16_fp32acc` | 0 | 0 | 0.015795 | 2.6e-4 |
-| `bf16_out` | 0 | 0 | 0.012127 | 5.3e-3 |
+Change = dense margin minus the exact fp64 margin of the same token; negative means margin lost.
 
-- fp32 accumulation over D = 8,192 terms costs up to 2.6e-4, about 1.6% of the tightest margin,
-  and bf16 inputs with fp32 accumulation cost no more. The same rounding makes dense results
-  shift by about 1e-5 with the candidate block size (measured in `tests/test_dense_check.py`).
-- Rounding dot products to bf16 costs far more. The largest absolute loss was Telugu token 57875
+| mode | wrong | ties | min margin | largest loss | largest gain |
+|---|--:|--:|--:|--:|--:|
+| `fp32` | 0 | 0 | 0.015795 | −5.3e-5 | +2.6e-4 |
+| `bf16_fp32acc` | 0 | 0 | 0.015795 | −2.6e-4 | +9.2e-5 |
+| `bf16_out` | 0 | 0 | 0.012127 | −5.3e-3 | +3.5e-3 |
+
+- fp32 accumulation over D = 8,192 terms shifts margins by at most 2.6e-4 either way, about
+  1.6% of the tightest margin. Its largest loss is only 5.3e-5 (token 44710); its largest shift is
+  a gain (Latin token 111303). The same rounding makes dense results move by about 1e-5 with the
+  candidate block size (measured in `tests/test_dense_check.py`).
+- bf16 inputs with fp32 accumulation lose up to 2.6e-4 (Mixed token 96773), about 5× fp32's
+  largest loss. That is still small next to the tightest margin.
+- Rounding dot products to bf16 moves margins far more, in both directions: up to 3.5e-3 gained
+  (Latin token 111303) and 5.3e-3 lost. The largest absolute loss was Telugu token 57875
   (0.039290 → 0.034032). The largest relative loss was the tightest pair (0.015809 → 0.012127,
   −23%). There, the self dot (8,216.8) rounds down to 8,192 and the rival's dot rounds up, because
   the bf16 step is 64 at and above 8,192.

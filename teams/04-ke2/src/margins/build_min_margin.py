@@ -217,12 +217,15 @@ def run(
     for mode in MODES:
         c = checks[mode]
         exact = np.array([exact_by_id[t] for t in worst.tolist()])
+        delta = c.margins - exact  # negative = margin lost to the scoring precision
         dense[mode] = {
             "n_queries": len(worst),
             "n_wrong": int((c.decoded_ids != worst).sum()),
             "n_ties": int((c.margins == 0).sum()),
             "min_margin": float(c.margins.min()),
-            "max_abs_delta_vs_fp64": float(np.abs(c.margins - exact).max()),
+            "min_delta_vs_fp64": float(delta.min()),
+            "max_delta_vs_fp64": float(delta.max()),
+            "max_abs_delta_vs_fp64": float(np.abs(delta).max()),
         }
     gate = all((margins[p].margins > 0).all() for p in PRECISIONS) and all(
         (checks[m].decoded_ids == worst).all() and (checks[m].margins > 0).all() for m in ("fp32", "bf16_fp32acc")
@@ -244,6 +247,9 @@ def run(
 
 
 def _code(text: str) -> str:
+    """Token text as a Markdown code span; a run of spaces only is shown as ``␠×N`` (spans collapse spaces)."""
+    if text and text.strip(" ") == "":
+        return f"␠×{len(text)}"
     return f"`` {text} ``"
 
 
@@ -297,15 +303,16 @@ def render_markdown(class_rows: list[dict], dense_rows: list[dict], summary: dic
         "The lowest-margin tokens of every class (union over precisions), decoded against the whole "
         "vocabulary with dense matrix products. `fp32`: fp32 codes and arithmetic. `bf16_fp32acc`: bf16 codes, "
         "fp32 accumulation. `bf16_out`: as `bf16_fp32acc` with each dot product rounded to bf16 "
-        "(a GEMM with bf16 output). Δ is against the exact fp64 margin of the same token.",
+        "(a GEMM with bf16 output). Δ is the dense margin minus the exact fp64 margin of the same token; "
+        "negative means margin lost.",
         "",
-        "| mode | queries | wrong | ties | min margin | max abs Δ vs fp64 |",
-        "|---|--:|--:|--:|--:|--:|",
+        "| mode | queries | wrong | ties | min margin | largest loss (min Δ) | largest gain (max Δ) |",
+        "|---|--:|--:|--:|--:|--:|--:|",
     ]
     for mode, d in summary["dense"].items():
         lines.append(
             f"| `{mode}` | {d['n_queries']} | {d['n_wrong']} | {d['n_ties']} "
-            f"| {d['min_margin']:.6f} | {d['max_abs_delta_vs_fp64']:.2e} |"
+            f"| {d['min_margin']:.6f} | {d['min_delta_vs_fp64']:+.2e} | {d['max_delta_vs_fp64']:+.2e} |"
         )
     return "\n".join(lines) + "\n"
 

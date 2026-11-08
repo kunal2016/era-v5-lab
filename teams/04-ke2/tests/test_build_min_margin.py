@@ -101,8 +101,8 @@ def test_markdown_marks_a_reversed_pair_as_swapped(make_byte_table):
     fp64 = bmm.class_minima(["A", "A", "B"], sm([0.1, 0.1, 0.5], [1, 0, 0]), t)
     fp32 = bmm.class_minima(["A", "A", "B"], sm([0.2, 0.1, 0.5], [1, 0, 0], "fp32"), t)
     bf16 = bmm.class_minima(["A", "A", "B"], sm([0.1, 0.1, 0.5], [1, 0, 0], "bf16"), t)
-    dense = {m: {"n_queries": 0, "n_wrong": 0, "n_ties": 0, "min_margin": 0.0, "max_abs_delta_vs_fp64": 0.0}
-             for m in dc.MODES}  # fmt: skip
+    dense = {m: {"n_queries": 0, "n_wrong": 0, "n_ties": 0, "min_margin": 0.0, "max_abs_delta_vs_fp64": 0.0,
+                 "min_delta_vs_fp64": 0.0, "max_delta_vs_fp64": 0.0} for m in dc.MODES}  # fmt: skip
     summary = {"P": 4, "table_kind": "raw", "table_sha256": "0" * 64, "vocab_size": 3, "exhaustive": True,
                "gate_all_positive": True, "definition": "d", "dense": dense}  # fmt: skip
     md = bmm.render_markdown(fp64 + fp32 + bf16, [], summary)
@@ -110,3 +110,24 @@ def test_markdown_marks_a_reversed_pair_as_swapped(make_byte_table):
     row_b = next(line for line in md.splitlines() if line.startswith("| B |"))
     assert "| swapped |" in row_a  # fp64 picks 0 -> 1, fp32 picks 1 -> 0: the same two tokens
     assert "| yes |" in row_b
+
+
+def test_dense_summary_keeps_signed_extremes(synthetic_p8):
+    classes = ["A" if i % 3 else "B" for i in range(synthetic_p8.vocab_size)]
+    _, dense_rows, summary = bmm.run(synthetic_p8, classes, worst_k=2, chunk_rows=16)
+    for mode in dc.MODES:
+        deltas = [r["delta"] for r in dense_rows if r["mode"] == mode]
+        d = summary["dense"][mode]
+        assert (d["min_delta_vs_fp64"], d["max_delta_vs_fp64"]) == (min(deltas), max(deltas))
+        assert d["max_abs_delta_vs_fp64"] == max(-min(deltas), max(deltas))
+
+
+def test_markdown_shows_space_only_tokens_as_counted_spaces(make_byte_table):
+    t = make_byte_table([b"   ", b"    ", b"zz"], P=4)
+    rows = [r for p in pm.PRECISIONS for r in bmm.class_minima(["A", "A", "B"], sm([0.1, 0.2, 0.5], [1, 0, 0], p), t)]
+    dense = {m: {"n_queries": 0, "n_wrong": 0, "n_ties": 0, "min_margin": 0.0, "max_abs_delta_vs_fp64": 0.0,
+                 "min_delta_vs_fp64": 0.0, "max_delta_vs_fp64": 0.0} for m in dc.MODES}  # fmt: skip
+    summary = {"P": 4, "table_kind": "raw", "table_sha256": "0" * 64, "vocab_size": 3, "exhaustive": True,
+               "gate_all_positive": True, "definition": "d", "dense": dense}  # fmt: skip
+    row_a = next(line for line in bmm.render_markdown(rows, [], summary).splitlines() if line.startswith("| A |"))
+    assert "␠×3 (0) → ␠×4 (1)" in row_a
