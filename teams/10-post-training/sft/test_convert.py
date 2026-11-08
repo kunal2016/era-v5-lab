@@ -505,3 +505,33 @@ def test_full_set_sources_of_the_five_sets():
     assert spec["sft-code-nemotron-cascade-swe"].count("|") == 2
     assert spec["sft-code-opencodereasoning"] == "glob:split_0/" and spec["sft-math-openr1-math"] == "glob:all/train-"
     assert spec["sft-math-openr1-math-raw"] == "glob:data/"
+
+
+def test_full_set_sources_of_swe_zero_and_the_two_jsonl_sets():
+    assert convert.ADAPTERS["sft-code-swe-zero-openhands"][2][1] == "glob:data/"
+    assert convert.ADAPTERS["sft-chat-nemotron-if-v2"][2][1] == "data/reasoning_on.jsonl"
+    assert convert.ADAPTERS["sft-agentic-nemotron-sft-agentic-v2-tool-calling"][2][1] == "data/tool_calling.jsonl"
+
+
+def test_full_set_sources_of_the_three_downloaded_math_sets():
+    assert convert.ADAPTERS["sft-math-nemotron-math-v2"][2][1] == "glob:data/*.parquet"
+    assert convert.ADAPTERS["sft-rl-math-openmathreasoning"][2][1] == "glob:data/cot-"
+    assert convert.ADAPTERS["sft-math-nemotron-proofs"][2][1] == "data/lean.jsonl"
+
+
+def test_local_copy_of_a_repo_is_read_instead_of_the_hub(tmp_path, monkeypatch):
+    pq = pytest.importorskip("pyarrow.parquet")
+    import pyarrow as pa
+
+    data = tmp_path / "org" / "repo" / "data"
+    data.mkdir(parents=True)
+    pq.write_table(pa.table({"a": [1, 2, 3]}), data / "x-0.parquet")
+    pq.write_table(pa.table({"a": [4, 5]}), data / "x-1.parquet")
+    (data / "x-2.jsonl").write_text('{"a": 6}\n{"a": 7}', encoding="utf-8")  # last line without a newline
+    (data / "other.parquet").write_bytes(b"")
+    monkeypatch.setenv("G10_LOCAL_ROOT", str(tmp_path))
+    assert convert.expand_paths("org/repo", "glob:data/x-") == ["data/x-0.parquet", "data/x-1.parquet", "data/x-2.jsonl"]
+    assert convert.expand_paths("org/repo", "glob:data/*.jsonl") == ["data/x-2.jsonl"]
+    rows = list(convert.hf_file_rows("org/repo", "glob:data/x-", 0, 100))
+    assert [r["a"] for r in rows] == [1, 2, 3, 4, 5, 6, 7]
+    assert [r["a"] for r in convert.hf_file_rows("org/repo", "glob:data/x-", 2, 3)] == [3, 4, 5]

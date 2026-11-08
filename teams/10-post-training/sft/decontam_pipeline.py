@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -304,6 +305,20 @@ class Pipeline:
             if not self.ready and running_t < self.a.dec_slots and os.getloadavg()[0] < os.cpu_count() - 2:
                 cap = self.a.conv_slots * 2
             backlog = sum(t["bytes"] for t in self.ready) / 1e9
+            if self.a.throttle:  # local sources render much faster than they are checked: hold the converters back
+                free = self.free_gb()
+                hold = backlog > self.a.max_backlog_gb or free < self.a.min_free_gb
+                release = backlog < 0.6 * self.a.max_backlog_gb and free > self.a.min_free_gb + 10
+                for u in self.units:
+                    if u["status"] != "running" or u["proc"] is None or u["proc"].poll() is not None:
+                        continue
+                    if hold and not u.get("stopped"):
+                        u["proc"].send_signal(signal.SIGSTOP)
+                        u["stopped"] = True
+                        self.log(f"held converter {u['set']} u{u['idx']:03d}: free {free:.0f} GB, backlog {backlog:.0f} GB")
+                    elif release and u.get("stopped"):
+                        u["proc"].send_signal(signal.SIGCONT)
+                        u["stopped"] = False
             pending = [u for u in self.units if u["status"] == "pending" and u["set"] not in self.failed_sets]
             if pending and running_u < cap:
                 free = self.free_gb()
@@ -345,6 +360,7 @@ def main(argv=None):
     ap.add_argument("--conv-slots", type=int, default=6, help="download+render processes at once (doubled when cores idle)")
     ap.add_argument("--roll-mb", type=float, default=300, help="size of one part handed to the checker")
     ap.add_argument("--min-free-gb", type=float, default=20, help="stop starting downloads below this free space")
+    ap.add_argument("--throttle", action="store_true", help="pause running converters while the backlog or disk limit is hit (local sources)")
     ap.add_argument("--max-backlog-gb", type=float, default=25, help="stop starting downloads when this much is queued")
     ap.add_argument("--limit-units", type=int, help="TEST: only the first N files of each set")
     ap.add_argument("--limit-rows", type=int, help="TEST: only this many selected rows per file")

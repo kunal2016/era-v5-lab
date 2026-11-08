@@ -33,6 +33,7 @@ import http.client
 import io
 import importlib.util
 import json
+import os
 import re
 import time
 import urllib.parse
@@ -449,13 +450,14 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-code-nemotron-cuda": (nemotron_chat, "", ("file", "data/train.jsonl"), None, ""),
     "sft-agentic-nemotron-agentic-v1": (nemotron_chat, "uuid", ("file", "data/tool_calling.jsonl"), None, "tool_calling file"),
     "sft-agentic-nemotron-sft-agentic-v2-tool-calling": (nemotron_chat, "", ("file", "data/tool_calling.jsonl"), None, ""),
-    "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "data/high.part_00.jsonl"), None, "first high-reasoning part"),
+    "sft-math-nemotron-math-v2": (nemotron_chat, "uuid", ("file", "glob:data/*.parquet"), None,
+        "all 5 parquet files (high x3, medium, low); the jsonl copies of the same data are not read"),
     "sft-code-nemotron-cascade-swe": (think_tag_messages, "", ("file", "swe_localization.jsonl|swe_repair.jsonl|swe_testgen.jsonl"), None,
         "all three files (localization, repair, testgen)"),
     "sft-code-opencodereasoning": (opencodereasoning, "id", ("file", "glob:split_0/"), None,
         "split_0, all 30 shards (split_1 withholds the questions)"),
     "sft-math-nemotron-sft-math-v4": (nemotron_chat, "uuid", ("file", "glob:data/"), None, "all 12 shards"),
-    "sft-rl-math-openmathreasoning": (openmathreasoning, "", ("file", "data/cot-00000-of-00144.parquet"), None, "first cot shard"),
+    "sft-rl-math-openmathreasoning": (openmathreasoning, "", ("file", "glob:data/cot-"), None, "all 144 cot shards"),
     "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "glob:all/train-"), None, "config all, 20 shards"),
     "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "glob:data/"), _raw_verified,
         "all 39 shards; first generation, rows whose first generation passes llama_verification"),
@@ -464,9 +466,9 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-science-nemotron-science": (nemotron_chat, "uuid", ("file", "data/MCQ.jsonl"), None, "MCQ file"),
     "sft-chat-nemotron-if-v1": (nemotron_chat, "uuid", ("file", "data/structured_outputs.jsonl"), None, "structured_outputs file"),
     "sft-chat-nemotron-if-v2": (nemotron_chat, "uuid", ("file", "data/reasoning_on.jsonl"), None, "reasoning_on file"),
-    "sft-math-nemotron-proofs": (nemotron_chat_nonempty, "uuid", ("file", "data/lean.jsonl"), None, "lean file"),
+    "sft-math-nemotron-proofs": (nemotron_chat_nonempty, "uuid", ("file", "data/lean.jsonl"), None, "whole lean file"),
     "sft-bespoke-stratos-17k": (bespoke_stratos, "", ("file", "data/train-00000-of-00001.parquet"), None, ""),
-    "sft-code-swe-zero-openhands": (swe_zero, "trajectory_id", ("file", "data/train-00000-of-00064.parquet"), None, "first shard"),
+    "sft-code-swe-zero-openhands": (swe_zero, "trajectory_id", ("file", "glob:data/"), None, "all 64 shards"),
     "sft-code-nemotron-terminal": (think_tag_messages, "", ("file", "dataset_adapters/code.parquet"), None, "code adapter file"),
     "sft-science-nemotron-science-v2": (nemotron_chat, "uuid", ("file", "syn_mcq.jsonl"), None, "syn_mcq file"),
     "sft-code-nemotron-opencode": (nemotron_chat, "uuid", ("file", "agent_skills/data.jsonl"), None, "agent_skills file"),
@@ -736,10 +738,27 @@ class _RangeFile(io.RawIOBase):
         return len(data)
 
 
+def local_path(dataset: str, path: str) -> Path | None:
+    """`$G10_LOCAL_ROOT/<dataset>/<path>` when that variable is set and the file or folder exists (a downloaded copy)."""
+    root = os.environ.get("G10_LOCAL_ROOT")
+    if not root:
+        return None
+    p = Path(root) / dataset / path
+    return p if p.exists() else None
+
+
 def expand_paths(dataset: str, spec: str) -> list[str]:
     """`a|b` is a list of files; `glob:dir/` is every .parquet or .jsonl file directly under that prefix."""
     if spec.startswith("glob:"):
-        prefix = spec[5:]
+        prefix, _, suffix = spec[5:].partition("*")  # `glob:data/*.parquet` keeps one file type
+        local = local_path(dataset, prefix.rpartition("/")[0] or ".")
+        if local is not None and local.is_dir():  # a local copy of the repo (G10_LOCAL_ROOT)
+            names = sorted(p.relative_to(local_path(dataset, ".")).as_posix() for p in local.rglob("*")
+                           if p.is_file() and p.as_posix().endswith(suffix or (".parquet", ".jsonl"))
+                           and p.relative_to(local_path(dataset, ".")).as_posix().startswith(prefix))
+            if not names:
+                raise SystemExit(f"no data files under {prefix} in the local copy of {dataset}")
+            return names
         for attempt in range(4):
             try:
                 with urllib.request.urlopen(f"https://huggingface.co/api/datasets/{dataset}/tree/main?recursive=1", timeout=60) as r:
@@ -749,7 +768,8 @@ def expand_paths(dataset: str, spec: str) -> list[str]:
                 if attempt == 3:
                     raise
                 time.sleep(5 * (attempt + 1))
-        names = sorted(x["path"] for x in tree if x["path"].startswith(prefix) and x["path"].endswith((".parquet", ".jsonl")))
+        names = sorted(x["path"] for x in tree if x["path"].startswith(prefix)
+                       and x["path"].endswith(suffix or (".parquet", ".jsonl")))
         if not names:
             raise SystemExit(f"no data files under {prefix} in {dataset}")
         return names
@@ -782,6 +802,34 @@ def hf_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]
                 time.sleep(10 * (attempt + 1))
 
 
+def _local_file_rows(file: Path, offset: int, n: int) -> Iterator[dict]:
+    """The same rows as `_one_file_rows`, from a file on disk."""
+    global BYTES_READ
+    taken = 0
+    if file.suffix == ".parquet":
+        import pyarrow.parquet as pq
+
+        pf = pq.ParquetFile(file)
+        per_row = file.stat().st_size / max(pf.metadata.num_rows, 1)
+        for batch in pf.iter_batches(batch_size=64):
+            BYTES_READ += int(per_row * batch.num_rows)
+            for row in batch.to_pylist():
+                if taken >= offset + n:
+                    return
+                if taken >= offset:
+                    yield row
+                taken += 1
+        return
+    with open(file, "rb") as f:
+        for line in f:
+            BYTES_READ += len(line)
+            if taken >= offset + n:
+                return
+            if taken >= offset:
+                yield json.loads(line)  # the file was checked against the Hub sha256 when it was downloaded
+            taken += 1
+
+
 def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dict]:
     """First rows of one data file in a public Hugging Face dataset repo (.jsonl or .parquet), read from the start.
 
@@ -790,6 +838,10 @@ def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dic
     """
     url = f"https://huggingface.co/datasets/{dataset}/resolve/main/{urllib.parse.quote(path)}"
     taken = 0
+    local = local_path(dataset, path)
+    if local is not None and local.is_file():
+        yield from _local_file_rows(local, offset, n)
+        return
     if path.endswith(".parquet"):
         import pyarrow.parquet as pq
 
