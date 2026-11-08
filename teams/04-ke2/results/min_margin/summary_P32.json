@@ -170,10 +170,11 @@
     }
   },
   "gate_all_positive": true,
+  "gate_definition": "gate: every token's margin is > 0 in all three storage precisions (fp64, fp32, bf16), and every dense-checked token decodes to itself with margin > 0 in `fp32` and `bf16_fp32acc`; `bf16_out` is reported, not gated",
   "versions": {
     "numpy": "2.2.6",
     "torch": "2.14.1",
     "kronecker_embeddings": "0.1.1"
   },
-  "seconds": 631.4
+  "seconds": 656.1
 }

@@ -113,3 +113,16 @@ def test_codec_values_rejects_an_unknown_precision(synthetic_p8):
 def test_value_pairs_per_length_counts_distinct_pairs():
     v = pm.CodeValues("fp32", 4, 256, np.array([1, 1, 2]), np.array([3.0, 3.5, 2.0]), np.array([-0.1, -0.1, -0.2]))
     assert pm.value_pairs_per_length(v) == {1: 2, 2: 1}
+
+
+@parametrize("precision", ["fp32", "bf16"])
+def test_pair_cosines_with_rounded_values_equal_dense_cosines_of_those_codes(synthetic_p8, precision):
+    t = synthetic_p8
+    codes = encode_ids(np.arange(t.vocab_size), t)
+    if precision == "bf16":
+        codes = codes.to(torch.bfloat16)
+    dense = codes.double().numpy()
+    unit = dense / np.linalg.norm(dense, axis=1, keepdims=True)
+    k = pm.overlap_counts(t.bytes, t.lengths, t.bytes, t.lengths)
+    got = pm.pair_cosines(np.arange(t.vocab_size), k, pm.codec_values(t, precision))
+    np.testing.assert_allclose(got, unit @ unit.T, rtol=0, atol=1e-12)

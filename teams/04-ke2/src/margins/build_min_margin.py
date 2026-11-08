@@ -19,7 +19,7 @@ Outputs (default: teams/04-ke2/results/min_margin/):
 Usage:
   python build_min_margin.py [--tokenizer PATH_OR_HF_ID] [--allow-download] [--P 32] [--out DIR]
                              [--chunk-rows 64] [--worst-k 3] [--sample N]
-The exhaustive run takes about 30 minutes at P = 32 on an Apple M1. Exit status 1 if the gate fails.
+The exhaustive run takes about 11 minutes at P = 32 on an Apple M1. Exit status 1 if the gate fails.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ import collections
 import csv
 import json
 import logging
+import re
 import sys
 import time
 import unicodedata
@@ -92,6 +93,11 @@ DENSE_COLUMNS = [
     "exact_margin",
     "delta",
 ]
+GATE_DEFINITION = (
+    "gate: every token's margin is > 0 in all three storage precisions (fp64, fp32, bf16), and every "
+    "dense-checked token decodes to itself with margin > 0 in `fp32` and `bf16_fp32acc`; "
+    "`bf16_out` is reported, not gated"
+)
 DEFINITION = (
     "self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the whole vocabulary; "
     "equals decode_ref's margin whenever t decodes to itself; <= 0 means a tie or a wrong decode"
@@ -99,8 +105,8 @@ DEFINITION = (
 
 
 def display_text(raw: bytes) -> str:
-    """Readable, table-safe text for token bytes: invalid UTF-8 and control characters as ``\\xNN``."""
-    text = raw.decode("utf-8", errors="backslashreplace").replace("|", "\\|")
+    """Readable text for token bytes: invalid UTF-8 and control characters as ``\\xNN``."""
+    text = raw.decode("utf-8", errors="backslashreplace")
     return "".join(f"\\x{ord(c):02x}" if unicodedata.category(c) == "Cc" else c for c in text)
 
 
@@ -242,15 +248,21 @@ def run(
         "precisions": precisions,
         "dense": dense,
         "gate_all_positive": bool(gate),
+        "gate_definition": GATE_DEFINITION,
     }
     return class_rows, dense_rows, summary
 
 
 def _code(text: str) -> str:
-    """Token text as a Markdown code span; a run of spaces only is shown as ``␠×N`` (spans collapse spaces)."""
+    """Token text as a code span that is safe inside a Markdown table cell.
+
+    A run of spaces only is shown as ``␠×N`` (code spans collapse spaces). The delimiter is one
+    backtick longer than the longest backtick run in the text, and ``|`` is escaped for the table.
+    """
     if text and text.strip(" ") == "":
         return f"␠×{len(text)}"
-    return f"`` {text} ``"
+    fence = "`" * (max((len(run) for run in re.findall(r"`+", text)), default=1) + 1)
+    return f"{fence} {text.replace('|', chr(92) + '|')} {fence}"
 
 
 def render_markdown(class_rows: list[dict], dense_rows: list[dict], summary: dict) -> str:
@@ -274,6 +286,8 @@ def render_markdown(class_rows: list[dict], dense_rows: list[dict], summary: dic
         "fp32 / bf16 columns: class minimum with codes stored in that precision, minus the fp64 minimum "
         "(exact float64 arithmetic). Same pair: yes, swapped (the same two tokens in the other direction) "
         "or no (another pair; check its margin). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.",
+        "",
+        f"The {GATE_DEFINITION}.",
         "",
         "| script class | tokens | min margin (fp64) | token → rival | bytes (L, L′, shared) "
         "| fp32 − fp64 | bf16 − fp64 | same pair | bf16 steps |",

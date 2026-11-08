@@ -30,8 +30,8 @@ def sm(margins, rivals, precision="fp64"):
     )
 
 
-def test_display_text_escapes_controls_pipes_and_partial_utf8():
-    assert bmm.display_text(b"a|b\n") == "a\\|b\\x0a"
+def test_display_text_escapes_controls_and_partial_utf8_but_keeps_pipes():
+    assert bmm.display_text(b"a|b\n") == "a|b\\x0a"  # CSV keeps the token's own characters
     assert bmm.display_text(b"\xe0\xa4") == "\\xe0\\xa4"
     assert bmm.display_text("नमस्ते".encode()) == "नमस्ते"
 
@@ -131,3 +131,36 @@ def test_markdown_shows_space_only_tokens_as_counted_spaces(make_byte_table):
                "gate_all_positive": True, "definition": "d", "dense": dense}  # fmt: skip
     row_a = next(line for line in bmm.render_markdown(rows, [], summary).splitlines() if line.startswith("| A |"))
     assert "␠×3 (0) → ␠×4 (1)" in row_a
+
+
+def _render_one(make_byte_table, rows_bytes):
+    t = make_byte_table(rows_bytes, P=8)
+    classes = ["A"] * (len(rows_bytes) - 1) + ["B"]
+    margins = [0.1] + [0.2] * (len(rows_bytes) - 2) + [0.5]
+    rivals = [1] + [0] * (len(rows_bytes) - 1)
+    rows = [r for p in pm.PRECISIONS for r in bmm.class_minima(classes, sm(margins, rivals, p), t)]
+    dense = {m: {"n_queries": 0, "n_wrong": 0, "n_ties": 0, "min_margin": 0.0, "max_abs_delta_vs_fp64": 0.0,
+                 "min_delta_vs_fp64": 0.0, "max_delta_vs_fp64": 0.0} for m in dc.MODES}  # fmt: skip
+    summary = {"P": 8, "table_kind": "raw", "table_sha256": "0" * 64, "vocab_size": len(rows_bytes),
+               "exhaustive": True, "gate_all_positive": True, "definition": "d", "dense": dense,
+               "gate_definition": bmm.GATE_DEFINITION}  # fmt: skip
+    md = bmm.render_markdown(rows, [], summary)
+    return md, next(line for line in md.splitlines() if line.startswith("| A |"))
+
+
+def test_markdown_escapes_pipes_inside_table_cells(make_byte_table):
+    _, row = _render_one(make_byte_table, [b"<|x|>", b"<|y|>", b"zz"])
+    assert "`` <\\|x\\|> ``" in row and row.count("|") - row.count("\\|") == 10  # 9 columns
+
+
+def test_markdown_code_span_survives_backticks_in_the_token(make_byte_table):
+    _, row = _render_one(make_byte_table, [b"a``b", b"a``c", b"zz"])
+    assert "``` a``b ```" in row
+
+
+def test_gate_definition_is_in_the_summary_and_the_markdown(make_byte_table):
+    _, _, summary = bmm.run(make_byte_table([b"ab", b"cd"], P=4), ["A", "A"], worst_k=1)
+    assert summary["gate_definition"] == bmm.GATE_DEFINITION
+    assert "bf16_out" in bmm.GATE_DEFINITION and "not gated" in bmm.GATE_DEFINITION
+    md, _ = _render_one(make_byte_table, [b"ab", b"ac", b"zz"])
+    assert bmm.GATE_DEFINITION in md

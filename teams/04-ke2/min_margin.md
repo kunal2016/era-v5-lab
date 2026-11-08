@@ -102,8 +102,10 @@ how many bf16 rounding steps separate the right token from its rival.
 | ‖z‖² across all tokens | 8189.515 – 8189.517 | 8189.514 – 8189.518 | 8146.09 – 8239.47 |
 
 Every code is still two-valued after rounding. In fp32 and bf16, all tokens of the same length
-also share the same two values, so rounding rescales codes per length without changing their
-shape. Cosine ignores scale, which is why stored precision barely moves the margin.
+also share the same two values, so rounding acts per length. `high` and `low` round separately,
+so it changes each length's high/low ratio very slightly; that is where bf16's 6.2e-8 comes from.
+Mostly it changes the code's overall scale (the ‖z‖² spread above), and cosine ignores scale.
+That is why stored precision barely moves the margin.
 
 Five (class, precision) rows report a different pair under fp32 or bf16. Four are the same two
 tokens in the other direction (Code/Structure, Latin and Mixed: "swapped" in the generated table).
@@ -177,6 +179,12 @@ A future tokenizer with 64-byte tokens at P = 64 gives 0.007874 for a 63/64-byte
 .venv/bin/python -m pytest teams/04-ke2/tests -q
 ```
 
-Outputs go to `results/min_margin/`. `tests/test_min_margin_results.py` checks that the committed
-results cover every class, that each committed pair reproduces its margin and rival, and that the
-exhaustive minimum is not above the sampled one.
+Outputs go to `results/min_margin/`. The script exits with status 1 if its gate fails. The gate
+requires every token's margin to be > 0 in all three storage precisions, and every dense-checked
+token to decode to itself with margin > 0 in `fp32` and `bf16_fp32acc`. `bf16_out` is reported,
+not gated. `tests/test_min_margin_results.py` checks that the committed results cover every class,
+that each committed pair reproduces its margin and rival in all three storage precisions, and that
+the exhaustive minimum is not above the sampled one.
+
+In `min_margin_by_class_P32.csv`, `token_text` and `rival_text` show the token's characters, with
+invalid UTF-8 and control bytes written as `\xNN`. The `*_hex` columns hold the exact bytes.

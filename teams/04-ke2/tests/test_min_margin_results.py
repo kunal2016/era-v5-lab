@@ -65,10 +65,11 @@ def test_every_script_class_has_one_row_per_precision(tb):
         assert got == dict(counts)
 
 
-def test_committed_pairs_reproduce_their_margin_and_rival(raw32):
-    rows = [r for r in class_rows() if r["precision"] == "fp64"]
+@parametrize("precision", pm.PRECISIONS)
+def test_committed_pairs_reproduce_their_margin_and_rival(raw32, precision):
+    rows = [r for r in class_rows() if r["precision"] == precision]
     ids = np.array([int(r["token_id"]) for r in rows])
-    sm = pm.self_margins(raw32, [pm.exact_values(raw32)], query_ids=ids)["fp64"]
+    sm = pm.self_margins(raw32, [pm.codec_values(raw32, precision)], query_ids=ids)[precision]
     for r, m, rival in zip(rows, sm.margins, sm.rival_ids, strict=True):
         assert float(r["min_margin"]) == pytest.approx(m, abs=1e-12)
         assert int(r["rival_id"]) == rival

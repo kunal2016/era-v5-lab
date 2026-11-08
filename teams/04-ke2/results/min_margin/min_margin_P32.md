@@ -6,6 +6,8 @@ Table `b3f5476ec6ae…`, tokenizer `01d968a7970b…`, V = 131,072, exhaustive: y
 
 Margin: self margin = cos(z_t, z_t) - max over s != t of cos(z_t, z_s), over the whole vocabulary; equals decode_ref's margin whenever t decodes to itself; <= 0 means a tie or a wrong decode. The pair is the class's lowest-margin token and its rival (rival may be in another class). Bytes: (token length, rival length, positions with equal bytes). fp32 / bf16 columns: class minimum with codes stored in that precision, minus the fp64 minimum (exact float64 arithmetic). Same pair: yes, swapped (the same two tokens in the other direction) or no (another pair; check its margin). bf16 steps: fp64 minimum / 2^-8, the bf16 spacing just below 1.0.
 
+The gate: every token's margin is > 0 in all three storage precisions (fp64, fp32, bf16), and every dense-checked token decodes to itself with margin > 0 in `fp32` and `bf16_fp32acc`; `bf16_out` is reported, not gated.
+
 | script class | tokens | min margin (fp64) | token → rival | bytes (L, L′, shared) | fp32 − fp64 | bf16 − fp64 | same pair | bf16 steps |
 |---|--:|--:|---|---|--:|--:|---|--:|
 | Code/Structure | 4,275 | 0.015809 | ␠×32 (50346) → ␠×31 (83647) | 32, 31, 31 | +0.00e+00 | +2.01e-08 | swapped | 4.0 |

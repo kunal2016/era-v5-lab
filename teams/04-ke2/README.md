@@ -45,7 +45,7 @@ python -m venv .venv && .venv/bin/pip install -r teams/04-ke2/src/requirements.t
 export KE2_TOKENIZER=/path/to/BrahmicTokenizer-131K   # folder with tokenizer.json and special_tokens_map.json
 .venv/bin/python -m pytest teams/04-ke2/tests -q        # about 3 minutes; tokenizer tests skip without it
 .venv/bin/python teams/04-ke2/src/run_experiment.py     # about 10 minutes; rewrites results/ and experiment.md
-.venv/bin/python teams/04-ke2/src/margins/build_min_margin.py   # about 30 minutes; rewrites results/min_margin/
+.venv/bin/python teams/04-ke2/src/margins/build_min_margin.py   # about 11 minutes; rewrites results/min_margin/
 ```
 
 The tokenizer is never committed and never downloaded implicitly. Without `KE2_TOKENIZER` it is
