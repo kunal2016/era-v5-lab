@@ -21,6 +21,7 @@ is float64 either way, so the result measures the effect of *storing* codes in t
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -29,6 +30,8 @@ import numpy as np
 from ke2.codec import code_values
 from ke2.config import CHAR_DIM
 from ke2.tables import ByteTable
+
+log = logging.getLogger("pair_margins")
 
 PRECISIONS: tuple[str, ...] = ("fp64", "fp32", "bf16")
 
@@ -143,7 +146,11 @@ def self_margins(
         }
         for v in values
     }
-    for start in range(0, n, chunk_rows):
+    n_chunks = -(-n // chunk_rows)
+    every = max(1, n_chunks // 20)  # progress about every 5%
+    for c, start in enumerate(range(0, n, chunk_rows)):
+        if c % every == 0 and n_chunks > 1:
+            log.info("self margins: chunk %d / %d", c, n_chunks)
         where = order[start : start + chunk_rows]
         q = ids[where]
         k = overlap_counts(table.bytes[q], lengths[q], table.bytes, lengths)
