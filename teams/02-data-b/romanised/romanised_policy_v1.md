@@ -4,7 +4,7 @@ Issue #213, part 2. How romanised Indic text (an Indian language in Latin letter
 is measured and capped in the training corpus. The cap value is a Gate 2 decision (14 Nov); this file gives the
 measurements and the options.
 
-## Rules (TSAI decisions in #213)
+## Rules (TSAI in G2, 5 Nov)
 
 1. The cap applies to the training corpus. The detector is run over the corpus; the gold sets are used only for the
    harm test.
@@ -73,13 +73,19 @@ No setting reaches 0 gold flags, and the one closest to it finds fewer D2 docume
 | ml, or | 866,051 | 0 | 0% | 0 |
 | **all** | **12,117,350** | **0** | **0%** | **3,001 (0.025%)** |
 
-- **Cap share** = tokens of romanised documents / all tokens of the language. No sample document is mostly romanised;
-  the highest share is 35% (ind-hi-indiccorp `62707cd1ddf37b45`), then 30% and 27%.
+- **Cap share** = tokens of romanised documents / all tokens of the language. The word list finds no sample document
+  that is mostly romanised; its highest share is 35% (ind-hi-indiccorp `62707cd1ddf37b45`).
 - The last column is for scale only: romanised headings, comments and verses inside native documents. Rule 3 keeps
   them, and the cap does not count them.
-- The word list finds 48% (readers' labels) to 70% (checked labels) of D2 documents, so the true romanised text could be
-  about 1.5 to 2 times what is measured. This does not change the result: the nearest document is at 35%, well
-  below 50%.
+- The word list misses romanised words that are not on it, so its shares are low. A bound that does not depend on the
+  list: a document cannot be more romanised than its share of Latin-letter words. 37 of the 11,000 documents have more
+  than half their words in Latin letters. In review (#327) these were found to be English, another language (one is
+  Guarani) or broken text, apart from a Kannada phrasebook (ind-kn-sangraha-v `da01db2cbb02e54d`: Kannada, romanised
+  Kannada and Spanish side by side, so well under half romanised). The closest real case is ind-te-fw2
+  `8cac6c338ccde963`: by a
+  rough count about 40% of its words are romanised Telugu (55% are Latin-letter words, the rest of the Latin text is
+  English), while the word list gives 10% because common words in it (naku, nannu, ani, andi, tanu) are not on the
+  list. It stays under 50%, and both readers drop it (F3), so it changes nothing here.
 - **Tokenizer: stand-in.** Tokens are counted with BrahmicTokenizer-131K (`github.com/theschoolofai/BrahmicTokenizer-131K`,
   commit `7dfcf398`), the baseline team 03-tokenizer measures its candidates against. When the project tokenizer is
   final, re-run `python token_share.py --tokenizer <its tokenizer.json>` and update this table.
@@ -104,21 +110,28 @@ For each language, on the training corpus:
 
 1. Run `doc_detector.decide` (word list) on every document.
 2. Count tokens with the project tokenizer: `R` = tokens of romanised documents, `T` = all tokens of the language.
-3. If `R / T` is above the cap, shuffle the romanised documents with a fixed seed (0), and drop them in that order until
-   `R / T` is at or below the cap. Dropped documents are removed whole and listed with their doc_ids.
+3. If `R / T` is above the cap, sort the romanised doc_ids, shuffle them with `random.Random(0).shuffle`, and drop the
+   documents in that order until `R / T` is at or below the cap. Sorting first makes the order the same however the
+   documents are read. Dropped documents are removed whole and listed with their doc_ids.
 4. Harm test: no gold document may be dropped. On the current gold sets the detector flags 0 at the majority level.
 
 ## Wrong D2 marks and gold
 
 Readers' D2 marks are not all correct: 19 of the 52 hold no romanised Indic phrase (`checked_labels.csv`). Only two of
-them kept a clean document out of a gold set; they are listed in #213 for Data B to check, and gold membership will be
-fixed in the next spec if they were wrongly kept out. The other sheets are not re-done.
+them kept a clean document out of a gold set (ind-bn-sangraha-v `aecb9893b814c81f`, ind-hi-fw2 `3776d34f591f896d`).
+Data B checked them in #213: under the document rule both are native documents, and the readers are asked to change
+their rows to clean, so the next gold rebuild includes them. They are also good gold cases for the cap: native
+documents with a little romanised text, which the cap must not drop. The other sheets are not re-done.
+
+The gold check above uses the 1,957 gold documents on main. After the gold rebuild (#229) merges, gold will have 2,081
+documents in 18 packs, including ind-hi-sangraha-v; the gold check (`eval_v2.py`) will be re-run then.
 
 ## Limits
 
 - Measured on 22 sample packs of 500 documents, not the full corpus. The full run may find romanised documents the
   sample does not have.
-- The word list misses romanised text that uses words not on it (short SEO titles, single words); see `eval_v1.md`.
+- The word list misses romanised text that uses words not on it (short SEO titles, single words, and common Telugu
+  words such as naku, nannu, ani); see `eval_v1.md`.
 - Precision and recall are measured at the contains level only: readers marked D2 for any romanised text, so there is
   no labelled set of mostly-romanised documents.
 
