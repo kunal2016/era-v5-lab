@@ -92,3 +92,19 @@ Output on the loaded Team 5 (`run_a`, `run_b`) and Team 6 (`h200_v1`) runs:
   - `metrics_rollup_10000` ($W = 10{,}000$ steps)
 - **1-second GPU telemetry rollup** (`toStartOfSecond(time, 'UTC') AS time_1s`):
   - `gpu_telemetry_1s` (aggregates `gpu_utilization`, `gpu_util_pct`, `gpu_memory_used`, `mem_used_mib`, `mem_util_pct`, `gpu_alloc_gb`, `gpu_alloc_gib`, `sm_clock_mhz`, `mem_clock_mhz`, `power_w`, `temp_c`).
+
+## 6. Node Health & Telemetry Loader (`load_node_logs.py`)
+
+`load_node_logs.py` ingests validated node health JSON / JSONL reports (`v5-health/1` contract from Team 07's `health_check.py`) into the `node_health` table and streams GPU temperature/telemetry metrics into `metrics_raw`:
+
+```bash
+# Ingest default sample health report (teams/07-infrastructure/health/results/health_sample_v5.json)
+python -I teams/08-monitoring/clickhouse/load_node_logs.py --defaults
+
+# Parse without database write
+python -I teams/08-monitoring/clickhouse/load_node_logs.py --dry-run <path_to_report_or_jsonl>
+
+# Run offline unit/self tests
+python -I teams/08-monitoring/clickhouse/load_node_logs.py --selftest
+```
+
