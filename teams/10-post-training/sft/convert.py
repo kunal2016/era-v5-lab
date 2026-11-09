@@ -174,6 +174,26 @@ def indic_align_t(row: dict) -> list[dict]:
             for thread in threads for i, text in enumerate(thread)]
 
 
+DOLLY_SOURCE = ("databricks/databricks-dolly-15k", "databricks-dolly-15k.jsonl")
+_dolly_no_context: frozenset[str] | None = None
+
+
+def dolly_no_context_questions() -> frozenset[str]:
+    """English instructions of the Dolly rows that have no context passage (read once from the Hub file)."""
+    global _dolly_no_context
+    if _dolly_no_context is None:
+        _dolly_no_context = frozenset(row["instruction"].strip() for row in hf_file_rows(*DOLLY_SOURCE, 0, 10**9)
+                                      if not (row.get("context") or "").strip())
+    return _dolly_no_context
+
+
+def dolly_t_without_context(row: dict) -> bool:
+    """Dolly_T drops Dolly's context passage, so a row whose question had one would ask about text that is
+    not there. Keep a row only if its English question matches a Dolly row with no context."""
+    eng = row.get("eng_Latn") or []
+    return bool(eng and eng[0]) and eng[0][0].strip() in dolly_no_context_questions()
+
+
 # --- adapters for the nvidia / open-r1 families (reasoning_content, tool_calls, tool turns) -----
 
 def _text(value) -> str:
@@ -444,7 +464,7 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
         lambda row: row["language_code"] in AYA_INDIC, "language_code in " + ",".join(sorted(AYA_INDIC)),
     ),
     "sft-indic-indic-align-oasst-t": (
-        indic_align_t, "doc_id", ("OpenAssistant_T", "train"), None,
+        indic_align_t, "doc_id", ("file", "indicalign-instruct/oasst/oasst.parquet"), None,
         "one native-script column per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
     ),
     "sft-code-nemotron-cuda": (nemotron_chat, "", ("file", "data/train.jsonl"), None, ""),
@@ -473,8 +493,9 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-science-nemotron-science-v2": (nemotron_chat, "uuid", ("file", "syn_mcq.jsonl"), None, "syn_mcq file"),
     "sft-code-nemotron-opencode": (nemotron_chat, "uuid", ("file", "agent_skills/data.jsonl"), None, "agent_skills file"),
     "sft-indic-indic-align-dolly-t": (
-        indic_align_t, "doc_id", ("file", "indicalign-instruct/dolly/Dolly.parquet"), None,
-        "one native-script column per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
+        indic_align_t, "doc_id", ("file", "indicalign-instruct/dolly/Dolly.parquet"), dolly_t_without_context,
+        "rows whose English question has no context passage in databricks-dolly-15k; one native-script column "
+        "per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
     ),
     "sft-science-glm51-phd": (sharegpt_think, "id", ("file", "PHD-Science.jsonl"), None, "PHD-Science config"),
     "sft-math-nemotron-proofs-v3-sft": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00010.jsonl"), None, "first part"),

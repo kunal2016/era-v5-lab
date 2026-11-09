@@ -370,6 +370,25 @@ def test_opencode_without_think_is_skipped():
     assert lines == [] and list(manifest["skipped"]) == ["output does not start with one <think>...</think> block"]
 
 
+def test_dolly_t_keeps_only_questions_that_had_no_context(monkeypatch):
+    source = [{"instruction": "Hi? ", "context": "", "response": "x"},
+              {"instruction": "Summarise this.", "context": "A passage.", "response": "y"}]
+    monkeypatch.setattr(convert, "_dolly_no_context", None)
+    monkeypatch.setattr(convert, "hf_file_rows", lambda ds, path, off, n: iter(source))
+    assert convert.dolly_no_context_questions() == frozenset({"Hi?"})
+    had_context = dict(INDIC_ALIGN, doc_id="d2", eng_Latn=[["Summarise this.", "Short."]])
+    not_in_dolly = dict(INDIC_ALIGN, doc_id="d3", eng_Latn=[["Unknown question?", "No."]])
+    lines, manifest = convert.convert("sft-indic-indic-align-dolly-t", [INDIC_ALIGN, had_context, not_in_dolly], None, None)
+    assert manifest["rows_scanned"] == 3 and manifest["rows_in"] == 1 and len(lines) == 1
+    assert json.loads(lines[0])["source_id"] == "d1"
+    assert "no context passage" in manifest["selection"]
+
+
+def test_indic_align_sets_read_hub_files_so_the_pipeline_can_run_them():
+    for set_id in ("sft-indic-indic-align-oasst-t", "sft-indic-indic-align-dolly-t"):
+        assert convert.ADAPTERS[set_id][2][0] == "file"
+
+
 def test_dolly_puts_context_after_instruction():
     sample, _ = one("sft-dolly-15k", DOLLY)
     assert "Name a colour.\n\nThink of the sky." in sample["text"]
