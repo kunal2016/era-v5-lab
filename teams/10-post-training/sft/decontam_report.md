@@ -10,7 +10,7 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
   - `lab_canary.py`: `373536a777c9f16367cf6affcc2cc6243755ac23e75850a2624eadf65918ea09`
   - `normalize.py`: `570dcb820ac2ae6c667b1abc5ea1d781a6795aa42a7735aa94377e756d7d70e9`
 - **Runner and reconciliation:** `sft/decontam_run.py`; this file is written by `sft/decontam_report.py`.
-- **Sets run:** 27. **Rows in:** 16,300,745. **Removed (flagged or canary):** 337,635 (2.07%). **Kept:** 15,963,110.
+- **Sets run:** 29. **Rows in:** 16,766,783. **Removed (flagged or canary):** 345,101 (2.06%). **Kept:** 16,421,682.
 - No benchmark item text is in this file or in the run records: only set names, counts, document ids, benchmark item ids, offsets and sha256 values.
 
 ## 1. Result per set
@@ -33,7 +33,8 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
 | `sft-dolly-15k` | full set | 15,011 | 4 | 0 | 4 (0.03%) | 15,007 | `93069f7a3a2c…` |
 | `sft-indic-aya-collection` | full set | 654,530 | 6 | 0 | 6 (0.00%) | 654,524 | `cb4b80d9253a…` |
 | `sft-indic-aya-dataset` | full set | 41,261 | 8 | 0 | 8 (0.02%) | 41,253 | `a1d2c8f07122…` |
-| `sft-indic-indic-align-dolly-t` | full set | 15,011 | 0 | 0 | 0 (0.00%) | 15,011 | `35980cee7f1d…` |
+| `sft-indic-indic-align-dolly-t` | full set | 10,541 | 0 | 0 | 0 (0.00%) | 10,541 | `3af21a7c294c…` |
+| `sft-indic-indic-align-oasst-t` | full set | 19,909 | 9 | 0 | 9 (0.05%) | 19,900 | `219d0a5fcb3c…` |
 | `sft-math-nemotron-math-v2` | full set | 7,079,896 | 60,665 | 0 | 60,665 (0.86%) | 7,019,231 | `27c65cac950e…`, `f19b10b9d206…`, `84e1ddcb3def…`, `6a957902a3a4…`, `10d3918d7c30…`, `f585f501e3d6…`, `fed5fe3fa8e5…`, `a8b090f46bab…`, `49133eb89ec0…`, `65d80fefa97e…`, `4a7b8aa4d16f…`, `522201078ae1…`, `b4feaebe4742…`, `1d957aca4f7d…`, `5f07ec5b5b31…`, `17f1bcb8d232…`, `dc33b0613b07…`, `f15a012d93d4…`, `8f5ebb8ea566…`, `2f1ab4423cea…`, `802a50b9e4eb…`, `849481e57408…`, `7f4e7d84a2d1…`, `4446e824a5dd…`, `63658a614a0d…`, `92ec346667da…`, `65ce89e71ceb…`, `d42d704c3c3e…`, `d2c7e56ea7e6…`, `d1252729f69b…`, `6f0683ce1633…`, `7c260fd3c33c…`, `6f29a9ee0b26…`, `85ba981f3363…`, `f314229d4d5e…`, `3f5d25fe8cda…`, `af5c3a5621da…`, `b03820fda2ab…`, `b1bf8a343aec…`, `68186e1aae2d…`, `482e17c7a49d…`, `c59580a1a47a…`, `12a575bc883f…`, `306798c60d31…`, `f17208f0a10d…`, `f9211fb7f101…`, `2ffa0c31740c…`, `bde4a48f05de…`, `4cf9472d34f0…`, `24a192b3f7cc…`, `413962c30845…`, `cf67025ee601…`, `8522b3b249ed…`, `6fb93be82b43…`, `b34a7737d816…`, `4f4184890d61…`, `91897e613729…`, `0e9148d086e6…`, `9237011e0819…`, `4f5a6e13c605…`, `19499a2da095…`, `1a0cc5a057b7…`, `fa2852bc0169…`, `33293c78381d…`, `78d875859a33…`, `bac430d5d08d…`, `ed0774060ab2…`, `81f0766a92f9…`, `e13c6501fb4c…`, `8bb42a2a57cf…`, `dbaee3b8d085…`, `5936ec5e3f91…`, `649297836036…`, `9809fb830a3a…`, `cc2e1f47379e…`, `b7c899679cf6…`, `ceca4bbcfea8…`, `781072b80c8c…`, `fcd9e6ea5a1c…`, `914a508ea4b2…`, `0d0bef9aecdd…`, `de8ca4c029f0…`, `c21c809bf274…`, `003746006cb4…`, `b4af14c08162…`, `b2fb07b7cede…`, `890c11ead088…`, `49a66538a51e…`, `8f6fc125866a…`, `bd3b500640a5…`, `b427ddcde93e…`, `4cd4b01d2f39…`, `fb7f1c24a5c9…`, `a021b726107d…`, `2fda528c8e42…`, `34be18f48761…`, `17d0c727344c…`, `2a120e261795…`, `62f689c673e3…`, `72889b66102a…`, `6d536631e234…`, `a234ce89912b…`, `bfc25d2ecc46…`, `242af4a05ea8…`, `6a2c06667807…`, `d444728f24c7…`, `b2e38ddeff09…`, `9129eb87ca30…`, `ddbfcae672bc…`, `297d9b0b7441…`, `19f822e66bb4…`, `e2262d7b899c…`, `c9475138dd01…`, `a0619b5bc059…`, `2a383ba67dff…`, `7d0a97975c0e…`, `f59526a71b4d…`, `6e187410eb65…`, `54a1e2785d3b…`, `5697ab18e5b3…`, `c4620e46ffaf…`, `8c767892c298…`, `a75d94307968…`, `ca53b78ed919…`, `6cc7eed6b59b…`, `73b9e9da033e…`, `e2aca007ec85…`, `5ef31c363c10…`, `da9b1d9ddd1c…`, `1f1c689ce1d0…`, `8173ee3dd79d…`, `6bd159fe144c…`, `4ca1bad936e4…`, `023ef17d3bcf…`, `ec34ddf7bc52…`, `fae813aae341…`, `95011762a9d7…`, `870677dc03f3…`, `ca9258d85599…`, `a7e116d2c3a3…`, `a51e45ff4a65…`, `8d221cf43d78…`, `5eaf39d8b158…`, `99d22e4af60a…`, `4ef10fa8f5ed…`, `054f1424243f…`, `d6512f9d8c3a…`, `2924aba43448…`, `edbc3b574b9c…`, `0d93375576e9…`, `582f7b7b9e4f…`, `675afa91298c…`, `3273429e3e16…`, `4b7e6722156f…`, `2079d22b9e80…`, `0a299bbd742b…`, `70ea508e1231…`, `9dfdc10bdeb0…`, `c3b89577fb5b…`, `01b83e3faf7f…`, `4d1da1390d5f…`, `6d32b2b66a57…`, `825c9f9e2c3e…`, `53015c296114…`, `14315ffbef05…`, `6d6aea6ddf2c…`, `4065610efd48…`, `3fab004702a4…`, `c18421aca1a3…`, `e9f2df097147…`, `68299fa54052…`, `65d87bd522d0…`, `d9d4b63dddb8…`, `29cb25560380…`, `51aa4d51d11b…`, `52b11b397824…`, `268ea247c196…`, `64b76d7eca7c…`, `f5606d18aeef…`, `6d3440e3c823…`, `2b4c3c493e86…`, `e98900cdf426…`, `b39e7c74bb02…`, `46f12d6ec567…`, `51c30586f0fb…`, `497a751ea3cf…`, `f18177d0b5c9…`, `19db1eabee7a…`, `b552fa1e1599…`, `8161f6caaca9…`, `ddb0708f912b…`, `2d083d7d89e4…`, `3c45379036ed…`, `6e0e0c9cfde1…`, `b9e89de76759…`, `61b318527c99…`, `2581646d8cd9…`, `520e59ed7325…`, `57476bc1356f…`, `1ab843e4e046…`, `9da9807c0aa2…`, `0b4e8e8f5104…`, `4bec9074bb99…`, `543e4c97b4b6…`, `1e11b229ee37…`, `8e6b8dd04fe9…`, `3fa3476da098…`, `5096c30dbf7e…`, `39fd53e1b98d…`, `8812deb12b2d…`, `d83cc18e15fc…`, `2b9076820e50…`, `2e2afb7701cf…`, `2913175e74c5…`, `cdd0d19e0cc0…`, `bdbcf313230e…`, `14ac4f535f6b…`, `5e4868cc0585…`, `9d2db08f7e1a…`, `c2fbe737d364…`, `b7ae083ccad9…`, `fed168176d72…`, `c47a689322a2…`, `44049e2aace7…`, `35b8bb742727…`, `dbfde3b707dd…`, `54825c63368f…`, `2c8a86d63c3b…`, `315e344a2a20…`, `6f25bb9f83fe…`, `93b0c6284b89…`, `38ab941e6a72…`, `ac16debea5ff…`, `cdc410dd150e…`, `b1ccd4c61a63…`, `dea421dd9003…`, `732df5779588…`, `11270317e6d1…`, `d0898ffd2e82…`, `f0b6168bc28a…`, `fffbd1e700a9…`, `5eb0e6aae43d…`, `72ab350a75e6…`, `fbdb8984b52e…`, `6ca45c096225…`, `b1384b8c3dbd…`, `c3b1aa34f62d…`, `b91dfd50d7c9…`, `73244539c3da…`, `c955c0b1cddd…`, `7c8758dcdc57…`, `cf6fa1de43ca…`, `1c91fc2724e0…`, `054abe1b5fe0…`, `27a8d3479ee2…`, `a6676b9b82cd…`, `2c6dfc61d3aa…`, `8741c631af3e…`, `2afccb815229…`, `25e2d33da2f6…`, `fa5137b405b7…`, `2b2b0c8d5740…`, `ed31e5707fa8…`, `8bbcd2ed367d…`, `71f3ccbf548c…`, `cac0f2e078b6…`, `d3fb55913184…`, `04c1f9088fde…`, `9b58b65f0cb4…`, `64f0c38fe8f4…`, `cf0f682a98c2…`, `734e89af9298…`, `85f26be41bc9…`, `1012c6aa0829…`, `5fffc2ba91a1…`, `26722f3db3b3…`, `f246a682fe18…`, `a3d8f89a50f7…`, `4e81d66eb543…`, `65192f4af950…`, `7748860b7722…`, `1cef530901ae…`, `ae43feeb0bf2…`, `daecf4d7314a…`, `44f09425772e…`, `dc56b3c0b52c…`, `05a39fae2804…`, `a8268bfdaa70…`, `70fb22540709…`, `740d85141ad0…`, `5194b6c89e85…`, `56976d0f1c87…`, `a25c32bdc9bc…`, `c4e2c6dbe9f5…`, `17ff859f9ccc…`, `c4d9fdf73bbe…`, `4fd1395dfc3d…`, `5f24acf38456…`, `cfcfe6439958…`, `293c96afc924…`, `fc231d502c7d…`, `5a196c23f693…`, `e2915f0f5b1b…`, `169fd5df3f92…`, `55415db654c3…`, `28470f70d240…`, `c01da91a8add…`, `563964bd6bd1…`, `4e2063ae947f…`, `8b23d68f76c0…`, `b57a2b778a48…`, `691cf84cf093…`, `0d4c8596a74f…`, `af44ee569a58…`, `376f0ff20209…`, `dc95c67f2a79…`, `0d6cae72bcea…`, `f11b04e990ea…`, `023a80a15e35…`, `f061fe5c1797…`, `da655710835c…`, `8247cdb28ee9…`, `c899e8c48a76…`, `09ed23650d6b…`, `55ce45a6d3ae…`, `7628f0c9dfd9…`, `e77a802f9329…`, `30d7a1fad985…`, `5baefba041c9…`, `b9ee986c63db…`, `54f005e873c0…`, `85a1706041a3…`, `5641e84bda30…`, `4867b3e99182…`, `d4490516b817…`, `eaca515140c5…`, `df69454705fd…`, `9c58896dd05f…`, `973a2060c454…`, `2fb1fa63d66b…`, `5d30950c0518…`, `2e7031f08f08…`, `bd214bff958b…`, `6407b1b5b815…`, `0c4b8a7fc9f6…`, `2d8371b5add0…`, `c8a6810a1a27…`, `b0733f1273c9…`, `eb466653e19e…`, `62276a78e00d…`, `e28c95fd3f77…`, `a41a524dc1ef…`, `ac232eedea56…`, `1ccdac076686…`, `a0aa8c180617…`, `4b8eacc00e04…`, `bd44c0371434…`, `9d6fe7765ef8…`, `c4840a8341fa…`, `ef4522d1d2c1…`, `196cffe0272a…`, `e98903d9acb7…`, `b37ba0936f01…`, `a46589ad75bf…`, `4a1235cd56f2…`, `3a88d35aa4fb…`, `f222e5e9c325…`, `135d98c38610…`, `38e33b6110e8…`, `d296186a0bfc…`, `e8b7188a6fd4…`, `64c50511cde4…`, `f7a8b66a279e…`, `6ed9dd9ff509…`, `fb0e7d35b595…`, `0f7568473e08…`, `fe004409ee18…`, `f97fdb8ab54d…`, `2841045e96cf…`, `84a4b356f6af…`, `48740b0003c4…`, `0bfbd18e7a11…`, `6aec3da4b09a…`, `f14ebbabbc10…`, `f7295bfc8b62…`, `c6db7b7d16f1…`, `c38ec83be850…`, `cbd891e96e74…`, `7de8c32152a1…`, `aa04767a7715…`, `6db0f05d6912…`, `49c366c20462…`, `01bfc158874f…`, `6d0b28ef1c7c…`, `488526ffc145…`, `5155a396b945…`, `56067ea39bbd…`, `cd2f89b2d080…`, `0af903e4cea0…`, `d2e95dd12285…`, `663eb505e54e…`, `5edfc5c6b920…`, `9568fb415f8e…`, `aec723894e42…`, `a0a364b57a51…`, `b157b4be35d1…`, `fd35f824a539…`, `116473610a1f…`, `aedda3d22a88…`, `7c134048dd4e…`, `7f873f50eaa9…`, `c49c404af084…`, `d8938c2d8153…`, `e67ca1f74b25…`, `02cb0586aab9…`, `c3b0dbe3f99c…`, `177d57106ab5…`, `36a750c35117…`, `d5c5eaeeaa15…`, `ce3b3bf8c612…`, `67760a18b0ed…`, `380009336cb5…`, `a972bee93eb1…`, `1616ef5fcba4…`, `905006edf5d9…`, `a57d04ffbb09…`, `ac16adeb6b67…`, `22bd3d759631…`, `ca3fdd0d53b0…`, `92fcda30ec54…`, `03e1f09b7c1d…`, `183d5e630ffb…`, `15f8cdee21cd…`, `cbc1dabbea30…`, `a05098861293…`, `9d46f08ceb5d…`, `8eefa8ee9e3f…`, `ee88f782b67f…`, `3ab20fa5e46f…`, `570edeb9b955…`, `0e40e1ab106b…`, `f7b20e7b9900…`, `f56b04585e1e…`, `4d6242aff42c…`, `5c5c74c9cbe0…`, `8c521895fd03…`, `877da1f7e8ab…`, `24a5f3871400…`, `796c3d33651d…`, `a8b3eb95c333…`, `7eb1f0d63a4c…`, `0f7433341594…`, `a93c7565f7f5…`, `b35d36145d91…`, `326db86dbc5b…`, `4ae9b7d09e1e…`, `6f886901453e…`, `569036880f78…`, `084acf483597…`, `2069e3286041…`, `15c78f2f21ce…`, `521a86cc239e…`, `9d0a50ee706f…`, `9089836bdb82…`, `2b4cb61352ad…`, `7fe63356953e…`, `544ee475f587…`, `99542fe37c07…`, `0515fed44c2e…`, `152c0cc19ce3…`, `270a8f2cbcb8…`, `63a8cfcb02aa…`, `48564350974f…`, `93feddbe2851…`, `019e8dabd717…`, `779e141bb949…`, `7c413966db7b…`, `b08ae4629c0c…`, `316091a1ccf6…`, `2c89f140a212…`, `9d0d58f25eb1…`, `a17259944c33…` |
 | `sft-math-nemotron-proofs` | full set | 920,831 | 2,357 | 0 | 2,357 (0.26%) | 918,474 | `8898ae62ec5f…`, `04278dc9f3b5…`, `5a3256975ea6…`, `6210fa7fe8e0…`, `ea29a8869ed9…`, `dbd243b4a5ff…`, `b4795373d8af…`, `e0a60a7898f8…`, `c8e4df68c4fd…`, `6ea94ca2be26…`, `77aa012fcd6f…`, `7b4c528f5e42…`, `3cc573e4855e…`, `0308e7083727…`, `a1d8983dda04…`, `fb6424330498…`, `97730b1883c6…`, `a242cee2e064…`, `01570e9708f8…`, `4e4e6ad06518…`, `ee2698da6f93…`, `7c84375b79df…`, `826c9d1121ca…`, `a5413c0de14a…`, `767d35724877…`, `eb9a61d81180…`, `01a89b0d1bf6…`, `517017ba5163…`, `5de3c8a07ac7…`, `92dbba4bf6da…`, `f2dec3ffa46e…`, `9b549cb94ee7…`, `bed5941de885…`, `82d9db7ceeaf…`, `6e56299965a9…`, `acb6dcbb481e…`, `07e3664d2e7c…`, `87328b3781ed…`, `129fd7ad4e78…`, `9022a80da5ef…`, `4345adaf21a2…`, `3c032567c973…`, `fca9db63afd1…`, `2e26ad5f6362…`, `f5b544402f5d…`, `c3e3a974088b…`, `14464c824150…`, `27b28626566f…`, `48261764d6fd…`, `f009cd1047f0…`, `06e38e930b8f…`, `fd3c8991f3e3…`, `6e5818264428…`, `4e9bf2ae2fe1…`, `88acd4e2c9e7…`, `5f796dcff93d…`, `0cc2cd6cca3a…`, `60866f25712e…`, `1abc1f2b181f…`, `86bc20161e7a…`, `7befa00aa956…`, `c335461b2418…`, `89e431f8b389…`, `ca6e0c0232e1…`, `84670f9a3bf5…`, `ec21d89617f1…`, `5661beb70b35…`, `45995c46b302…`, `24940f031f4e…`, `2a653bb30dea…`, `d0a7d361c72b…`, `4e17af345314…`, `008d588aaa70…`, `94669a276ddf…`, `68432fdc543a…`, `06d904b3baf9…`, `0ca5c94583be…`, `afc1865a0c26…`, `bf119d4abd05…`, `261480aff1ce…`, `9ee438f946b6…`, `22618b863f50…`, `ad0527a04d0e…`, `d0b1434d9e82…`, `6ef8614ee9d5…`, `3bd6692a0323…`, `8eb682915447…`, `0257af4bc126…`, `fba5b2ca3361…`, `8b869f72a4e1…`, `8a3c3e4f34fc…`, `d3500995cca3…`, `3c212eae7b64…`, `3f8867ebf2ff…`, `7e458d07acd8…` |
 | `sft-math-nemotron-sft-math-v4` | full set | 542,117 | 4,776 | 0 | 4,776 (0.88%) | 537,341 | `20c00f0cd256…` |
@@ -44,9 +45,10 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
 | `sft-science-glm51-phd` | full set | 103,702 | 207 | 0 | 207 (0.20%) | 103,495 | `54d681c1edc8…` |
 | `sft-science-nemotron-science-v2` | full set | 96,605 | 286 | 0 | 286 (0.30%) | 96,319 | `390c839aae1b…` |
 | `sft-science-nemotron-science` | full set | 174,155 | 369 | 0 | 369 (0.21%) | 173,786 | `6f9ac4dc35a0…` |
-| **Total** | | **16,300,745** | **337,635** | **0** | **337,635** (2.07%) | **15,963,110** | |
+| `sft-stem-code-openthoughts3` | full set | 450,599 | 7,457 | 0 | 7,457 (1.65%) | 443,142 | `79f4ff26c091…`, `ade7c9a57a9a…`, `339d8d7a2365…`, `6cd690ad6162…`, `bfc8889fd947…`, `bbf06c20198f…`, `c0b69a521656…`, `050dc50cc113…`, `78b37d9adaaf…`, `45112561996b…`, `df2a24c8ffb1…`, `035b09e8392d…`, `e91b9317cf4f…`, `79c54c847f81…`, `f1fd1a47c906…`, `fb0dc7686647…`, `6f98a681965c…`, `3b9ce3d515f8…`, `06de3c49caa6…`, `7b5c21530b81…`, `b68890d2f196…`, `e96250c2c5dd…`, `47ffd65a22c6…`, `f97a16876b62…`, `b2eda5876be9…`, `784f6476778e…`, `9ee3aeb836ee…`, `4f9a39e0d2b6…`, `82a3e0878dfc…`, `8e49fff488bb…`, `24eab6e1e40f…`, `a0a74c9b6662…`, `6db44fc142f7…`, `b49184e84ecb…`, `08ef9e409887…`, `759d62dea723…`, `4aa6cd514c76…`, `16315ac38c30…`, `a14c07d455d4…`, `ac423827f18d…`, `2b150183b97b…`, `28c038ede56f…`, `17a8a8b4699f…`, `d25d0d3cb5c8…`, `3bfa28c90937…`, `c8535b6b24c3…`, `7170551799f6…`, `980940982da2…`, `0cfbbf6fe7ff…`, `6278731204e0…`, `f46e39ba4445…`, `a008b84b3403…`, `b75cec629a02…`, `180233fa0a0d…`, `f4ddf86d1768…`, `176a98edadd0…`, `c8fd43f1ca01…`, `0490573de419…`, `7d1a10cca633…`, `c5451affbdb0…`, `ad0ee9308e89…`, `5ac1e4c7b8ae…`, `2d06beeec41a…`, `c562fc524337…`, `60e57ff96219…`, `90f37ab833e4…`, `ac39bc75d9e3…`, `2e5bcc6805e3…`, `ab93ee9ddac1…`, `89b9caa7b479…`, `9b24af20c6fa…`, `85eb8b58180d…`, `86b2cb843c66…`, `8aa42a3c0b7e…`, `0d92bbe5c35d…`, `96ff98da4576…`, `2f57f6cdd449…`, `e4ca30295e37…`, `a97bfbbb54de…`, `e7ac6d81e8bb…`, `5b5d250c2b15…`, `a48fdf3f83fb…`, `622db5de91b8…`, `14fd7d1bcb25…`, `fc679955203f…`, `41d40a253c48…`, `2995815864d7…`, `697f08fa7820…`, `b418bdfc940c…`, `6f6683ebeeac…`, `5e654702115f…`, `6aa5102da92c…`, `a07c687c112b…`, `37bae8c93b88…`, `1ad5a7501c96…`, `eab3dc4bb945…`, `f813e452f827…`, `2e749834981f…`, `6e843ee19136…`, `4ffba978fc49…`, `144580db0fe3…`, `976ee17bcc51…`, `1dc640b953af…`, `248755862922…`, `ad4367db46ce…`, `0e0ae3cf1233…`, `6331f959579d…`, `b4e65d14ef97…`, `b470a1881d98…`, `23029aeec603…`, `087a9770b759…`, `80865aa19021…`, `af50e4d4dcf2…`, `d99412775cec…`, `fa8706efcf46…`, `38a251e43b1b…`, `d6f01e3864e4…`, `6252a408aa3b…`, `124f8b845375…`, `f6eb39dfe732…` |
+| **Total** | | **16,766,783** | **345,101** | **0** | **345,101** (2.06%) | **16,421,682** | |
 
-**Run on** says what was checked: *full set* is every row the converter produced from the whole source (27 sets); *sample* is the first rows of a split only (0 sets), and is not cleared as a whole.
+**Run on** says what was checked: *full set* is every row the converter produced from the whole source (29 sets); *sample* is the first rows of a split only (0 sets), and is not cleared as a whole.
 
 A row that is both flagged and carries a canary counts once in Removed.
 
@@ -71,6 +73,7 @@ A row that is both flagged and carries a canary counts once in Removed.
 | `sft-indic-aya-collection` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `sft-indic-aya-dataset` | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 6 | 0 | 0 | 0 | 0 | 0 |
 | `sft-indic-indic-align-dolly-t` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `sft-indic-indic-align-oasst-t` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `sft-math-nemotron-math-v2` | 11104 | 10767 | 21 | 2232 | 0 | 3 | 395 | 0 | 161 | 24253 | 0 | 0 | 6861 | 9 | 18 | 2287 | 11227 | 20 | 792 | 0 |
 | `sft-math-nemotron-proofs` | 84 | 9 | 1 | 326 | 0 | 12 | 32 | 0 | 32 | 1438 | 0 | 0 | 359 | 0 | 1 | 166 | 0 | 0 | 0 | 0 |
 | `sft-math-nemotron-sft-math-v4` | 225 | 308 | 1 | 199 | 0 | 1 | 65 | 0 | 52 | 3070 | 0 | 0 | 574 | 1 | 6 | 228 | 299 | 10 | 66 | 0 |
@@ -81,6 +84,7 @@ A row that is both flagged and carries a canary counts once in Removed.
 | `sft-science-glm51-phd` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 207 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `sft-science-nemotron-science-v2` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 183 | 0 | 0 | 0 | 0 | 34 | 74 | 2 | 0 | 0 | 0 |
 | `sft-science-nemotron-science` | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 272 | 0 | 0 | 0 | 0 | 42 | 68 | 0 | 0 | 0 | 0 |
+| `sft-stem-code-openthoughts3` | 213 | 171 | 16 | 4066 | 0 | 15 | 24 | 0 | 5 | 2335 | 0 | 0 | 705 | 0 | 75 | 149 | 2 | 10 | 0 | 0 |
 
 A document is flagged when it shares at least one 13-word run (20 tokens for code) with a benchmark item. The whole document is removed. The count is documents per benchmark, so a document that matches two benchmarks counts in both columns.
 
@@ -107,6 +111,7 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `sft-indic-aya-collection` | 6 | 1 | 0 | 5 |
 | `sft-indic-aya-dataset` | 8 | 1 | 2 | 5 |
 | `sft-indic-indic-align-dolly-t` | 0 | 0 | 0 | 0 |
+| `sft-indic-indic-align-oasst-t` | 9 | 0 | 3 | 6 |
 | `sft-math-nemotron-math-v2` | 60665 | 1 | 827 | 59837 |
 | `sft-math-nemotron-proofs` | 2357 | 0 | 8 | 2349 |
 | `sft-math-nemotron-sft-math-v4` | 4776 | 0 | 42 | 4734 |
@@ -117,6 +122,7 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `sft-science-glm51-phd` | 207 | 0 | 0 | 207 |
 | `sft-science-nemotron-science-v2` | 286 | 0 | 6 | 280 |
 | `sft-science-nemotron-science` | 369 | 0 | 3 | 366 |
+| `sft-stem-code-openthoughts3` | 7457 | 0 | 40 | 7417 |
 
 ## 4. Benchmark items with the largest overlap
 
@@ -372,6 +378,15 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `milu:test:76394` | 2 | 0.018 | 1 / 57 | `sft-indic-aya-dataset/27660` | 165 |
 | `milu:test:34930` | 2 | 0.009 | 1 / 114 | `sft-indic-aya-dataset/16747` | 437 |
 
+**`sft-indic-indic-align-oasst-t`**: at least 4 different benchmark items found in 9 documents (top 4 by coverage; the checker lists the best 5 items per document, so this is a lower bound)
+
+| Benchmark item | Documents | Highest coverage | Shared runs / item runs | Example document | Offset |
+|---|---:|---:|---:|---|---:|
+| `in22_conv:test:3-2` | 2 | 0.167 | 1 / 6 | `sft-indic-indic-align-oasst-t/7889` | 1430 |
+| `in22_conv:test:34-8` | 1 | 0.143 | 1 / 7 | `sft-indic-indic-align-oasst-t/2914` | 1937 |
+| `in22_conv:test:40-23` | 1 | 0.091 | 1 / 11 | `sft-indic-indic-align-oasst-t/15521` | 916 |
+| `hle:test:672faa45c5a8bce51676ee01` | 5 | 0.002 | 5 / 2298 | `sft-indic-indic-align-oasst-t/13048` | 784 |
+
 **`sft-math-nemotron-math-v2`**: at least 532 different benchmark items found in 60665 documents (top 15 by coverage; the checker lists the best 5 items per document, so this is a lower bound)
 
 | Benchmark item | Documents | Highest coverage | Shared runs / item runs | Example document | Offset |
@@ -559,24 +574,44 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `mmlu:test:7326` | 2 | 0.053 | 1 / 19 | `sft-science-nemotron-science/16853` | 2578 |
 | `milu:test:10786` | 1 | 0.050 | 4 / 80 | `sft-science-nemotron-science/33738` | 56350 |
 
+**`sft-stem-code-openthoughts3`**: at least 471 different benchmark items found in 7457 documents (top 15 by coverage; the checker lists the best 5 items per document, so this is a lower bound)
+
+| Benchmark item | Documents | Highest coverage | Shared runs / item runs | Example document | Offset |
+|---|---:|---:|---:|---|---:|
+| `milu:test:15749` | 8 | 0.347 | 35 / 101 | `sft-stem-code-openthoughts3/11600009558` | 420 |
+| `milu:test:17670` | 10 | 0.343 | 35 / 102 | `sft-stem-code-openthoughts3/11600009558` | 420 |
+| `milu:test:8199` | 25 | 0.256 | 23 / 90 | `sft-stem-code-openthoughts3/11600009558` | 420 |
+| `milu:test:8201` | 23 | 0.247 | 23 / 93 | `sft-stem-code-openthoughts3/11600009558` | 420 |
+| `milu:test:8200` | 23 | 0.245 | 23 / 94 | `sft-stem-code-openthoughts3/11600009558` | 420 |
+| `mmlu:test:4258` | 6 | 0.217 | 5 / 23 | `sft-stem-code-openthoughts3/7000009013` | 34066 |
+| `bfcl_v3:test:simple_98` | 1 | 0.167 | 1 / 6 | `sft-stem-code-openthoughts3/4400007659` | 50452 |
+| `milu:test:19953` | 1 | 0.167 | 1 / 6 | `sft-stem-code-openthoughts3/1300001147` | 6348 |
+| `milu:test:9157` | 2 | 0.167 | 1 / 6 | `sft-stem-code-openthoughts3/700002862` | 4208 |
+| `milu:test:8643` | 3 | 0.163 | 8 / 49 | `sft-stem-code-openthoughts3/11600002217` | 9324 |
+| `aime_2025:test:14` | 21 | 0.125 | 4 / 32 | `sft-stem-code-openthoughts3/4900002690` | 295 |
+| `aime_2025:test:3` | 1 | 0.118 | 2 / 17 | `sft-stem-code-openthoughts3/10400008274` | 386 |
+| `gaia:2023:2b3ef98c-cc05-450b-a719-711aee40ac65` | 12 | 0.110 | 13 / 118 | `sft-stem-code-openthoughts3/500002679` | 2546 |
+| `milu:test:9042` | 14 | 0.100 | 9 / 90 | `sft-stem-code-openthoughts3/11700004442` | 420 |
+| `milu:test:11230` | 11 | 0.091 | 9 / 99 | `sft-stem-code-openthoughts3/11700004442` | 420 |
+
 Coverage is the share of the item's runs found in the document. A value near 1.0 is a full copy; a low value is a short shared passage, for example a common problem statement. The ids above are enough to find the document in the set; the item text stays in Team 9's restricted folder.
 
 ## 5. Checks
 
 | Check | Sets passed |
 |---|---:|
-| `all_source_files_converted` | 11 of 27 |
-| `canary_ids_in_input` | 27 of 27 |
-| `canary_scan_complete` | 27 of 27 |
-| `clean_file_flags_0` | 27 of 27 |
-| `docs_match_checker` | 27 of 27 |
-| `every_removed_row_is_hit` | 1 of 27 |
-| `flagged_count_matches` | 27 of 27 |
-| `flagged_ids_in_input` | 27 of 27 |
-| `ids_disjoint_across_units` | 11 of 27 |
-| `ids_unique` | 27 of 27 |
-| `parts_cover_all_converted_rows` | 11 of 27 |
-| `rows_in_eq_kept_plus_removed` | 27 of 27 |
+| `all_source_files_converted` | 14 of 29 |
+| `canary_ids_in_input` | 29 of 29 |
+| `canary_scan_complete` | 29 of 29 |
+| `clean_file_flags_0` | 29 of 29 |
+| `docs_match_checker` | 29 of 29 |
+| `every_removed_row_is_hit` | 1 of 29 |
+| `flagged_count_matches` | 29 of 29 |
+| `flagged_ids_in_input` | 29 of 29 |
+| `ids_disjoint_across_units` | 14 of 29 |
+| `ids_unique` | 29 of 29 |
+| `parts_cover_all_converted_rows` | 14 of 29 |
+| `rows_in_eq_kept_plus_removed` | 29 of 29 |
 
 `rows_in_eq_kept_plus_removed`: rows in = rows kept + rows removed. `clean_file_flags_0`: the checker, run again on the clean file, flags 0 of the kept rows. `canary_scan_complete`: `canary_scan.py` read every file (exit 0 or 1). A set with a failed check or a canary is not in this report (the script stops).
 
@@ -910,7 +945,8 @@ Coverage is the share of the item's runs found in the document. A value near 1.0
 | `sft-dolly-15k` | `dolly-15k.jsonl` | 15,465,770 | `f0e65f12ff0437552f9d8340c5244758ca233693c7c4c982480f3fcbfb50714a` |
 | `sft-indic-aya-collection` | `indic-aya-collection.jsonl` | 2,668,534,387 | `be59e274c47778c906e0f5fa531ca5c8c195f29189ef8d09dd046d6beabae9eb` |
 | `sft-indic-aya-dataset` | `indic-aya-dataset.jsonl` | 106,423,427 | `fbaf54e2913face83c7a9d1a25b87e086ce574b5debb840d2d159681b0bcb2ea` |
-| `sft-indic-indic-align-dolly-t` | `indic-indic-align-dolly-t.jsonl` | 22,694,421 | `35980cee7f1d613dbc7814a7f7d0430c5c6bb98e3a7ecc0d01dcf41ae9f14e17` |
+| `sft-indic-indic-align-dolly-t` | `u000.part0000.jsonl` | 16,609,790 | `3af21a7c294ccaa362cda5b22af00b538879f5683dc5745a7aedc26efe437786` |
+| `sft-indic-indic-align-oasst-t` | `u000.part0000.jsonl` | 88,323,173 | `d672b433316d3fba14398ded7bf6c4583002669ec0cf15b8262165b6d0ef3480` |
 | `sft-math-nemotron-math-v2` | `u004.part0000.jsonl` | 300,011,632 | `dc76b50a648933be117aeb4697f3049202e9a7cfea42003827ebd09eaa4f12eb` |
 | `sft-math-nemotron-math-v2` | `u003.part0000.jsonl` | 300,005,514 | `22a46eeb89a2a8d72191790cfbd20c17b463bf4291e8c9f4a0cec1e3b31acd1f` |
 | `sft-math-nemotron-math-v2` | `u002.part0000.jsonl` | 300,026,748 | `cd929f5022ada43ec9d8b2a22a46b75b11b810df4486aff361030f6a7e47a229` |
@@ -1840,10 +1876,130 @@ Coverage is the share of the item's runs found in the document. A value near 1.0
 | `sft-science-glm51-phd` | `science-glm51-phd.jsonl` | 2,013,871,482 | `88165c31230c1a5efab08882c7c5160ebe032b7b0b1a7e500cbca1e3903aa387` |
 | `sft-science-nemotron-science-v2` | `science-nemotron-science-v2.jsonl` | 571,034,022 | `ec5a5bf12503b7e798da641a895ccae1ade0ba3c0e9c31f22d9cf02473d5148b` |
 | `sft-science-nemotron-science` | `science-nemotron-science.jsonl` | 1,808,296,419 | `339a9bdf19fc9fcc12124ed9c1ded743b22afe45c818249b028fe293c250ba95` |
+| `sft-stem-code-openthoughts3` | `u005.part0000.jsonl` | 179,951,314 | `61b966fb0dcf8c81a40d94f3143371a7543669a38652f1ac0b654bb5202375f8` |
+| `sft-stem-code-openthoughts3` | `u002.part0000.jsonl` | 183,522,542 | `02860363d35598f7e4362ed270120dd478dd7fdb5e9c5f5cb8e80b8cdcaabbdc` |
+| `sft-stem-code-openthoughts3` | `u003.part0000.jsonl` | 181,978,287 | `77de6fafafd2f2c80e06d33bc5cb41909613d889fed1733688bcfb90cd7356f8` |
+| `sft-stem-code-openthoughts3` | `u009.part0000.jsonl` | 183,065,704 | `5f4c0a2f877cc02cb2f7948d7536a8b1aab37973e0b1283b00477fd3bb1a2fd1` |
+| `sft-stem-code-openthoughts3` | `u019.part0000.jsonl` | 186,249,245 | `cadbaacb0fb395c668d15c363530154d9c14139db48f2bacb5e1bfe61d7f6ce8` |
+| `sft-stem-code-openthoughts3` | `u017.part0000.jsonl` | 187,750,995 | `fa987c85d2b2554911dc08664c2d47bbd15b9651d791a0877ad6572b1a9913f4` |
+| `sft-stem-code-openthoughts3` | `u024.part0000.jsonl` | 183,370,418 | `3c063420f17512d9295a412717d6bb90981a1823582373084c578a06052f11b9` |
+| `sft-stem-code-openthoughts3` | `u004.part0000.jsonl` | 187,089,142 | `be316d8b23bf4b96511ceda3a6c5ee7ad229d0f2aaa481361cf4807125d88c2b` |
+| `sft-stem-code-openthoughts3` | `u015.part0000.jsonl` | 188,079,020 | `e909cf8e6ec1533f14aafa562318348bec90b6977f0902ea795d39f86001f383` |
+| `sft-stem-code-openthoughts3` | `u000.part0000.jsonl` | 186,208,977 | `81ed82c8b1b8b21cbb1baee21820b530ff48cb6c9cdb9ec1d63eea825538f07c` |
+| `sft-stem-code-openthoughts3` | `u008.part0000.jsonl` | 181,492,005 | `fa77f0161988eacd5ad658902641cebc0f32924b2d95beb252ce3f2102a8d2bf` |
+| `sft-stem-code-openthoughts3` | `u010.part0000.jsonl` | 187,829,340 | `64a6876f25baada6739e9b38f1f2aa7dbcf2b81f2199166c85d94fbb0bb6b4d6` |
+| `sft-stem-code-openthoughts3` | `u023.part0000.jsonl` | 190,781,933 | `b59992ac57ba6f07948242edcbe741a72d350367f02e592ba93ad4b26eec45c1` |
+| `sft-stem-code-openthoughts3` | `u020.part0000.jsonl` | 184,083,248 | `bfe363eda594def72f3903e9a711383c6986531e89c60f85ff55657a22d7d205` |
+| `sft-stem-code-openthoughts3` | `u022.part0000.jsonl` | 185,100,592 | `3c9c086f9d302602afcca8c3459cf68dc921f9132094d2ce04168564dfd634a2` |
+| `sft-stem-code-openthoughts3` | `u007.part0000.jsonl` | 186,817,149 | `3f3553f6e92bd0cd62b50b73adcb5ae23eb38f6fe242fcf54150623bd9f40b88` |
+| `sft-stem-code-openthoughts3` | `u011.part0000.jsonl` | 189,623,793 | `89b629aa0d5dca70e961323ea977c8947f9f647aa5622b3c97cada0d64b68fc4` |
+| `sft-stem-code-openthoughts3` | `u013.part0000.jsonl` | 191,184,696 | `5c48fe9a66897bc96488b0d7e33829851ffa06b1ed15339ecd6364ca58866b31` |
+| `sft-stem-code-openthoughts3` | `u001.part0000.jsonl` | 187,860,252 | `fc893723343f0cda168add0c7263d681fd7fd8d8d5d1c5e1c72869803000489a` |
+| `sft-stem-code-openthoughts3` | `u016.part0000.jsonl` | 182,158,069 | `2939bf5d7a87e9854c3bb2cb417d3faaa231f1233baa71ad5ceaf17903b734b4` |
+| `sft-stem-code-openthoughts3` | `u021.part0000.jsonl` | 186,471,804 | `934553e4b07839059c5688da720b61cf4c1c9b1afd361f0e6852452b732acb7c` |
+| `sft-stem-code-openthoughts3` | `u014.part0000.jsonl` | 182,324,121 | `15d2f2c135b3d0cd15cb0f7996c6c2827268b8991ee45c4b33eac5033b7ee2ed` |
+| `sft-stem-code-openthoughts3` | `u018.part0000.jsonl` | 182,997,142 | `5f03dc8910904343a6f6ed88bf559c04f73b01c57ab720569e27d71b028faee6` |
+| `sft-stem-code-openthoughts3` | `u006.part0000.jsonl` | 185,938,272 | `fb248cb1ec0c647d03ecc32a7326de70e3f899aa0d3e53c8ea053c7be35da9c5` |
+| `sft-stem-code-openthoughts3` | `u012.part0000.jsonl` | 188,851,693 | `62af1dcf7c27514bfc5f328366643d3dcf4378d11f1847b7d0333a848425cea9` |
+| `sft-stem-code-openthoughts3` | `u032.part0000.jsonl` | 142,917,791 | `3bfffd688504e8dff37beb4b50b1456dd5c7be1424cff666b53fdd4584667744` |
+| `sft-stem-code-openthoughts3` | `u030.part0000.jsonl` | 146,550,371 | `6261bfaaf9122e754f6f83e93136392b790172bb8b5957d4743226decd1b5c3e` |
+| `sft-stem-code-openthoughts3` | `u049.part0000.jsonl` | 147,206,726 | `5d68b73f751ceb0eec0cd6fe3895eb6496bb1611f398299667d42ed59175b653` |
+| `sft-stem-code-openthoughts3` | `u086.part0000.jsonl` | 146,309,531 | `a4de4008e45abf95510569d3c369b0159d482ef99cad4f5c56089105641b7c75` |
+| `sft-stem-code-openthoughts3` | `u070.part0000.jsonl` | 144,020,843 | `cd2a87abcb3b4642999d77e9972d0ed725fc7d5c32e84132794e7143746ff3d1` |
+| `sft-stem-code-openthoughts3` | `u053.part0000.jsonl` | 146,190,775 | `04914dae1561da4367efd11fa56726d1f63d75fcde93685ff509e80c0a9561d9` |
+| `sft-stem-code-openthoughts3` | `u060.part0000.jsonl` | 145,007,957 | `cc0acc8186a7e68b2f245c03f4227eee60de1fee0b8a200744edefed7e27a9f3` |
+| `sft-stem-code-openthoughts3` | `u085.part0000.jsonl` | 149,315,608 | `4790019c6a72444494b9c603ae1f2b7947a36f8d82dbff7fe85b70dc60e19bfd` |
+| `sft-stem-code-openthoughts3` | `u080.part0000.jsonl` | 142,341,269 | `bd0cd7a2cf5ffb49d4e386b0dd1af1cebb6273813f45c21c0f525bbbf56348c9` |
+| `sft-stem-code-openthoughts3` | `u043.part0000.jsonl` | 145,461,840 | `03825debb4f72a6e369a15953c53acdde157f145709184d11f1ce4c75f34c26b` |
+| `sft-stem-code-openthoughts3` | `u042.part0000.jsonl` | 142,941,074 | `f0a02e5d4b5c2d8e3d7419a17bd65fb19249ee8e1ba54939596ef07391b186a7` |
+| `sft-stem-code-openthoughts3` | `u028.part0000.jsonl` | 143,758,302 | `7ed59b0a78cdbcc757b9ff716a65c4eadb6a740e428feb662932e1fb3843c6e4` |
+| `sft-stem-code-openthoughts3` | `u069.part0000.jsonl` | 146,814,630 | `fec281f799072719c2111632dcb618c8b4b4f85b828627c6f7dee55a1187760b` |
+| `sft-stem-code-openthoughts3` | `u072.part0000.jsonl` | 142,728,739 | `09a2fcaa9dc6d09e9efb6870751cb038b1dc7ea7b8b239aef9ad1edd7e83f05b` |
+| `sft-stem-code-openthoughts3` | `u065.part0000.jsonl` | 145,980,918 | `43781127566e1b63183cf3735c19ad2f00072436b8a8d624d70ab1143ffef705` |
+| `sft-stem-code-openthoughts3` | `u029.part0000.jsonl` | 145,795,184 | `8512028228f88f079c3e264debc7224e4bea08700cc16b78af1f50e59b2f2561` |
+| `sft-stem-code-openthoughts3` | `u089.part0000.jsonl` | 145,203,696 | `1ecaaee1cae0e244dbfbd44fcebebbe9b3ee823f3b70aedf3fbe446ee74f4587` |
+| `sft-stem-code-openthoughts3` | `u038.part0000.jsonl` | 143,508,052 | `075c864df24b64235c01a35be11e494dad10df03fc6ab5000d17bec3bb3c35a4` |
+| `sft-stem-code-openthoughts3` | `u054.part0000.jsonl` | 145,992,642 | `e06f715134af296891075401d594f003a3ba558a274ed004e22755554d2cfd5f` |
+| `sft-stem-code-openthoughts3` | `u103.part0000.jsonl` | 146,563,174 | `4e7168b8f0eba294934b62217bec19f327bcdda5cf8c5cbab305ee5624ac7f70` |
+| `sft-stem-code-openthoughts3` | `u082.part0000.jsonl` | 148,487,102 | `4e7bd4e5c9d92bb3f32e7396d2dacb8b14474b85637827cef58af9fbd01e809b` |
+| `sft-stem-code-openthoughts3` | `u031.part0000.jsonl` | 145,882,242 | `5a8fa588c1fb1e57944d5d90aa9073decdf73e10c1d4d7a6f747d25272419cc8` |
+| `sft-stem-code-openthoughts3` | `u090.part0000.jsonl` | 146,085,575 | `167ecc918bc3d13177ad47b059eb01b7fd4be93932088d90c8fb2ca48d239f0b` |
+| `sft-stem-code-openthoughts3` | `u056.part0000.jsonl` | 147,581,393 | `a22c1624147c35b692a534b4f33ff7b38525ef30763ec909d9ccb4af993fd71d` |
+| `sft-stem-code-openthoughts3` | `u026.part0000.jsonl` | 141,571,322 | `b48337cd5fa8c34915b96289a2e2eddc2e1eb7ba3c6644f8cd6b573dba06654b` |
+| `sft-stem-code-openthoughts3` | `u058.part0000.jsonl` | 143,441,203 | `5d9023e78872a2d6b1cf07aa5f36064698a041090ffaa6044974876404f70d40` |
+| `sft-stem-code-openthoughts3` | `u061.part0000.jsonl` | 144,007,123 | `17a6b696aaa2bef4b6ca2105bb9cd81cc835db8a1c92925dc8d383537a00abf1` |
+| `sft-stem-code-openthoughts3` | `u095.part0000.jsonl` | 143,050,154 | `059640cd40806b3ea0f904eaa3e10a603bb24394cb121549259f671bb75b2d35` |
+| `sft-stem-code-openthoughts3` | `u047.part0000.jsonl` | 145,364,208 | `f8cc96d2682eb6ec74fef413dc9321716cecdbf5f126ca1f1ecf8b1d3a93a9b7` |
+| `sft-stem-code-openthoughts3` | `u066.part0000.jsonl` | 148,543,747 | `e93a0eb81429801e516a3fc1536c61e419185a4ef664be39d5cc2ecd94dfbae5` |
+| `sft-stem-code-openthoughts3` | `u079.part0000.jsonl` | 148,756,712 | `c2286377d74eed71922168fa3a12d9c4bc89c2db6a0ff3510d28640099e35044` |
+| `sft-stem-code-openthoughts3` | `u039.part0000.jsonl` | 143,116,423 | `3e3bc316a4a93a1883a0cddec55bd92afabb23eb54da653cbbc131e612b1aa3d` |
+| `sft-stem-code-openthoughts3` | `u037.part0000.jsonl` | 145,809,620 | `30339caab7608f5ef8e346d4eea4c5af5b4d5e9b61d631235e56920b1c6aa243` |
+| `sft-stem-code-openthoughts3` | `u035.part0000.jsonl` | 148,152,370 | `1fc0858d7a4537a93c27745841a19854edf04d3f94bb05950bca2e47f0f512bf` |
+| `sft-stem-code-openthoughts3` | `u041.part0000.jsonl` | 145,097,828 | `5e8af92cdfb81d53701eb7dc850e4b0136de533a5f8954731735c55fe99c187a` |
+| `sft-stem-code-openthoughts3` | `u087.part0000.jsonl` | 148,117,135 | `d7db6887aa8b323513b91c8d6afe58765ac5594d3c4043808effef3e2d9d993d` |
+| `sft-stem-code-openthoughts3` | `u096.part0000.jsonl` | 146,191,915 | `ef77a9aff71d0bf9ab4489b5803170c998d67a73778546a13c65625138c428ac` |
+| `sft-stem-code-openthoughts3` | `u073.part0000.jsonl` | 149,079,646 | `6cd17509c66b0f5e4e7813ceda69e6d73d18342c5a3f7dfd27b2b25407929c83` |
+| `sft-stem-code-openthoughts3` | `u048.part0000.jsonl` | 150,882,141 | `add1fd3dcf49030a05855df54b1aec687132a62505c761de2d18a8735c70d124` |
+| `sft-stem-code-openthoughts3` | `u100.part0000.jsonl` | 144,838,601 | `c360b497f2b13a070cd31c645fd68bc0ad835a01f9701d8228a6ca70cd9c306a` |
+| `sft-stem-code-openthoughts3` | `u104.part0000.jsonl` | 145,713,729 | `15b0d017f30a9438ae6effccf49a12f41651e6a67a747f20287e3ca7480b4d09` |
+| `sft-stem-code-openthoughts3` | `u088.part0000.jsonl` | 144,424,674 | `696756c635fa79725879b5b1f346340515b18a5d649ae3c13790c99c52fc91fe` |
+| `sft-stem-code-openthoughts3` | `u025.part0000.jsonl` | 148,920,664 | `d76d9a264339fa84bb70351bff1a61a3e0d654187f14e984b2fc067b9e70a727` |
+| `sft-stem-code-openthoughts3` | `u034.part0000.jsonl` | 147,902,122 | `639f7068076b2074212b60b6834cfdfbf723742393646ce610dc6a95c7e1191d` |
+| `sft-stem-code-openthoughts3` | `u101.part0000.jsonl` | 148,150,877 | `ed1788508e7e93ef617cbdeb766a033d80c56693a1727e50559da880c3fbcdcd` |
+| `sft-stem-code-openthoughts3` | `u083.part0000.jsonl` | 146,703,498 | `224813e8c29f7cdaada90b6a07a6b2c4f9684edf83950fd71370fbfe64593025` |
+| `sft-stem-code-openthoughts3` | `u099.part0000.jsonl` | 148,467,191 | `a47a5cdbd829770676754b3c77b5db723d4f0e2a4580e2f7de5d6b5a0f404a7a` |
+| `sft-stem-code-openthoughts3` | `u109.part0000.jsonl` | 144,887,109 | `8f42fa43e994426702928ff57b24ca8aa08b0bd4b9e32150e3e1ba720c13426b` |
+| `sft-stem-code-openthoughts3` | `u077.part0000.jsonl` | 145,719,987 | `8ed654525e8a6248c16d88db595c27f96b9fa4c957cd58fc01cfbc8b8111efc6` |
+| `sft-stem-code-openthoughts3` | `u107.part0000.jsonl` | 145,223,376 | `bf37446cdda455b3cca07fb0d4e234859a4386ab2a8a1e5cfb55b05c6da74416` |
+| `sft-stem-code-openthoughts3` | `u055.part0000.jsonl` | 145,108,077 | `d31bd6c52ac22636b4526183cb85843dbb534506f136938920fe5efd88b6ab0a` |
+| `sft-stem-code-openthoughts3` | `u068.part0000.jsonl` | 149,435,562 | `7e3ae6a99ba7af79da71fd105841f1e7b8ed3b05766b64ec768358d2babfa7fd` |
+| `sft-stem-code-openthoughts3` | `u092.part0000.jsonl` | 145,163,356 | `23a7eaca02e4f93204510e9ef3d8b0929ebcba5fb69d4d57386b23dd9c26df59` |
+| `sft-stem-code-openthoughts3` | `u050.part0000.jsonl` | 145,358,101 | `d623770fabbfddd1cead534f751e656af66de5a42001b8b1832b70a2febfb05c` |
+| `sft-stem-code-openthoughts3` | `u033.part0000.jsonl` | 143,871,666 | `f5dd773499679c04f8b81e62b86b5914bd8773820925b8f5a8e2132d77d3c840` |
+| `sft-stem-code-openthoughts3` | `u052.part0000.jsonl` | 145,180,681 | `6d60a7be42fce5e0e7128c03c684d8cc9ec134095b3df8940bb86ae774903b46` |
+| `sft-stem-code-openthoughts3` | `u051.part0000.jsonl` | 142,465,566 | `16685ab74780bdd9bd26c950c797d417fa851746b2c05d1fba1a7d7a2f713339` |
+| `sft-stem-code-openthoughts3` | `u091.part0000.jsonl` | 149,785,466 | `5439ebd33999885c571b98503cd82c8d47c4905f8f2a2e7930ad721c907242b8` |
+| `sft-stem-code-openthoughts3` | `u064.part0000.jsonl` | 144,842,004 | `70d51f9a08c78eb74aafe0df7491832567e5c87fc78a9a390a5c0f1e283f5ba6` |
+| `sft-stem-code-openthoughts3` | `u105.part0000.jsonl` | 148,351,250 | `7903f5d6ddda840dafac799e89714e77a714fbbcc904e2b5b97a2d7163be8c08` |
+| `sft-stem-code-openthoughts3` | `u078.part0000.jsonl` | 146,202,972 | `3cddd07f0ca0add87b22deb03875f2df5323f75016dfe677fd530fea42cff415` |
+| `sft-stem-code-openthoughts3` | `u076.part0000.jsonl` | 143,506,999 | `402b08e57775b8c4772ab3e00455fd409e85e5fee49409d2949336da24f15111` |
+| `sft-stem-code-openthoughts3` | `u036.part0000.jsonl` | 142,303,712 | `fff437d48f5aee93de6163c234d394a484e187cdd09cba6f72f6dbb916806cbc` |
+| `sft-stem-code-openthoughts3` | `u098.part0000.jsonl` | 144,269,824 | `01843776659000d648d80f5e3e1c070d94321133ee198d7264acea73af4520a2` |
+| `sft-stem-code-openthoughts3` | `u027.part0000.jsonl` | 143,397,985 | `4537d21308eddda29c93dd58d97dc471b9dcfb1963860c8621661c47e9d6bf85` |
+| `sft-stem-code-openthoughts3` | `u044.part0000.jsonl` | 146,928,400 | `234552f007144371a52c46cc2564a20ee0463c71646e565df1d80ad23f3321a0` |
+| `sft-stem-code-openthoughts3` | `u046.part0000.jsonl` | 145,298,796 | `25eef1f29344df50734ca470dcfc26b9a55e2ebfde26581aba5507686d97fb34` |
+| `sft-stem-code-openthoughts3` | `u106.part0000.jsonl` | 148,572,069 | `d1cf9a3fbd8e19f9d421424213bde09a00f0ea9c8a6708613ed6dbc65fc828a2` |
+| `sft-stem-code-openthoughts3` | `u075.part0000.jsonl` | 150,485,844 | `d248773eb29b33fbbde059f2a67ed595a1cb09d4934ce0129549767070d60494` |
+| `sft-stem-code-openthoughts3` | `u094.part0000.jsonl` | 146,737,416 | `61bc52077cdd7bcae9d2045a0cd55dc92e938f35a9d61959f4ea6c9fa8204160` |
+| `sft-stem-code-openthoughts3` | `u057.part0000.jsonl` | 146,083,717 | `bd04a3eb1869a82fa009428ae624fd10190f376a6a0769e365c63de9fd1b37f9` |
+| `sft-stem-code-openthoughts3` | `u063.part0000.jsonl` | 150,195,068 | `f49462f53b9ba8a9fa7d5456b4beafc070a82f234df5436d877cc0fd36cbea3b` |
+| `sft-stem-code-openthoughts3` | `u081.part0000.jsonl` | 148,205,525 | `3fdacd63c7bb77364405559c449a819b86b18c101207899df11af877ec5370dd` |
+| `sft-stem-code-openthoughts3` | `u084.part0000.jsonl` | 143,679,432 | `520315e6b493a2f3fdfc1aac2d22e6448bd1ead6d228d4c70f8c93a7f110a08b` |
+| `sft-stem-code-openthoughts3` | `u093.part0000.jsonl` | 146,522,067 | `2dc8ce71ce0d9436e0186f7e3d7668f3c80b06e46f9001c97421dbf972f11702` |
+| `sft-stem-code-openthoughts3` | `u040.part0000.jsonl` | 147,530,386 | `7567e02bd6f1d9a2a0f45f5703bbeb34a282e55b0ad4f4b2353f175dcf052b1b` |
+| `sft-stem-code-openthoughts3` | `u059.part0000.jsonl` | 147,200,090 | `0d6a54b1153c0b4850f170c6a346b8b2da20dc431fc4d4764bb5a6e1bc02f26a` |
+| `sft-stem-code-openthoughts3` | `u067.part0000.jsonl` | 144,575,421 | `8193c45c70f0a02a02a253ab1aaaec33f6a1167db68ceb399d1cf46f7da8386d` |
+| `sft-stem-code-openthoughts3` | `u108.part0000.jsonl` | 147,456,157 | `31f005b1a60716067703e893bd7207be4b5474c63167d0433283d891f7d563ad` |
+| `sft-stem-code-openthoughts3` | `u045.part0000.jsonl` | 144,841,512 | `44ab5346e065c4f570c8c107aa8c500e332dcc8ac142d6c3551c20ac05c2695c` |
+| `sft-stem-code-openthoughts3` | `u097.part0000.jsonl` | 145,779,221 | `a94240998a0410d70163f237747a1d5e95b5469db39edd4185dd2ba9410a4303` |
+| `sft-stem-code-openthoughts3` | `u074.part0000.jsonl` | 147,209,452 | `5942c45a3c4d347f162c578ff08987ab0ebf274d91c362eda982706a94ec5689` |
+| `sft-stem-code-openthoughts3` | `u062.part0000.jsonl` | 146,165,599 | `ee4f49d702527d42bee61c972f4b45b2cba0447c3a3e7d71765de0fa7f672878` |
+| `sft-stem-code-openthoughts3` | `u102.part0000.jsonl` | 143,870,441 | `22eed1e8b58fe1617ef55c42a2eda3bceed77407f1cc8510fac836938ad74107` |
+| `sft-stem-code-openthoughts3` | `u071.part0000.jsonl` | 150,395,960 | `07d895bf15a4d25df6a790e88cbc9673ec62e0ff9f2de577b7f37f4080a1924d` |
+| `sft-stem-code-openthoughts3` | `u116.part0000.jsonl` | 265,493,867 | `b0e8a91024accce9f72014e9cfc65ee1670ab4989ec886fd8e9272f81df8f67f` |
+| `sft-stem-code-openthoughts3` | `u118.part0000.jsonl` | 259,430,397 | `85383c91bc8ff2984d9f6db804cac891eb703cfc1abcedc19e58a1302d5f38da` |
+| `sft-stem-code-openthoughts3` | `u113.part0000.jsonl` | 260,321,537 | `2a4a622aa95579f97fcfbf2b35ec4d1a80dc94a86c8ff6b5b722b24570bb3cea` |
+| `sft-stem-code-openthoughts3` | `u119.part0000.jsonl` | 259,834,946 | `76e9bd90d56a667268f9d84438f1ad2834886a484ec0debf6ce3b82c49c32b66` |
+| `sft-stem-code-openthoughts3` | `u115.part0000.jsonl` | 259,768,184 | `31470c851560af4aecd644d4ff063d74cf3a70266c7a71f06973187153a7f1be` |
+| `sft-stem-code-openthoughts3` | `u114.part0000.jsonl` | 260,301,391 | `eccf21971f996eb5c5dbd0c8415b7503bded24af2ef75376d1dae3ae47a11355` |
+| `sft-stem-code-openthoughts3` | `u110.part0000.jsonl` | 261,260,853 | `c8db9eeb75c225aa95540610053d24b338bbd0790b7034ab5348e903111d98f2` |
+| `sft-stem-code-openthoughts3` | `u111.part0000.jsonl` | 260,187,955 | `c336454ac8fff3ce6e27846f18c63f47d9305641038b7f649db6f57de0b210f3` |
+| `sft-stem-code-openthoughts3` | `u117.part0000.jsonl` | 260,902,820 | `4699921b2b4702c625394c65c2753cacc5fe42adb5149391f2427002be2628dd` |
+| `sft-stem-code-openthoughts3` | `u112.part0000.jsonl` | 260,814,905 | `66d4fd88dd0cfe1585028292b60ce00b421d7f2ff153e37d073fc5647651339d` |
 
 ```
 python teams/10-post-training/sft/decontam_run.py --set <set-id> --input <set>.jsonl --out-dir decontam_out
-python teams/10-post-training/sft/decontam_report.py --records decontam_out --out teams/10-post-training/sft/decontam_report.md --sets <set-id> ...
+python teams/10-post-training/sft/decontam_report.py --records decontam_out --out decontam_report_29.md --sets <set-id> ...
 ```
 
 ## 7. Sets not run yet
@@ -1854,7 +2010,6 @@ python teams/10-post-training/sft/decontam_report.py --records decontam_out --ou
 | `sft-math-nemotron-proofs-v3-sft` | full run not done yet |
 | `sft-safety-aegis-v1` | safety classification data (text plus labels, no assistant turn); no chat format applies, so no adapter |
 | `sft-salesforce-xlam-60k` | gated on the Hub (needs a Hugging Face token with accepted terms); not downloaded |
-| `sft-stem-code-openthoughts3` | full run not done yet |
 
 ## 8. What this check does not cover
 
