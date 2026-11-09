@@ -10,7 +10,7 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
   - `lab_canary.py`: `373536a777c9f16367cf6affcc2cc6243755ac23e75850a2624eadf65918ea09`
   - `normalize.py`: `570dcb820ac2ae6c667b1abc5ea1d781a6795aa42a7735aa94377e756d7d70e9`
 - **Runner and reconciliation:** `sft/decontam_run.py`; this file is written by `sft/decontam_report.py`.
-- **Sets run:** 29. **Rows in:** 16,766,783. **Removed (flagged or canary):** 345,101 (2.06%). **Kept:** 16,421,682.
+- **Sets run:** 30. **Rows in:** 16,826,783. **Removed (flagged or canary):** 345,283 (2.05%). **Kept:** 16,481,500.
 - No benchmark item text is in this file or in the run records: only set names, counts, document ids, benchmark item ids, offsets and sha256 values.
 
 ## 1. Result per set
@@ -42,13 +42,14 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
 | `sft-math-openr1-math` | full set | 224,882 | 1,803 | 0 | 1,803 (0.80%) | 223,079 | `682344d24ba3…`, `cbc8bcb171c9…`, `d7736b348d63…`, `a33ff5ac1edc…`, `2155e5e92cac…`, `0d8c2e5c3de9…`, `75552335c648…`, `36f998d5f8fb…`, `832b5c5c3dc3…`, `bc563c89f1fa…`, `c4b606aaf3ab…`, `35933e6d4603…`, `995b8e6cf0f8…`, `7d869556febb…`, `252ac9a8d858…`, `d241ab7ff755…`, `4aaba5193b88…`, `81500d615610…`, `d027135dc548…`, `733924cab8a8…` |
 | `sft-oasst2` | full set | 9,548 | 5 | 0 | 5 (0.05%) | 9,543 | `c89de79a902a…` |
 | `sft-rl-math-openmathreasoning` | full set | 3,200,855 | 65,402 | 0 | 65,402 (2.04%) | 3,135,453 | `3284d63609e9…`, `2ebfe35f1169…`, `b891ff3ffe3d…`, `520832e05acd…`, `9b2fb521d086…`, `3e6228811a69…`, `64f8eb745521…`, `34aeb7a4aaa1…`, `3f6de1e2045c…`, `3b2e00e0ca37…`, `aabccd35829f…`, `bf6a83f06264…`, `5ad685c94f4e…`, `450a02276d27…`, `c87c8c300475…`, `8302b952c6cd…`, `9851a061561d…`, `b28049b8eaa5…`, `65a162a500e7…`, `79f804123f09…`, `e66c2a7938ad…`, `bdaf681f56fb…`, `1424654e1b51…`, `9a31959fca15…`, `0d2fe60e1e08…`, `0973862a08a0…`, `a931c74a1baa…`, `f85c4ec8486d…`, `036414affe0a…`, `7961ad01d50b…`, `8048ec925d9a…`, `0810bad23be2…`, `0915a69766c8…`, `968e5fe87db9…`, `271d98a35b27…`, `965a60c859cb…`, `f5af4c909dd6…`, `70301d6ace8d…`, `d06582ea2a51…`, `ff47c8208f23…`, `800478a43cba…`, `664800f89401…`, `aa9724964248…`, `88c559df0dea…`, `32863da72915…`, `5c2c3a5f9696…`, `0e376c442ccd…`, `17b5ba56659c…`, `9b7c3b5e7f74…`, `fe4f81d65c85…`, `8abc21439f6e…`, `c500995414d4…`, `2a2b4793e7d5…`, `f4c40fbe1def…`, `361b36368989…`, `a790a79ade60…`, `31756702a1f3…`, `27391f84d3c2…`, `09cbb21e31df…`, `9014b57e473a…`, `e8a8633c3e2d…`, `afb3bac3099a…`, `ec45b83350ab…`, `d2f8040844aa…`, `51772aa8351b…`, `2eb95931671a…`, `8ba65953b7d9…`, `1f5ef9fe61f0…`, `e924975157ba…`, `05e6afb88a0a…`, `8e043fc6c9df…`, `0b3ce64e59e7…`, `d70df76baa2c…`, `96aba93d6cbc…`, `067702a09740…`, `33d88080d359…`, `2527f17e3659…`, `1707031e676f…`, `1a84c576f8ae…`, `9c5da1a5f251…`, `77ec05509656…`, `6ce066529935…`, `de96d90288bc…`, `bbf4874247b4…`, `f2ef547b6187…`, `985a48db314d…`, `fcb3c7e6452b…`, `d23013785dc1…`, `6e8c71487eff…`, `feaf808d4770…`, `a8158633e360…`, `0fc00a8cc04f…`, `bb2dc602aeac…`, `e164bcf54a25…`, `1d7196e3a022…`, `0af1bc05784a…`, `89bcd415481b…`, `cb3d9424982a…`, `8f726c538ddf…`, `10dd5ad4495e…`, `2457be1c8cd7…`, `22f9db6c3fe3…`, `af6287d63391…`, `b5a07c0ca310…`, `0f0a352cf114…`, `40ae1c6bd42c…`, `982fecf7bbe0…`, `f418b398910a…`, `8e7bd798c20d…`, `bdd5b1c21524…`, `6941859f8e47…`, `be8dfc1a4d2c…`, `d117e2cd75b7…`, `7cc87dfe1055…`, `ef2f0d89686b…`, `94a9c2c76808…`, `8740bed39849…`, `8f4bb2a7c8ca…`, `1285ca30d9bc…`, `14e5f4507f65…`, `256b6d11e3a5…`, `0a85c20646fe…`, `67b2e19bbe0b…`, `6987917ef0d5…`, `72a350c33aca…`, `f2bfef1147a2…`, `2b921b2ffc41…`, `7c2d0ff4e97e…`, `bab6ee297d36…`, `1a894af76156…`, `101c11cd0a95…`, `cfa5fcfe180d…`, `8158bcb2e2a3…`, `e23334b55426…`, `3b381f8d7e4f…`, `fc6f92f069a7…`, `64f5015f2350…`, `08a48287152c…`, `8ac1997d6e29…`, `8fc33da2286c…`, `d740fd41473e…`, `89627e5a5b1b…`, `6c703eff82f3…`, `8f59a39a5cc3…`, `8f245acb29aa…`, `df5c4facc0f1…`, `4bf41fbe08f8…`, `b973ea7b417a…`, `5a86caf8cebe…`, `3574497c5a5e…`, `33b70690dbec…`, `e377700a7105…`, `8f71f9314565…`, `d042a0cefd80…`, `69be3e877699…`, `f18f1804f8ab…`, `64f9a1adbd4b…`, `d5a501c4909a…`, `5fbdaed78b02…`, `9ecca29361e6…`, `84a511b1f9e4…`, `ed22f30081cf…`, `1a2485292fa1…`, `d62db448415a…`, `8b0d596ca5d1…`, `b319c09d9451…`, `79f85a49f086…`, `aff534e743d0…`, `ff3b038bb43f…`, `baab5eef7c9e…`, `372ef3b64007…`, `310b2e704e56…`, `7d7fa9a7c75a…`, `d3dc4e299397…`, `7983a773ff7c…`, `125bde84972e…`, `c3ed02482301…`, `f4aa7224b735…`, `68ea0b01a8ba…`, `ce73ea854ccf…`, `48e3d9a7e72d…`, `808b94a105d4…`, `9e510c662661…`, `e192a7bc7fb9…`, `e7a63a09a4a6…`, `5b3205d1b158…`, `fc3fe93d038f…`, `94b6144c849f…`, `a846b7f2a174…`, `a03ebd1fb0ff…`, `9a061321e26b…`, `57d91c731573…`, `990e922feafb…`, `cd7e715104ee…`, `177640130602…`, `060c77f1703f…`, `54b336fdecdf…`, `482cfd896398…`, `f952e3c8c8b5…`, `5d598a7978e4…`, `f1eb466bc90a…`, `6fdb4b9b10ca…`, `7acb39ce853b…`, `a0fe81fd1457…`, `f2ea5af2eaf8…`, `5a35b4f24ae5…`, `a121b5585f6a…`, `9ea28483c52d…`, `cbea13314fec…`, `dbec9869fd37…`, `ad99b69d8f30…`, `fd71f17f1e82…`, `01abb629e4fa…`, `633de527a6ef…`, `9e5de8472a82…`, `62882f05772c…`, `3c3e5e03c5d6…`, `c0fe56517bba…`, `5b12b9b07a9e…`, `8c83b71196f1…`, `5b526b7c71b9…`, `0645bc031ba0…`, `771476a69c76…`, `1d835fcb15ed…`, `a0542e1169c1…`, `2051a914e0f5…`, `d8ab807c3ece…`, `2ae0d6c94166…`, `29f6ea4ed8e7…`, `57ec01e19aaa…`, `02e426282e4b…`, `657f60c6bc75…`, `4d542e60e094…`, `e367d8ff2055…`, `a73c88e137cf…`, `f2cf9ba57501…`, `1d694feef564…`, `127e37c9a9b2…`, `74c5e268af4b…`, `21d851837e17…`, `866fbe7778d4…`, `ebb323e06fbb…`, `3428f453d6f0…`, `8a4a80ab1ade…`, `dbc4cfca3c9a…`, `2a69a13f0db9…`, `6fd204c0e308…`, `bc5127ec8e71…`, `3d40b8e17e17…`, `637e567abc5d…`, `3ad763bf4e47…`, `6990473816d3…`, `20948c21cbb2…`, `fbb24159ba62…`, `db6dc23bd1dc…`, `02ba704849df…`, `010a9cf0e254…`, `3f2ae3d475eb…`, `a9089b72ef2f…`, `755eaf7d30f5…`, `3f7cb7fdd4e8…`, `9b85b7108b1b…`, `ebcc01809919…`, `9285222a2ded…`, `4bc140a21191…`, `50e4511b512d…`, `7f9197576241…`, `5fb7c8195d05…`, `0028853c9f1a…`, `497f6dcc2762…`, `57d05c48b679…`, `ce7795908cf9…`, `3478a670c196…`, `7767d673d04c…`, `b83163a038ca…`, `462701dc7a30…`, `1d729cf6054d…`, `9ec32a58240d…`, `3edc49665928…`, `ac910d699bc1…`, `9df36add01b5…`, `418db412a5fe…`, `91a172c3a456…`, `ae1840e4674c…`, `f630e75059d5…`, `d0443ea106d7…`, `1515ab0e5ccc…`, `86f50f583105…` |
+| `sft-salesforce-xlam-60k` | full set | 60,000 | 182 | 0 | 182 (0.30%) | 59,818 | `77369e312a59…` |
 | `sft-science-glm51-phd` | full set | 103,702 | 207 | 0 | 207 (0.20%) | 103,495 | `54d681c1edc8…` |
 | `sft-science-nemotron-science-v2` | full set | 96,605 | 286 | 0 | 286 (0.30%) | 96,319 | `390c839aae1b…` |
 | `sft-science-nemotron-science` | full set | 174,155 | 369 | 0 | 369 (0.21%) | 173,786 | `6f9ac4dc35a0…` |
 | `sft-stem-code-openthoughts3` | full set | 450,599 | 7,457 | 0 | 7,457 (1.65%) | 443,142 | `79f4ff26c091…`, `ade7c9a57a9a…`, `339d8d7a2365…`, `6cd690ad6162…`, `bfc8889fd947…`, `bbf06c20198f…`, `c0b69a521656…`, `050dc50cc113…`, `78b37d9adaaf…`, `45112561996b…`, `df2a24c8ffb1…`, `035b09e8392d…`, `e91b9317cf4f…`, `79c54c847f81…`, `f1fd1a47c906…`, `fb0dc7686647…`, `6f98a681965c…`, `3b9ce3d515f8…`, `06de3c49caa6…`, `7b5c21530b81…`, `b68890d2f196…`, `e96250c2c5dd…`, `47ffd65a22c6…`, `f97a16876b62…`, `b2eda5876be9…`, `784f6476778e…`, `9ee3aeb836ee…`, `4f9a39e0d2b6…`, `82a3e0878dfc…`, `8e49fff488bb…`, `24eab6e1e40f…`, `a0a74c9b6662…`, `6db44fc142f7…`, `b49184e84ecb…`, `08ef9e409887…`, `759d62dea723…`, `4aa6cd514c76…`, `16315ac38c30…`, `a14c07d455d4…`, `ac423827f18d…`, `2b150183b97b…`, `28c038ede56f…`, `17a8a8b4699f…`, `d25d0d3cb5c8…`, `3bfa28c90937…`, `c8535b6b24c3…`, `7170551799f6…`, `980940982da2…`, `0cfbbf6fe7ff…`, `6278731204e0…`, `f46e39ba4445…`, `a008b84b3403…`, `b75cec629a02…`, `180233fa0a0d…`, `f4ddf86d1768…`, `176a98edadd0…`, `c8fd43f1ca01…`, `0490573de419…`, `7d1a10cca633…`, `c5451affbdb0…`, `ad0ee9308e89…`, `5ac1e4c7b8ae…`, `2d06beeec41a…`, `c562fc524337…`, `60e57ff96219…`, `90f37ab833e4…`, `ac39bc75d9e3…`, `2e5bcc6805e3…`, `ab93ee9ddac1…`, `89b9caa7b479…`, `9b24af20c6fa…`, `85eb8b58180d…`, `86b2cb843c66…`, `8aa42a3c0b7e…`, `0d92bbe5c35d…`, `96ff98da4576…`, `2f57f6cdd449…`, `e4ca30295e37…`, `a97bfbbb54de…`, `e7ac6d81e8bb…`, `5b5d250c2b15…`, `a48fdf3f83fb…`, `622db5de91b8…`, `14fd7d1bcb25…`, `fc679955203f…`, `41d40a253c48…`, `2995815864d7…`, `697f08fa7820…`, `b418bdfc940c…`, `6f6683ebeeac…`, `5e654702115f…`, `6aa5102da92c…`, `a07c687c112b…`, `37bae8c93b88…`, `1ad5a7501c96…`, `eab3dc4bb945…`, `f813e452f827…`, `2e749834981f…`, `6e843ee19136…`, `4ffba978fc49…`, `144580db0fe3…`, `976ee17bcc51…`, `1dc640b953af…`, `248755862922…`, `ad4367db46ce…`, `0e0ae3cf1233…`, `6331f959579d…`, `b4e65d14ef97…`, `b470a1881d98…`, `23029aeec603…`, `087a9770b759…`, `80865aa19021…`, `af50e4d4dcf2…`, `d99412775cec…`, `fa8706efcf46…`, `38a251e43b1b…`, `d6f01e3864e4…`, `6252a408aa3b…`, `124f8b845375…`, `f6eb39dfe732…` |
-| **Total** | | **16,766,783** | **345,101** | **0** | **345,101** (2.06%) | **16,421,682** | |
+| **Total** | | **16,826,783** | **345,283** | **0** | **345,283** (2.05%) | **16,481,500** | |
 
-**Run on** says what was checked: *full set* is every row the converter produced from the whole source (29 sets); *sample* is the first rows of a split only (0 sets), and is not cleared as a whole.
+**Run on** says what was checked: *full set* is every row the converter produced from the whole source (30 sets); *sample* is the first rows of a split only (0 sets), and is not cleared as a whole.
 
 A row that is both flagged and carries a canary counts once in Removed.
 
@@ -81,6 +82,7 @@ A row that is both flagged and carries a canary counts once in Removed.
 | `sft-math-openr1-math` | 354 | 279 | 14 | 99 | 0 | 0 | 30 | 0 | 7 | 1053 | 0 | 0 | 132 | 0 | 38 | 72 | 0 | 0 | 0 | 0 |
 | `sft-oasst2` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 2 | 1 | 1 | 0 | 0 | 0 |
 | `sft-rl-math-openmathreasoning` | 18233 | 14606 | 64 | 3962 | 0 | 15 | 1300 | 0 | 297 | 33251 | 0 | 0 | 4352 | 0 | 17 | 2712 | 0 | 13 | 0 | 0 |
+| `sft-salesforce-xlam-60k` | 0 | 0 | 164 | 0 | 0 | 0 | 0 | 0 | 0 | 4 | 0 | 0 | 0 | 0 | 1 | 0 | 13 | 0 | 0 | 0 |
 | `sft-science-glm51-phd` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 207 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `sft-science-nemotron-science-v2` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 183 | 0 | 0 | 0 | 0 | 34 | 74 | 2 | 0 | 0 | 0 |
 | `sft-science-nemotron-science` | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 272 | 0 | 0 | 0 | 0 | 42 | 68 | 0 | 0 | 0 | 0 |
@@ -119,6 +121,7 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `sft-math-openr1-math` | 1803 | 0 | 50 | 1753 |
 | `sft-oasst2` | 5 | 0 | 3 | 2 |
 | `sft-rl-math-openmathreasoning` | 65402 | 639 | 1890 | 62873 |
+| `sft-salesforce-xlam-60k` | 182 | 13 | 53 | 116 |
 | `sft-science-glm51-phd` | 207 | 0 | 0 | 207 |
 | `sft-science-nemotron-science-v2` | 286 | 0 | 6 | 280 |
 | `sft-science-nemotron-science` | 369 | 0 | 3 | 366 |
@@ -520,6 +523,26 @@ Coverage is the share of one benchmark item's runs that the document contains (t
 | `mmlu:test:4460` | 16 | 0.676 | 25 / 37 | `sft-rl-math-openmathreasoning/4800003231` | 67 |
 | `mmlu:test:4261` | 16 | 0.657 | 23 / 35 | `sft-rl-math-openmathreasoning/2000011632` | 67 |
 
+**`sft-salesforce-xlam-60k`**: at least 25 different benchmark items found in 182 documents (top 15 by coverage; the checker lists the best 5 items per document, so this is a lower bound)
+
+| Benchmark item | Documents | Highest coverage | Shared runs / item runs | Example document | Offset |
+|---|---:|---:|---:|---|---:|
+| `bfcl_v3:test:multiple_65` | 1 | 1.000 | 1 / 1 | `sft-salesforce-xlam-60k/28370` | 2142 |
+| `bfcl_v3:test:simple_310` | 1 | 1.000 | 1 / 1 | `sft-salesforce-xlam-60k/27613` | 2676 |
+| `bfcl_v3:test:simple_336` | 2 | 1.000 | 1 / 1 | `sft-salesforce-xlam-60k/44060` | 1333 |
+| `bfcl_v3:test:simple_379` | 2 | 1.000 | 1 / 1 | `sft-salesforce-xlam-60k/6203` | 2472 |
+| `bfcl_v3:test:simple_9` | 7 | 1.000 | 1 / 1 | `sft-salesforce-xlam-60k/541` | 256 |
+| `bfcl_v3:test:parallel_18` | 8 | 0.400 | 4 / 10 | `sft-salesforce-xlam-60k/50994` | 1577 |
+| `bfcl_v3:test:simple_98` | 10 | 0.333 | 2 / 6 | `sft-salesforce-xlam-60k/39057` | 1413 |
+| `milu:test:12344` | 1 | 0.289 | 11 / 38 | `sft-salesforce-xlam-60k/3852` | 1014 |
+| `bfcl_v3:test:simple_0` | 3 | 0.200 | 1 / 5 | `sft-salesforce-xlam-60k/39051` | 630 |
+| `bfcl_v3:test:parallel_19` | 2 | 0.176 | 3 / 17 | `sft-salesforce-xlam-60k/49274` | 1027 |
+| `bfcl_v3:test:parallel_145` | 58 | 0.133 | 4 / 30 | `sft-salesforce-xlam-60k/6934` | 949 |
+| `bfcl_v3:test:parallel_multiple_8` | 3 | 0.130 | 3 / 23 | `sft-salesforce-xlam-60k/38963` | 1848 |
+| `bfcl_v3:test:simple_133` | 1 | 0.111 | 1 / 9 | `sft-salesforce-xlam-60k/45565` | 867 |
+| `bfcl_v3:test:live_parallel_multiple_14-12-0` | 10 | 0.105 | 2 / 19 | `sft-salesforce-xlam-60k/34005` | 1457 |
+| `bfcl_v3:test:parallel_multiple_164` | 33 | 0.062 | 6 / 97 | `sft-salesforce-xlam-60k/274` | 2099 |
+
 **`sft-science-glm51-phd`**: at least 9 different benchmark items found in 207 documents (top 9 by coverage; the checker lists the best 5 items per document, so this is a lower bound)
 
 | Benchmark item | Documents | Highest coverage | Shared runs / item runs | Example document | Offset |
@@ -600,18 +623,18 @@ Coverage is the share of the item's runs found in the document. A value near 1.0
 
 | Check | Sets passed |
 |---|---:|
-| `all_source_files_converted` | 14 of 29 |
-| `canary_ids_in_input` | 29 of 29 |
-| `canary_scan_complete` | 29 of 29 |
-| `clean_file_flags_0` | 29 of 29 |
-| `docs_match_checker` | 29 of 29 |
-| `every_removed_row_is_hit` | 1 of 29 |
-| `flagged_count_matches` | 29 of 29 |
-| `flagged_ids_in_input` | 29 of 29 |
-| `ids_disjoint_across_units` | 14 of 29 |
-| `ids_unique` | 29 of 29 |
-| `parts_cover_all_converted_rows` | 14 of 29 |
-| `rows_in_eq_kept_plus_removed` | 29 of 29 |
+| `all_source_files_converted` | 15 of 30 |
+| `canary_ids_in_input` | 30 of 30 |
+| `canary_scan_complete` | 30 of 30 |
+| `clean_file_flags_0` | 30 of 30 |
+| `docs_match_checker` | 30 of 30 |
+| `every_removed_row_is_hit` | 1 of 30 |
+| `flagged_count_matches` | 30 of 30 |
+| `flagged_ids_in_input` | 30 of 30 |
+| `ids_disjoint_across_units` | 15 of 30 |
+| `ids_unique` | 30 of 30 |
+| `parts_cover_all_converted_rows` | 15 of 30 |
+| `rows_in_eq_kept_plus_removed` | 30 of 30 |
 
 `rows_in_eq_kept_plus_removed`: rows in = rows kept + rows removed. `clean_file_flags_0`: the checker, run again on the clean file, flags 0 of the kept rows. `canary_scan_complete`: `canary_scan.py` read every file (exit 0 or 1). A set with a failed check or a canary is not in this report (the script stops).
 
@@ -1873,6 +1896,7 @@ Coverage is the share of the item's runs found in the document. A value near 1.0
 | `sft-rl-math-openmathreasoning` | `u088.part0001.jsonl` | 209,875,387 | `88e758764e85c5f7bd3ae88eed8d5544d7b83620ed6e99a6d7d6f1f2a337a34c` |
 | `sft-rl-math-openmathreasoning` | `u058.part0001.jsonl` | 209,304,725 | `20144d15e00e082517a21acc03e63f3070b84981adb81f5d3ae4f82d21078bbc` |
 | `sft-rl-math-openmathreasoning` | `u049.part0001.jsonl` | 207,202,359 | `4be3c207b2c2aae5b32aa0670cb94cc0c4135dcce962972e2a3214dc243e9cea` |
+| `sft-salesforce-xlam-60k` | `u000.part0000.jsonl` | 111,560,188 | `79a293c5f4e26f97200cc50559ceb253e9c2846d6fccd6318d412330b3de6b5c` |
 | `sft-science-glm51-phd` | `science-glm51-phd.jsonl` | 2,013,871,482 | `88165c31230c1a5efab08882c7c5160ebe032b7b0b1a7e500cbca1e3903aa387` |
 | `sft-science-nemotron-science-v2` | `science-nemotron-science-v2.jsonl` | 571,034,022 | `ec5a5bf12503b7e798da641a895ccae1ade0ba3c0e9c31f22d9cf02473d5148b` |
 | `sft-science-nemotron-science` | `science-nemotron-science.jsonl` | 1,808,296,419 | `339a9bdf19fc9fcc12124ed9c1ded743b22afe45c818249b028fe293c250ba95` |
@@ -1999,7 +2023,7 @@ Coverage is the share of the item's runs found in the document. A value near 1.0
 
 ```
 python teams/10-post-training/sft/decontam_run.py --set <set-id> --input <set>.jsonl --out-dir decontam_out
-python teams/10-post-training/sft/decontam_report.py --records decontam_out --out decontam_report_29.md --sets <set-id> ...
+python teams/10-post-training/sft/decontam_report.py --records decontam_out --out decontam_report_30.md --sets <set-id> ...
 ```
 
 ## 7. Sets not run yet
@@ -2009,7 +2033,6 @@ python teams/10-post-training/sft/decontam_report.py --records decontam_out --ou
 | `sft-code-opencodereasoning-2` | adapter and test written, but upstream withholds the question text ('-') in the python shard; needs a join with the source problem sets (taco, apps, code_contests) before it can be converted |
 | `sft-math-nemotron-proofs-v3-sft` | full run not done yet |
 | `sft-safety-aegis-v1` | safety classification data (text plus labels, no assistant turn); no chat format applies, so no adapter |
-| `sft-salesforce-xlam-60k` | gated on the Hub (needs a Hugging Face token with accepted terms); not downloaded |
 
 ## 8. What this check does not cover
 
