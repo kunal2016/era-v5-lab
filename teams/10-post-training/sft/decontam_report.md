@@ -10,7 +10,7 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
   - `lab_canary.py`: `373536a777c9f16367cf6affcc2cc6243755ac23e75850a2624eadf65918ea09`
   - `normalize.py`: `570dcb820ac2ae6c667b1abc5ea1d781a6795aa42a7735aa94377e756d7d70e9`
 - **Runner and reconciliation:** `sft/decontam_run.py`; this file is written by `sft/decontam_report.py`.
-- **Sets run:** 33. **Rows in:** 16,904,565. **Removed (flagged or canary):** 349,540 (2.07%). **Kept:** 16,555,025.
+- **Sets run:** 34. **Rows in:** 16,916,562. **Removed (flagged or canary):** 349,542 (2.07%). **Kept:** 16,567,020.
 - No benchmark item text is in this file or in the run records: only set names, counts, document ids, benchmark item ids, offsets and sha256 values.
 
 ## 1. Result per set
@@ -50,7 +50,8 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
 | `sft-science-nemotron-science-v2` | full set | 96,605 | 286 | 0 | 286 (0.30%) | 96,319 | `390c839aae1b…` |
 | `sft-science-nemotron-science` | full set | 174,155 | 369 | 0 | 369 (0.21%) | 173,786 | `6f9ac4dc35a0…` |
 | `sft-stem-code-openthoughts3` | full set | 450,599 | 7,457 | 0 | 7,457 (1.65%) | 443,142 | `79f4ff26c091…`, `ade7c9a57a9a…`, `339d8d7a2365…`, `6cd690ad6162…`, `bfc8889fd947…`, `bbf06c20198f…`, `c0b69a521656…`, `050dc50cc113…`, `78b37d9adaaf…`, `45112561996b…`, `df2a24c8ffb1…`, `035b09e8392d…`, `e91b9317cf4f…`, `79c54c847f81…`, `f1fd1a47c906…`, `fb0dc7686647…`, `6f98a681965c…`, `3b9ce3d515f8…`, `06de3c49caa6…`, `7b5c21530b81…`, `b68890d2f196…`, `e96250c2c5dd…`, `47ffd65a22c6…`, `f97a16876b62…`, `b2eda5876be9…`, `784f6476778e…`, `9ee3aeb836ee…`, `4f9a39e0d2b6…`, `82a3e0878dfc…`, `8e49fff488bb…`, `24eab6e1e40f…`, `a0a74c9b6662…`, `6db44fc142f7…`, `b49184e84ecb…`, `08ef9e409887…`, `759d62dea723…`, `4aa6cd514c76…`, `16315ac38c30…`, `a14c07d455d4…`, `ac423827f18d…`, `2b150183b97b…`, `28c038ede56f…`, `17a8a8b4699f…`, `d25d0d3cb5c8…`, `3bfa28c90937…`, `c8535b6b24c3…`, `7170551799f6…`, `980940982da2…`, `0cfbbf6fe7ff…`, `6278731204e0…`, `f46e39ba4445…`, `a008b84b3403…`, `b75cec629a02…`, `180233fa0a0d…`, `f4ddf86d1768…`, `176a98edadd0…`, `c8fd43f1ca01…`, `0490573de419…`, `7d1a10cca633…`, `c5451affbdb0…`, `ad0ee9308e89…`, `5ac1e4c7b8ae…`, `2d06beeec41a…`, `c562fc524337…`, `60e57ff96219…`, `90f37ab833e4…`, `ac39bc75d9e3…`, `2e5bcc6805e3…`, `ab93ee9ddac1…`, `89b9caa7b479…`, `9b24af20c6fa…`, `85eb8b58180d…`, `86b2cb843c66…`, `8aa42a3c0b7e…`, `0d92bbe5c35d…`, `96ff98da4576…`, `2f57f6cdd449…`, `e4ca30295e37…`, `a97bfbbb54de…`, `e7ac6d81e8bb…`, `5b5d250c2b15…`, `a48fdf3f83fb…`, `622db5de91b8…`, `14fd7d1bcb25…`, `fc679955203f…`, `41d40a253c48…`, `2995815864d7…`, `697f08fa7820…`, `b418bdfc940c…`, `6f6683ebeeac…`, `5e654702115f…`, `6aa5102da92c…`, `a07c687c112b…`, `37bae8c93b88…`, `1ad5a7501c96…`, `eab3dc4bb945…`, `f813e452f827…`, `2e749834981f…`, `6e843ee19136…`, `4ffba978fc49…`, `144580db0fe3…`, `976ee17bcc51…`, `1dc640b953af…`, `248755862922…`, `ad4367db46ce…`, `0e0ae3cf1233…`, `6331f959579d…`, `b4e65d14ef97…`, `b470a1881d98…`, `23029aeec603…`, `087a9770b759…`, `80865aa19021…`, `af50e4d4dcf2…`, `d99412775cec…`, `fa8706efcf46…`, `38a251e43b1b…`, `d6f01e3864e4…`, `6252a408aa3b…`, `124f8b845375…`, `f6eb39dfe732…` |
-| **Total** | | **16,904,565** | **349,540** | **0** | **349,540** (2.07%) | **16,555,025** | |
+| `sft-safety-aegis-v1` | text column, train and test, not chat | 11,997 | 2 | 0 | 2 (0.02%) | 11,995 | `e545b24def6c…` |
+| **Total** | | **16,916,562** | **349,542** | **0** | **349,542** (2.07%) | **16,567,020** | |
 
 **Run on** says what was checked: *full set* is every row the converter produced from the whole source (30 sets); *sample* is the first rows of a split only (0 sets), and is not cleared as a whole.
 
@@ -93,6 +94,7 @@ A row that is both flagged and carries a canary counts once in Removed.
 | `sft-science-nemotron-science-v2` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 183 | 0 | 0 | 0 | 0 | 34 | 74 | 2 | 0 | 0 | 0 |
 | `sft-science-nemotron-science` | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 272 | 0 | 0 | 0 | 0 | 42 | 68 | 0 | 0 | 0 | 0 |
 | `sft-stem-code-openthoughts3` | 213 | 171 | 16 | 4066 | 0 | 15 | 24 | 0 | 5 | 2335 | 0 | 0 | 705 | 0 | 75 | 149 | 2 | 10 | 0 | 0 |
+| `sft-safety-aegis-v1` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
 
 A document is flagged when it shares at least one 13-word run (20 tokens for code) with a benchmark item. The whole document is removed. The count is documents per benchmark, so a document that matches two benchmarks counts in both columns.
 
@@ -2038,7 +2040,7 @@ python teams/10-post-training/sft/decontam_report.py --records decontam_out --ou
 
 | Set | Status | Why |
 |---|---|---|
-| `sft-safety-aegis-v1` | no chat rows | Labels on text, no assistant turn. `convert.py` has no adapter. |
+| `sft-safety-aegis-v1` | text only | Checked 9 Nov on the stored `text` column (11,997 train+test rows, 2 removed). It is not chat: there is no assistant turn, so it is not in the SFT mix as training text. 339 source ids were repeated; the check used one id per row. |
 | `sft-safety-indicguard` | excluded | Google Translate and an unnamed generator. |
 | `sft-safety-nemotron-guard-v3` | excluded | Google Translate and a Llama jury. |
 | `sft-safety-wildjailbreak` | excluded | GPT-4 and GPT-3.5. |
