@@ -1,7 +1,7 @@
 doc_id,read,verdict,diseases,evidence,hex,note
 73edc87d0fe145a4,full,fix,C2;D3,इंटरनेशनल स्पेस स्टेशन (ISS) धरती से 20 @2046 | US @26,,
 b671c23be750f5e0,full,fix,C1;D3,Photo Credit @17 | source @1,,
-70212045c3378b0a,partial,fix,,मेत्युपल / मैंग्रेजी @OCR,,OCR errors
+70212045c3378b0a,partial,fix,,मेत्युपल @4 | मैंग्रेजी @96,,OCR errors
 2945dc492be15c69,partial,fix,C2;D3,"(क)50%, चिकित्सा जांच होने और पुष्टि कार @13128 | II @894",,
 569dff1b80deaeea,full,clean,,,,
 cbf9d075cfdd413c,full,clean,,,,
@@ -62,7 +62,7 @@ af6c50a82a970dfd,full,fix,C3,"स्थिर । मुस्कराते �
 ff63850cf6ff8d2b,full,fix,C1;D3,ये भी पढ़ @3085 | Ram @23,,
 5db2108aeda0ff42,full,fix,C2,पहले कैराना उपचुनाव में जयंत चौधरी को यह @1558,,
 24726107e3227aa8,full,fix,C2,प्रधानमंत्री मोदी गांधीनगर के महात्मा म @494,,
-881937cc40e5c177,partial,fix,D3;D4,Ouija @5973 | हो सकता हैइस धारणा @524,,
+881937cc40e5c177,partial,fix,D3,Ouija @5973,,
 739d607ed9b10834,full,clean,,,,
 0983ea888abe5b95,full,fix,C3,पूछ रहे हो? क्या होगा ? यह 'माँ' को स्व @1292,,
 04ff15d3f374defb,full,clean,D3,Amitabh @0,,

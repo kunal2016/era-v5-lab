@@ -20,6 +20,13 @@ Pack: `ind-hi-sangraha-v`, 500 documents labelled in parquet order. Verdicts: 17
 | D3 | 219 | see below | fix/drop/keep |
 | D4 | 3 | see below | fix/drop/keep |
 
+## Proposed disease: OCR misread letters (CAP, 24 Oct)
+
+Not in the official disease list. The scan or font pipeline swaps consonants or vowel signs (`मेत्युपल` for a name with मृत्यु, `मैंग्रेजी` for अंग्रेजी). A5 fixes mark order only; this is a different letter, so I left **no code** on the label row and recorded offsets in `evidence`.
+
+1. **Example:** `70212045c3378b0a` (partial read): `मेत्युपल` @4, `मैंग्रेजी` @96.
+2. **Medicine:** None. Safe repair needs a lexicon or a human reader.
+3. **Action:** Fix the word when the intended form is clear from context; otherwise keep the row as `fix` with `OCR errors` in `note`.
 
 ## Medicine 1: A5, characters in the wrong order
 
