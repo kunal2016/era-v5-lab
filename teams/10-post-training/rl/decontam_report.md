@@ -140,17 +140,23 @@ python teams/10-post-training/sft/decontam_run.py --set <set-id> --input <set>.j
 python teams/10-post-training/sft/decontam_report.py --records decontam_out --out teams/10-post-training/rl/decontam_report.md --sets <set-id> ... --title "RL decontamination report"
 ```
 
-## 7. Sets not run yet
+## 7. Sets not in the 4-set run (9 Nov)
 
-| Set | Why |
-|---|---|
-| `rl-code-swe-rebench` | no RL environments built from SWE-rebench yet; each one is rebuilt and gold-checked before use (TSAI 4 Nov), and gets this check then. Its SFT trajectories set is in sft/decontam_report.md. |
+An `excluded` set is out of training.
+
+| Set | Status | Why |
+|---|---|---|
+| `rl-code-swe-rebench` | not built | No RL environments from SWE-rebench yet. Each one is gold-checked before use, then checked here. The SFT trajectories are in `sft/decontam_report.md`. |
+| `rl-community-alignment` | excluded | Llama-based generation. |
+| `rl-safety-hh-rlhf` | excluded | Anthropic closed models. |
+| `rl-safety-alignment-faking` | excluded | Claude models. |
+| `rl-wildguardmix` | excluded | GPT-4. |
 
 ## 8. What this check does not cover
 
 - **Benchmarks outside the set.** This fingerprint set holds 20 benchmark entries: `aime_2024`, `aime_2025`, `bfcl_v3`, `codeforces`, `flores200`, `gaia`, `gpqa_diamond`, `gsm8k`, `heldout_g5_v1`, `hle`, `in22_conv`, `in22_gen`, `livecodebench`, `longbench_v2`, `milu`, `mmlu`, `swe_bench_live`, `swe_bench_pro`, `swe_bench_verified`, `terminal_bench_2`.
   It has no entry for HumanEval, HumanEval+, MBPP, MBPP+, ARC-Challenge, ARC-Easy, HellaSwag, TruthfulQA, MMLU-Pro, BBH, MuSR, Belebele, which Team 9's harnesses run (eval firewall, section 5, known gap), so a clean result says nothing about them.
-  `sft_mix_proposal.md` section 1 lists HumanEval+ and MBPP+ among the benchmarks of this check; this set does not contain them.
+  `sft_mix_proposal.md` section 1 was corrected on 9 Nov: HumanEval, HumanEval+, MBPP, and MBPP+ are not in this fingerprint set.
 - **Paraphrase.** The check finds copied runs of words. A reworded or translated item is not found.
 - **Other rows of a set.** Only the rows that were run are covered. A set that was sampled (for example the first rows of a split) is not cleared as a whole.
 - **Frozen tokenizer.** The check reads the rendered `text`, so it does not depend on the tokenizer. The effort tiers of the rows do, and Team 3 freezes the tokenizer on Sat 14 Nov.

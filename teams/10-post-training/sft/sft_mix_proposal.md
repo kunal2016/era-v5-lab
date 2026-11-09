@@ -18,7 +18,7 @@ G10 post-trains an **agentic, code-first, multilingual (Indic + English) reasoni
      4. **Unknown generator:** any set whose generator model is unknown / not stated on the card is **out** (`excluded`).
    - **Record:** For every set in `licences/licence_table.md`, both the generator model and its licence are recorded.
 2. **Decontamination Gate (`sft/decontam_report.md`):**
-   - Every set is filtered through Team 9's `decontam_check.py` against `fingerprints/v2` (covering SWE-bench Verified/Live/Pro, Terminal-Bench 2, BFCL v3, HumanEval+, MBPP+, LiveCodeBench, Codeforces, AIME 2024/2025, GPQA Diamond, MMLU, MILU, FLORES-200, IN22, GSM8K) and recorded with its clean `set_sha256`.
+   - Every set that has converted chat rows is filtered through Team 9's `decontam_check.py` against `fingerprints/v2` and recorded with its clean `set_sha256`. The v2 set (`set_sha256` `2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a`) has 20 benchmarks, including SWE-bench Verified/Live/Pro, Terminal-Bench 2, BFCL v3, LiveCodeBench, Codeforces, AIME 2024/2025, GPQA Diamond, MMLU, MILU, FLORES-200, IN22, and GSM8K. It does not include HumanEval, HumanEval+, MBPP, or MBPP+.
 3. **ChatML `v0` & Loss Mask Gate (`chat-format/render.py`):**
    - Every sample renders deterministically with exact Team 3 token IDs (`<|im_start|>` `129994`, `<|im_end|>` `130816`, `<|endoftext|>` `130822`, `<|think|>` `130823`, `<|/think|>` `130824`, `<|tool_call|>` `130773`, `<|/tool_call|>` `130825`, `<|tool_result|>` `130774`, `<|/tool_result|>` `130826`).
    - **Loss masks** are `1` strictly on `assistant` turns (`<|think|>...<|/think|>`, `<|tool_call|>...<|/tool_call|>`, and final assistant reply) and `0` on `system`, `user`, and `tool` (`<|tool_result|>...<|/tool_result|>`) turns so the model never learns to hallucinate user prompts or untrusted tool outputs.
@@ -143,3 +143,19 @@ What this means for the 15%:
 - **`aya_collection` must be capped per subset.** Without a cap, Telugu news is two thirds of the Indic area. A cap of a few thousand rows per subset keeps the 12 subsets as task variety, not as the bulk.
 - **Proposed composition inside the 15%:** `aya_dataset` (all rows), `oasst-t` (all rows), `aya_collection` (capped per subset), `dolly-t` (10,541 rows after the context filter). All of them are short (effort `1k`), so the Indic share adds no long-reasoning data.
 - **Decontamination:** `oasst-t` was run on 6 Nov with fingerprints v2, full set: 9 of 19,909 rows flagged (`in22_conv`, `hle`) and removed, 0 canary, 19,900 kept. `dolly-t` was run on 9 Nov after the context filter: 0 of 10,541 flagged, 0 canary.
+
+## 8. Revision note (9 Nov): three more checks, and sets that are out
+
+The area shares stay **35 / 25 / 15 / 15 / 7 / 3**. Kept-row counts are not those shares.
+
+Added to `sft/decontam_report.md` on 9 Nov, same fingerprints, 0 canaries:
+
+| Set | Scope | Removed | Kept |
+|---|---|---:|---:|
+| `sft-code-commitpackft` | python split | 15 of 56,025 (0.03%) | 56,010 |
+| `sft-code-opencodereasoning-2` | first python shard; questions joined from TACO, APPS, and code_contests | 4,200 of 20,000 (21.00%) | 15,800 |
+| `sft-math-nemotron-proofs-v3-sft` | first of 10 parts; only rows that fit the 64k budget | 42 of 1,757 (2.39%) | 1,715 |
+
+The other 69 OpenCodeReasoning-2 python shards are outside the adapter. In the proofs part, 18,266 of 20,023 source rows were over 64k and were not converted, so they were not checked.
+
+`sft-safety-aegis-v1` has no assistant turn. `sft-safety-indicguard`, `sft-safety-nemotron-guard-v3`, `sft-safety-wildjailbreak`, `sft-safety-nemotron-sft-v2`, and `sft-code-self-oss-instruct` are `excluded`. So are `rl-community-alignment`, `rl-safety-hh-rlhf`, `rl-safety-alignment-faking`, and `rl-wildguardmix`. Until TSAI names an allowed safety set with chat rows, use the section 6 fallback: **0% Safety / 10% General**.
