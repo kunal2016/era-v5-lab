@@ -29,7 +29,9 @@ def make_run(root, docs, matches, status="complete"):
         "pack": [p for _, p, _, _ in docs], "split": [s for _, _, s, _ in docs],
         "part": [f"{p}/part-00000.parquet" for _, p, _, _ in docs],
         "row_in_part": [sum(1 for x in docs[:i] if x[1] == docs[i][1] and x[2] == docs[i][2]) for i in range(len(docs))],
-        "words": [w for *_, w in docs], "shingles": [max(w - 4, 1) for *_, w in docs]}), res / "overlap_docs.parquet")
+        # as in overlap.py: an empty key has no shingle; a key under 5 words is one shingle
+        "words": [w for *_, w in docs], "shingles": [0 if w == 0 else max(w - 4, 1) for *_, w in docs]}),
+        res / "overlap_docs.parquet")
     with (res / "overlap_matches.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["row_a", "row_b", "rule", "stage", "pack_a", "pack_b", "word_jaccard", "code_jaccard"])
@@ -186,6 +188,41 @@ def test_remove_list_matches_the_log(repo):
     rows = list(csv.DictReader((repo / "out/dedup/remove_list.csv").open(encoding="utf-8")))
     assert [(r["pack_id"], r["split"], r["doc_id"]) for r in rows] == [("en-a", "train", "b")]
     assert s["outputs"]["remove_list.csv"]["sha256"] == sha(repo / "out/dedup/remove_list.csv")
+
+
+def empty_rows(repo):
+    return list(csv.DictReader((repo / "out/dedup/empty_documents.csv").open(encoding="utf-8")))
+
+
+def test_empty_documents_are_set_aside_and_listed(repo):
+    # Three documents that cleaning emptied (0 words) share one H1 key across two packs, as in TSAI's 38-pack run;
+    # en-a has one real near-duplicate pair.
+    make_run(repo, [("e1", "code-java", "train", 0), ("e2", "code-java", "train", 0), ("e3", "code-js-ts", "train", 0),
+                    ("a", "en-a", "train", 100), ("b", "en-a", "train", 90)],
+             [(0, 1, "H1", 1.0, ""), (0, 2, "H1", 1.0, ""), (1, 2, "H1", 1.0, ""), (3, 4, "H2", 0.9, "")])
+    s, log = run(repo)
+    assert set(log) == {"b"}                              # only the real copy is removed
+    assert s["empty_documents"] == 3 and s["empty_document_matches_set_aside"] == 3 and s["matches_used"] == 1
+    assert s["clusters"] == 1 and s["removed_by_rule"] == {"H2": 1}
+    assert s["by_pack"]["code-java"]["removed"] == 0 and s["by_pack"]["code-js-ts"]["removed"] == 0
+    assert [(r["pack_id"], r["doc_id"]) for r in empty_rows(repo)] == [
+        ("code-java", "e1"), ("code-java", "e2"), ("code-js-ts", "e3")]
+    assert s["outputs"]["empty_documents.csv"]["sha256"] == sha(repo / "out/dedup/empty_documents.csv")
+
+
+def test_empty_train_copy_of_an_empty_heldout_document_is_not_removed(repo):
+    # Rule 0 would remove a train copy of a held-out document; empty documents are not copies, so nothing goes.
+    make_run(repo, [("t", "en-a", "train", 0), ("h", "en-a", "heldout", 0)], [(0, 1, "H1", 1.0, "")])
+    s, log = run(repo)
+    assert log == {} and s["heldout_removed"] == 0 and s["heldout_heldout_pairs_reported"] == 0
+    assert [(r["split"], r["doc_id"]) for r in empty_rows(repo)] == [("heldout", "h"), ("train", "t")]
+
+
+def test_run_without_empty_documents_lists_none(repo):
+    make_run(repo, [("a", "en-a", "train", 100), ("b", "en-a", "train", 90)], [(0, 1, "H2", 0.9, "")])
+    s, log = run(repo)
+    assert set(log) == {"b"} and s["empty_documents"] == 0 and s["empty_document_matches_set_aside"] == 0
+    assert empty_rows(repo) == []
 
 
 def test_checksum_mismatch_is_refused(repo):

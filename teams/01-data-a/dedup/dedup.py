@@ -5,6 +5,13 @@ checks their SHA-256 against the summary, joins the matches into duplicate clust
 per cluster with the rules of source_priority_v1.md. It never reads or rewrites document text: IDs, scores and counts only.
 TSAI filters the cleaned data with remove_list.csv (dedup_design_v1.md, "Pipeline and hand-off to TSAI").
 
+EMPTY DOCUMENTS
+===============
+A document with no shingles (overlap_docs.parquet "shingles" = 0) is empty after normalisation. All such documents share
+one H1 key, so overlap.py reports them as exact copies of each other, but they are not duplicates: cleaning emptied them
+without dropping them. Their matches are set aside before clustering, nothing is removed for them, and they are listed
+in empty_documents.csv for the cleaning team.
+
 THE RULES (source_priority_v1.md), applied in order to each cluster
 =====================================================================
   0  Held-out first   dedup never removes a held-out document. In a cluster with held-out copies, every held-out copy
@@ -41,8 +48,11 @@ WHAT IT WRITES (in out)
                            rule, similarity, priority_rule, stage, direct (false when the removed copy reached the
                            survivor only through other copies; similarity is then its strongest match in the cluster)
   heldout_duplicates.csv   held-out <-> held-out matches, reported to G3; nothing is removed for them
+  empty_documents.csv      documents with no shingles (pack_id, split, part, row_in_part, doc_id), for the cleaning
+                           team; nothing is removed for them
   dedup_summary.json       per pack: documents in, removed by H1 / H2 / cross-pack, documents out; totals; how often
-                           each rule decided; the harm check; the config; each output's size and sha256
+                           each rule decided; empty documents and the matches set aside for them; the harm check; the
+                           config; each output's size and sha256
 """
 import argparse, csv, hashlib, json, sys, time
 from collections import Counter, defaultdict
@@ -127,15 +137,17 @@ def read_matches(results, cross_pack):
 
 
 def read_docs(results, rows):
-    """Run-local row -> document fields, for the matched rows only."""
+    """Run-local row -> document fields for the matched rows, and every document with no shingles (empty)."""
     import pyarrow.parquet as pq
-    cols = ["row", "doc_id", "pack", "split", "part", "row_in_part", "words"]
+    cols = ["row", "doc_id", "pack", "split", "part", "row_in_part", "words", "shingles"]
     t = pq.read_table(results / "overlap_docs.parquet", columns=cols)
     data = {c: t.column(c).to_pylist() for c in cols}
-    docs = {}
+    docs, empty = {}, []
     for i, row in enumerate(data["row"]):
         if row in rows:
             docs[row] = {c: data[c][i] for c in cols}
+        if data["shingles"][i] == 0:
+            empty.append({c: data[c][i] for c in cols})
     missing = rows - docs.keys()
     if missing:
         raise Fatal(f"{len(missing)} matched rows are not in overlap_docs.parquet, e.g. {sorted(missing)[:3]}")
@@ -143,7 +155,7 @@ def read_docs(results, rows):
     ids_by_pack = defaultdict(set)
     for p, d in zip(data["pack"], data["doc_id"]):
         ids_by_pack[p].add(d)
-    return docs, per_pack, ids_by_pack
+    return docs, per_pack, ids_by_pack, empty
 
 
 def read_urls(inputs, docs):
@@ -258,7 +270,11 @@ def run(cfg):
     summary_in, checked = check_results(results)
     matches, dropped_cross = read_matches(results, cfg["cross_pack"])
     rows = {x for a, b, *_ in matches for x in (a, b)}
-    docs, per_pack, ids_by_pack = read_docs(results, rows)
+    docs, per_pack, ids_by_pack, empty = read_docs(results, rows)
+    empty_rows = {d["row"] for d in empty}
+    n_matches = len(matches)
+    matches = [m for m in matches if m[0] not in empty_rows and m[1] not in empty_rows]   # not duplicates: set aside
+    empty_matches = n_matches - len(matches)
     packs = sorted(per_pack)
     missing = sorted(set(packs) - set(cfg["pack_order"]))
     if missing:
@@ -323,6 +339,11 @@ def run(cfg):
         for a, b, rule, score in held_pairs:
             w.writerow([docs[a]["pack"], docs[a]["part"], docs[a]["doc_id"],
                         docs[b]["pack"], docs[b]["part"], docs[b]["doc_id"], rule, round(score, 6)])
+    with (out / "empty_documents.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["pack_id", "split", "part", "row_in_part", "doc_id"])
+        for d in sorted(empty, key=lambda d: (d["pack"], d["split"], d["part"], d["row_in_part"])):
+            w.writerow([d["pack"], d["split"], d["part"], d["row_in_part"], d["doc_id"]])
 
     by_pack = {p: Counter() for p in packs}
     for e in log:
@@ -337,7 +358,7 @@ def run(cfg):
                "documents_out": per_pack[p] - by_pack[p]["removed"]} for p in packs}
     harm = harm_check(cfg["gold_dirs"], ids_by_pack, {(e["removed_pack_id"], e["removed_id"]) for e in log})
     files = {f: {"bytes": (out / f).stat().st_size, "sha256": sha256_file(out / f)}
-             for f in ("remove_list.csv", "dedup_log.jsonl", "heldout_duplicates.csv")}
+             for f in ("remove_list.csv", "dedup_log.jsonl", "heldout_duplicates.csv", "empty_documents.csv")}
     summary = {
         "status": "complete",
         "config": cfg,
@@ -345,6 +366,8 @@ def run(cfg):
                         "checked_sha256": checked},
         "matches_used": len(matches),
         "cross_pack_matches_dropped": dropped_cross,
+        "empty_documents": len(empty),
+        "empty_document_matches_set_aside": empty_matches,
         "clusters": sum(decided.values()),
         "clusters_decided_by_rule": {str(k): v for k, v in sorted(decided.items())},
         "documents_all": sum(per_pack.values()),
@@ -380,12 +403,14 @@ def main(argv=None):
     print(f"clusters decided by priority rule: {s['clusters_decided_by_rule']}")
     print(f"held-out removed: {s['heldout_removed']} (must be 0); held-out <-> held-out pairs reported: "
           f"{s['heldout_heldout_pairs_reported']}")
+    print(f"empty documents: {s['empty_documents']} listed, not removed; {s['empty_document_matches_set_aside']} "
+          f"matches between them set aside")
     if s["rule_2_note"]:
         print(f"note: {s['rule_2_note']}")
     if s["licence_default_used_for"]:
         print(f"note: licence map not filled for {len(s['licence_default_used_for'])} packs; default used")
     print(f"harm check: {s['harm_check']['status']}")
-    print(f"wrote remove_list.csv, dedup_log.jsonl, heldout_duplicates.csv and dedup_summary.json to "
+    print(f"wrote remove_list.csv, dedup_log.jsonl, heldout_duplicates.csv, empty_documents.csv and dedup_summary.json to "
           f"{(REPO / s['config']['out']).relative_to(REPO)}")
     return 0
 

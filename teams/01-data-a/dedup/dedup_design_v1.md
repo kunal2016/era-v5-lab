@@ -86,8 +86,9 @@ raw sample ─▶ clean.py (TSAI, spec v1) ─▶ cleaned parts (doc_id, text, u
 | Step | Code | Status |
 |---|---|---|
 | Measure and qualify | `overlap.py`, `overlap_rules.py`, `h1_sha256.py`, `jaccard_matrix.py`, `overlap_report.py`, tests; config `overlap.json` (38 cleaned packs) | Done (Aneesha Das, Vijay Patil). Job `jobs/2026-11-04-overlap.md`, run by TSAI on 5 Nov |
-| Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, form clusters, apply `source_priority_v1.md`, write the remove list and log. A scope switch can turn the cross-pack pass off without rerunning the overlap job | To write |
-| Check | Harm check of the remove list against gold | With `dedup.py` |
+| Reviewed matrix | `overlap_report.py`, `confirm_matrix.py` → `dedup/overlap_matrix.csv` | Done (Aneesha Das, 10 Nov): byte-identical to TSAI's matrix; `matrix_confirmation.md` |
+| Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, set aside matches between empty documents, form clusters, apply `source_priority_v1.md`, write the remove list and log. A scope switch can turn the cross-pack pass off without rerunning the overlap job | Written (Kunal Sinha), with tests and `README_dedup.md`. Local run on TSAI's outputs (no urls): 1,345 removed. Job `jobs/2026-11-10-dedup.md` pending approval |
+| Check | Harm check of the remove list against gold | Built into `dedup.py`; `not_testable` on sample v0; to run on the diagnosis packs |
 
 **What TSAI receives:** this design and `source_priority_v1.md`; the code, configs, tests and test logs above; the reviewed overlap matrix (`dedup/overlap_matrix.csv`); and a job request for `dedup.py` on sample v0 ("which documents would v1 remove, per pack and stage, and does it remove any gold?"). After approval, TSAI filters the full cleaned data with the remove list, as it applies spec v1. Our code never rewrites the data, so every removal can be reversed from the log. This is not a cleaning job request.
 
@@ -97,14 +98,15 @@ For every removed document, one row in `dedup_log.jsonl`:
 
 | Field | Meaning |
 |---|---|
-| `removed_pack_id`, `removed_split`, `removed_part`, `removed_id` | The removed document; `removed_id` is its `doc_id`, unchanged |
-| `kept_pack_id`, `kept_split`, `kept_part`, `kept_id` | The surviving copy it duplicated |
+| `removed_pack_id`, `removed_split`, `removed_part`, `removed_row_in_part`, `removed_id` | The removed document; `removed_id` is its `doc_id`, unchanged |
+| `kept_pack_id`, `kept_split`, `kept_part`, `kept_row_in_part`, `kept_id` | The surviving copy it duplicated (empty when no copy could survive) |
 | `rule` | `H1` or `H2` |
 | `similarity` | 1.0 for H1; exact Jaccard for H2 (token Jaccard for code) |
 | `priority_rule` | The `source_priority_v1.md` rule that chose the survivor (0–4) |
-| `stage` | `within_pack` or `cross_pack` |
+| `stage` | `within_pack`, `cross_pack`, or `none` when no copy could survive |
+| `direct` | `false` when the removed copy reached the survivor only through other copies |
 
-Plus `remove_list.csv` (`pack_id, split, part, doc_id`: what TSAI filters out), a list of held-out ↔ held-out duplicates for G3, and a summary per pack: documents in, removed by H1, removed by H2, removed cross-pack, documents out.
+Plus `remove_list.csv` (`pack_id, split, part, row_in_part, doc_id`: what TSAI filters out), a list of held-out ↔ held-out duplicates for G3, a list of empty documents for the cleaning team (`empty_documents.csv`; nothing is removed for them), and a summary per pack: documents in, removed by H1, removed by H2, removed cross-pack, documents out.
 
 **A document is identified by `(pack_id, split, part, doc_id)`, never by `doc_id` alone.** `doc_id` hashes the original text, so exact copies in different parts or packs share it, and `removed_id` can equal `kept_id`.
 
@@ -122,9 +124,9 @@ Plus `remove_list.csv` (`pack_id, split, part, doc_id`: what TSAI filters out), 
 
 The full numbers, per pack and per run, are in **`results_v1.md`**. This section lists only what the decisions rest on. Final measurements come from TSAI's run of `overlap.py` (commit `86ecdd4`) on the 38 cleaned sample v0 packs, 5 Nov 2026 (`jobs/results/2026-11-04-overlap/`). Document removal counts come from `dedup.py`.
 
-- **Scale:** 1,416,236 documents in 56 minutes with a 9.8 GB peak, within the requested 60 minutes and 32 GiB, so exact all-pairs scoring fits (Risk 4).
-- **Duplicates are rare:** 98 H1 pairs and 2,613 H2 pairs.
-- **Cross-pack overlap is small:** 50 of the 2,711 qualifying pairs are cross-pack. This answers E2: the cross-pack pass cannot cause a measurable FineWeb effect, so v1 applies it and no training ablation is needed.
+- **Scale:** 1,416,236 documents in 56 minutes with a 9.6 GiB peak, within the requested 60 minutes and 32 GiB, so exact all-pairs scoring fits (Risk 4).
+- **Duplicates are rare:** 98 H1 pairs and 2,613 H2 pairs. 21 of the H1 pairs are between 7 documents that cleaning emptied without dropping (1 `code-cpp`, 4 `code-java`, 2 `code-js-ts`); they share one H1 key but are not copies, so `dedup.py` sets them aside and lists them for the cleaning team. On the sample, `dedup.py` removes 1,345 documents (0.095%).
+- **Cross-pack overlap is small:** 50 of the 2,711 qualifying pairs are cross-pack, 14 of them between the empty documents. This answers E2: the cross-pack pass cannot cause a measurable FineWeb effect, so v1 applies it and no training ablation is needed.
 - **Held-out copies exist:** 63 qualifying pairs join a train and a held-out document, so rule 0 matters.
 - **Concentration:** most near duplicates are in `cadj-commits`, `cadj-stackexchange` and `ind-hi-sangraha-s`; English packs have very few.
 - **Two signals for the hand review** (`results_v1.md`, section 1): the code token pass finds many pairs that word scores miss (`code-rust`: 3 pairs ≥ 0.80 by words, 530 qualifying), and the 50-word minimum removes almost every pair in three Indic `sangraha-s` packs, which is where E4 starts.
@@ -144,8 +146,8 @@ Findings from local test runs on raw sample v0 parts (details in `results_v1.md`
 
 ## Open items before the final (Fri 13 Nov)
 
-- **`dedup.py`:** write it, with tests and a job request. Who writes it: Task 4 or Task 5?
-- **`overlap_docs.parquet`** (34 MB, not in the repo): request it from TSAI in G1. `dedup.py`, the reviewed matrix (`overlap_report.py`) and the harm check need it.
+- **`dedup.py` TSAI run:** approve `jobs/2026-11-10-dedup.md`; TSAI runs it with the cleaned parts, so rule 2 (url) applies.
+- **Licence map** (`source_priority_v1.md`, rule 1): fill `licence_usable` in `dedup.json` from G10's licence table before the TSAI run.
 - **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates.
 - **E4:** the Indic threshold check.
 - **Harm check** on the diagnosis packs.
@@ -169,3 +171,5 @@ It covers this file and `source_priority_v1.md`. The body states the decisions; 
 | 5 Nov 2026 | Location: code and design in `teams/01-data-a/dedup/`, job requests in `teams/01-data-a/jobs/` | TSAI | PR #255, point 6 |
 | 10 Nov 2026 | The 25 Data B packs, which `clean.py` does not list, follow the Data A packs in alphabetical order. It affects 23 of the 50 cross-pack pairs. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov | Data A team; approved by TSAI | `source_priority_v1.md`, rule 4; TSAI in G1 |
 | 10 Nov 2026 | Cross-pack pass applied in v1 (E2 answered: 50 of 2,711 qualifying pairs are cross-pack); no training ablation for v1 | Data A team | `results_v1.md`, section 1 |
+| 10 Nov 2026 | Reviewed source matrix: `dedup/overlap_matrix.csv` is TSAI's returned matrix, unchanged; rebuilt byte-identically with and without `overlap_docs.parquet` and with `overlap_report.py --results` | Aneesha Das (Data A) | `matrix_confirmation.md`; PR #255 |
+| 10 Nov 2026 | Empty documents (no shingles) are not duplicates: `dedup.py` sets aside their matches, removes none of them and lists them in `empty_documents.csv` for the cleaning team. On the sample: 7 documents, 21 matches; 1,345 removed instead of 1,351 | Proposed by Aneesha Das; to confirm with the Data A team | `dedup.py`, `README_dedup.md`, `jobs/2026-11-10-dedup.md` |

@@ -62,9 +62,16 @@ Applied to each cluster in order; each breaks the ties left by the one above (`s
 | `remove_list.csv` | What TSAI filters out: `pack_id, split, part, row_in_part, doc_id` |
 | `dedup_log.jsonl` | One row per removed document: the removed and kept copies, `rule` (H1/H2), `similarity`, `priority_rule` (0–4), `stage` (`within_pack`, `cross_pack`, or `none` when no copy could survive), and `direct` (`false` when the copy reached the survivor only through other copies) |
 | `heldout_duplicates.csv` | Held-out ↔ held-out matches, for G3 |
-| `dedup_summary.json` | Per pack: documents in, removed by H1 / H2 / cross-pack, documents out; totals; how often each rule decided; the harm check; the config; each output's size and SHA-256 |
+| `empty_documents.csv` | Documents with no shingles, for the cleaning team: `pack_id, split, part, row_in_part, doc_id`. Nothing is removed for them |
+| `dedup_summary.json` | Per pack: documents in, removed by H1 / H2 / cross-pack, documents out; totals; how often each rule decided; the number of empty documents and of matches set aside for them; the harm check; the config; each output's size and SHA-256 |
 
 A document is always identified by `(pack_id, split, part, row_in_part)` and its `doc_id`, never by `doc_id` alone: exact copies in different packs share a `doc_id`.
+
+## Empty documents
+
+A document with no shingles (`overlap_docs.parquet` column `shingles` = 0) is empty after normalisation. All such documents share one H1 key, so `overlap.py` reports them as exact copies of each other. They are not duplicates: cleaning emptied them without dropping them. `dedup.py` therefore sets their matches aside before forming clusters, removes none of them, and lists them in `empty_documents.csv`.
+
+TSAI's 38-pack run has 7 such documents in `code-cpp`, `code-java` and `code-js-ts` (21 of its 98 H1 pairs; see `matrix_confirmation.md`). Whether they should be dropped is a cleaning decision, not a dedup one.
 
 ## Harm check
 
@@ -82,4 +89,4 @@ The same inputs and config give byte-identical outputs on any system (checked on
 
 ## Results so far
 
-On TSAI's 38-pack run of 5 Nov 2026 (1,416,236 documents), without urls: 1,351 documents removed (0.095%), 0 held-out removed, 63 train copies removed by rule 0. Details in `results_v1.md`.
+On TSAI's 38-pack run of 5 Nov 2026 (1,416,236 documents), without urls: 1,345 documents removed (0.095%: 1,289 H2, 56 H1; 1,309 within a pack, 36 across packs), 0 held-out removed, 63 train copies removed by rule 0. The 7 empty documents are listed in `empty_documents.csv`, not removed; before they were set aside, 1,351 documents were removed, 6 of them empty. Details in `results_v1.md`.
