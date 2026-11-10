@@ -345,3 +345,18 @@ def test_merge_refuses_parts_from_different_tools_or_with_a_failure(tmp_path, to
     rc = dict(ra, tools={"files": {}, "git_commit": "other"})
     with pytest.raises(run.RunError, match="different tools"):
         run.merge_records("ac", [ra, rc])
+
+
+def test_pipeline_starts_only_files_the_downloader_marked_complete(tmp_path, monkeypatch):
+    import decontam_pipeline as dp
+
+    monkeypatch.setenv("G10_LOCAL_ROOT", str(tmp_path))
+    f = tmp_path / "org" / "repo" / "data" / "a.jsonl"
+    f.parent.mkdir(parents=True)
+    f.write_text("{}\n")
+    unit = {"dataset": "org/repo", "file": "data/a.jsonl"}
+    assert not dp.local_ready(unit)  # still downloading: no marker
+    Path(str(f) + ".ok").write_text("")
+    assert dp.local_ready(unit)
+    dp.delete_local_source(unit)
+    assert not f.exists() and not Path(str(f) + ".ok").exists()

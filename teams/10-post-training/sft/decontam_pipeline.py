@@ -51,20 +51,38 @@ def hub_sizes(dataset):
             time.sleep(5 * (attempt + 1))
 
 
-def plan_units(set_id, limit_units=None):
+def plan_units(set_id, limit_units=None, from_hub=False):
     meta = convert.licence_row(set_id)
     kind, spec = convert.ADAPTERS[set_id][2]
     if kind != "file":
         raise SystemExit(f"{set_id}: only sets read from Hub files can run here (source kind '{kind}')")
-    names = convert.expand_paths(meta["source"], spec)
     sizes = hub_sizes(meta["source"])
-    units = [{"set": set_id, "idx": i, "file": n, "bytes": sizes.get(n, 0), "base": i * STRIDE}
+    if from_hub and spec.startswith("glob:"):  # files are still arriving: list them from the Hub, not from the folder
+        prefix, _, suffix = spec[5:].partition("*")
+        names = sorted(n for n in sizes if n.startswith(prefix) and n.endswith(suffix or (".parquet", ".jsonl")))
+    else:
+        names = convert.expand_paths(meta["source"], spec)
+    units = [{"set": set_id, "dataset": meta["source"], "idx": i, "file": n, "bytes": sizes.get(n, 0), "base": i * STRIDE}
              for i, n in enumerate(names)]
     return units[:limit_units] if limit_units else units, len(names)
 
 
 def gb(n):
     return f"{n / 1e9:,.2f}"
+
+
+def local_ready(u):
+    """True when the unit's file is in the local copy (G10_LOCAL_ROOT) and the downloader marked it complete (`<file>.ok`,
+    written after the Hub sha256 matched). A file that is still downloading has no marker, so it is never read half-way."""
+    path = convert.local_path(u["dataset"], u["file"])
+    return path is not None and path.is_file() and Path(str(path) + ".ok").exists()
+
+
+def delete_local_source(u):
+    """Remove the unit's source file and marker once its converter has read all of it (frees the disk for the next file)."""
+    path = convert.local_path(u["dataset"], u["file"])
+    for f in (path, Path(str(path) + ".ok")) if path is not None else ():
+        f.unlink(missing_ok=True)
 
 
 class Pipeline:
@@ -99,7 +117,7 @@ class Pipeline:
     # --- planning ----------------------------------------------------------------------------
     def plan(self):
         for s in self.a.sets:
-            units, n = plan_units(s, self.a.limit_units)
+            units, n = plan_units(s, self.a.limit_units, from_hub=self.a.wait_ready)
             self.units += units
             self.n_files[s] = n
             self.log(f"plan {s}: {len(units)} units, {gb(sum(u['bytes'] for u in units))} GB of source files")
@@ -107,6 +125,13 @@ class Pipeline:
         self.units.sort(key=lambda u: -u["bytes"])
         for u in self.units:
             u.update(status="pending", proc=None, parts=0, manifest=None, rows=0, bytes_read=0)
+        if self.a.resume:  # a unit whose converter finished (it wrote its manifest) is not converted again
+            for u in self.units:
+                manifest = Path(f"{self.unit_paths(u)[0]}.manifest.json")
+                if manifest.is_file():
+                    m = json.loads(manifest.read_text(encoding="utf-8"))
+                    u.update(status="done", manifest=m, rows=m["rows"], bytes_read=u["bytes"], started=time.time(), resumed=True)
+                    self.log(f"resume: unit u{u['idx']:03d} of {u['set']} was converted before ({m['rows']:,} rows, {len(m['parts'])} parts)")
 
     # --- units (download + render) -----------------------------------------------------------
     def unit_paths(self, u):
@@ -144,6 +169,9 @@ class Pipeline:
                 self.log(f"unit done {u['set']} u{u['idx']:03d}: rows {u['manifest']['rows']:,} of "
                          f"{u['manifest']['rows_in']:,} selected, skipped {sum(u['manifest']['skipped'].values()):,}, "
                          f"{time.time() - u['started']:.0f}s")
+                if self.a.delete_source:
+                    delete_local_source(u)
+                    self.log(f"source deleted {u['set']} u{u['idx']:03d} {u['file']}")
                 return
             except (OSError, ValueError) as e:
                 self.log(f"unit ERROR {u['set']} u{u['idx']:03d}: no manifest ({e})")
@@ -152,25 +180,49 @@ class Pipeline:
         self.log(f"unit FAILED {u['set']} u{u['idx']:03d} rc {rc}")
 
     # --- parts (decontam) --------------------------------------------------------------------
+    def _add_part(self, u, p, done=False):
+        self.seen_parts.add(p)
+        u["parts"] += 1
+        t = {"set": u["set"], "unit": u, "part": p, "bytes": p.stat().st_size if p.exists() else 0, "proc": None,
+             "id": f"{u['set']}.{p.name[:-len('.jsonl')].replace('.part', '.p')}", "status": "ready"}
+        self.tasks.append(t)
+        if done:  # checked before the restart: its record is already written
+            r = json.loads(self.record_path(t).read_text(encoding="utf-8"))
+            t["status"], t["rec"] = "done", {k: r[k] for k in ("rows_in", "rows_flagged", "rows_canary", "rows_kept")}
+            p.unlink(missing_ok=True)
+            self.log(f"resume: part {t['id']} was checked before (flagged {r['rows_flagged']:,}, kept {r['rows_kept']:,})")
+        else:
+            self.ready.append(t)
+            self.rendered_bytes += t["bytes"]
+
     def discover_parts(self):
         for u in self.units:
             if u["status"] not in ("running", "done"):
                 continue
             prefix, _ = self.unit_paths(u)
+            if u.get("resumed"):  # the manifest lists the parts the converter wrote
+                for name in u["manifest"]["parts"]:
+                    p = prefix.parent / name
+                    if p in self.seen_parts:
+                        continue
+                    rec = self.work / "shards" / u["set"] / f"{u['set']}.{name[:-len('.jsonl')].replace('.part', '.p')}.record.json"
+                    if rec.is_file() or p.exists():
+                        self._add_part(u, p, done=rec.is_file())
+                    else:
+                        self.failed_sets[u["set"]] = f"resume: part {name} has neither input nor record"
+                        self.log(f"SET FAILED {u['set']}: part {name} has neither input nor record")
+                        self.seen_parts.add(p)
+                continue
             for p in sorted(prefix.parent.glob(f"{prefix.name}.part*.jsonl")):
                 if p not in self.seen_parts:
-                    self.seen_parts.add(p)
-                    u["parts"] += 1
-                    t = {"set": u["set"], "unit": u, "part": p, "bytes": p.stat().st_size, "proc": None,
-                         "id": p.name[:-len(".jsonl")].replace(".part", ".p"), "status": "ready"}
-                    t["id"] = f"{u['set']}.{t['id']}"
-                    self.tasks.append(t)
-                    self.ready.append(t)
-                    self.rendered_bytes += t["bytes"]
+                    self._add_part(u, p)
 
     def start_task(self, t):
         out = self.work / "shards" / t["set"]
         out.mkdir(parents=True, exist_ok=True)
+        if self.a.resume:  # a part that was running when the run stopped starts over
+            for stale in out.glob(f"{t['id']}.*"):
+                stale.unlink(missing_ok=True)
         cmd = [sys.executable, str(HERE / "decontam_run.py"), "--set", t["id"], "--input", str(t["part"]),
                "--out-dir", str(out), "--drop-clean"]
         logf = open(self.work / "logs" / f"{t['id']}.log", "w")
@@ -320,6 +372,8 @@ class Pipeline:
                         u["proc"].send_signal(signal.SIGCONT)
                         u["stopped"] = False
             pending = [u for u in self.units if u["status"] == "pending" and u["set"] not in self.failed_sets]
+            if self.a.wait_ready:  # files still downloading are not started
+                pending = [u for u in pending if local_ready(u)]
             if pending and running_u < cap:
                 free = self.free_gb()
                 if free < self.a.min_free_gb or backlog > self.a.max_backlog_gb:
@@ -341,7 +395,7 @@ class Pipeline:
                 self.status()
                 self.last_status = time.time()
             busy = (any(u["status"] == "running" for u in self.units) or any(t["status"] == "running" for t in self.tasks)
-                    or self.ready or any(u["status"] == "pending" and u["set"] not in self.failed_sets for u in self.units))
+                    or self.ready or any(u["status"] == "pending" and u["set"] not in self.failed_sets for u in self.units))  # not-ready files count as busy
             if not busy:
                 break
             time.sleep(1)
@@ -362,6 +416,11 @@ def main(argv=None):
     ap.add_argument("--min-free-gb", type=float, default=20, help="stop starting downloads below this free space")
     ap.add_argument("--throttle", action="store_true", help="pause running converters while the backlog or disk limit is hit (local sources)")
     ap.add_argument("--max-backlog-gb", type=float, default=25, help="stop starting downloads when this much is queued")
+    ap.add_argument("--wait-ready", action="store_true",
+                    help="start a file only when the downloader has marked it complete (`<file>.ok`); lets the run start while the download is going")
+    ap.add_argument("--resume", action="store_true",
+                    help="continue a stopped run in the same --work folder: converted files and checked parts are not redone")
+    ap.add_argument("--delete-source", action="store_true", help="delete a local source file once its converter has read all of it")
     ap.add_argument("--limit-units", type=int, help="TEST: only the first N files of each set")
     ap.add_argument("--limit-rows", type=int, help="TEST: only this many selected rows per file")
     a = ap.parse_args(argv)
