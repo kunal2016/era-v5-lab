@@ -6,12 +6,17 @@
 
 ## Result
 
-- **Confirmed.** The source-by-source matrix rebuilt from TSAI's `overlap_matches.csv` is **byte-identical** to the
-  returned `overlap_matrix.csv` and `overlap_matrix_counts.csv`. **20 of 20 checks passed.**
-- Every returned output's SHA-256 and size equal the values the run recorded in `overlap_summary.json`.
-- **One caveat for the reviewed matrix:** 8 cells (code-cpp, code-java, code-js-ts) are inflated by a group of 7 empty
-  documents that match each other. The cells are correct for what `overlap.py` measures, but these are not real
-  duplicates (see "The empty-document group").
+- **Confirmed, three ways.** The source-by-source matrix rebuilt from TSAI's `overlap_matches.csv` is
+  **byte-identical** to the returned `overlap_matrix.csv` and `overlap_matrix_counts.csv`:
+  - with the row → pack map rebuilt from the part order in the summary: **20 of 20 checks passed**;
+  - with the map read from TSAI's `overlap_docs.parquet` (`--docs`): **22 of 22 checks passed**;
+  - with the job request's own command, `overlap_report.py --results`: both files byte-identical.
+- All 9 of the run's outputs, including `overlap_docs.parquet` and `overlap_pairs.csv`, equal the SHA-256 and size the
+  run recorded in `overlap_summary.json`.
+- The map rebuilt from the part order equals `overlap_docs.parquet` on **all 1,416,236 rows** (pack and split).
+- **One caveat for the reviewed matrix:** 8 cells (code-cpp, code-java, code-js-ts) are inflated by 7 documents that
+  are empty after normalisation (0 words, 0 shingles in `overlap_docs.parquet`) and therefore match each other. The
+  cells are correct for what `overlap.py` measures, but these are not real duplicates (see "The empty-document group").
 
 ## What the matrix is
 
@@ -34,9 +39,12 @@ Downloaded on 10 Nov 2026 from `aneeshads/era-v5-lab`, branch `main`,
 | `overlap_by_pack.csv` | 238,212 | `1a1b409c122d57083a87ade36a534a7483a0d1e76f74e58a0ecf0db0e03b0a89` | yes |
 | `overlap_histogram.csv` | 1,694 | `e2558a34aa961528a4f6e945afc987b5dc8839b3b3f220cd512a59dfa2be342b` | yes |
 | `overlap_summary.json` | 272,880 | `a1dec3f4e07153f02979ad92dc017c8c2a3df6458d9f8064817915b0d0b30cb0` | not recorded by the run |
+| `overlap_docs.parquet` | 34,454,169 | `15ed5627f10fe220623275331eeb0701186f57c4c694a1496f736f0593d67c9c` | yes |
+| `overlap_pairs.csv` | 6,739,846 | `699f2a87bd5f90f4b2d8110c6e0f8b49405f9ccdf363336acc9ace3696230f60` | yes |
 
-Not returned by TSAI (sizes from the summary): `overlap_docs.parquet` (34,454,169 bytes), `overlap_pairs.csv`
-(6,739,846 bytes), `overlap_matrix.npz` (4,407,894 bytes).
+`overlap_docs.parquet` and `overlap_pairs.csv` are too large for the repository. They were received separately on
+10 Nov 2026, placed in `out/overlap_tsai/` and accepted only because their SHA-256 and size equal the summary's.
+`overlap_matrix.npz` (4,407,894 bytes) was not needed.
 
 The run itself: 1,416,236 documents in 38 packs and 86 parts (48 train, 38 held-out); 2,711 qualifying pairs
 (98 H1, 2,613 H2; 2,661 within a pack, 50 across packs); 7 empty documents.
@@ -52,7 +60,7 @@ for f in overlap_summary.json overlap_matches.csv overlap_matrix.csv overlap_mat
 cd ../..
 ```
 
-**2. Run the confirmation:**
+**2. Run the confirmation with the map rebuilt from the part order:**
 
 ```sh
 python3 teams/01-data-a/dedup/confirm_matrix.py --results out/overlap_tsai
@@ -73,22 +81,57 @@ uses `overlap_report.write_matrix`, the same function `overlap.py` used to write
 
 Run on macOS (arm64), Python 3.12.10: 0.46 s, peak memory 228 MiB (239,271,936 bytes). Exit 0.
 
-**Row → pack map.** `overlap_report.py --results` reads this map from `overlap_docs.parquet`, which TSAI did not
-return. `overlap.py` numbers documents 0 to N−1 in the order it reads the parts, and that order is the part list in
-`overlap_summary.json` (`inputs.parts`), so the map was rebuilt from that list. It was accepted only because:
+**Row → pack map.** `overlap_report.py --results` reads this map from `overlap_docs.parquet`, which TSAI did not put in
+the repository. `overlap.py` numbers documents 0 to N−1 in the order it reads the parts, and that order is the part
+list in `overlap_summary.json` (`inputs.parts`), so step 2 rebuilds the map from that list. It is accepted only because:
 - the 86 parts add up to 1,416,236 documents, equal to `documents_all`;
 - the per-pack train and held-out counts from the parts equal the summary's, which `overlap.py` counted from each row's
   `pack_id` (38 packs × 2 splits);
 - all 2,436 distinct rows in the 2,711 matches fall in the pack `overlap_matches.csv` names for them (0 mismatches).
 
-When `overlap_docs.parquet` arrives, rerun with it. The parquet's SHA-256 is then checked as well, and the result should
-be byte-identical again:
+Step 5 then compared this rebuilt map with `overlap_docs.parquet` row by row: it is exact.
+
+**3. Run the confirmation with `overlap_docs.parquet`** (after placing it in `out/overlap_tsai/`):
 
 ```sh
 python3 teams/01-data-a/dedup/confirm_matrix.py --results out/overlap_tsai --docs out/overlap_tsai/overlap_docs.parquet
 ```
 
-## Checks (20 of 20 passed)
+The map is read from the parquet after its SHA-256 is checked against the summary. 22 of 22 checks passed; 3.80 s, peak
+memory 634 MiB (665,042,944 bytes). Exit 0.
+
+**4. Run the job request's own command** (`jobs/2026-11-04-overlap.md`) and compare its output with TSAI's files:
+
+```sh
+python3 teams/01-data-a/dedup/overlap_report.py --results out/overlap_tsai
+cmp out/overlap_returned/overlap_matrix.csv out/overlap_tsai/overlap_matrix.csv
+cmp out/overlap_returned/overlap_matrix_counts.csv out/overlap_tsai/overlap_matrix_counts.csv
+```
+
+`overlap_report.py` checked the summary's status and the SHA-256 of `overlap_docs.parquet` and `overlap_matches.csv`, and
+wrote `out/overlap_returned/`. Exit 0; both `cmp` commands found no difference (SHA-256 `2a049f18…7295bd` and
+`cef888f8…60b523`).
+
+**5. Read `overlap_docs.parquet` directly** to list the documents with no shingles and to compare the step-2 map with it
+for every row:
+
+```sh
+python3 -c "import pyarrow.parquet as pq; [print(d) for d in pq.read_table('out/overlap_tsai/overlap_docs.parquet', columns=['row','pack','split','part','doc_id','words','shingles']).to_pylist() if d['shingles'] == 0]"
+python3 -c "import json, pyarrow.parquet as pq; t=pq.read_table('out/overlap_tsai/overlap_docs.parquet', columns=['pack','split']).to_pydict(); s=json.load(open('out/overlap_tsai/overlap_summary.json')); m=[(p['part'].split('/')[1], p['part'].split('/')[0]) for p in s['inputs']['parts'] for _ in range(p['documents'])]; print(len(m), len(t['pack']), sum(a != (b, c) for a, b, c in zip(m, t['pack'], t['split'])))"
+```
+
+The second command prints `1416236 1416236 0`: rows in the rebuilt map, rows in the parquet, rows that differ.
+
+Results:
+- the parquet has 1,416,236 rows, numbered 0 to N−1 in order;
+- **exactly 7 documents have 0 words and 0 shingles**, the same 7 rows as the H1 group of 7 (see "The empty-document
+  group");
+- the map rebuilt from the part order differs from the parquet on **0 of 1,416,236 rows** for the pack and **0** for
+  the split, and every row's part path equals the summary's part.
+
+## Checks
+
+### Map rebuilt from the part order (step 2): 20 of 20 passed
 
 | # | Check | Result | Detail |
 |---:|---|---|---|
@@ -112,6 +155,19 @@ python3 teams/01-data-a/dedup/confirm_matrix.py --results out/overlap_tsai --doc
 | 18 | Every denominator equals its pack's document count | PASS | 0 differ |
 | 19 | Every share equals matched ÷ total (10 decimals) | PASS | 0 differ |
 | 20 | The empty documents form exactly one H1 group | PASS | 7 empty documents, 1 group of 7 |
+
+### Map read from `overlap_docs.parquet` (step 3): 22 of 22 passed
+
+The same checks, except that checks 8 and 9 (the part list) are replaced by checks on the parquet, and the two large
+files are hashed as well:
+
+| Check | Result | Detail |
+|---|---|---|
+| `overlap_pairs.csv` SHA-256 and size equal the summary | PASS | 6,739,846 bytes |
+| `overlap_docs.parquet` SHA-256 and size equal the summary | PASS | 34,454,169 bytes |
+| `overlap_docs.parquet` SHA-256 equals the summary (before its map is used) | PASS | `15ed5627…593d67c9c` |
+| `overlap_docs.parquet` has one entry per document | PASS | 1,416,236 rows |
+| The other 18 checks (1–7, 10–20 above) | PASS | same details as above, including both byte-identical rebuilds |
 
 ## What the matrix shows
 
@@ -202,18 +258,22 @@ Matched documents of A with a copy in B, and the share of A; then the same for B
 
 ## The empty-document group
 
-The summary reports 7 empty documents (no word 5-gram after normalisation). Empty documents all have the same H1 key, so
-they always form one complete H1 group. Exactly one H1 group has 7 members:
+The summary reports 7 empty documents (no word left after normalisation). Empty documents all have the same H1 key, so
+they always form one complete H1 group. Exactly one H1 group has 7 members, and `overlap_docs.parquet` confirms that
+these 7 rows, and no others, have 0 words and 0 shingles:
 
-| Row | Pack | Split |
-|---:|---|---|
-| 173629 | `code-cpp` | train |
-| 305920 | `code-java` | train |
-| 309041 | `code-java` | train |
-| 331691 | `code-java` | train |
-| 347544 | `code-java` | train |
-| 360063 | `code-js-ts` | train |
-| 404794 | `code-js-ts` | train |
+| Row | Pack | Split | Part | Row in part | `doc_id` | Words | Shingles |
+|---:|---|---|---|---:|---|---:|---:|
+| 173629 | `code-cpp` | train | `code-cpp/part-00001.parquet` | 1,499 | `79fa36f8339f9ebd` | 0 | 0 |
+| 305920 | `code-java` | train | `code-java/part-00000.parquet` | 42,665 | `d5d0b4192775579c` | 0 | 0 |
+| 309041 | `code-java` | train | `code-java/part-00000.parquet` | 45,786 | `4a67489226159c57` | 0 | 0 |
+| 331691 | `code-java` | train | `code-java/part-00001.parquet` | 5,993 | `8a07c8e5f95eee27` | 0 | 0 |
+| 347544 | `code-java` | train | `code-java/part-00001.parquet` | 21,846 | `91f4b8de1c11bf4b` | 0 | 0 |
+| 360063 | `code-js-ts` | train | `code-js-ts/part-00000.parquet` | 12,129 | `a2ffa5d828d9e9ab` | 0 | 0 |
+| 404794 | `code-js-ts` | train | `code-js-ts/part-00000.parquet` | 56,860 | `fff1410ec5527f29` | 0 | 0 |
+
+`doc_id` is set before cleaning and never changed, so these IDs find each document's raw text in sample v0, to see which
+cleaning rule emptied it.
 
 They make **21 of the 98 H1 pairs** and **14 of the 50 cross-pack pairs**. These are files that cleaning emptied but did
 not drop, not real duplicates. Without the pairs inside the group, 8 cells change:
@@ -274,8 +334,6 @@ Each test then changes one thing and checks that the script reacts correctly.
 
 ## Limits
 
-- The row → pack map was rebuilt from the part order, not read from `overlap_docs.parquet` (see "Row → pack map").
-  Rerun with `--docs` once TSAI provides the file.
 - This confirms that the matrix follows exactly from the qualifying matches. It does not check whether each match is a
   true duplicate; that is the hand review (prose, code, `cadj-commits`) and E4.
 - `overlap.py` does not record the summary's own SHA-256. The returned summary and `run.log` were edited after the run
@@ -289,8 +347,11 @@ Each test then changes one thing and checks that the script reacts correctly.
    ```sh
    cp out/matrix_confirmation/rebuilt/overlap_matrix.csv teams/01-data-a/dedup/overlap_matrix.csv
    ```
-2. Add a row to the decision log in `dedup_design_v1.md`: matrix confirmed on 10 Nov 2026, with the empty-document note.
-3. Rerun with `--docs` when `overlap_docs.parquet` is available.
+2. **Done:** the confirmation was rerun with `overlap_docs.parquet` (22 of 22) and with `overlap_report.py --results`
+   (byte-identical), and the 7 empty documents were identified by `doc_id`.
+3. Add a row to the decision log in `dedup_design_v1.md`: matrix confirmed on 10 Nov 2026, with the empty-document note.
+4. Find which cleaning rule emptied the 7 documents (raw text by `doc_id`), and have `dedup.py` leave documents with no
+   shingles out of duplicate groups.
 
 ## Files
 
@@ -300,7 +361,8 @@ Each test then changes one thing and checks that the script reacts correctly.
 | `teams/01-data-a/dedup/tests/test_confirm_matrix.py` | Its tests: 11 cases on made-up runs (see "Tests") | yes (new) |
 | `teams/01-data-a/dedup/matrix_confirmation.md` | This report | yes (new) |
 | `teams/01-data-a/dedup/overlap_matrix.csv` | The reviewed matrix, byte-identical to TSAI's | yes (new) |
-| `out/overlap_tsai/` | TSAI's returned files, as downloaded | no (`out/` is ignored) |
+| `out/overlap_tsai/` | TSAI's returned files, plus `overlap_docs.parquet` and `overlap_pairs.csv` | no (`out/` is ignored) |
+| `out/overlap_returned/` | The matrix written by `overlap_report.py --results` | no |
 | `out/matrix_confirmation/confirmation.json` | Every check and number above | no |
 | `out/matrix_confirmation/rebuilt/` | The rebuilt matrix files | no |
 | `out/matrix_confirmation/without_empty_documents/` | The matrix without the empty-document group | no |
