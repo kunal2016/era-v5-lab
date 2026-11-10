@@ -883,6 +883,8 @@ def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dic
     if local is not None and local.is_file():
         yield from _local_file_rows(local, offset, n)
         return
+    if path.endswith(".json"):  # one JSON array, not lines (xLAM 60k is also gated): it is read from a local copy
+        raise SystemExit(f"{dataset}/{path} is a single JSON array: download it and set G10_LOCAL_ROOT to the folder that holds it")
     if path.endswith(".parquet"):
         import pyarrow.parquet as pq
 

@@ -585,3 +585,9 @@ def test_xlam_json_array_is_read_from_a_local_copy(tmp_path):
 
 def test_commitpackft_reads_every_language_file_so_the_pipeline_can_run_it():
     assert convert.ADAPTERS["sft-code-commitpackft"][2] == ("file", "glob:data/*/data.jsonl")
+
+
+def test_a_json_array_file_needs_a_local_copy(tmp_path, monkeypatch):
+    monkeypatch.setenv("G10_LOCAL_ROOT", str(tmp_path))
+    with pytest.raises(SystemExit, match="G10_LOCAL_ROOT"):
+        list(convert._one_file_rows("org/repo", "x.json", 0, 5))
