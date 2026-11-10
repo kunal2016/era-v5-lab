@@ -32,6 +32,7 @@ import re
 import resource
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,7 @@ MAX_CODE_CHARS = 20_000
 CASE_TIMEOUT_S = 2.0
 STARTUP_S = 3.0
 MEM_BYTES = 512 * 1024 * 1024
+MAX_RESULT_BYTES = 1_000_000  # results.json is written by the candidate's container: never read more than this
 DEFAULT_IMAGE = os.environ.get("G10_RL_IMAGE", "python:3.12-slim")
 
 _FENCE_LINE = re.compile(r"^[ \t]{0,3}```[ \t]*([^`\n]*?)[ \t]*$")
@@ -112,11 +114,35 @@ def _case_ok(result: dict, case: dict) -> bool:
     return bool(result.get("ok")) and _same(result.get("value"), case["expected"])
 
 
+def read_result_bytes(name: str | Path, dir_fd: int | None = None) -> bytes:
+    """Bytes of the results file that the candidate's container wrote. The container can leave anything at this path
+    (a symlink to a host file, a pipe, a huge file) and can still be running, so the file is opened without following a
+    symlink (O_NOFOLLOW, without blocking on a pipe), must be a regular file, and at most MAX_RESULT_BYTES are read.
+    Raises OSError or ValueError otherwise."""
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    fd = os.open(name, flags, dir_fd=dir_fd)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError("result file is not a regular file")
+        data = os.read(fd, MAX_RESULT_BYTES + 1)
+        while len(data) <= MAX_RESULT_BYTES:
+            more = os.read(fd, MAX_RESULT_BYTES + 1 - len(data))
+            if not more:
+                break
+            data += more
+    finally:
+        os.close(fd)
+    if len(data) > MAX_RESULT_BYTES:
+        raise ValueError("result file is too large")
+    return data
+
+
 # --- running the child -------------------------------------------------------------------------
 
 def _limits():  # runs in the child between fork and exec
     os.setsid()
-    resource.setrlimit(resource.RLIMIT_AS, (MEM_BYTES, MEM_BYTES))
+    if sys.platform != "darwin":  # macOS refuses RLIMIT_AS
+        resource.setrlimit(resource.RLIMIT_AS, (MEM_BYTES, MEM_BYTES))
     resource.setrlimit(resource.RLIMIT_FSIZE, (10_000_000, 10_000_000))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     resource.setrlimit(resource.RLIMIT_NPROC, (1, 1))  # no fork, no threads (not enforced for root)
@@ -193,8 +219,8 @@ def reward(task_dir: Path | str, completion: str, sandbox="process") -> dict:
         if err:
             return {**out, "reason": err, "seconds": seconds}
         try:
-            results = json.loads((work / "results.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+            results = json.loads(read_result_bytes(work / "results.json").decode("utf-8"))
+        except (OSError, ValueError):  # UnicodeDecodeError is a ValueError
             return {**out, "reason": "no readable result file", "seconds": seconds}
 
     if not (isinstance(results, list) and len(results) == n and all(isinstance(r, dict) for r in results)):

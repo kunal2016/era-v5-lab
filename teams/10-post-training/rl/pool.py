@@ -115,6 +115,21 @@ class _CodeWorker:
         for p in self.dir.iterdir():
             shutil.rmtree(p, ignore_errors=True) if p.is_dir() and not p.is_symlink() else p.unlink(missing_ok=True)
 
+    @staticmethod
+    def _fetch_results(slot: Path, workdir: Path) -> str | None:
+        """Copy results.json out of the slot. The candidate can replace the slot folder or the file with a symlink, so
+        both are opened without following one, and the file must be a regular file of bounded size."""
+        try:
+            dfd = os.open(slot, os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_NOFOLLOW", 0))
+            try:
+                data = verifier_module().read_result_bytes("results.json", dfd)
+            finally:
+                os.close(dfd)
+        except (OSError, ValueError):
+            return "result file is not a regular file or is too large"
+        (workdir / "results.json").write_bytes(data)
+        return None
+
     def run(self, workdir: Path, entry: str, wall_s: float) -> str | None:
         """Same contract as verifier._run_docker: run _child.py on workdir; error string or None."""
         rid = uuid.uuid4().hex[:12]
@@ -128,7 +143,7 @@ class _CodeWorker:
             if r.returncode != 0:
                 err = f"container exited with {r.returncode}"
             elif (slot / "results.json").exists():
-                shutil.copyfile(slot / "results.json", workdir / "results.json")
+                err = self._fetch_results(slot, workdir)
         except subprocess.TimeoutExpired:
             err = "timeout"
         finally:

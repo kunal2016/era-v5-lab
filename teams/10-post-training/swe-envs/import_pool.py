@@ -58,8 +58,8 @@ NAME_TO_SPDX = {
 
 
 def benchmark_repos(path: Path = HERE / "benchmark_repos.txt") -> set[str]:
-    return {l.strip().lower() for l in path.read_text(encoding="utf-8").splitlines()
-            if l.strip() and not l.startswith("#")}
+    return {line.strip().lower() for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.startswith("#")}
 
 
 def spdx(name: str | None) -> str | None:

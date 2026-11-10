@@ -213,3 +213,57 @@ def test_swe_env_scores_gold_one_and_noop_zero_from_parallel_workers():
     with ThreadPoolExecutor(4) as ex:
         scores = list(ex.map(lambda out: reward.reward(f"swe/{SWE_ENV}", out)[0], [good, bad, good, bad]))
     assert scores == [1.0, 0.0, 1.0, 0.0]
+
+
+def test_pool_does_not_copy_a_symlinked_results_file(monkeypatch, tmp_path):
+    outside = tmp_path / "outside.json"
+    outside.write_text("[]")
+
+    def fake_docker(*args, timeout=60):
+        out = ""
+        if args[0] == "exec" and any(str(a).endswith("/_child.py") for a in args):
+            rid = next(str(a) for a in args if str(a).endswith("/_child.py")).split("/")[2]
+            (worker.dir / rid / "results.json").symlink_to(outside)  # what a hostile candidate could leave behind
+        elif args[0] == "exec":
+            out = "clean"
+        return subprocess.CompletedProcess(args, 0, out, "")
+
+    monkeypatch.setattr(pool, "_docker", fake_docker)
+    worker = pool._CodeWorker("img", 5)
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "_child.py").write_text("")
+    try:
+        err = worker.run(work, "f", 1.0)
+    finally:
+        worker.close()
+    assert err == "result file is not a regular file or is too large"
+    assert not (work / "results.json").exists()
+
+
+def test_pool_does_not_follow_a_replaced_slot_folder(monkeypatch, tmp_path):
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "results.json").write_text("[]")
+
+    def fake_docker(*args, timeout=60):
+        out = ""
+        if args[0] == "exec" and any(str(a).endswith("/_child.py") for a in args):
+            rid = next(str(a) for a in args if str(a).endswith("/_child.py")).split("/")[2]
+            shutil.rmtree(worker.dir / rid)  # the candidate removes its slot folder and puts a symlink in its place
+            (worker.dir / rid).symlink_to(other)
+        elif args[0] == "exec":
+            out = "clean"
+        return subprocess.CompletedProcess(args, 0, out, "")
+
+    monkeypatch.setattr(pool, "_docker", fake_docker)
+    worker = pool._CodeWorker("img", 5)
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "_child.py").write_text("")
+    try:
+        err = worker.run(work, "f", 1.0)
+    finally:
+        worker.close()
+    assert err == "result file is not a regular file or is too large"
+    assert not (work / "results.json").exists()

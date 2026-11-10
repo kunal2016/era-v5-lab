@@ -95,11 +95,11 @@ Each reference solution scores 1 in both sandboxes, and simple wrong answers sco
 
 Tasks are original: not taken from HumanEval, MBPP or any benchmark. `source` in `task.json` records this. Run the repository's decontamination check on the prompts before merging.
 
-## Open questions
+## Decisions (TSAI answers of 5 Nov) and what was built
 
-1. Entry point for the RL loop: `reward(task_dir, completion)` here. If other environment types are added (for example repository-patch tasks), one wrapper `reward(env_id, output)` could dispatch on the folder type. OK?
-2. Do we need tasks with a custom checker (several valid answers)? v1 says no.
-3. Cost per call on one machine: about 0.04 s in process mode and 0.23 s in docker (5 calls, small task). For 1,000 rollouts a step that is about 4 minutes of docker time on one core, so parallel workers or a warm container pool may be needed.
+1. **Entry point.** One wrapper `reward(env_id, output)` returns a score and an info dict. Each environment registers its own checker under its `env_id`. Built in `rl/reward.py` (PR #33); the ten code tasks register through `rl/verifier.py`.
+2. **Custom checkers.** Not in v1. Every case in the ten tasks has exactly one expected value or one expected exception, so one exact check is enough. A hook can be added later, with its own tests, only when a real task needs several valid answers.
+3. **Cost per call.** A Docker call is about 0.23 s (0.04 s in process mode). `rl/pool.py` keeps a warm container per worker (one worker per CPU core), reuses it for a batch of rollouts and cleans it after each one. Measured in `results/reward_pool_bench.md` (8 CPUs, Docker Desktop): code tasks 21.42 rollouts/s with the pool, 12.45 in parallel and 4.38 serial. SWE environments are not pooled, because a reused container with a writable repository is unsafe; 4 parallel workers give 2.15 rollouts/s.
 
 ## Out of scope
 

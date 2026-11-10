@@ -269,7 +269,7 @@ def container_script(env: dict, with_candidate: bool, token: str = "0" * 12) -> 
     restore = " ".join(shlex.quote(f) for f in env["test_files"])
     report = f"/tmp/g10_{token}.out"
     sent = sentinel(env, token)
-    body = " ".join(f"echo {shlex.quote(l)};" for l in sent["lines"])
+    body = " ".join(f"echo {shlex.quote(line)};" for line in sent["lines"])
     if env.get("language", "python") == "go":
         write_sentinel = (f"pkg=$(sed -n 's/^package \\([A-Za-z0-9_]*\\).*/\\1/p' {shlex.quote(sent['pkg_from'])} "
                           f"| head -1); {{ echo \"package $pkg\"; {body} }} > {shlex.quote(sent['file'])}")

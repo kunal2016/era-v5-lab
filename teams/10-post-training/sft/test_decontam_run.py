@@ -18,8 +18,16 @@ import decontam_report as rep  # noqa: E402
 import decontam_run as run  # noqa: E402
 
 TOOLS = run.DEFAULT_TOOLS
-pytestmark = pytest.mark.skipif(not (TOOLS / "decontam_check.py").is_file(),
-                                reason="Team 9's decontam folder is not on this branch (set G10_DECONTAM_TOOLS)")
+
+
+def _tools_are_v2() -> bool:
+    """Team 9's folder must be the fingerprints v2 version (fpset.DEFAULT_NORM); an older copy lacks it."""
+    fpset = TOOLS / "fpset.py"
+    return (TOOLS / "decontam_check.py").is_file() and fpset.is_file() and "DEFAULT_NORM" in fpset.read_text(encoding="utf-8")
+
+
+pytestmark = pytest.mark.skipif(not _tools_are_v2(), reason="Team 9's decontam folder here is missing or older than "
+                                "fingerprints v2 (no fpset.DEFAULT_NORM): set G10_DECONTAM_TOOLS to lab main c6b0ce0")
 
 # Made-up items, as in Team 9's own tests.
 TOY = [
