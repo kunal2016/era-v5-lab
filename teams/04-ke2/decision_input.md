@@ -12,9 +12,10 @@ Team 4 package, after a joint review of the four on 10 Nov. All four were merged
 | swatibansal/era-v5-lab #4 | dattatreyamanjunath | exact minimum decode margin per script class, fp64 / fp32 / bf16 | `min_margin.md`, `results/min_margin/` |
 
 Review outcome: all four are approve-with-changes; every change asked for is documentation, none is code or a
-number. The four merge together after one stitch commit (section 7). On the merged tree `pytest teams/04-ke2/tests -q`
-gives 158 passed, 2 skipped (the opt-in MPS and CUDA tests) with the tokenizer present, and 99 passed, 61 skipped
-without it; no failures.
+number. The four merge together after one stitch commit (section 7). Two items the package did not cover, the tau
+sweep and a CPU counterpart of the GPU determinism run, come from the lead's own CPU run and are added with this file
+(section 7). On that tree `pytest teams/04-ke2/tests -q` gives 175 passed, 2 skipped (the opt-in MPS and CUDA tests)
+with the tokenizer present, and 116 passed, 61 skipped without it; no failures.
 
 ## 1. Byte table type: raw bytes
 
@@ -36,7 +37,8 @@ is not in its registry.
 
 ## 3. Decode margins, precision, and what Team 5's decoder must do
 
-This replaces the tau proposal. No PR in the package measures a rejection threshold; see risk 2.
+No PR in the package measures a rejection threshold; the tau proposal below comes from the lead's CPU run
+(`src/tau_sweep.py`, `results/tau_sweep/tau_rates.md`, `summary.json`) on synthetic vectors; see risk 2.
 
 Margin floor. The margin of a token is its best cosine minus its second-best over all 131,072 raw-table codes.
 Computed exhaustively in float64 from the two-valued code structure (`results/min_margin/summary_P32.json`), the
@@ -55,6 +57,18 @@ precision is not: fp32 scores shift margins by -5.3e-5 to +2.6e-4; bf16 inputs w
 to +9.2e-5; bf16-rounded scores by -5.3e-3 to +3.5e-3, which cuts the tightest margin by 23% to 0.012127
 (`results/min_margin/summary_P32.json`, `min_margin.md`). On GPU fp32 the worst margin error against float64 is
 4.1e-4 at batch 4,096 (`results/decode_gpu/raw_P32.json`), 39 times smaller than the floor.
+
+Tau sweep and proposal. 10,000 query tokens (seed 0) over the raw table at P = 32, tau in {0, 0.3, 0.5, 0.7, 0.9},
+with three stand-ins for predicted vectors, since Team 5 has none: isotropic noise at target cosine 0.95 down to 0.3,
+pure Gaussian garbage with no true token, and rival mixtures (1 - a) z_true + a z_rival with the token's own
+runner-up at a = 0.3, 0.45, 0.55, 0.7. Proposed tau = 0.3, the smallest grid value that rejects every garbage query
+(best cosine about 0.05) while accepting every correct decode down to target cosine 0.5; tau = 0.5 already drops half
+the queries at cosine 0.5 and tau = 0.7 half of those at 0.7. Tau is a garbage filter only: every rival mixture keeps
+its best cosine above 0.77 and is accepted at every tau in the grid, and above a = 0.5 the accepted answer is wrong
+(wrong-accept 100% at a = 0.55 and 0.7). The margin is what detects that case. The margin passes of the same run
+reproduce the fork #4 floor, 0.015809 between ids 50346 and 83647, and the same class minima
+(`results/tau_sweep/margin_table.md`). The sweep re-runs on real vectors with `--vectors team5.npz` (`vectors` (N, D),
+`true_ids` (N,), -1 where unknown).
 
 Requirements for Team 5 (and Team 6 for a fast decoder):
 1. Decode by cosine over all 131,072 raw-table codes, each divided by its own norm (the norms differ by length).
@@ -75,9 +89,13 @@ float64: 2.2e-5, 7.5e-5 and 2.35e-4 at batch 1, 7 and 4,096; `NVIDIA_TF32_OVERRI
 2.14.1+cu130, CUDA 13.0); the decoder is a dense fp32 GEMM in `src/determinism/decode_gpu.py`, checked only against
 the float64 `decode_ref.py`; the 5e-4 tolerance has 22% headroom at batch 4,096 and larger batches were not run.
 
-CPU. The package has no CPU counterpart of the GPU run (three fresh processes per batch size, hashes compared). The
-CPU side of the evidence is the single float64 reference pass inside `decode_gpu.py` and the week-1 CPU decode files
-in `results/`.
+CPU (`src/determinism/decode_batches.py`, `results/decode_batches_cpu.md`, `.json`; lead's run, macOS arm64, torch
+2.15.0, fp32, matmul precision highest). The same protocol on CPU: three fresh processes at each of batch 1, 7 and 4,096,
+all 131,072 ids, scored by the structured cosine scorer `ke2.scoring`. The three hashes agree within every batch size,
+every run's ids equal the float64 `decode_ref.decode` reference id for id, and the id bodies are identical across the
+three batch sizes (`same_ids_across_batch_sizes: true`; the per-run hash differs across batch sizes only because its
+header names the batch size). Together with the GPU run this gives the same 131,072 ids from two decoders, two devices
+and three batch shapes.
 
 Target for Team 6: id hash `31c8d0e0ac50cff5c8021f88a2b608de2298fdbf216c620a40e83d2adbe26f9a` (raw table, P = 32,
 format `ke2-decode-gpu-ids-v1`, the identity map); tolerance 5e-4 on scores and margins against `decode_ref.py`.
@@ -100,7 +118,7 @@ review and agree.
 | # | owner | status | risk |
 |---|---|---|---|
 | 1 | TSAI | closed with caveats | CUDA determinism: PR #268, section 4. Caveats: one GPU class, dense decoder, batch <= 4,096. |
-| 2 | Team 5 -> Team 4 | open | No predicted vectors yet. No rejection threshold (tau) exists in the package; it must be set on Team 5's vectors, and the margin, not a threshold, is what detects a near-code wrong answer. |
+| 2 | Team 5 -> Team 4 | open | No predicted vectors yet. tau = 0.3 is proposed from synthetic error models only (section 3) and must be re-checked on Team 5's vectors with `tau_sweep.py --vectors`; the margin, not tau, is what detects a near-code wrong answer. |
 | 3 | TSAI | open | E4 to E8 are single-seed in TSAI's files. Multi-seed still needed. |
 | 4 | Lab decision | open | Unit-norm codes cannot express a per-token frequency prior; the fix is one scalar per token, V extra parameters. |
 | 5 | Team 4 with Team 3 | partially closed | v0, v0.1, v1-c1, C1 to C3 measured, all 32 bytes max, 0 raw collisions. C1-s0, C2-s0, C3-s0 and v2 unmeasured. |
@@ -115,6 +133,14 @@ non-fast-forward merge so every author's commits are kept as written. #3 and #2 
 conflicted with the earlier ones only in `teams/04-ke2/README.md`, and #268 with #4 in `src/ruff.toml`; both were
 resolved as the union of the index rows and of `known-first-party`. On the merged tree `pytest teams/04-ke2/tests -q`
 gives 158 passed, 2 skipped with the tokenizer and 99 passed, 61 skipped without it.
+
+Added from the lead's CPU run of 31 Oct, in the same pull request as this file: `src/tau_sweep.py` (margin passes with
+fp32 and bf16 queries, tau sweep, `--vectors` loader), `src/ke2/scoring.py` (structured cosine scorer pinned to
+`decode_ref`), `src/determinism/decode_batches.py` (three processes per batch size on a chosen device), their tests, and
+the outputs `results/tau_sweep/` and `results/decode_batches_cpu.*` with the cached float64 reference
+`results/decode_ref_full_raw_P32_b3f5476e.npz`. The script takes its Theorem 2 and 3 helpers from
+`src/proofs/decode_theorems.py` (fork #3) instead of its own copy. With these the suite is 175 passed, 2 skipped with the
+tokenizer and 116 passed, 61 skipped without it.
 
 Documentation fixes from the review, applied with this file:
 - `determinism_gpu.md`: the precision table now labels the first two rows as the 16,384-code study and adds the

@@ -1,0 +1,199 @@
+{
+  "format": "ke2-decode-batches-v1",
+  "P": 32,
+  "table_sha256": "b3f5476ec6ae8a6bc3a8ca18e6662d2407645c2ed6f3b3ca4561a9bafd8d04db",
+  "vocab_size": 131072,
+  "device": "cpu",
+  "reference": {
+    "decoder": "decode_ref.decode, float64, CPU, float32 CPU codes",
+    "cached": false,
+    "sha256": "bdd5c1c5a0b792c37e6e47d6973268965666503a922299a73a1648544d141835",
+    "seconds": 1155.5,
+    "ids_equal_arange": true
+  },
+  "batch_sizes": {
+    "1": {
+      "runs": [
+        {
+          "sha256": "f373cee371bea3491821e811edf6b935dd672be04c66554fc6e12e09cabe694b",
+          "seconds": 294.0,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "f373cee371bea3491821e811edf6b935dd672be04c66554fc6e12e09cabe694b",
+          "seconds": 319.5,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "f373cee371bea3491821e811edf6b935dd672be04c66554fc6e12e09cabe694b",
+          "seconds": 278.9,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        }
+      ],
+      "hashes_match": true,
+      "all_equal_reference": true
+    },
+    "7": {
+      "runs": [
+        {
+          "sha256": "44ebe69e4061b55241af8198b1a207033d2d513dab479f89a2933e8b070776e9",
+          "seconds": 80.4,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "44ebe69e4061b55241af8198b1a207033d2d513dab479f89a2933e8b070776e9",
+          "seconds": 81.2,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "44ebe69e4061b55241af8198b1a207033d2d513dab479f89a2933e8b070776e9",
+          "seconds": 80.9,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        }
+      ],
+      "hashes_match": true,
+      "all_equal_reference": true
+    },
+    "4096": {
+      "runs": [
+        {
+          "sha256": "f24afbd717b6383d1cfdab51796cd51e52dcb6abffc84e57390a38a05e5d1849",
+          "seconds": 86.2,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "f24afbd717b6383d1cfdab51796cd51e52dcb6abffc84e57390a38a05e5d1849",
+          "seconds": 85.1,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        },
+        {
+          "sha256": "f24afbd717b6383d1cfdab51796cd51e52dcb6abffc84e57390a38a05e5d1849",
+          "seconds": 85.3,
+          "environment": {
+            "python": "3.12.14",
+            "torch": "2.15.0",
+            "numpy": "2.5.4",
+            "platform": "macOS-14.4-arm64-arm-64bit",
+            "machine": "arm64",
+            "device": "cpu",
+            "dtype": "float32",
+            "tf32": false,
+            "float32_matmul_precision": "highest"
+          },
+          "ids_equal_reference": true,
+          "ids_differing_from_reference": 0
+        }
+      ],
+      "hashes_match": true,
+      "all_equal_reference": true
+    }
+  },
+  "same_ids_across_batch_sizes": true,
+  "environment": {
+    "python": "3.12.14",
+    "torch": "2.15.0",
+    "numpy": "2.5.4",
+    "platform": "macOS-14.4-arm64-arm-64bit",
+    "machine": "arm64",
+    "device": "cpu",
+    "dtype": "float32",
+    "tf32": false,
+    "float32_matmul_precision": "highest"
+  }
+}
