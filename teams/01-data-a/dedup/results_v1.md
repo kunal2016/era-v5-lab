@@ -107,6 +107,8 @@ The large files (`overlap_docs.parquet`, `overlap_pairs.csv`) were not used: TSA
 
 *Source:* `overlap_matches.csv`, `stage = cross_pack`, counted by pack pair.
 
+**Pairs affected by the Data B pack order** (`source_priority_v1.md`, rule 4): **23 of the 50** have a Data B pack on at least one side. 14 are between two Data B packs, mostly the same Indic language in `fw2` and `sangraha-v` (`ind-mr` 5, `ind-kn` 3, `ind-te` 2; `ind-hi`, `ind-bn`, `ind-ta` 1 each; `ind-hi-indiccorp` × `ind-hi-sangraha-v` 1). 9 are between `cadj-commits` and a code pack (`code-python` 4, `code-rust` 3, `code-cpp` 1, `code-java` 1). The other 27 are between two Data A packs. Rule 4 decides a pair only if the copies are still tied after rules 0–3. TSAI approved this order in G1 on 10 Nov 2026. *Source:* `overlap_matches.csv`, by each side's pack.
+
 ### Observations for discussion
 
 1. **`cadj-commits` holds two-fifths of all qualifying pairs** (1,094 of 2,711) and 45 of the 98 exact pairs; by our estimate it would lose 1.18% of its documents, the only pack above 1%. A sample should be read to confirm they are true copies (for example repeated commit messages) before they are removed.

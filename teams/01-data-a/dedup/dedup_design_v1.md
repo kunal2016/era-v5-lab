@@ -167,5 +167,5 @@ It covers this file and `source_priority_v1.md`. The body states the decisions; 
 | 5 Nov 2026 | Held-out first (rule 0): a train copy of a held-out document is removed; held-out ↔ held-out duplicates are reported, not removed; dedup never shrinks the held-out set | TSAI | PR #255, point 4 |
 | 5 Nov 2026 | Hand-off: a remove list `(pack_id, split, part, doc_id)` and `dedup_log.jsonl`; TSAI filters the cleaned data, our code never rewrites it | TSAI | PR #255, point 5 |
 | 5 Nov 2026 | Location: code and design in `teams/01-data-a/dedup/`, job requests in `teams/01-data-a/jobs/` | TSAI | PR #255, point 6 |
-| 10 Nov 2026 | The 25 Data B packs, which `clean.py` does not list, follow the Data A packs in alphabetical order (Data B to confirm) | Data A team | `source_priority_v1.md`, rule 4 |
+| 10 Nov 2026 | The 25 Data B packs, which `clean.py` does not list, follow the Data A packs in alphabetical order. It affects 23 of the 50 cross-pack pairs. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov | Data A team; approved by TSAI | `source_priority_v1.md`, rule 4; TSAI in G1 |
 | 10 Nov 2026 | Cross-pack pass applied in v1 (E2 answered: 50 of 2,711 qualifying pairs are cross-pack); no training ablation for v1 | Data A team | `results_v1.md`, section 1 |
