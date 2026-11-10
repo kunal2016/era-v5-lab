@@ -4,7 +4,61 @@ Aggregates and replay commands only. Rows, statements, completions and document 
 run folder. Every number is labelled **measured** (read from a run record of this work), **inferred**
 (reasoned from something measured) or **not measured**.
 
-## What this is, and what it is not
+## Full run: all 70 Python shards (measured, run of 10 Nov)
+
+All 70 shards of the pinned Python split ran end to end in diagnostic mode, 67 of them on Modal CPU in
+parallel containers and shards 0 to 2 locally. Every shard is a full 20,000-row file at revision
+`eadf535931451525f3e5621d0f960c240bc62fd9`, each verified against its recorded size and sha256 before use.
+
+| Stage | Rows |
+|---|---:|
+| Raw | 1,398,166 |
+| Upstream test splits excluded | 268,752 |
+| Protected family | 3,629 |
+| Quality proposal, critique wrong | 310,019 |
+| Quality proposal, pass_rate under 1 | 203,790 |
+| Held, source revision unestablished | 69,690 |
+| **Joined** | **542,286** |
+| Converter rejected | 67 |
+| Rendered | 542,219 |
+| Flagged by fingerprint set v2 | 115,067 |
+| Kept | 427,152 |
+| **Admitted** | **0** |
+
+Conservation holds exactly: 1,398,166 = 268,752 + 3,629 + 310,019 + 203,790 + 69,690 + 542,286, and
+542,286 − 67 − 115,067 = 427,152. Every held row names `open-r1/codeforces`, the one source whose producer
+revision is not established. Rendered and kept rows were counted in every shard; 0 canaries were found.
+
+### How many distinct problems this actually is
+
+| | Count |
+|---|---:|
+| Joined rows | 542,286 |
+| Distinct problems by position | **19,825** |
+| Distinct problems by content, Jaccard 0.8 | **15,402** |
+| Rows per content cluster, mean / max | 27.7 / 349 |
+| Trained tokens | **2,539,177,884** |
+| Tokens per content cluster, mean | 176,274 |
+
+The 1,398,166 figure is rows, not problems. The same problem recurs across shards within a source;
+cross-source collapse is small (169 clusters at 0.8). **2.54B trained tokens across roughly 15,400 distinct
+problems** is the supply figure, not a row count.
+
+### What the full run does not settle
+
+- **Gate D1 row-level reconciliation is impossible.** The historical run's `record.json` no longer exists,
+  and its 4,200 removed was counted before the join on rows whose question was `-`, so it is not the same
+  quantity as any count here. The difference can only be recorded by definition.
+- **Admission is unchanged.** The set is `TSAI reserves`, no tokenizer is approved, and
+  `--mode admission` exits 3 without creating a folder.
+- The quality thresholds are a proposal in `ocr2_policy.json`, not a ruling. On the first three shards,
+  pass_rate 0.9 recovers 2,421 rows and 445 problems; 0.5 recovers 6,694 and 1,259.
+
+## Earlier runs kept as history
+
+The two-shard run of shards 0 and 1, the single-shard run of shard 0, and the 1,000-row prefix run are
+described below. Their numbers are subsets of the table above and are retained for provenance.
+
 
 - It is a **diagnostic scan of shards 0 and 1, the full files**: all 20,000 rows of each of
   `train/python/train-00000-of-00070.parquet` (sha256 `18f09c9b93a4…`, 366,930,945 bytes) and
