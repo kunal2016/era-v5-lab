@@ -3,7 +3,7 @@
 > **Result: pass.** On an NVIDIA GPU, all **131,072** token IDs of BrahmicTokenizer-131K decode back to
 > themselves. That holds in **9 fresh processes** (batch sizes **1, 7 and 4,096**, three runs each,
 > **fp32, TF32 off**), and the decoded IDs are bit for bit the same as the CPU float64 reference.
-> This is the Gate 2 evidence for `determinism_gpu.md`.
+> This is the Gate 2 evidence for GPU determinism (`decision_input.md`, section 4).
 
 ![Verdict: every GPU run gives the CPU reference's ID hash](docs/figures/gpu1_verdict.svg)
 
@@ -86,8 +86,9 @@ IDs need no tolerance.
 
 | Batch size | 1 | 7 | 64 | 512 | 1,024 | 4,096 |
 |---|---:|---:|---:|---:|---:|---:|
-| Score error, TF32 off (as run) | 1.1e-5 | 7.5e-6 | 2.5e-5 | 7.2e-5 | 2.0e-4 | 2.0e-4 |
-| Score error, TF32 on (contrast only) | 1.1e-5 | 4.9e-4 | 5.6e-4 | 7.6e-4 | 7.6e-4 | 7.6e-4 |
+| Score error, TF32 off (16,384-code study) | 1.1e-5 | 7.5e-6 | 2.5e-5 | 7.2e-5 | 2.0e-4 | 2.0e-4 |
+| Score error, TF32 on (16,384-code study, contrast only) | 1.1e-5 | 4.9e-4 | 5.6e-4 | 7.6e-4 | 7.6e-4 | 7.6e-4 |
+| Full run: score error vs CPU | 2.2e-5 | 7.5e-5 | | | | 2.3e-4 |
 | Full run: margin error vs CPU | 2.9e-5 | 1.2e-4 | | | | 4.1e-4 |
 
 The first two rows come from [`gemm_accuracy_gpu.py`](src/determinism/gemm_accuracy_gpu.py)
@@ -136,6 +137,10 @@ GPU process:
 | Batch 1, run 3 | 57 W | 809 MHz | 95% | 64 °C |
 | Batch 7 | 79 W | ~865 MHz | 94–97% | 71–72 °C |
 | Batch 4,096 | 101–104 W | ~1,000 MHz | 54–65% | 72 °C |
+
+The table is averaged from the CSV; each batch-4,096 run lasted about 25 s, so its row rests on 4 to 5 samples. The
+clock, power-state, power-limit and worker-memory figures in the bullets below were read from `nvidia-smi` and the task
+manager during the run and have no committed source.
 
 - **The GPU ran in a low-power state.** `nvidia-smi` reported P3: memory clock **7,001 of 9,001 MHz**, SM clock
   ~1,000 of 3,105 MHz. The software power-cap and software thermal-slowdown flags (`0x24`) were set in every

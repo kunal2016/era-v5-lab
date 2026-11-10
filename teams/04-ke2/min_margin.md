@@ -105,10 +105,13 @@ Every code is still two-valued after rounding. In fp32 and bf16, all tokens of t
 also share the same two values, so rounding acts per length. `high` and `low` round separately,
 so it changes each length's high/low ratio very slightly; that is where bf16's 6.2e-8 comes from.
 Mostly it changes the code's overall scale (the ‖z‖² spread above), and cosine ignores scale.
-That is why stored precision barely moves the margin.
+That is why stored precision barely moves the margin. In this table both the query and every candidate code are
+stored in the reduced precision before the exact float64 scoring; a decoder that keeps the table in fp64 and only
+receives a reduced-precision query sees a smaller shift still.
 
 Five (class, precision) rows report a different pair under fp32 or bf16. Four are the same two
-tokens in the other direction (Code/Structure, Latin and Mixed: "swapped" in the generated table).
+tokens in the other direction: Code/Structure in both fp32 and bf16, Latin and Mixed in fp32 only. The
+generated table marks a class "swapped" if either precision reversed the pair.
 A pair's margin is the same seen from either token, and rounding broke the tie the other way. The
 fifth (Other, bf16) is another pair in the mirror shape (8, 7, 7) with the same fp64 margin. bf16
 rounding left the two directions about 2e-16 apart, and the lowest-ID rule then picked among
@@ -156,7 +159,10 @@ resolving them silently.
 8,239, against a spread of 0.004 in fp32), because `high` rounds differently for each length.
 Cosine cancels this; a raw dot product does not. For the tightest pair, ranking bf16 codes by dot
 product gives the 32-byte token a margin of 0.012388 instead of 0.015809 (−22%), because its
-31-byte rival's norm is 0.35% larger. Normalise, or score fp32 codes.
+31-byte rival's norm is 0.35% larger. Normalise, or score fp32 codes. These three figures (self dot 8,216.8, norm
+ratio 0.35%, raw-dot margin 0.012388) are not in `summary_P32.json`; they follow from the bf16 per-length values
+(‖z‖² = 8,160.0 at L = 32 and 8,216.8 at L = 31, ratio of norms sqrt(8216.8 / 8160.0) = 1.0035) and the closed form in
+`pair_margins.py`.
 
 **Longer tokens.** The extension margin is about 1 − √(L/(L+1)), so it shrinks as tokens get
 longer. P = 32 has no spare room (`output_shape.md`): this tokenizer already has 32-byte tokens.
