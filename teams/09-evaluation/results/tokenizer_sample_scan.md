@@ -1,7 +1,5 @@
 # Tokenizer sample scan: canary scan + full decontamination check (G9 Task 11)
 
-Owner: Raghav Tayal (G9 Member C). Reviewer: Rahul Uniyal. Date: 10 Nov 2026.
-
 Gate 2 evidence: *the canary scan finds no canary in the tokenizer sample; the decontamination report exists.*
 
 ## Summary
@@ -62,11 +60,11 @@ Note: the canary folder scan also reads the sample's README/JSON files, so its d
 | gaia | 8 | 6 |
 | in22_gen | 6 | 5 |
 | flores200 | 4 | 4 |
-| in22_conv | 3 | 3 |
-| gpqa_diamond | 3 | 3 |
 | aime_2025 | 3 | 3 |
-| longbench_v2 | 2 | 2 |
+| gpqa_diamond | 3 | 3 |
+| in22_conv | 3 | 3 |
 | bfcl_v3 | 3 | 2 |
+| longbench_v2 | 2 | 2 |
 | aime_2024 | 1 | 1 |
 | **docs flagged** | **2,128** (0.147%) | **1,594** (0.113%) |
 
