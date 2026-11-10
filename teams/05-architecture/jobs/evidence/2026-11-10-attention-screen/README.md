@@ -69,7 +69,7 @@ and are **not comparative model-speed benchmarks**. All five finished below the
 90-minute trainer cap. The original queue and each overlapped job have separate
 processes, receipts, metrics and summaries.
 
-- [Notebook](https://github.com/revantg/era-v5-lab/blob/1c024d22ae48a3ca07c1f4da5408028b36f7cb4e/teams/05-architecture/notebooks/attention_gpu_screen.py) · [opening instructions](https://github.com/revantg/era-v5-lab/blob/1c024d22ae48a3ca07c1f4da5408028b36f7cb4e/teams/05-architecture/notebooks/README.md).
+- [Notebook](https://github.com/revantg/era-v5-lab/blob/codex/g5-attention-notebooks/teams/05-architecture/notebooks/attention_gpu_screen.py) · [opening instructions](https://github.com/revantg/era-v5-lab/blob/codex/g5-attention-notebooks/teams/05-architecture/notebooks/README.md).
 - [Comparison CSV](screen-comparison.csv) · [all 75 slice scores](screen-slice-scores.csv).
 - [Status of all 15 requested runs](requested-seed-status.csv): five local preliminary results; formal request remains open.
 - [Final checks](screen-final-verification.json) · [113-test log](unit-tests.log).
@@ -79,3 +79,10 @@ processes, receipts, metrics and summaries.
 Datasets, numeric caches and checkpoints are excluded from Git. Notebook preparation,
 execution glue and reporting were AI-assisted; no independent learning assessment
 or reported study hours is implied.
+
+## Review handoff
+
+The request and this record are reviewed in [#345](https://github.com/theschoolofai/era-v5-lab/pull/345).
+Notebook sources are separate in [#344](https://github.com/theschoolofai/era-v5-lab/pull/344);
+the cache/resume implementation and tests are separate in [#343](https://github.com/theschoolofai/era-v5-lab/pull/343).
+The original execution pin, raw commands and eligibility flags are unchanged.

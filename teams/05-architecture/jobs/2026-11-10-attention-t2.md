@@ -18,7 +18,7 @@ Measures:        every held-out slice, three-group/code/Indic BPB, seeds, comple
 Expected result: per-design means and seed ranges; no winning design is assumed
 Outputs:         each run's metrics.jsonl, manifest.json and summary.json only; total return <=50 MB; retain required checkpoints internally, do not return them
 Test log:        evidence/2026-11-10-attention-screen/unit-tests.log (113 tests at the pinned execution source)
-Notebook:        separate companion PR; pinned source linked below (explicit controls, no training on open)
+Notebook:        companion PR #344; source linked below (explicit controls, no training on open)
 ```
 
 ## Source and controls
@@ -117,7 +117,7 @@ it does not grant approval to an unmerged implementation.
 
 ## Completed owner-managed preliminary screen
 
-The separate [annotated GPU notebook](https://github.com/revantg/era-v5-lab/blob/1c024d22ae48a3ca07c1f4da5408028b36f7cb4e/teams/05-architecture/notebooks/attention_gpu_screen.py) completed
+The separate [annotated GPU notebook](https://github.com/revantg/era-v5-lab/blob/codex/g5-attention-notebooks/teams/05-architecture/notebooks/attention_gpu_screen.py) completed
 all five designs at seed 1235 for 1,221 full-shape updates each, with checkpoints.
 This uses a declared reconstruction from the published cleaned TRAIN parts and
 permanent G5 heldout, and keeps pending approval/development eligibility. It does
@@ -136,3 +136,12 @@ not replace the exact #310 staging request or the three-seed quality matrix abov
 ![Completed real-data training losses; single-seed preliminary evidence](evidence/2026-11-10-attention-screen/screen-losses.png)
 
 ![Completed held-out score curves](evidence/2026-11-10-attention-screen/screen-heldout-bpb.png)
+
+## Separate review scopes
+
+- [Cache/resume implementation and regression tests: #343](https://github.com/theschoolofai/era-v5-lab/pull/343), for Sonu's coordination/integration and Udit's code review.
+- [Annotated notebooks and synthetic launch evidence: #344](https://github.com/theschoolofai/era-v5-lab/pull/344).
+- [This job request and one-seed records: #345](https://github.com/theschoolofai/era-v5-lab/pull/345).
+
+The original [#337](https://github.com/theschoolofai/era-v5-lab/pull/337) is superseded
+by those submissions; its branch and historical evidence remain available.
