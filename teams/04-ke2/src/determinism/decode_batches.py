@@ -6,13 +6,16 @@ the ids of the batch, the structured cosine scorer (``ke2.scoring``) picks the n
 whole vocabulary, and the ids are hashed. TF32 is disabled so CUDA float32 means float32. The parent
 starts ``--repeats`` fresh processes per batch size, requires their hashes to agree, and compares
 every id with the CPU float64 reference (``decode_ref.decode`` on float32 CPU codes, computed once and
-cached in ``results/decode_ref_full_<kind>_P<P>_<table sha8>.npz``).
-The parent exits 1 if any batch size has differing hashes or ids differing from the reference. Reports from
-runs after the first commit also carry ``same_ids_across_batch_sizes_hash`` (hash of the id bodies across
-batch sizes); the committed CPU JSON predates it and was not regenerated.
+cached in ``results/decode_cpu/decode_ref_full_<kind>_P<P>_<table sha8>.npz``).
+The parent exits 1 if any batch size has differing hashes or ids differing from the reference. Every run also gets
+the id digest in ``decode_gpu.py``'s format (``ke2-decode-gpu-ids-v1``: header, then (query id, decoded id) pairs as
+big-endian uint32), so a CPU run and the GPU run in ``results/decode_gpu/`` are compared by one value.
+
+This is the CPU counterpart of ``decode_gpu.py`` (determinism_gpu.md): same ids, same batch sizes, three fresh
+processes each, fp32 with TF32 off, the same float64 reference.
 
 usage: python decode_batches.py --device cpu|cuda|mps [--batch-sizes 1 7 4096] [--repeats 3]
-                                [--table results/tables/raw_table_P32.npz] [--out results/decode_batches_<device>.json]
+                                [--table results/tables/raw_table_P32.npz] [--out results/decode_<device>/<kind>_P<P>.json]
 """
 
 from __future__ import annotations
@@ -43,6 +46,7 @@ from ke2.scoring import StructuredScorer
 from ke2.tables import ByteTable
 
 HASH_FORMAT = "ke2-decode-batches-v1"
+GPU_ID_HASH_FORMAT = "ke2-decode-gpu-ids-v1"  # decode_gpu.ID_HASH_FORMAT, kept in step by test_decode_batches
 
 
 def configure_device(device: str) -> torch.device:
@@ -85,8 +89,17 @@ def ids_sha256(ids: np.ndarray, P: int, device: str, batch_size: int) -> str:
     return h.hexdigest()
 
 
+def ids_sha256_gpu_format(ids: np.ndarray, P: int, table_sha256: str) -> str:
+    """decode_gpu.id_digest of (0..V-1 -> ids): the value every GPU run in results/decode_gpu/ reports."""
+    ids = np.asarray(ids)
+    pairs = np.stack([np.arange(ids.size), ids], axis=1)
+    h = hashlib.sha256(f"{GPU_ID_HASH_FORMAT}|P={P}|table={table_sha256}|n={ids.size}\n".encode())
+    h.update(pairs.astype(">u4").tobytes())
+    return h.hexdigest()
+
+
 def reference_cache_path(table: ByteTable, ct) -> Path:
-    return RESULTS_DIR / f"decode_ref_full_{table.kind}_P{table.pos_dim}_{ct.table_sha256[:8]}.npz"
+    return RESULTS_DIR / "decode_cpu" / f"decode_ref_full_{table.kind}_P{table.pos_dim}_{ct.table_sha256[:8]}.npz"
 
 
 def reference_ids(table: ByteTable, ct, cache: Path, chunk: int = 2048) -> tuple[np.ndarray, dict]:
@@ -142,7 +155,8 @@ def parent(a) -> int:
     ref, ref_info = reference_ids(table, ct, reference_cache_path(table, ct))
     report = {"format": HASH_FORMAT, "P": table.pos_dim, "table_sha256": ct.table_sha256, "vocab_size": table.vocab_size,
               "device": a.device, "reference": {"decoder": "decode_ref.decode, float64, CPU, float32 CPU codes", **ref_info,
-                                                "ids_equal_arange": bool(np.array_equal(ref, np.arange(table.vocab_size)))},
+                                                "ids_equal_arange": bool(np.array_equal(ref, np.arange(table.vocab_size))),
+                                                "ids_sha256_gpu_format": ids_sha256_gpu_format(ref, table.pos_dim, ct.table_sha256)},
               "batch_sizes": {}}
     with tempfile.TemporaryDirectory() as tmp:
         for b in a.batch_sizes:
@@ -160,12 +174,14 @@ def parent(a) -> int:
                 info["ids_equal_reference"] = bool(np.array_equal(ids, ref))
                 info["ids_differing_from_reference"] = int((ids != ref).sum())
                 info["ids_body_sha256"] = ids_sha256(ids, table.pos_dim, "", 0)
+                info["ids_sha256_gpu_format"] = ids_sha256_gpu_format(ids, table.pos_dim, ct.table_sha256)
                 runs.append(info)
                 print(f"device={a.device} batch={b} run={r} sha={info['sha256'][:12]} equal_ref={info['ids_equal_reference']} {info['seconds']}s", flush=True)
             report["batch_sizes"][str(b)] = {"runs": runs, "hashes_match": len({x["sha256"] for x in runs}) == 1,
                                              "all_equal_reference": all(x["ids_equal_reference"] for x in runs)}
     report["same_ids_across_batch_sizes"] = all(v["all_equal_reference"] for v in report["batch_sizes"].values())
     report["same_ids_across_batch_sizes_hash"] = len({x["ids_body_sha256"] for v in report["batch_sizes"].values() for x in v["runs"]}) == 1
+    report["ids_sha256_gpu_format"] = sorted({x["ids_sha256_gpu_format"] for v in report["batch_sizes"].values() for x in v["runs"]})
     report["environment"] = environment(a.device)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -184,6 +200,10 @@ def to_markdown(report: dict) -> str:
         secs = ", ".join(str(x["seconds"]) for x in v["runs"])
         lines.append(f"| {b} | {len(v['runs'])} | {'yes' if v['hashes_match'] else 'NO'} | `{v['runs'][0]['sha256'][:16]}…` | "
                      f"{'yes' if v['all_equal_reference'] else 'NO (' + str(max(x['ids_differing_from_reference'] for x in v['runs'])) + ' differ)'} | {secs} |")
+    if "ids_sha256_gpu_format" in report:
+        g = report["ids_sha256_gpu_format"]
+        lines += ["", f"ID hash in `decode_gpu.py`'s format (`ke2-decode-gpu-ids-v1`), {'the same in every run' if len(g) == 1 else 'NOT the same across runs'}: "
+                  + ", ".join(f"`{x}`" for x in g) + ". Compare with `results/decode_gpu/raw_P32_sha256.txt`."]
     return "\n".join(lines) + "\n"
 
 
@@ -201,7 +221,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     if a.child:
         return child(a)
-    a.out = a.out or RESULTS_DIR / f"decode_batches_{a.device.replace(':', '')}.json"
+    dev = "gpu" if a.device.startswith("cuda") else a.device.replace(":", "")
+    a.out = a.out or RESULTS_DIR / f"decode_{dev}" / f"{a.table.stem.replace('_table', '')}.json"
     return parent(a)
 
 

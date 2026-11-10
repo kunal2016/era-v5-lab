@@ -29,8 +29,12 @@ the structural (Theorem 2) accuracy for comparison. ``propose_tau`` applies the 
 (also stated in decision_input.md section 3): tau is a garbage filter, chosen to reject garbage without rejecting
 correct decodes under mild noise.
 
-usage: python tau_sweep.py --tokenizer <tokenizer.json or folder> [--out results/tau_sweep] [--sample 10000] [--chunk 4096]
-       python tau_sweep.py --skip-margins [--vectors team5.npz]   # reuse the saved margin passes, redo only the tau sweep
+Outputs, next to build_min_margin.py's in results/min_margin/: margins_P32_{fp32,bf16}.{npz,csv} (the per-token pass the
+sweep needs: best and second-best cosine and the rival id for every token), tau_margin_pass_P32.md (the per-class minima
+of that pass; it must agree with min_margin_P32.md), tau_rates_P32.{json,md} and tau_summary_P32.json.
+
+usage: python src/margins/tau_sweep.py --tokenizer <tokenizer.json or folder> [--out results/min_margin] [--sample 10000] [--chunk 4096]
+       python src/margins/tau_sweep.py --skip-margins [--vectors team5.npz]   # reuse the saved margin passes, redo only the tau sweep
 """
 
 from __future__ import annotations
@@ -44,8 +48,8 @@ import time
 from pathlib import Path
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    sys.path.insert(0, str(Path(__file__).resolve().parent / "proofs"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "proofs"))
     from ke2.upstream import ensure_kronecker_embeddings
 
     ensure_kronecker_embeddings()
@@ -298,12 +302,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tokenizer", default=None, help="tokenizer.json or folder (default: $KE2_TOKENIZER)")
     ap.add_argument("--table", type=Path, default=TABLES_DIR / "raw_table_P32.npz")
-    ap.add_argument("--out", type=Path, default=RESULTS_DIR / "tau_sweep")
+    ap.add_argument("--out", type=Path, default=RESULTS_DIR / "min_margin")
     ap.add_argument("--sample", type=int, default=10000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--chunk", type=int, default=4096, help="queries scored per block")
     ap.add_argument("--skip-margins", action="store_true",
-                    help="reuse the saved margins_P32_*.npz and summary.json in --out; redo only the tau sweep")
+                    help="reuse the saved margins_P32_*.npz and tau_summary_P32.json in --out; redo only the tau sweep")
     ap.add_argument("--vectors", type=Path, default=None,
                     help="npz with 'vectors' (N, D) and 'true_ids' (N,) (-1 = unknown): added to the sweep as condition 'external'")
     a = ap.parse_args(argv)
@@ -316,9 +320,9 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     P = table.pos_dim
     if a.skip_margins:
-        summary = json.loads((a.out / "summary.json").read_text(encoding="utf-8"))
+        summary = json.loads((a.out / f"tau_summary_P{P}.json").read_text(encoding="utf-8"))
         if summary["table_sha256"] != ct.table_sha256:
-            raise SystemExit(f"saved summary.json is for table {summary['table_sha256'][:12]}..., not {ct.table_sha256[:12]}...")
+            raise SystemExit(f"saved tau_summary is for table {summary['table_sha256'][:12]}..., not {ct.table_sha256[:12]}...")
         with np.load(a.out / f"margins_P{P}_fp32.npz") as z:
             runner_up = np.asarray(z["second_id"])
         summary["margin_pass_seconds"] = summary.pop("seconds", summary.get("margin_pass_seconds"))  # key renamed
@@ -342,22 +346,22 @@ def main(argv=None) -> int:
                                        "min_margin": float(res["margin"].min()), "argmin_id": int(res["margin"].argmin()),
                                        "median_margin": float(np.median(res["margin"])), "min_best_cos": float(res["best"].min())}
             print(f"{name}: decoded {summary['dtypes'][name]['decoded_correctly']}/{table.vocab_size}, min margin {summary['dtypes'][name]['min_margin']:.5f}", flush=True)
-        (a.out / "margin_table.md").write_text(margin_markdown(rows_by_dtype, P), encoding="utf-8")
+        (a.out / f"tau_margin_pass_P{P}.md").write_text(margin_markdown(rows_by_dtype, P), encoding="utf-8")
         summary["margin_pass_seconds"] = round(time.perf_counter() - t0, 1)
     t1 = time.perf_counter()
     ids = np.random.default_rng(a.seed).choice(table.vocab_size, a.sample, replace=False)
     sweep = tau_sweep(table, ct, scorer, ids, seed=a.seed, chunk=a.chunk, runner_up_ids=runner_up, external=external)
     report = proposal_report(sweep)
-    (a.out / "tau_rates.json").write_text(json.dumps({**sweep, **report}, indent=2) + "\n", encoding="utf-8")
-    (a.out / "tau_rates.md").write_text(tau_markdown(sweep, report), encoding="utf-8")
+    (a.out / f"tau_rates_P{P}.json").write_text(json.dumps({**sweep, **report}, indent=2) + "\n", encoding="utf-8")
+    (a.out / f"tau_rates_P{P}.md").write_text(tau_markdown(sweep, report), encoding="utf-8")
     summary.pop("rival_confusions_caught_by_tau", None)  # key renamed to rival_wrong_accept_at_tau
     summary.update(**report, external_vectors=str(a.vectors) if a.vectors is not None else None,
                    tau_sweep_seconds=round(time.perf_counter() - t1, 1),
                    environment={"python": platform.python_version(), "torch": torch.__version__, "numpy": np.__version__, "device": "cpu"})
-    (a.out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (a.out / f"tau_summary_P{P}.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     if not a.skip_margins:
-        print((a.out / "margin_table.md").read_text())
-    print((a.out / "tau_rates.md").read_text())
+        print((a.out / f"tau_margin_pass_P{P}.md").read_text())
+    print((a.out / f"tau_rates_P{P}.md").read_text())
     return 0
 
 

@@ -1,8 +1,14 @@
-"""Margin table rows and the tau sweep bookkeeping, on a synthetic vocabulary with known rivals."""
+"""Margin table rows and the tau sweep bookkeeping (src/margins/tau_sweep.py), on a synthetic vocabulary with known rivals."""
+
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "margins"))
+
 from decode_theorems import closed_form_cosine
 
 import decode_ref as dr

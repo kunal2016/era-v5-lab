@@ -37,6 +37,18 @@ def test_batch_sizes_agree_and_match_reference():
     assert len({db.ids_sha256(ids, P, "cpu", 0) for ids in runs.values()}) == 1  # same ids -> same body hash
 
 
+def test_gpu_format_digest_matches_decode_gpu():
+    import decode_gpu as dg
+
+    assert db.GPU_ID_HASH_FORMAT == dg.ID_HASH_FORMAT
+    ids = np.arange(120)
+    sha = "ab" * 32
+    assert db.ids_sha256_gpu_format(ids, P, sha) == dg.id_digest(P, sha, np.arange(120), ids)
+    ids2 = ids.copy()
+    ids2[5] = 6
+    assert db.ids_sha256_gpu_format(ids2, P, sha) != db.ids_sha256_gpu_format(ids, P, sha)
+
+
 def test_tf32_is_disabled_by_configure_device():
     db.configure_device("cpu")
     assert torch.backends.cuda.matmul.allow_tf32 is False

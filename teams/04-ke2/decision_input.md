@@ -14,7 +14,7 @@ Team 4 package, after a joint review of the four on 10 Nov. All four were merged
 Review outcome: all four are approve-with-changes; every change asked for is documentation, none is code or a
 number. The four merge together after one stitch commit (section 7). Two items the package did not cover, the tau
 sweep and a CPU counterpart of the GPU determinism run, come from the lead's own CPU run and are added with this file
-(section 7). On that tree `pytest teams/04-ke2/tests -q` gives 175 passed, 2 skipped (the opt-in MPS and CUDA tests)
+(section 7). On that tree `pytest teams/04-ke2/tests -q` gives 176 passed, 2 skipped (the opt-in MPS and CUDA tests)
 with the tokenizer present, and 116 passed, 61 skipped without it; no failures.
 
 ## 1. Byte table type: raw bytes
@@ -38,7 +38,8 @@ is not in its registry.
 ## 3. Decode margins, precision, and what Team 5's decoder must do
 
 No PR in the package measures a rejection threshold; the tau proposal below comes from the lead's CPU run
-(`src/tau_sweep.py`, `results/tau_sweep/tau_rates.md`, `summary.json`) on synthetic vectors; see risk 2.
+(`src/margins/tau_sweep.py`, `results/min_margin/tau_rates_P32.md`, `tau_summary_P32.json`; explained in plain terms in
+`min_margin.md`, section "Acceptance threshold") on synthetic vectors; see risk 2.
 
 Margin floor. The margin of a token is its best cosine minus its second-best over all 131,072 raw-table codes.
 Computed exhaustively in float64 from the two-valued code structure (`results/min_margin/summary_P32.json`), the
@@ -67,7 +68,7 @@ the queries at cosine 0.5 and tau = 0.7 half of those at 0.7. Tau is a garbage f
 its best cosine above 0.77 and is accepted at every tau in the grid, and above a = 0.5 the accepted answer is wrong
 (wrong-accept 100% at a = 0.55 and 0.7). The margin is what detects that case. The margin passes of the same run
 reproduce the fork #4 floor, 0.015809 between ids 50346 and 83647, and the same class minima
-(`results/tau_sweep/margin_table.md`). The sweep re-runs on real vectors with `--vectors team5.npz` (`vectors` (N, D),
+(`results/min_margin/tau_margin_pass_P32.md`). The sweep re-runs on real vectors with `--vectors team5.npz` (`vectors` (N, D),
 `true_ids` (N,), -1 where unknown).
 
 Requirements for Team 5 (and Team 6 for a fast decoder):
@@ -89,13 +90,13 @@ float64: 2.2e-5, 7.5e-5 and 2.35e-4 at batch 1, 7 and 4,096; `NVIDIA_TF32_OVERRI
 2.14.1+cu130, CUDA 13.0); the decoder is a dense fp32 GEMM in `src/determinism/decode_gpu.py`, checked only against
 the float64 `decode_ref.py`; the 5e-4 tolerance has 22% headroom at batch 4,096 and larger batches were not run.
 
-CPU (`src/determinism/decode_batches.py`, `results/decode_batches_cpu.md`, `.json`; lead's run, macOS arm64, torch
-2.15.0, fp32, matmul precision highest). The same protocol on CPU: three fresh processes at each of batch 1, 7 and 4,096,
+CPU (`src/determinism/decode_batches.py`, `results/decode_cpu/raw_P32.md`, `.json`, and `determinism_gpu.md` section 7;
+lead's run, macOS arm64, torch 2.15.0, fp32, matmul precision highest). The same protocol on CPU: three fresh processes at each of batch 1, 7 and 4,096,
 all 131,072 ids, scored by the structured cosine scorer `ke2.scoring`. The three hashes agree within every batch size,
 every run's ids equal the float64 `decode_ref.decode` reference id for id, and the id bodies are identical across the
 three batch sizes (`same_ids_across_batch_sizes: true`; the per-run hash differs across batch sizes only because its
-header names the batch size). Together with the GPU run this gives the same 131,072 ids from two decoders, two devices
-and three batch shapes.
+header names the batch size). In the GPU document's hash format the CPU ids give `31c8d0e0…`, the value of all nine GPU
+runs, so two decoders, two devices and three batch shapes give the same 131,072 ids.
 
 Target for Team 6: id hash `31c8d0e0ac50cff5c8021f88a2b608de2298fdbf216c620a40e83d2adbe26f9a` (raw table, P = 32,
 format `ke2-decode-gpu-ids-v1`, the identity map); tolerance 5e-4 on scores and margins against `decode_ref.py`.
@@ -134,13 +135,14 @@ conflicted with the earlier ones only in `teams/04-ke2/README.md`, and #268 with
 resolved as the union of the index rows and of `known-first-party`. On the merged tree `pytest teams/04-ke2/tests -q`
 gives 158 passed, 2 skipped with the tokenizer and 99 passed, 61 skipped without it.
 
-Added from the lead's CPU run of 31 Oct, in the same pull request as this file: `src/tau_sweep.py` (margin passes with
-fp32 and bf16 queries, tau sweep, `--vectors` loader), `src/ke2/scoring.py` (structured cosine scorer pinned to
-`decode_ref`), `src/determinism/decode_batches.py` (three processes per batch size on a chosen device), their tests, and
-the outputs `results/tau_sweep/` and `results/decode_batches_cpu.*` with the cached float64 reference
-`results/decode_ref_full_raw_P32_b3f5476e.npz`. The script takes its Theorem 2 and 3 helpers from
-`src/proofs/decode_theorems.py` (fork #3) instead of its own copy. With these the suite is 175 passed, 2 skipped with the
-tokenizer and 116 passed, 61 skipped without it.
+Added from the lead's CPU run of 31 Oct, in the same pull request as this file, filed under the week-2 owners' folders
+so each ask has one home: `src/margins/tau_sweep.py` (margin passes with fp32 and bf16 queries, tau sweep, `--vectors`
+loader; outputs in `results/min_margin/` next to fork #4's, documented in `min_margin.md`), `src/ke2/scoring.py`
+(structured cosine scorer pinned to `decode_ref`), `src/determinism/decode_batches.py` (three processes per batch size on
+a chosen device; outputs in `results/decode_cpu/` mirroring `results/decode_gpu/`, documented as section 7 of
+`determinism_gpu.md`), and their tests. The tau script takes its Theorem 2 and 3 helpers from
+`src/proofs/decode_theorems.py` (fork #3) instead of its own copy. With these the suite is 176 passed, 2 skipped with the
+tokenizer and 117 passed, 61 skipped without it.
 
 Documentation fixes from the review, applied with this file:
 - `determinism_gpu.md`: the precision table now labels the first two rows as the 16,384-code study and adds the
