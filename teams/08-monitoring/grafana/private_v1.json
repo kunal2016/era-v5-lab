@@ -1640,6 +1640,96 @@
         }
       ],
       "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "update_weight_ratio per logged optimizer step: global L2 update-to-weight ratio ||lr * update||_2 / ||W||_2 (one scalar for the whole model). Equals ||ΔW||_2 / ||W||_2 when update is the parameter change. Very large values may mean unstable steps; near-zero may mean learning has stalled. Worked out by metrics_logger/metrics_writer.py compute_update_weight_ratio (default every 10 steps).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "update / weight L2",
+            "lineWidth": 2,
+            "showPoints": "auto"
+          },
+          "decimals": 4,
+          "min": 0,
+          "unit": "short",
+          "displayName": "${__field.labels.run_id}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 92
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'update_weight_ratio' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "Update-to-weight ratio (update_weight_ratio)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
     }
   ],
   "refresh": "",
