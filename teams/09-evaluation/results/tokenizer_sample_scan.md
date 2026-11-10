@@ -6,10 +6,9 @@ Gate 2 evidence: *the canary scan finds no canary in the tokenizer sample; the d
 
 - **Canary scan: clean.** 0 canaries in v0-clean (1,416,238 docs scanned) and in v0 (1,444,768). 4 canaries checked: era-v5-lab, gpqa_diamond, hle, terminal_bench_2.
 - **Decontamination (fingerprints v2, full set, `set_sha256` `2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a`):** v0-clean 1,594 of 1,416,236 documents flagged (0.113%); v0 2,128 of 1,444,766 (0.147%).
-- **Every v0-clean flag was reviewed from its exact matched text** (no sampling). **68 documents (0.0048%) contain real benchmark or held-out text** (65 distinct items); the rest are false hits (boilerplate, shared code, question templates) or public text that benchmarks quote.
+- **68 documents (0.0048%) contain real benchmark or held-out text** (65 distinct items); the rest are false hits (boilerplate, shared code, question templates) or public text that benchmarks quote.
 - **No contamination** for AIME, GPQA Diamond, HLE, Codeforces, Terminal-Bench 2, GSM8K, GAIA, LongBench v2, BFCL v3, SWE-bench Verified/Live/Pro (9 SWE-bench docs hold same-repo code, listed separately).
 - **Main findings:** MILU questions on Indian exam-prep pages (47 docs, mostly `math-finemath`), and **9 training documents that overlap Team 5's held-out set v1** (6 with coverage ≥ 0.5, 4 of them ≥ 0.93). Action items for Teams 1/2/5 are at the end.
-- Verdicts were checked by a blind second review (independent reviewers, same rubric, no access to the first verdicts): agreement 1,563 / 1,594 documents (98.1%); 876 / 907 unique passages (96.6%); every document the first review called contaminated was also contaminated in the blind review. The 32 disagreements were decided by the owner.
 
 ## Inputs
 
@@ -93,7 +92,7 @@ A flag means a document shares at least one 13-word (prose) or 20-token (code) r
 | **false-hit** | 1356 | heldout_g5_v1 518, swe_bench_live 267, hle 171, swe_bench_pro 154, milu 64, livecodebench 61, swe_bench_verified 38, mmlu 37, codeforces 22, terminal_bench_2 14, in22_conv 3, aime_2025 3, bfcl_v3 2, gpqa_diamond 2 |
 | total | 1594 | |
 
-Review coverage: coverage ≥ 0.5: all 27 documents read; 0.2–0.5: all 127 documents' matched text read; < 0.2: all 821 unique matched passages read (1,440 documents). Per-document verdicts with item, coverage and offset: [`tokenizer_sample_scan/verdicts_v0-clean.csv`](tokenizer_sample_scan/verdicts_v0-clean.csv) (no document text).
+Per-document verdicts with item, coverage and offset: [`tokenizer_sample_scan/verdicts_v0-clean.csv`](tokenizer_sample_scan/verdicts_v0-clean.csv) (no document text).
 
 ### Contaminated documents (real + real-short)
 
@@ -182,20 +181,14 @@ Review coverage: coverage ≥ 0.5: all 27 documents read; 0.2–0.5: all 127 doc
 | `train/code-python/part-00000` | `b4140476f57da914` | `swe_bench_live:test:conan-io__conan-16964` | 0.001 |
 | `train/code-python/part-00001` | `df8f26f50f2ab492` | `swe_bench_live:test:freqtrade__freqtrade-10208` | 0.001 |
 
-## 4. How the verdicts were checked
-
-1. First review of all 1,594 flags from the exact matched text, then a second pass of consistency checks (all long matches re-read, same rule applied to all short question stems).
-2. **Blind second review:** the rubric was frozen and 907 unique matched passages (covering all 1,594 documents) were judged by independent reviewers who saw only the rubric, the passage, the item ID and the coverage. Agreement: 1,563 / 1,594 documents (98.1%); 876 / 907 unique passages (96.6%).
-3. The blind review called **all** documents contaminated that the first review did; it called 8 more borderline documents contaminated. The owner decided all 32 disagreements by reading each in context; one changed the result (a UPSC Prelims 2022 question printed with its answer, `milu:test:35519`, public-text → real). Of the other 7, five were judged false hits (the same booking-site template for a different hotel ×2, one shared idiom from the same Rust project, a widely copied fitness sentence, a standard textbook rule) and two public text (NCERT textbook definitions).
-
-## 5. Known limits
+## 4. Known limits
 
 - n-gram matching finds copies only: paraphrased or translated benchmark items are not found (decontam README, *Known limits*).
 - Items under 8 words are not fingerprinted; BFCL v3 has 16% of items without a fingerprint.
 - `same-repo-code` cannot be resolved without each task's gold patch.
-- v0 flags were counted but not reviewed one by one; outside `code-go` they match v0-clean closely.
+- v0 flags were counted but not classified; outside `code-go` they match v0-clean closely.
 
-## 6. Actions
+## 5. Actions
 
 - **Team 5 (held-out set v1):** 9 training documents overlap held-out documents. Six have coverage ≥ 0.5 (4 of them ≥ 0.93: `fw2-hi-test-000011` 1.00, `vault-go-test-000011` 1.00, `vault-rs-test-000053` 1.00, `fw2-mr-test-000037` 0.93, `vault-rs-test-000028` 0.69, `vault-js-test-000022` 0.56); three are partial overlaps (0.04–0.20). The same page or file was collected by two sources (e.g. FineWeb-2 test split and HPLT train). Suggest dropping these docs from training (Teams 1/2) or replacing those held-out docs (Team 5).
 - **Teams 1/2 (data):** remove the contaminated documents listed above before training. The 47 MILU documents are exam-prep pages: 28 in `math-finemath`, the rest in `en-dclm`, `en-nemotroncc`, `math-megamath`, `en-fineweb-edu`, `ind-hi-sangraha-v`, `ind-hi-indiccorp`, `sci-finepdfs` and `en-nemotroncc-synth`.
