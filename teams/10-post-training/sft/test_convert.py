@@ -554,3 +554,40 @@ def test_local_copy_of_a_repo_is_read_instead_of_the_hub(tmp_path, monkeypatch):
     rows = list(convert.hf_file_rows("org/repo", "glob:data/x-", 0, 100))
     assert [r["a"] for r in rows] == [1, 2, 3, 4, 5, 6, 7]
     assert [r["a"] for r in convert.hf_file_rows("org/repo", "glob:data/x-", 2, 3)] == [3, 4, 5]
+
+
+def test_full_set_source_of_openthoughts3():
+    assert convert.ADAPTERS["sft-stem-code-openthoughts3"][2][1] == "glob:data/*.parquet"
+
+
+def test_full_set_source_of_proofs_v3_sft():
+    assert convert.ADAPTERS["sft-math-nemotron-proofs-v3-sft"][2][1] == "glob:data/*.jsonl"
+
+
+def test_xlam_row_becomes_one_tool_call_turn():
+    row = {"id": 7, "query": "Q?", "tools": json.dumps([{"name": "f", "parameters": {}}]),
+           "answers": json.dumps([{"name": "f", "arguments": {"x": 1}}])}
+    m = convert.xlam_function_calling(row)
+    assert [x["role"] for x in m] == ["system", "user", "assistant"]
+    assert m[2]["tool_calls"][0]["function"] == {"name": "f", "arguments": {"x": 1}}
+    assert m[0]["content"].startswith("Tools:\n")
+    with pytest.raises(convert.Skip):
+        convert.xlam_function_calling({**row, "answers": "[]"})
+    with pytest.raises(convert.Skip):
+        convert.xlam_function_calling({**row, "answers": "not json"})
+
+
+def test_xlam_json_array_is_read_from_a_local_copy(tmp_path):
+    f = tmp_path / "x.json"
+    f.write_text(json.dumps([{"id": i} for i in range(5)]))
+    assert [r["id"] for r in convert._local_file_rows(f, 1, 3)] == [1, 2, 3]
+
+
+def test_commitpackft_reads_every_language_file_so_the_pipeline_can_run_it():
+    assert convert.ADAPTERS["sft-code-commitpackft"][2] == ("file", "glob:data/*/data.jsonl")
+
+
+def test_a_json_array_file_needs_a_local_copy(tmp_path, monkeypatch):
+    monkeypatch.setenv("G10_LOCAL_ROOT", str(tmp_path))
+    with pytest.raises(SystemExit, match="G10_LOCAL_ROOT"):
+        list(convert._one_file_rows("org/repo", "x.json", 0, 5))

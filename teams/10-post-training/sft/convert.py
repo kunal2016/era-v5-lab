@@ -241,6 +241,21 @@ def nemotron_chat(row: dict) -> list[dict]:
     return messages
 
 
+def xlam_function_calling(row: dict) -> list[dict]:
+    """Salesforce xLAM: `query`, `tools` and `answers` (the last two are JSON text). One user turn, one assistant turn of tool calls."""
+    try:
+        tools, answers = json.loads(row["tools"]), json.loads(row["answers"])
+    except (TypeError, ValueError):
+        raise Skip("tools or answers is not valid JSON") from None
+    calls = [{"function": {"name": a["name"], "arguments": a.get("arguments") or {}}, "id": None}
+             for a in answers if isinstance(a, dict) and a.get("name")]
+    if not calls or len(calls) != len(answers):
+        raise Skip("no usable tool call")
+    system = "Tools:\n" + json.dumps(tools, ensure_ascii=False, sort_keys=True)
+    return [{"role": "system", "content": system}, {"role": "user", "content": _text(row["query"])},
+            {"role": "assistant", "content": "", "tool_calls": calls}]
+
+
 def think_tag_messages(row: dict) -> list[dict]:
     """`messages` or `conversations` whose assistant turns carry one leading <think>...</think> block
     (Nemotron Cascade SWE, Nemotron Terminal)."""
@@ -456,7 +471,7 @@ def aya_collection_rows(dataset: str, _path: str, offset: int, n: int) -> Iterat
 
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
-    "sft-code-commitpackft": (commitpackft, "commit", ("python", "train"), None, ""),
+    "sft-code-commitpackft": (commitpackft, "commit", ("file", "glob:data/*/data.jsonl"), None, "all 277 language files (data/<language>/data.jsonl)"),
     "sft-code-codeforces-cots": (codeforces_cots, "id", ("file", "glob:solutions/"), None, "solutions config"),
     "sft-code-swe-rebench-openhands": (swe_rebench_openhands, "trajectory_id", ("file", "trajectories.parquet"), None, ""),
     "sft-indic-aya-dataset": (
@@ -481,7 +496,7 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
     "sft-math-openr1-math": (think_tag_messages, "uuid", ("file", "glob:all/train-"), None, "config all, 20 shards"),
     "sft-math-openr1-math-raw": (openr1_math_raw, "", ("file", "glob:data/"), _raw_verified,
         "all 39 shards; first generation, rows whose first generation passes llama_verification"),
-    "sft-stem-code-openthoughts3": (sharegpt_think, "", ("file", "data/train-00000-of-00120.parquet"), None, "first shard"),
+    "sft-stem-code-openthoughts3": (sharegpt_think, "", ("file", "glob:data/*.parquet"), None, "all 120 parquet shards"),
     "sft-code-opencodereasoning-2": (opencodereasoning_2, "id", ("file", "train/python/train-00000-of-00070.parquet"), None, "python, first shard"),
     "sft-science-nemotron-science": (nemotron_chat, "uuid", ("file", "data/MCQ.jsonl"), None, "MCQ file"),
     "sft-chat-nemotron-if-v1": (nemotron_chat, "uuid", ("file", "data/structured_outputs.jsonl"), None, "structured_outputs file"),
@@ -498,7 +513,8 @@ ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Ca
         "per row by sha256(doc_id) from " + ",".join(INDIC_ALIGN_COLUMNS),
     ),
     "sft-science-glm51-phd": (sharegpt_think, "id", ("file", "PHD-Science.jsonl"), None, "PHD-Science config"),
-    "sft-math-nemotron-proofs-v3-sft": (nemotron_chat, "uuid", ("file", "data/train-00000-of-00010.jsonl"), None, "first part"),
+    "sft-salesforce-xlam-60k": (xlam_function_calling, "id", ("file", "xlam_function_calling_60k.json"), None, "all rows"),
+    "sft-math-nemotron-proofs-v3-sft": (nemotron_chat, "uuid", ("file", "glob:data/*.jsonl"), None, "all 10 jsonl files"),
     "sft-oasst2": (oasst2_thread, "id", ("oasst2", "data/train-00000-of-00001-88ba0162028a73fc.parquet"), None,
                    "best-ranked reply at each step; not deleted, not synthetic, ready_for_export trees"),
     "sft-indic-aya-collection": (aya_collection, "", ("aya", ""), None,
@@ -841,6 +857,10 @@ def _local_file_rows(file: Path, offset: int, n: int) -> Iterator[dict]:
                     yield row
                 taken += 1
         return
+    if file.suffix == ".json":  # one JSON array (xLAM, 96 MB): read whole
+        BYTES_READ += file.stat().st_size
+        yield from json.loads(file.read_text(encoding="utf-8"))[offset:offset + n]
+        return
     with open(file, "rb") as f:
         for line in f:
             BYTES_READ += len(line)
@@ -863,6 +883,8 @@ def _one_file_rows(dataset: str, path: str, offset: int, n: int) -> Iterator[dic
     if local is not None and local.is_file():
         yield from _local_file_rows(local, offset, n)
         return
+    if path.endswith(".json"):  # one JSON array, not lines (xLAM 60k is also gated): it is read from a local copy
+        raise SystemExit(f"{dataset}/{path} is a single JSON array: download it and set G10_LOCAL_ROOT to the folder that holds it")
     if path.endswith(".parquet"):
         import pyarrow.parquet as pq
 
