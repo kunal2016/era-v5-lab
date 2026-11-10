@@ -135,8 +135,8 @@ def lock_dependencies(base_image: str, repo: str, sha: str, date: str, spec: lis
         Path(tmp, "Dockerfile").write_text(dockerfile(base_image, repo, sha, install), encoding="utf-8")
         build(tag, Path(tmp))
     frozen = sh(["docker", "run", "--rm", "--network=none", tag, "uv", "pip", "freeze"])
-    keep = [l for l in frozen.splitlines() if l.strip() and not l.startswith("-e") and "file:///repo" not in l
-            and not l.startswith(("uv==", "pip=="))]
+    keep = [line for line in frozen.splitlines() if line.strip() and not line.startswith("-e") and "file:///repo" not in line
+            and not line.startswith(("uv==", "pip=="))]
     subprocess.run(["docker", "rmi", "-f", tag], capture_output=True)
     return "\n".join(sorted(keep, key=str.lower)) + "\n"
 
