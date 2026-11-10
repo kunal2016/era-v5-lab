@@ -107,7 +107,7 @@ records actual per-step timing and sampled total device memory. It does not
 measure official evaluation/checkpoint overhead or establish a 90-minute finish.
 Choose a fresh workspace if a prior probe exists; evidence is never overwritten.
 
-The [compute request](https://github.com/revantg/era-v5-lab/blob/1c024d22ae48a3ca07c1f4da5408028b36f7cb4e/teams/05-architecture/jobs/2026-11-10-attention-t2.md) includes the full
+The [compute request](https://github.com/revantg/era-v5-lab/blob/codex/g5-attention-job/teams/05-architecture/jobs/2026-11-10-attention-t2.md) includes the full
 five-design, three-seed matrix and links the saved evidence.
 
 ## Single-seed GPU screen
@@ -183,7 +183,7 @@ the initial evaluation. Plot labels name the designs in plain language.
 All five runs completed 1,221 updates at the same seed 1235 and full model/batch shape.
 These are single-seed preliminary scores; approval and the formal three-seed comparison
 remain pending. The learned output gate is lowest overall/Indic; windowed attention
-is lowest on code. [Raw evidence and limitations](https://github.com/revantg/era-v5-lab/blob/1c024d22ae48a3ca07c1f4da5408028b36f7cb4e/teams/05-architecture/jobs/evidence/2026-11-10-attention-screen/README.md).
+is lowest on code. [Raw evidence and limitations](https://github.com/revantg/era-v5-lab/blob/codex/g5-attention-job/teams/05-architecture/jobs/evidence/2026-11-10-attention-screen/README.md).
 
 ## Review boundaries
 
@@ -195,3 +195,11 @@ and full-size fit evidence lives in
 [`../jobs/evidence/2026-11-10-attention-smoke/`](../jobs/evidence/2026-11-10-attention-smoke/README.md).
 The GPU notebook deliberately retains its historical execution pin; it does not
 claim that the proposed cache/resume repair is merged or approved.
+
+- [Compute request and completed real-data records: #345](https://github.com/theschoolofai/era-v5-lab/pull/345).
+- [Cache/resume implementation and tests: #343](https://github.com/theschoolofai/era-v5-lab/pull/343), for Sonu/Udit coordination and review.
+- [This notebook companion: #344](https://github.com/theschoolofai/era-v5-lab/pull/344).
+
+The original [#337](https://github.com/theschoolofai/era-v5-lab/pull/337) is superseded;
+its execution history remains available. These links separate review ownership
+without changing the historical notebook execution pins.
