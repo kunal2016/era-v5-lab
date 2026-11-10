@@ -24,7 +24,7 @@ This handoff provides Team 12 with the production-ready Jinja2 chat template (`c
 > Per repo `pr-guard.yml` rules (lines 52–54), non-markdown files within `teams/` must reside inside a topic subdirectory (depth $\ge 4$). Placing the template under `teams/12-quantization/tokenizer/` or `teams/12-quantization/chat-format/` ensures full compliance with PR Guard.
 
 ### Hand-off Note for Team 12 (`unsupported_parts.md`):
-Team 12's tracking document [`teams/12-quantization/docs/unsupported_parts.md`](file:///home/opc/projects/era-v5-team10/teams/12-quantization/docs/unsupported_parts.md#L179) notes:  
+Team 12's tracking document [`teams/12-quantization/docs/unsupported_parts.md`](../../12-quantization/docs/unsupported_parts.md#L179) notes:  
 `| Chat template | yes: Jinja in tokenizer.chat_template | yes | G10 sends it on 12 Nov; test it with llama-server and vLLM chat endpoints |`
 
 The update for Sreekanth (`@SreekanthZipsy`) to reference this delivered artifact is:  
