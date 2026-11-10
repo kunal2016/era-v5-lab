@@ -10,7 +10,7 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
   - `lab_canary.py`: `373536a777c9f16367cf6affcc2cc6243755ac23e75850a2624eadf65918ea09`
   - `normalize.py`: `570dcb820ac2ae6c667b1abc5ea1d781a6795aa42a7735aa94377e756d7d70e9`
 - **Runner and reconciliation:** `sft/decontam_run.py`; this file is written by `sft/decontam_report.py`.
-- **Sets run:** 34. **Rows in:** 16,916,562. **Removed (flagged or canary):** 349,542 (2.07%). **Kept:** 16,567,020.
+- **Sets run:** 34. **Rows in:** 17,438,781. **Removed (flagged or canary):** 460,409 (2.64%). **Kept:** 16,978,372.
 - No benchmark item text is in this file or in the run records: only set names, counts, document ids, benchmark item ids, offsets and sha256 values.
 
 ## 1. Result per set
@@ -51,7 +51,7 @@ Run for G10 on 2026-11-06 to 2026-11-09. Every set was checked against Team 9's 
 | `sft-science-nemotron-science` | full set | 174,155 | 369 | 0 | 369 (0.21%) | 173,786 | `6f9ac4dc35a0…` |
 | `sft-stem-code-openthoughts3` | full set | 450,599 | 7,457 | 0 | 7,457 (1.65%) | 443,142 | `79f4ff26c091…`, `ade7c9a57a9a…`, `339d8d7a2365…`, `6cd690ad6162…`, `bfc8889fd947…`, `bbf06c20198f…`, `c0b69a521656…`, `050dc50cc113…`, `78b37d9adaaf…`, `45112561996b…`, `df2a24c8ffb1…`, `035b09e8392d…`, `e91b9317cf4f…`, `79c54c847f81…`, `f1fd1a47c906…`, `fb0dc7686647…`, `6f98a681965c…`, `3b9ce3d515f8…`, `06de3c49caa6…`, `7b5c21530b81…`, `b68890d2f196…`, `e96250c2c5dd…`, `47ffd65a22c6…`, `f97a16876b62…`, `b2eda5876be9…`, `784f6476778e…`, `9ee3aeb836ee…`, `4f9a39e0d2b6…`, `82a3e0878dfc…`, `8e49fff488bb…`, `24eab6e1e40f…`, `a0a74c9b6662…`, `6db44fc142f7…`, `b49184e84ecb…`, `08ef9e409887…`, `759d62dea723…`, `4aa6cd514c76…`, `16315ac38c30…`, `a14c07d455d4…`, `ac423827f18d…`, `2b150183b97b…`, `28c038ede56f…`, `17a8a8b4699f…`, `d25d0d3cb5c8…`, `3bfa28c90937…`, `c8535b6b24c3…`, `7170551799f6…`, `980940982da2…`, `0cfbbf6fe7ff…`, `6278731204e0…`, `f46e39ba4445…`, `a008b84b3403…`, `b75cec629a02…`, `180233fa0a0d…`, `f4ddf86d1768…`, `176a98edadd0…`, `c8fd43f1ca01…`, `0490573de419…`, `7d1a10cca633…`, `c5451affbdb0…`, `ad0ee9308e89…`, `5ac1e4c7b8ae…`, `2d06beeec41a…`, `c562fc524337…`, `60e57ff96219…`, `90f37ab833e4…`, `ac39bc75d9e3…`, `2e5bcc6805e3…`, `ab93ee9ddac1…`, `89b9caa7b479…`, `9b24af20c6fa…`, `85eb8b58180d…`, `86b2cb843c66…`, `8aa42a3c0b7e…`, `0d92bbe5c35d…`, `96ff98da4576…`, `2f57f6cdd449…`, `e4ca30295e37…`, `a97bfbbb54de…`, `e7ac6d81e8bb…`, `5b5d250c2b15…`, `a48fdf3f83fb…`, `622db5de91b8…`, `14fd7d1bcb25…`, `fc679955203f…`, `41d40a253c48…`, `2995815864d7…`, `697f08fa7820…`, `b418bdfc940c…`, `6f6683ebeeac…`, `5e654702115f…`, `6aa5102da92c…`, `a07c687c112b…`, `37bae8c93b88…`, `1ad5a7501c96…`, `eab3dc4bb945…`, `f813e452f827…`, `2e749834981f…`, `6e843ee19136…`, `4ffba978fc49…`, `144580db0fe3…`, `976ee17bcc51…`, `1dc640b953af…`, `248755862922…`, `ad4367db46ce…`, `0e0ae3cf1233…`, `6331f959579d…`, `b4e65d14ef97…`, `b470a1881d98…`, `23029aeec603…`, `087a9770b759…`, `80865aa19021…`, `af50e4d4dcf2…`, `d99412775cec…`, `fa8706efcf46…`, `38a251e43b1b…`, `d6f01e3864e4…`, `6252a408aa3b…`, `124f8b845375…`, `f6eb39dfe732…` |
 | `sft-safety-aegis-v1` | text column, train and test, not chat | 11,997 | 2 | 0 | 2 (0.02%) | 11,995 | `e545b24def6c…` |
-| **Total** | | **16,916,562** | **349,542** | **0** | **349,542** (2.07%) | **16,567,020** | |
+| **Total** | | **17,438,781** | **460,409** | **0** | **460,409** (2.64%) | **16,978,372** | |
 
 `sft-code-opencodereasoning-2` raw input is 1,398,166 rows. Before the scan, 268,752 are upstream test splits, 3,629 are protected family, 513,809 fail the quality proposal, and 69,690 are held because the `open-r1/codeforces` revision is not established. The other 542,286 join; 67 are rejected by the converter, so 542,219 reach the scan.
 
@@ -2038,7 +2038,7 @@ python teams/10-post-training/sft/decontam_report.py --records decontam_out --ou
 
 ## 7. Sets not in section 1 (9 Nov)
 
-`sft-code-commitpackft` is the python split (56,025 rows, 15 removed). `sft-code-opencodereasoning-2` is the first python shard after joining questions from TACO, APPS, and code_contests by `dataset` + `index` (20,000 rows, 4,200 removed). The other 69 python shards are outside the adapter in `convert.py`. `sft-math-nemotron-proofs-v3-sft` is the first of 10 parts: 20,023 source rows, 18,266 skipped by `convert.py` because the trace is over the 64k budget, 1,757 checked, 42 removed. An `excluded` set is out of training.
+`sft-code-commitpackft` is the python split (56,025 rows, 15 removed). `sft-code-opencodereasoning-2` is all 70 python shards, converted, after joining questions from TACO, APPS, and code_contests by `dataset` + `index` (542,219 rows scanned, 115,067 removed). `sft-math-nemotron-proofs-v3-sft` is the first of 10 parts: 20,023 source rows, 18,266 skipped by `convert.py` because the trace is over the 64k budget, 1,757 checked, 42 removed. An `excluded` set is out of training.
 
 | Set | Status | Why |
 |---|---|---|
