@@ -67,7 +67,7 @@ V5_SKIP="${V5_SKIP:-}"                      # steps that do not apply (the Docke
 CTLD=(${V5_CTLD_HOSTS:-})
 NODES=(${V5_NODES:-})
 CTL="${CTLD[0]:-}"
-SUB="$V5_REPO"                # the team folder: adr/ ckpt/ queue/ slurm/ health/ metrics/ common/ ops/
+SUB="$V5_REPO"                # the team folder: adr/ ckpt/ queue/ slurm/ health/ metrics/ common/ launch/
 LOG="${V5_LAUNCH_LOG:-./launch-$(date -u +%Y%m%dT%H%M%SZ).log}"
 
 say()  { printf '[%s] %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG" >&2; }

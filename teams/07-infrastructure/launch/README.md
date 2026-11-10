@@ -1,4 +1,4 @@
-# Operations (`ops/`): starting the whole stack, in order
+# Launch (`launch/`): starting the whole stack, in order
 
 Plain-words overview and the reasons behind it: [team briefing §3.7](../TEAM_BRIEFING.md#37-starting-the-cluster-operations).
 Full step table: [team README](../README.md#starting-production-opslaunchsh).
@@ -11,8 +11,8 @@ Full step table: [team README](../README.md#starting-production-opslaunchsh).
 ## How it works, step by step
 
 ```text
-cp ops/cluster.env.example /etc/v5/cluster.env   (edit hosts, store, run id)
-ops/launch.sh            every step: do it (only if not already done) → check it → next, or STOP with the reason
+cp launch/cluster.env.example /etc/v5/cluster.env   (edit hosts, store, run id)
+launch/launch.sh            every step: do it (only if not already done) → check it → next, or STOP with the reason
 
  1 preflight   settings complete · every host reachable · the same code on every host
  2 munge       munged on every host · a credential from the controller decodes everywhere (one key, clocks ok)
@@ -30,10 +30,10 @@ ops/launch.sh            every step: do it (only if not already done) → check 
 ```
 
 ```bash
-ops/launch.sh --list          # the steps
-ops/launch.sh --dry-run       # what would run where; nothing changes
-ops/launch.sh --from health   # continue after fixing a failed step
-ops/launch.sh --only store    # one step
+launch/launch.sh --list          # the steps
+launch/launch.sh --dry-run       # what would run where; nothing changes
+launch/launch.sh --from health   # continue after fixing a failed step
+launch/launch.sh --only store    # one step
 ```
 
 Hosts are reached through `V5_EXEC` (`ssh -o BatchMode=yes %h` by default; the Docker test uses

@@ -1,7 +1,8 @@
 # Checkpoint design (V5 main run)
 
-Team 07, Infrastructure. Status: **draft for review**, week 1.
-Code: [`../ckpt/ckpt.py`](../../ckpt/ckpt.py), tests [`../ckpt/test_ckpt.py`](../tests/test_ckpt.py). Related: [ADR 0001](../../adr/0001-checkpoint-format-and-commit.md) (decisions, contracts, metrics; it wins where this draft differs), [ADR 0002](../../adr/0002-job-queue-slurm.md) (queue) and `../health/`.
+Team 07, Infrastructure. Status: **v0**, written in week 1, moved here from `support/docs/checkpoint_design.md`
+for Gate 2 (the week plan names this path). Section 13 (the save time) is filled in week 2.
+Code: [`../ckpt/ckpt.py`](../ckpt/ckpt.py), tests [`../support/tests/test_ckpt.py`](../support/tests/test_ckpt.py). Related: [ADR 0001](../adr/0001-checkpoint-format-and-commit.md) (decisions, contracts, metrics; it wins where this draft differs), [ADR 0002](../adr/0002-job-queue-slurm.md) (queue) and `../health/`.
 
 ## 1. Goal
 
@@ -255,3 +256,14 @@ initialised model of the final shape. You don't need a trained model to measure 
 3. "Every N-th protected": N in steps or tokens? The eval team should say what cadence it needs.
 4. Does the instructor's submit system restart jobs itself, or should Slurm requeue (exit 75)?
 5. Spot or on-demand for the main run? Spot makes the emergency-save path the common path.
+
+## 13. Save time (Team 6 input)
+
+Section D of the week-2 plan. Team 6 gives the measured save time on Fri 13 Nov; it goes here with the command,
+the checkpoint size and the machine, and is compared with the stall budget in section 11 (stall ≤ 2% of the
+interval) and the interval in section 7.
+
+| Input | Value | Source |
+|---|---|---|
+| Save time (stall, then background commit) | _pending, Fri 13 Nov_ | Team 6 |
+| Checkpoint size per rank | _pending, config v1 (Sat 14 Nov)_ | Team 5 config v1, [parallel_layout_v0.md](parallel_layout_v0.md) |

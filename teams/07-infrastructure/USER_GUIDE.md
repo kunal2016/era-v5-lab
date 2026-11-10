@@ -61,7 +61,7 @@ the Docker test cluster unless the text says otherwise.
 | Queue: Slurm config, accounts and limits, job scripts, the wrapper | `slurm/`, `queue/` | ADR 0002 |
 | Node health: GPU checks, Xid scan, NVLink, collectives, drain | `health/` | ADR 0003 |
 | Monitoring and cost: events, 74 metrics, alerts, explanations | `metrics/`, `common/` | ADR 0004 |
-| Start-up of the whole stack, in order | `ops/launch.sh` | ADR 0002 §11 |
+| Start-up of the whole stack, in order | `launch/launch.sh` | ADR 0002 §11 |
 
 ### 1.2 The life of the main run
 
@@ -428,12 +428,12 @@ The run continues on branch `b1` from step K, skipping the 5 batches after it. T
 ### 6.1 Start everything in order
 
 ```bash
-cp /opt/v5/ops/cluster.env.example /etc/v5/cluster.env      # hosts, store, run id; no secrets
+cp /opt/v5/launch/cluster.env.example /etc/v5/cluster.env      # hosts, store, run id; no secrets
 $EDITOR /etc/v5/cluster.env
-/opt/v5/ops/launch.sh --list        # the 12 steps
-/opt/v5/ops/launch.sh --dry-run     # what would run where
-/opt/v5/ops/launch.sh               # start; stops at the first failed step
-/opt/v5/ops/launch.sh --from health # continue after a fix
+/opt/v5/launch/launch.sh --list        # the 12 steps
+/opt/v5/launch/launch.sh --dry-run     # what would run where
+/opt/v5/launch/launch.sh               # start; stops at the first failed step
+/opt/v5/launch/launch.sh --from health # continue after a fix
 ```
 
 | Step | Proves before going on |
@@ -484,7 +484,7 @@ healthy node). A missing tool is `skipped`, never `pass`.
 ```text
 teams/07-infrastructure/
 ├── USER_GUIDE.md          this file
-├── adr/ ckpt/ queue/ slurm/ health/ metrics/ common/ ops/   what runs on the cluster
+├── adr/ ckpt/ queue/ slurm/ health/ metrics/ common/ launch/   what runs on the cluster
 └── support/
     ├── tests/             unit tests (pytest)
     ├── simulation/        Docker Slurm cluster + drills (run_sim.py), test trainer, results*/
