@@ -9,7 +9,7 @@ doc_id,read,verdict,diseases,evidence,hex,note
 7385cf9ffc8e5a84,full,clean,,,,
 74462a9950dcb577,full,clean,,,,
 74c34771bf81bd80,full,clean,,,,
-76dd30d606198926,full,drop,D4;C1,literal MT of 'in this neck of the woods': 'जंगल की इस गर्दन में' at offset 2771|'वीडियो निर्देश: What is Two Finger Test?' at offset 2841,,machine-translated legal text + video caption
+76dd30d606198926,full,drop,D4;C1,literal MT of 'in this neck of the woods': 'जंगल की इस गर्दन में' at offset 2771 | 'वीडियो निर्देश: What is Two Finger Test?' at offset 2841,,machine-translated legal text + video caption
 76e8d2463393e396,full,clean,,,,
 77172d99db521f81,full,fix,D5,Marathi-style phrasing 'सोमानीने किया है' at offset 1112; 'इस समय' used as 'at this event' at offset 1266,,YOUR CALL: reads like translation from Marathi
 78952e0fa6f58c9b,full,clean,,,,
@@ -31,7 +31,7 @@ doc_id,read,verdict,diseases,evidence,hex,note
 8c1b53a83cec3736,full,clean,,,,
 8c376bb94e61c9ae,full,clean,,,,
 8ee9899341e82b51,full,clean,,,,
-8f95854f321445b1,full,fix,C1,embedded tweet credit 'भारत समाचार | Bharat Samachar (@bstvlive)' at offset 472,,
+8f95854f321445b1,full,fix,C1,embedded tweet credit 'Bharat Samachar (@bstvlive)' at offset 486,,
 911027243948566b,full,clean,,,,
 91f24d98cc6a7860,full,clean,,,,
 927341055e08d5be,full,clean,,,,
