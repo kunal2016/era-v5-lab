@@ -471,7 +471,7 @@ def aya_collection_rows(dataset: str, _path: str, offset: int, n: int) -> Iterat
 
 # set id -> (adapter, source id field, Hugging Face config/split, row selection or None, selection note)
 ADAPTERS: dict[str, tuple[Callable[[dict], list[dict]], str, tuple[str, str], Callable[[dict], bool] | None, str]] = {
-    "sft-code-commitpackft": (commitpackft, "commit", ("file", "data/python/data.jsonl"), None, "python subset (data/python/data.jsonl)"),
+    "sft-code-commitpackft": (commitpackft, "commit", ("file", "glob:data/*/data.jsonl"), None, "all 277 language files (data/<language>/data.jsonl)"),
     "sft-code-codeforces-cots": (codeforces_cots, "id", ("file", "glob:solutions/"), None, "solutions config"),
     "sft-code-swe-rebench-openhands": (swe_rebench_openhands, "trajectory_id", ("file", "trajectories.parquet"), None, ""),
     "sft-indic-aya-dataset": (

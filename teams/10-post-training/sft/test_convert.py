@@ -583,5 +583,5 @@ def test_xlam_json_array_is_read_from_a_local_copy(tmp_path):
     assert [r["id"] for r in convert._local_file_rows(f, 1, 3)] == [1, 2, 3]
 
 
-def test_commitpackft_reads_its_python_file_so_the_pipeline_can_run_it():
-    assert convert.ADAPTERS["sft-code-commitpackft"][2] == ("file", "data/python/data.jsonl")
+def test_commitpackft_reads_every_language_file_so_the_pipeline_can_run_it():
+    assert convert.ADAPTERS["sft-code-commitpackft"][2] == ("file", "glob:data/*/data.jsonl")

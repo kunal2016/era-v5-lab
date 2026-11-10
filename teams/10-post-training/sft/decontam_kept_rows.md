@@ -12,7 +12,7 @@ Rows in, removed and kept for the 32 SFT sets that were run on every converted r
 | `sft-chat-nemotron-if-v1` | 4,963 | 1 | 0.02% | 4,962 |
 | `sft-chat-nemotron-if-v2` | 929,130 | 5,820 | 0.63% | 923,310 |
 | `sft-code-codeforces-cots` | 45,734 | 20,796 | 45.47% | 24,938 |
-| `sft-code-commitpackft` | 56,025 | 15 | 0.03% | 56,010 |
+| `sft-code-commitpackft` | 702,062 | 1,001 | 0.14% | 701,061 |
 | `sft-code-nemotron-cascade-swe` | 210,582 | 18,248 | 8.67% | 192,334 |
 | `sft-code-nemotron-cuda` | 2,273 | 2 | 0.09% | 2,271 |
 | `sft-code-nemotron-opencode` | 67,086 | 332 | 0.49% | 66,754 |
@@ -38,7 +38,7 @@ Rows in, removed and kept for the 32 SFT sets that were run on every converted r
 | `sft-science-nemotron-science` | 174,155 | 369 | 0.21% | 173,786 |
 | `sft-science-nemotron-science-v2` | 96,605 | 286 | 0.30% | 96,319 |
 | `sft-stem-code-openthoughts3` | 450,599 | 7,457 | 1.65% | 443,142 |
-| **32 sets** | **17,176,456** | **348,310** | **2.03%** | **16,828,146** |
+| **32 sets** | **17,822,493** | **349,296** | **1.96%** | **17,473,197** |
 
 ## Not in this table
 
