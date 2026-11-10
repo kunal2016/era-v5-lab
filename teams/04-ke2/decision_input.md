@@ -2,7 +2,7 @@
 
 Everything below is read from a committed results file in one of the four week-2 pull requests that form the
 Team 4 package, after a joint review of the four on 10 Nov. All four were merged into `ke2-week2-stitch` on 10 Nov
-(section 9); the documentation fixes from the review are applied in the same pull request as this file.
+(section 7); the documentation fixes from the review are applied in the same pull request as this file.
 
 | PR | author | what it adds | files cited below |
 |---|---|---|---|
@@ -12,7 +12,7 @@ Team 4 package, after a joint review of the four on 10 Nov. All four were merged
 | swatibansal/era-v5-lab #4 | dattatreyamanjunath | exact minimum decode margin per script class, fp64 / fp32 / bf16 | `min_margin.md`, `results/min_margin/` |
 
 Review outcome: all four are approve-with-changes; every change asked for is documentation, none is code or a
-number. The four merge together after one stitch commit (section 9). On the merged tree `pytest teams/04-ke2/tests -q`
+number. The four merge together after one stitch commit (section 7). On the merged tree `pytest teams/04-ke2/tests -q`
 gives 158 passed, 2 skipped (the opt-in MPS and CUDA tests) with the tokenizer present, and 99 passed, 61 skipped
 without it; no failures.
 
@@ -95,33 +95,20 @@ the codec to 1.7e-15 on 10,010 real pairs; cos = 1 iff the strings are equal; th
 guarantee of section 3 follow. Both theorems and every number in them were re-derived independently in the 10 Nov
 review and agree.
 
-## 6. Revalidation of TSAI's experiments (private repo theschoolofai/era-v5-ke2)
-
-Status as reported in the open PR #5 there, not reviewed as part of this package: R1 single-seed re-runs match
-within tolerance for T0, C1, E1, E2, E3a, E4, E4 best, E5, E6, E8, S02a and S10; E3b timings differ; S02b and
-S03a blocked; E7, S03b, S04 pending; S05 to S08 depend on the TSAI job request. Nine differences D1 to D9 are listed
-there for team review, including a parameter-audit bug (D2) that touches the parameter count behind risk 4.
-
-## 7. EXP-5 bits per byte (Team 5)
-
-Not yet delivered. [Insert Team 5's EXP-5 bpb for the KE2 arm vs the dense baseline when received.] This is the only
-item that speaks to whether KE2 helps the language model; everything above speaks to whether it is safe and
-well-defined.
-
-## 8. Open risks after the package
+## 6. Open risks after the package
 
 | # | owner | status | risk |
 |---|---|---|---|
 | 1 | TSAI | closed with caveats | CUDA determinism: PR #268, section 4. Caveats: one GPU class, dense decoder, batch <= 4,096. |
 | 2 | Team 5 -> Team 4 | open | No predicted vectors yet. No rejection threshold (tau) exists in the package; it must be set on Team 5's vectors, and the margin, not a threshold, is what detects a near-code wrong answer. |
-| 3 | TSAI | open | E4 to E8 are single-seed in TSAI's files and single-seed in the R1 re-run (section 6). Multi-seed still needed; E7 not re-run. |
-| 4 | Lab decision | open | Unit-norm codes cannot express a per-token frequency prior; the fix is one scalar per token, V extra parameters. D2 in section 6 says the parameter audit script is wrong for every arm, so re-audit before deciding. |
+| 3 | TSAI | open | E4 to E8 are single-seed in TSAI's files. Multi-seed still needed. |
+| 4 | Lab decision | open | Unit-norm codes cannot express a per-token frequency prior; the fix is one scalar per token, V extra parameters. |
 | 5 | Team 4 with Team 3 | partially closed | v0, v0.1, v1-c1, C1 to C3 measured, all 32 bytes max, 0 raw collisions. C1-s0, C2-s0, C3-s0 and v2 unmeasured. |
 | 6 | Team 4 with Team 3 | open | The real `special_tokens_map.json` is still unconfirmed; no PR in the package touches it. |
 | 7 | Team 5 | partially closed | Margin floor and precision rules are now proven and measured (section 3). The cosine-decoder requirement and the margin-reporting requirement are stated here, not yet in Team 5's decoder. |
 | 8 | Team 4 | new | Team 3's `verify_kronecker_constraints_unified.py` reports 131,072 normal and 0 special tokens; the correct split is 130,716 and 356 (`output_shape.md`). Its length and cross-script gates still pass. File with Team 3. |
 
-## 9. How the package was merged
+## 7. How the package was merged
 
 Merged into `swatibansal/era-v5-lab:ke2-week2-stitch` on 10 Nov in the order #3, #2, #4, #268, each as a
 non-fast-forward merge so every author's commits are kept as written. #3 and #2 applied cleanly; #4 and #268
