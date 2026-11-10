@@ -71,7 +71,7 @@ A document is always identified by `(pack_id, split, part, row_in_part)` and its
 
 A document with no shingles (`overlap_docs.parquet` column `shingles` = 0) is empty after normalisation. All such documents share one H1 key, so `overlap.py` reports them as exact copies of each other. They are not duplicates: cleaning emptied them without dropping them. `dedup.py` therefore sets their matches aside before forming clusters, removes none of them, and lists them in `empty_documents.csv`.
 
-TSAI's 38-pack run has 7 such documents in `code-cpp`, `code-java` and `code-js-ts` (21 of its 98 H1 pairs; see `matrix_confirmation.md`). Whether they should be dropped is a cleaning decision, not a dedup one.
+TSAI's 38-pack run has 7 such documents in `code-cpp`, `code-java` and `code-js-ts` (21 of its 98 H1 pairs; see `matrix_confirmation.md`). They pass `clean.py`'s empty-output check (`out.strip()`) but have no words after normalisation, so they stay in the data. Dropping them is a cleaning rule change for spec v1.1, not a dedup one.
 
 ## Harm check
 
