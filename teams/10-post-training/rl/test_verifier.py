@@ -4,6 +4,7 @@ Run:  python -m pytest teams/10-post-training/rl/test_verifier.py -q -p no:cache
 Docker tests run only when `docker` and the image G10_RL_IMAGE (default python:3.12-slim) are present locally.
 """
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -466,3 +467,46 @@ def test_docker_writing_a_huge_file_is_stopped_before_it_fills_the_disk():
             return 0
     """, "docker")
     assert r["reward"] == 0
+
+
+def test_symlinked_result_file_is_not_read(monkeypatch, tmp_path):
+    secret = tmp_path / "outside.json"
+    secret.write_text(json.dumps([{"ok": True, "value": 1}]))
+
+    def fake(workdir, entry, wall_s):
+        (workdir / "results.json").symlink_to(secret)
+        return None
+    monkeypatch.setattr(v, "_run_process", fake)
+    r = score(CORRECT)
+    assert r["reward"] == 0 and "no readable result file" in r["reason"]
+
+
+def test_oversized_result_file_is_not_read(monkeypatch):
+    def fake(workdir, entry, wall_s):
+        (workdir / "results.json").write_text("[" + " " * (v.MAX_RESULT_BYTES + 1) + "]")
+        return None
+    monkeypatch.setattr(v, "_run_process", fake)
+    r = score(CORRECT)
+    assert r["reward"] == 0 and "no readable result file" in r["reason"]
+
+
+def test_read_result_bytes_reads_a_small_regular_file_and_refuses_the_rest(tmp_path):
+    f = tmp_path / "r.json"
+    f.write_text("[]")
+    assert v.read_result_bytes(f) == b"[]"
+    with pytest.raises(OSError):
+        v.read_result_bytes(tmp_path / "missing.json")
+    with pytest.raises(ValueError):  # a directory
+        v.read_result_bytes(tmp_path)
+    big = tmp_path / "big.json"
+    big.write_bytes(b" " * (v.MAX_RESULT_BYTES + 1))
+    with pytest.raises(ValueError):
+        v.read_result_bytes(big)
+    link = tmp_path / "link.json"
+    link.symlink_to(f)
+    with pytest.raises(OSError):
+        v.read_result_bytes(link)
+    fifo = tmp_path / "fifo.json"
+    os.mkfifo(fifo)
+    with pytest.raises(ValueError):  # must not block on a pipe
+        v.read_result_bytes(fifo)
