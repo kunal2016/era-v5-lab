@@ -29,7 +29,9 @@ Rule 0 overrides rule 1: a held-out document is kept even if its pack's licence 
 - **Usable:** permissive licences (e.g. MIT, Apache-2.0, BSD, CC-BY, CC0, public domain) and CC-BY-SA.
 - **Not usable:** any NC (non-commercial), any ND (no derivatives), and unstated licences. A copy with an unusable licence never survives.
 - If no copy in a group has a usable licence, every train copy is removed.
-- **Applied per pack.** The sample has no per-document licence column, so each pack's licence comes from G10's table (`teams/10-post-training/licences/licence_table.md`). `dedup.json` holds the pack-to-licence map.
+- **Applied per pack.** The sample has no per-document licence column, so a pack's licence applies to all its documents. `dedup.json` holds the map (`licence_usable`, with `default_licence_usable` for packs not listed).
+- **v1: all 38 sample-v0 packs are usable.** TSAI approved every pack into sample v0, and G10's licence table on `main` (`teams/10-post-training/licences/licence_table.md`, "Stage 0: Foundation data") excludes none of them: it lists 8 of the 38 (`code-python`, `code-go`, `code-js-ts`, `ind-mr-fw2`, `ind-kn-fw2`, `ind-ta-sangraha-v`, `ind-hi-indiccorp`, `ind-hi-hplt`), all with the decision "TSAI reserves", and does not list the other 30. So `licence_usable` stays empty and every pack uses `default_licence_usable: true`; `dedup.json` is unchanged.
+- **Two entries the table itself leaves open:** `code-js-ts` ("training-use rights require further verification") and `ind-hi-hplt` (CC0 for the packaging only; web terms for the text). Neither changes the v1 remove list: `code-js-ts`'s only cross-pack matches are the empty documents, which are set aside, and `ind-hi-hplt` has no qualifying duplicates. If TSAI excludes a pack, set it to `false` in `licence_usable` and rerun `dedup.py` (seconds).
 
 ## Rule 2: provenance
 
@@ -69,5 +71,5 @@ Preferring the copy that cleaning changed least was considered and dropped, beca
 
 ## Open items
 
-- Fill in the pack-to-licence map from G10's licence table.
+- TSAI: `code-js-ts` and `ind-hi-hplt` licences (open in G10's table; no effect on the v1 remove list).
 - Data B lead: any objection to the alphabetical order of their 25 packs, with a reason, by Fri 13 Nov 2026.

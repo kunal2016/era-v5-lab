@@ -147,7 +147,6 @@ Findings from local test runs on raw sample v0 parts (details in `results_v1.md`
 ## Open items before the final (Fri 13 Nov)
 
 - **`dedup.py` TSAI run:** approve `jobs/2026-11-10-dedup.md`; TSAI runs it with the cleaned parts, so rule 2 (url) applies.
-- **Licence map** (`source_priority_v1.md`, rule 1): fill `licence_usable` in `dedup.json` from G10's licence table before the TSAI run.
 - **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates.
 - **E4:** a reader to judge a sample of the 106 rejected `sangraha-s` pairs (are they true copies?); the measured part is done.
 - **E3:** add the missing known-pair tests (whitespace/case variant, truncated copy, same-topic pages, imports-only code).
@@ -172,3 +171,4 @@ It covers this file and `source_priority_v1.md`. The body states the decisions; 
 | 10 Nov 2026 | Cross-pack pass applied in v1 (E2 answered: 50 of 2,711 qualifying pairs are cross-pack); no training ablation for v1 | Data A team | `results_v1.md`, section 1 |
 | 10 Nov 2026 | Reviewed source matrix: `dedup/overlap_matrix.csv` is TSAI's returned matrix, unchanged; rebuilt byte-identically with and without `overlap_docs.parquet` and with `overlap_report.py --results` | Aneesha Das (Data A) | `matrix_confirmation.md`; PR #255 |
 | 10 Nov 2026 | Empty documents (no shingles) are not duplicates: `dedup.py` sets aside their matches, removes none of them and lists them in `empty_documents.csv` for the cleaning team. On the sample: 7 documents, 21 matches; 1,345 removed instead of 1,351. The 7 documents stay in the data; dropping them is a cleaning change for spec v1.1 | Data A team (proposed by Aneesha Das, agreed by Kunal Sinha; Kunal's Windows rerun gave the same result, `remove_list.csv` `913e66a6…`) | PR #255, commit `497dbd3`; `dedup.py`, `README_dedup.md`, `jobs/2026-11-10-dedup.md` |
+| 11 Nov 2026 | Licence (rule 1): all 38 sample-v0 packs usable; `dedup.json` unchanged (empty `licence_usable`, default true). G10's table on `main` lists 8 of the packs, none excluded; `code-js-ts` and `ind-hi-hplt` left open for TSAI, with no effect on the v1 remove list | Data A team (Vijay pointed to the table) | `source_priority_v1.md`, rule 1; G10 `licence_table.md` |
