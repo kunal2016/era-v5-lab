@@ -3,6 +3,7 @@
 
 The rule is the one in Data A's build_gold.py (DISEASES.md section 5). A document is gold when at least two
 different readers marked it read=full, verdict=clean with no disease code, and no reader marked it fix or drop.
+D3 (mixed language) is a label only: a clean row whose only code is D3 is a clean vote (TSAI, G1, 31 Oct).
 What differs: it needs no GitHub token (you give it the sheets), a bad sheet is skipped and reported instead of
 stopping the run, and it also writes one file for the whole language.
 
@@ -29,25 +30,30 @@ def read_votes(path, warnings):
         names = [(n or "").strip().lower() for n in (reader.fieldnames or [])]
         if not set(NEED) <= set(names):
             raise ValueError(f"the header has no {', '.join(sorted(set(NEED) - set(names)))} column")
-        votes, conflict = {}, set()
+        votes, conflict, every = {}, set(), {}
         for row in reader:
             r = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items() if k is not None}
             doc, read, verdict = r.get("doc_id"), r.get("read", "").lower(), r.get("verdict", "").lower()
             if not doc or read not in ("full", "partial") or verdict not in ("clean", "fix", "drop"):
                 continue
-            if verdict == "clean" and read == "full" and not r.get("diseases"):
+            codes = {c.strip().upper() for c in r.get("diseases", "").replace(",", ";").split(";") if c.strip()} - {"D3"}
+            if verdict == "clean" and read == "full" and not codes:
                 vote = "clean"
-            elif verdict in ("fix", "drop") or r.get("diseases"):
+            elif verdict in ("fix", "drop") or codes:
                 vote = "negative"
             else:
                 vote = "seen"  # clean but only partly read, or clean with a code: not a clean vote, not a dispute
             if doc in votes and votes[doc] != vote:
                 conflict.add(doc)
             votes[doc] = vote
+            every.setdefault(doc, set()).add(vote)
     if conflict:
-        warnings.append(f"{path.parent.name}/{path.name}: {len(conflict)} documents with two different rows: left out")
+        warnings.append(f"{path.parent.name}/{path.name}: {len(conflict)} documents with two different rows (disputed if one row is fix or drop)")
         for doc in conflict:
-            del votes[doc]
+            if "negative" in every[doc]:
+                votes[doc] = "negative"  # one row says fix or drop: the document is disputed, never gold
+            else:
+                del votes[doc]
     return votes
 
 
