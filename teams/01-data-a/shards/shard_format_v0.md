@@ -3,9 +3,12 @@
 How the cleaned packs become token shards for training. A draft to agree with G3 (tokenizer) and G7 (infrastructure)
 before anything is written at scale. The manifest template is `shard_manifest_v0.template.json`.
 
-**Sample:** `sample/` holds a real 3-document shard's manifest and a dump of its files (header, token IDs, index,
-metadata), made by `python teams/01-data-a/shards/make_sample_shard.py --out <dir>`. The script also writes the `.bin`,
-`.idx.npy` and `.docs.parquet` (not committed: pr-guard) and checks them by reading the `.bin` with G6's `open_shard`.
+**Sample:** `sample/` is one complete shard, `code-go-train-000000`: 266 docs, 262,109 tokens (about 1 MiB; a real shard
+is 2^26 tokens), from `code-go` part-00001 of the tokenizer sample v0 after `clean.py` and F2. It has every file below plus
+`cleaning_pipeline.json`, and `code-go-train-000000.dump.md` describes it. `make_sample_shard.py` made it and checks it:
+G6's `open_shard` reads the `.bin`, the sizes and the index match the manifest, and every doc decodes back to its text.
+The `.bin` and `.docs.parquet` are here only as a sample for review: pr-guard refuses them in a PR, so they come out
+before this is merged.
 
 ## Files of one shard
 
@@ -41,8 +44,8 @@ metadata), made by `python teams/01-data-a/shards/make_sample_shard.py --out <di
 | `eos_token_id` | the token after each document (open, see G3 below) |
 | `tokenizer_sha256` | sha256 of the `tokenizer.json` bytes that made the IDs |
 | `pack_id`, `language`, `script`, `domain`, `capability_lane`, `split` | what is in the shard. `split` is `train` or `validation` only: test and benchmark data are never sharded (eval firewall, G9 #269) |
-| `inputs_sha256` | sha256 of the sorted lines `<input_sha256> <part>` of the cleaned parquet parts used |
-| `cleaning_pipeline_sha256` | sha256 of `cleaning_pipeline.json`: `clean.py`, `f2_rule.py` and dedup sha256 values |
+| `inputs_sha256` | sha256 of the sorted lines `<input_sha256> <part>` of the input parts `run_clean.py` read (from its summaries) |
+| `cleaning_pipeline_sha256` | sha256 of `cleaning_pipeline.json`: the `clean.py` sha256, the F2 fingerprint set and the dedup version |
 | `decontam_set_sha256` | the G9 fingerprint set F2 checked against (v2 today). A new set means rechecking every shard with an older one |
 | `sample_metadata_*`, `quality_report_*` | links to what is kept outside the manifest, with hashes |
 | `created_by` | the git commit of the shard writer |
@@ -109,6 +112,6 @@ corpus-v1/
 
 ## Not done yet
 
-- The shard writer for real packs (`make_sample_shard.py` shows the format and the checks on made-up documents).
+- The shard writer for real packs (`make_sample_shard.py` writes one shard from one cleaned part, with the checks).
 - The loader and its run of `ckpt/loader_contract.py`.
 - The `capability_lane` values: from the training plan.
