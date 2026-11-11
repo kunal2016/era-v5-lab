@@ -28,7 +28,7 @@ doc_id,read,verdict,diseases,evidence,hex,note
 67a335cf66e1a9eb,full,clean,,,,
 6fb6f2b0a3cec116,full,clean,,,,
 7d872503e9cef4e7,full,clean,,,,
-7ee2c0a3a3cc4368,full,fix,C1,"""স্টাফ রিপোর্টার :"" at 1469",,byline 'স্টাফ রিপোর্টার :' repeated as a dangling last line
+7ee2c0a3a3cc4368,full,fix,C1,"""স্টাফ রিপোর্টার :"" at 1471",,byline 'স্টাফ রিপোর্টার :' repeated as a dangling last line
 93a14309bf646e28,full,clean,,,,
 967b598ec07b3ff6,full,clean,,,,
 98bb9578017e6159,full,fix,C3,"""এ ব্যাপারে তিনি মালিক আশতারকে নির্দেশ দেন :"" at 1165",,essay on governance; the quoted instruction after the colon is missing
