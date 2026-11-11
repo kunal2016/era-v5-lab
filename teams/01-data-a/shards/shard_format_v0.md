@@ -4,9 +4,10 @@ How the cleaned packs become token shards for training. Agreed with G3 (tokenize
 (infrastructure). The manifest template is `shard_manifest_v0.template.json`; `shard_writer.py` writes one shard from one
 cleaned part and checks it; `test_shard_writer.py` tests it.
 
-**Sample:** `sample/` holds `code-go-train-000000` (266 docs, 262,109 tokens) with every file below. It was written with
-the baseline tokenizer and EOS id 36, before G3's answers, and is rewritten with C3 once the C3 `tokenizer.json` is here. The
-`.bin` and `.docs.parquet` are there only for review: pr-guard refuses them in a PR, so they come out before a merge.
+**Sample:** `sample/` holds `code-go-train-000000` (266 docs, 262,109 tokens) with every file below except the
+`.bin` and `.docs.parquet`, which pr-guard refuses in a PR (`shard_writer.py` makes them; `.dump.md` shows what they hold). It
+was written with the baseline tokenizer and EOS id 36, before G3's answers, and is rewritten with C3 once the C3
+`tokenizer.json` is here.
 
 ## Files of one shard
 
