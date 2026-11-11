@@ -170,18 +170,33 @@ Per-pack `jaccard_matrix.py` outputs for the two math packs (histogram, matrix, 
 
 ### Harm check (pass)
 
-The gold sets come from the week-1 diagnosis packs, not from sample v0, so the harm check on the 38-pack run was `not_testable`. It was run on the 4 diagnosis packs on hand, through the production order: `clean.py` (main, SHA-256 `d3464bda…`), then `overlap.py`, then `dedup.py` with `gold_dirs` set. Log: `jobs/logs/2026-11-11-dedup-harm-diag-local.txt` (counts and hashes only).
+The gold sets come from the week-1 diagnosis packs, not from sample v0, so the harm check on the 38-pack run was `not_testable`. It was run on the 4 diagnosis packs on hand, through the production order: `clean.py` (main, SHA-256 `d3464bda…`), then `overlap.py`, then `dedup.py` with `gold_dirs` set. It was run twice on the same overlap output: run 1 with the gold files in this branch, run 2 adding the `cadj-commits` gold file from `main`. Log: `jobs/logs/2026-11-11-dedup-harm-diag-local.txt` (counts and hashes only).
 
 | | |
 |---|---|
 | Packs | `math-finemath`, `math-megamath`, `sci-finepdfs` (cleaned), `cadj-commits` (raw: `clean.py` has no rules for it) |
 | Documents after cleaning | 1,964 |
-| Gold IDs present | **314**: `math-finemath` 86, `math-megamath` 26, `sci-finepdfs` 202 (`cadj-commits` has no gold file in the repo) |
+| Gold IDs present, run 1 | **314**: `math-finemath` 86, `math-megamath` 26, `sci-finepdfs` 202 (this branch has no `cadj-commits` gold file) |
+| Gold IDs present, run 2 | **727**: the 314 above plus `cadj-commits` 413 (all 413 IDs in its gold file) |
 | Qualifying duplicate pairs | 0 |
-| Documents removed / gold removed | 0 / **0** |
+| Documents removed / gold removed | 0 / **0** in both runs |
 | Gold dropped by `clean.py` | 0 |
 
-The result is a pass, but a check where nothing is removed is weak on its own. The stronger evidence is the margin: **no gold document is in any pair at word Jaccard ≥ 0.50**, so none came near the 0.80, 0.85 or 0.90 thresholds. The only pair at ≥ 0.50 in the 1,964 documents is two `cadj-commits` documents at 0.716, neither gold. Limits: only 3 of the 13 Data A packs have gold here, and each pack is checked on its own.
+The result is a pass, but a check where nothing is removed is weak on its own. The stronger evidence is the margin: **only one pair in the 1,964 documents reaches word Jaccard ≥ 0.50**: two `cadj-commits` documents at 0.716. Both are `cadj-commits` gold documents (run 2), and both are kept, because 0.716 is below the 0.80 prose threshold. No math or science gold document is in any pair at ≥ 0.50, so none came near the 0.80 or 0.90 thresholds. Limits: 4 of the 13 Data A packs have gold here, and each pack is checked on its own.
+
+**The `cadj-commits` gold file (run 2)** is `teams/02-data-b/gold/cadj-commits_gold.csv` on `main` (added in commit `6b09da4`, 2 Nov; SHA-256 `ba4da5c2…`). It is not in this branch, which has not been synced with `main`, and it was not added here because it is a Data B file. When this PR merges, `main` already has it.
+
+**To reproduce run 2** from the repo root, after the clean and overlap steps in the log:
+
+```bash
+git fetch upstream
+mkdir -p out/gold_main
+git show 6b09da4:teams/02-data-b/gold/cadj-commits_gold.csv > out/gold_main/cadj-commits_gold.csv
+sha256sum out/gold_main/cadj-commits_gold.csv     # ba4da5c2…
+# config: copy out/dedup_diag.json to out/dedup_diag2.json, set
+#   "gold_dirs": ["teams/01-data-a/gold", "teams/02-data-b/gold", "out/gold_main"], "out": "out/dedup_diag2"
+python teams/01-data-a/dedup/dedup.py --config out/dedup_diag2.json   # harm check: pass
+```
 
 ### E4, measured part: the 50-word minimum and Indic text
 
