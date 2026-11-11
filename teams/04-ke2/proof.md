@@ -157,7 +157,7 @@ All 13 synthetic-data tests: `13 passed` (CPU, torch).
 
 **BrahmicTokenizer-131K** (`tokenizer.json` sha256 `01d968a7970b029c071b29f060abf6104b66168dedf2ff3b1a0290a545739fff`, 131,072 ids,
 356 special tokens, normalizer null, no byte fallback). Raw bytes come from the vocabulary strings by inverting the GPT-2
-byte-to-unicode map. The code is `src/proofs/proof_checks.py` (uses `forward.py`) and `tests/test_proof_checks.py`; run them as in section 5.
+byte-to-unicode map. The code is `src/proofs/proof_checks.py` (uses `forward.py`) and `tests/test_proof_checks.py`; run them as in section 7.
 Every number below is in `results/proof_checks.json`. The tokenizer files are not in this repository.
 
 | Table fed to the codec | P | distinct codes (of 131,072) | tokens that cannot be produced | pair causes |
@@ -179,38 +179,13 @@ Every number below is in `results/proof_checks.json`. The tokenizer files are no
   codec, but not the theorem. Whether to keep `<s>` text and the special token apart is a policy decision.
 - **Normalisation.** NFC or NFKC changes the bytes, so it changes the codes. The tokenizer has no normalizer, so this happens in the data pipeline. The proof starts from the bytes.
 - **Exact arithmetic.** The proof is exact. The checks cover fp32 and bf16 and show that the lit and unlit values stay apart.
-- **Decoding from a predicted vector** (noisy input, margins, tau) is week 2 and is not part of this proof.
+- **Decoding from a predicted vector** (noisy input, margins) is covered by Theorems 2 and 3 in sections 5 and 6. A rejection
+  threshold (tau) is not covered anywhere in this document.
 
-## 5. Run it
+## 5. Theorem 2: exact structural decode (week 2)
 
-The commands use bash `export`; on Windows cmd use `set NAME=value`.
-
-```
-git clone https://github.com/theschoolofai/kronecker-embeddings
-pip install torch pytest
-# either pip install -e kronecker-embeddings, or point the tests at its src folder:
-export KRONECKER_SRC=<path to kronecker-embeddings>/src
-pytest teams/04-ke2/tests -q
-```
-
-`tests/conftest.py` and the scripts also find a folder named `kronecker-embeddings` next to the lab repository (see `src/ke2/upstream.py`).
-
-On the real tokenizer (needs `pip install tokenizers`; download `tokenizer.json`, `tokenizer_config.json` and
-`special_tokens_map.json` from https://huggingface.co/theschoolofai/BrahmicTokenizer-131K into a folder outside this repository):
-
-```
-export BRAHMIC_TOKENIZER_DIR=<that folder>
-pytest teams/04-ke2/tests/test_proof_checks.py -q          # skipped when the variable is not set
-python teams/04-ke2/src/proofs/proof_checks.py $BRAHMIC_TOKENIZER_DIR       # rewrites results/proof_checks.json
-```
-
-Section 4 gives the expected numbers. With the tokenizer all 16 proof tests pass (about 2.5 minutes on CPU), including one that
-compares `results/proof_checks.json` with a fresh run; without it, 13 pass and 3 are skipped.
-
-## 6. Theorem 2: exact structural decode (week 2)
-
-Section 4 lists decoding from a predicted vector as not covered by the week-1 proof. Sections 6 and 7 now cover it
-(noisy input and margins). The choice of tau is still not covered.
+Section 4 lists decoding from a predicted vector as not covered by the week-1 proof. This section and section 6 now
+cover it (noisy input and margins). The choice of tau is still not covered.
 
 **Decoder.** For a vector q of length D = 256P and a cut-off theta, let C = {cells i with q_i > theta}.
 
@@ -247,6 +222,11 @@ token**: noise that happens to form another token's pattern. The theorem promise
 the decoder only. Whether the vectors fed to it are identical across runs is the determinism task. The fixed cut-off
 of 8 and its room for error first appear in `proof_explained.md` (figure 6); this theorem states them formally and
 adds the ID lookup and (c).
+Structured noise is the realistic case and is outside (b): a mixture q = (1 - a) code(t) + a code(t') with a = 0.3
+already lifts a cell of t' above the cut-off when t' is shorter than 12 bytes (0.3 h(L') > 8 for L' <= 11), while
+cos(q, code(t)) is still about 0.988, so the decoder returns invalid or, for an extension rival, t'. The structural
+decoder is therefore not for predicted vectors: use nearest-code cosine (Theorem 3) and report the margin
+(`min_margin.md`).
 
 **Numerical checks** (`results/decode_checks.json`, `src/proofs/decode_checks.py`; tests `test_theorem2.py`):
 
@@ -261,7 +241,7 @@ adds the ID lookup and (c).
 The last-but-one row is an example for "what it does not say": at P = 32 a push of 7.976, just past delta, gives another
 token (at P = 64 the lit value is higher and the same cell has to move 14.61).
 
-## 7. Theorem 3: nearest-code cosine (week 2)
+## 6. Theorem 3: nearest-code cosine (week 2)
 
 **Statement.** For non-empty strings a and b with La and Lb bytes (at most P), let
 m = the number of positions p < min(La, Lb) with a_p = b_p, and D = 256P. Then
@@ -325,9 +305,35 @@ vocabulary), and 10 hand-picked (space runs of 30, 31 and 32 bytes, the longest 
 
 The two "q between" rows show that (d) is tight: just past the guarantee, the worst pair swaps.
 
-### Run the week-2 checks
+## 7. Run it
 
-On the real tokenizer, as in section 5:
+The commands use bash `export`; on Windows cmd use `set NAME=value`.
+
+```
+git clone https://github.com/theschoolofai/kronecker-embeddings
+pip install torch pytest
+# either pip install -e kronecker-embeddings, or point the tests at its src folder:
+export KRONECKER_SRC=<path to kronecker-embeddings>/src
+pytest teams/04-ke2/tests -q
+```
+
+`tests/conftest.py` and the scripts also find a folder named `kronecker-embeddings` next to the lab repository (see `src/ke2/upstream.py`).
+
+On the real tokenizer (needs `pip install tokenizers`; download `tokenizer.json`, `tokenizer_config.json` and
+`special_tokens_map.json` from https://huggingface.co/theschoolofai/BrahmicTokenizer-131K into a folder outside this repository):
+
+```
+export BRAHMIC_TOKENIZER_DIR=<that folder>
+pytest teams/04-ke2/tests/test_proof_checks.py -q          # skipped when the variable is not set
+python teams/04-ke2/src/proofs/proof_checks.py $BRAHMIC_TOKENIZER_DIR       # rewrites results/proof_checks.json
+```
+
+Section 4 gives the expected numbers. With the tokenizer all 16 proof tests pass (about 2.5 minutes on CPU), including one that
+compares `results/proof_checks.json` with a fresh run; without it, 13 pass and 3 are skipped.
+
+### Week-2 checks
+
+On the real tokenizer, with the same variables:
 
 ```
 python teams/04-ke2/src/proofs/decode_checks.py      # rewrites results/decode_checks.json (about 4 minutes on a laptop CPU)

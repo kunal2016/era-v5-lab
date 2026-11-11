@@ -20,6 +20,9 @@ Full generated table: [results/min_margin/min_margin_P32.md](results/min_margin/
   Ranking bf16 codes by raw dot product instead of cosine costs about the same (0.0124).
 - No checked token decoded wrongly or tied in any mode. The tightest pair is 4 bf16 steps wide
   (one step = 2⁻⁸ ≈ 0.0039 near 1.0), so a fast decoder should keep fp32 scores.
+- **Acceptance threshold:** tau = **0.3** on the best cosine (section "Acceptance threshold"). It
+  rejects every vector that is far from all codes and keeps every correct answer down to a cosine of
+  0.5 to the true code. It cannot catch a wrong answer that sits close to a code; only the margin can.
 
 ## What this is
 
@@ -105,10 +108,13 @@ Every code is still two-valued after rounding. In fp32 and bf16, all tokens of t
 also share the same two values, so rounding acts per length. `high` and `low` round separately,
 so it changes each length's high/low ratio very slightly; that is where bf16's 6.2e-8 comes from.
 Mostly it changes the code's overall scale (the ‖z‖² spread above), and cosine ignores scale.
-That is why stored precision barely moves the margin.
+That is why stored precision barely moves the margin. In this table both the query and every candidate code are
+stored in the reduced precision before the exact float64 scoring; a decoder that keeps the table in fp64 and only
+receives a reduced-precision query sees a smaller shift still.
 
 Five (class, precision) rows report a different pair under fp32 or bf16. Four are the same two
-tokens in the other direction (Code/Structure, Latin and Mixed: "swapped" in the generated table).
+tokens in the other direction: Code/Structure in both fp32 and bf16, Latin and Mixed in fp32 only. The
+generated table marks a class "swapped" if either precision reversed the pair.
 A pair's margin is the same seen from either token, and rounding broke the tie the other way. The
 fifth (Other, bf16) is another pair in the mirror shape (8, 7, 7) with the same fp64 margin. bf16
 rounding left the two directions about 2e-16 apart, and the lowest-ID rule then picked among
@@ -156,7 +162,10 @@ resolving them silently.
 8,239, against a spread of 0.004 in fp32), because `high` rounds differently for each length.
 Cosine cancels this; a raw dot product does not. For the tightest pair, ranking bf16 codes by dot
 product gives the 32-byte token a margin of 0.012388 instead of 0.015809 (−22%), because its
-31-byte rival's norm is 0.35% larger. Normalise, or score fp32 codes.
+31-byte rival's norm is 0.35% larger. Normalise, or score fp32 codes. These three figures (self dot 8,216.8, norm
+ratio 0.35%, raw-dot margin 0.012388) are not in `summary_P32.json`; they follow from the bf16 per-length values
+(‖z‖² = 8,160.0 at L = 32 and 8,216.8 at L = 31, ratio of norms sqrt(8216.8 / 8160.0) = 1.0035) and the closed form in
+`pair_margins.py`.
 
 **Longer tokens.** The extension margin is about 1 − √(L/(L+1)), so it shrinks as tokens get
 longer. P = 32 has no spare room (`output_shape.md`): this tokenizer already has 32-byte tokens.
@@ -172,12 +181,81 @@ A future tokenizer with 64-byte tokens at P = 64 gives 0.007874 for a 63/64-byte
   machines, and they make no GPU claim.
 - The exact-margin CSV is fully reproducible: a second run produced it byte for byte.
 
+## Acceptance threshold (tau): what a decoder should refuse
+
+**The question.** The decoder always returns some token: it picks the code with the highest cosine
+to the vector it is given, whatever that vector is. The margin table above says how far apart the
+codes are from each other. It does not say what to do with a vector that is far from *every* code,
+for example a vector the model produced for a position it is unsure about, or noise. A threshold
+tau on the best cosine answers that: if the best cosine is below tau, the decoder says "no token"
+instead of guessing. The week-2 ask was to report the valid-decode rates for tau in
+{0.0, 0.3, 0.5, 0.7, 0.9} and propose one value.
+
+**What was run** (`src/margins/tau_sweep.py`, results in this folder). Team 5 has no predicted
+vectors yet, so three kinds of imperfect vectors stand in for them, on 10,000 tokens drawn at random
+(seed 0) from the raw table at P = 32:
+
+| Condition | What the vector is | What it stands for |
+|---|---|---|
+| `clean_fp32`, `clean_bf16` | the token's own code, stored in fp32 or bf16 | a perfect prediction |
+| `noise_cos_c`, c in 0.95 … 0.3 | the code plus random noise, scaled so its cosine to the true code is c | a prediction that is right but blurry |
+| `garbage` | pure random noise with no true token | a vector that means nothing |
+| `rival_mix_a`, a in 0.3 … 0.7 | (1 − a) × true code + a × the code of the token's closest rival | a prediction torn between two similar tokens |
+
+For every condition and every tau the sweep records the accept rate (best cosine ≥ tau), the
+accuracy among accepted vectors, and the wrong-accept rate. The same pass also recomputes every
+token's best and second-best cosine (`margins_P32_fp32.npz`, `margins_P32_bf16.npz`) because the
+rival mixtures need each token's rival; its per-class minima (`tau_margin_pass_P32.md`) agree with
+the table above in every class; where several pairs tie at the minimum, the sweep's lowest-id rule can
+name a different token of the tie (Gurmukhi in fp32, Other in bf16), and it reports the 21 partial-UTF-8
+subclasses as one class.
+
+**What came out** ([`tau_rates_P32.md`](results/min_margin/tau_rates_P32.md),
+[`tau_summary_P32.json`](results/min_margin/tau_summary_P32.json)).
+
+| | tau = 0.0 | tau = 0.3 | tau = 0.5 | tau = 0.7 | tau = 0.9 |
+|---|---|---|---|---|---|
+| `garbage` accepted (every one is a wrong accept) | 100% | **0%** | 0% | 0% | 0% |
+| correct answers kept at cosine 0.9 to the true code | 100% | 100% | 100% | 100% | 50% |
+| correct answers kept at cosine 0.7 | 100% | 100% | 100% | 50% | 0% |
+| correct answers kept at cosine 0.5 | 100% | 100% | 50% | 0% | 0% |
+| `rival_mix_0.55` accepted (the answer is the rival, so wrong) | 100% | 100% | 100% | 100% | 99.9% |
+
+Garbage vectors never reach a best cosine above 0.065, so any tau above that removes them; blurry but
+correct vectors keep a best cosine close to their cosine to the true code, so a high tau starts to
+throw away right answers. **Proposed tau = 0.3**, by the rule in the script's `propose_tau`: the
+smallest value in the grid that accepts at most 1% of garbage and keeps at least 99% of the correct
+answers under noise at cosine 0.7 or above. The safe band is wide: correct answers at cosine 0.5
+never fall below 0.472, so every tau between 0.065 and 0.472 gives exactly this table, and 0.3 is
+simply the grid point inside that band, not a tuned value.
+
+**What tau cannot do.** A vector torn between two similar tokens still has a best cosine above
+0.77 in every rival mixture, so every tau in the grid accepts it, and above a = 0.5 the accepted
+token is the rival, not the truth. The margin (best minus second-best cosine) is what shows that
+case: it collapses toward zero as a approaches 0.5. A decoder should therefore report both the best
+cosine (for tau) and the margin, as `decode_ref.py` does. Theorem 2's structural decoder is no
+substitute: it already fails on 51% of the a = 0.3 mixtures while the cosine decoder is still 100%
+right.
+
+**Limits.** Synthetic vectors only; the proposal must be re-checked on Team 5's predicted vectors
+when they exist (`--vectors team5.npz`, an npz with `vectors` (N, D) and `true_ids` (N,), −1 where
+unknown). Isotropic noise in 8,192 dimensions is kind to the decoder: it lowers the best cosine
+without changing the argmax, so the accuracy columns of the noise conditions are all 100%. Real
+prediction error is not isotropic; the rival mixtures are the pessimistic stand-in.
+
 ## Reproduce
 
 ```bash
 .venv/bin/python teams/04-ke2/src/margins/build_min_margin.py --P 32   # about 11 minutes on an M1
+.venv/bin/python teams/04-ke2/src/margins/tau_sweep.py --tokenizer $KE2_TOKENIZER   # about 7 minutes: 5 for the margin passes, 2 for the sweep
+.venv/bin/python teams/04-ke2/src/margins/tau_sweep.py --skip-margins --vectors team5.npz   # later: redo only the sweep on real vectors
 .venv/bin/python -m pytest teams/04-ke2/tests -q
 ```
+
+`tau_sweep.py` needs the tokenizer (for the script classes of its margin pass) and writes
+`margins_P32_{fp32,bf16}.{npz,csv}`, `tau_margin_pass_P32.md`, `tau_rates_P32.{json,md}` and
+`tau_summary_P32.json` into `results/min_margin/`. `tests/test_tau_sweep.py` checks the rate
+bookkeeping, the proposal rule and the `--vectors` loader on a synthetic vocabulary.
 
 Outputs go to `results/min_margin/`. The script exits with status 1 if its gate fails. The gate
 requires every token's margin to be > 0 in all three storage precisions, and every dense-checked

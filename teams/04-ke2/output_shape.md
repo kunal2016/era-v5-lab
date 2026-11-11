@@ -1,7 +1,8 @@
 # KE2 output shape (for G5)
 
-**Status:** final for the measured Team 3 chain through C3, revalidated 2 Nov. Both P = 32
-and P = 64 are supported; P = 32 is recommended.
+**Status:** revalidated 2 Nov on v0, v0.1, v1-c1 and the committed C1, C2 and C3. Not yet measured on
+Team 3's week-2 replacements C1-s0, C2-s0 and C3-s0, nor on the v2 file. Both P = 32 and P = 64 are
+supported; P = 32 is recommended.
 
 ## Shape
 
@@ -100,7 +101,7 @@ vocabulary and pass, but those two displayed category counts should not be used 
 
 | Candidate | tokenizer.json SHA-256 | V | Maximum raw bytes | Truncated at P=32 | Raw collisions, P=32 / P=64 | Decode collisions, P=32 / P=64 |
 |---|---|---:|---:|---:|---:|---:|
-| Team 3 v0 | `2de039f2…aead780` | 131,072 | 32 | 0 | 0 / 0 | 1,141 / 1,141 excess tokens |
+| Team 3 v0 | `2de039f2…f2af8e5` | 131,072 | 32 | 0 | 0 / 0 | 1,141 / 1,141 excess tokens |
 | Team 3 v0.1 | `a33c9907…6e578` | 131,072 | 32 | 0 | 0 / 0 | 1,141 / 1,141 excess tokens |
 | Team 3 v1-c1 | `7d2cff92…6af44` | 131,072 | 32 | 0 | 0 / 0 | 1,098 / 1,098 excess tokens |
 | Team 3 C1 | `5d386e2e…e46db9` | 131,072 | 32 | 0 | 0 / 0 | 1,095 / 1,095 excess tokens |
@@ -140,7 +141,7 @@ rebuilt with the exact PR #137 scripts after all 11 corpus byte counts and hashe
 manifest; the rebuilt tokenizer matched `7d2cff92…6af44`. C1–C3 were rebuilt from those same
 verified corpus files and each matched its published hash. The later sample-v0 retrains C1-s0,
 C2-s0 and C3-s0 remain unmeasured because neither their tokenizer files nor their training sample
-are present locally. Manifest claims alone are not copied into the KE collision results.
+are present locally. The v2 file in Team 3's `train/v2_manifest.json` (sha `0862f6…bc47`) is likewise unmeasured and is not in the script's hash registry. Manifest claims alone are not copied into the KE collision results.
 
 Reproduce from locally built, hash-verified tokenizer files:
 

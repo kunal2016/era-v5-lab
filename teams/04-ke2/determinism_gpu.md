@@ -3,7 +3,7 @@
 > **Result: pass.** On an NVIDIA GPU, all **131,072** token IDs of BrahmicTokenizer-131K decode back to
 > themselves. That holds in **9 fresh processes** (batch sizes **1, 7 and 4,096**, three runs each,
 > **fp32, TF32 off**), and the decoded IDs are bit for bit the same as the CPU float64 reference.
-> This is the Gate 2 evidence for `determinism_gpu.md`.
+> This is the Gate 2 evidence for GPU determinism (`decision_input.md`, section 4).
 
 ![Verdict: every GPU run gives the CPU reference's ID hash](docs/figures/gpu1_verdict.svg)
 
@@ -17,6 +17,7 @@
 | The IDs equal the CPU reference for every token ID | ✅ 131,072 of 131,072, in all 9 runs | `runs[].comparison` in [`raw_P32.json`](results/decode_gpu/raw_P32.json) |
 | fp32, TF32 off | ✅ | `runs[].environment`: `dtype float32`, `tf32_matmul false`, `tf32_cudnn false`, precision `highest` |
 | Every ID decodes to **itself**, not only to the CPU's answer | ✅ the ID hash is the hash of the identity map | `test_committed_gpu_results_are_complete_and_consistent` |
+| The same protocol on **CPU** (three processes per batch size) gives the same IDs | ✅ 9 CPU runs, every ID equal to the reference; the same `31c8d0e0…` ID hash | section 7, [`results/decode_cpu/raw_P32.md`](results/decode_cpu/raw_P32.md) |
 
 ## What was decoded
 
@@ -86,8 +87,9 @@ IDs need no tolerance.
 
 | Batch size | 1 | 7 | 64 | 512 | 1,024 | 4,096 |
 |---|---:|---:|---:|---:|---:|---:|
-| Score error, TF32 off (as run) | 1.1e-5 | 7.5e-6 | 2.5e-5 | 7.2e-5 | 2.0e-4 | 2.0e-4 |
-| Score error, TF32 on (contrast only) | 1.1e-5 | 4.9e-4 | 5.6e-4 | 7.6e-4 | 7.6e-4 | 7.6e-4 |
+| Score error, TF32 off (16,384-code study) | 1.1e-5 | 7.5e-6 | 2.5e-5 | 7.2e-5 | 2.0e-4 | 2.0e-4 |
+| Score error, TF32 on (16,384-code study, contrast only) | 1.1e-5 | 4.9e-4 | 5.6e-4 | 7.6e-4 | 7.6e-4 | 7.6e-4 |
+| Full run: score error vs CPU | 2.2e-5 | 7.5e-5 | | | | 2.3e-4 |
 | Full run: margin error vs CPU | 2.9e-5 | 1.2e-4 | | | | 4.1e-4 |
 
 The first two rows come from [`gemm_accuracy_gpu.py`](src/determinism/gemm_accuracy_gpu.py)
@@ -137,6 +139,10 @@ GPU process:
 | Batch 7 | 79 W | ~865 MHz | 94–97% | 71–72 °C |
 | Batch 4,096 | 101–104 W | ~1,000 MHz | 54–65% | 72 °C |
 
+The table is averaged from the CSV; each batch-4,096 run lasted about 25 s at one sample every 6.5 s, so its row rests on 3 to 4 samples per run, about 11 in all. The
+clock, power-state, power-limit and worker-memory figures in the bullets below were read from `nvidia-smi` and the task
+manager during the run and have no committed source.
+
 - **The GPU ran in a low-power state.** `nvidia-smi` reported P3: memory clock **7,001 of 9,001 MHz**, SM clock
   ~1,000 of 3,105 MHz. The software power-cap and software thermal-slowdown flags (`0x24`) were set in every
   sample. Windows was already in *Best performance*, so the limit is the laptop's GPU and thermal profile.
@@ -172,6 +178,27 @@ GPU process:
 | upstream `codec.py` (`d07cb54`) | `d9613ac9…` | `08f08f13…` | `08f08f13…` ✅ |
 | `decode_gpu.py` | `c82e28ea…` (LF) | `c82e28ea…` | n/a |
 
+### 7. The same protocol on CPU gives the same IDs
+
+The GPU runs above compare against one CPU reference process. The lead's run repeats the GPU protocol on CPU
+(`src/determinism/decode_batches.py`): the same three fresh processes at each of batch sizes 1, 7 and 4,096, fp32 with
+TF32 off and matmul precision `highest`, every one of the 131,072 IDs, scored by the structured cosine scorer
+(`ke2.scoring`; the two-valued code structure of proof.md Lemma 1) instead of a dense GEMM. The deterministic-algorithms
+mode and the cuBLAS workspace setting are CUDA-only and not set on CPU. Every run is compared ID for ID with the
+float64 `decode_ref.decode` reference (macOS arm64, torch 2.15.0).
+
+| batch size | runs | hashes match within the batch size | every ID equal to the reference |
+|---|---|---|---|
+| 1 | 3 | yes | yes |
+| 7 | 3 | yes | yes |
+| 4,096 | 3 | yes | yes |
+
+Every CPU run decodes every ID to itself, so its ID hash in this document's format (`ke2-decode-gpu-ids-v1`, the
+identity map over the committed table) is `31c8d0e0…`, the value of all nine GPU runs. Two decoders (dense fp32
+GEMM on CUDA, structured fp32 cosine on CPU), two devices and three batch shapes give the same
+131,072 IDs. The run's own per-run hash (`ke2-decode-batches-v1`) names the batch size in its header, so it differs
+across batch sizes by construction; the ID bodies are identical.
+
 ## Hand-off to Team 6
 
 | What | Where |
@@ -198,6 +225,13 @@ python teams/04-ke2/src/determinism/decode_gpu.py --pos-dim 32          # ~100 m
 python teams/04-ke2/src/determinism/gemm_accuracy_gpu.py --pos-dim 32   # ~1 min; gemm_accuracy_P32.json
 python teams/04-ke2/src/docs/determinism_gpu_figures.py                 # the four figures
 KE2_RUN_GPU_TESTS=1 python -m pytest teams/04-ke2/tests/test_decode_gpu.py -q
+```
+
+The CPU counterpart (section 7) needs no GPU and no tokenizer:
+
+```sh
+python teams/04-ke2/src/determinism/decode_batches.py --device cpu   # about 25 min on an Apple-silicon laptop; writes results/decode_cpu/raw_P32.{json,md}
+python -m pytest teams/04-ke2/tests/test_decode_batches.py -q
 ```
 
 To record resource use, start `resource_monitor.py --out <csv> --watch-pid <pid of decode_gpu.py>` next to the
@@ -235,3 +269,6 @@ little-endian.
 | [`results/decode_gpu/tf32_override_0/gemm_accuracy_P32.json`](results/decode_gpu/tf32_override_0/gemm_accuracy_P32.json) | The same measurement with TF32 forced off in the driver |
 | [`results/decode_gpu/resources_raw_P32.csv`](results/decode_gpu/resources_raw_P32.csv) | The resource trace |
 | [`tests/test_decode_gpu.py`](tests/test_decode_gpu.py) | 8 tests: hash framing, decoder logic against `decode_ref` and the tie rule (portable), the committed results, and an opt-in CUDA run (`KE2_RUN_GPU_TESTS=1`) |
+| [`src/determinism/decode_batches.py`](src/determinism/decode_batches.py) | The CPU counterpart (section 7): three fresh processes per batch size on a chosen device, compared with the float64 reference; reports the ID hash in this document's format |
+| [`results/decode_cpu/raw_P32.json`](results/decode_cpu/raw_P32.json), [`raw_P32.md`](results/decode_cpu/raw_P32.md) | Every CPU run: per-run hash, equality with the reference, seconds; the cached reference is `decode_ref_full_raw_P32_b3f5476e.npz` next to them |
+| [`tests/test_decode_batches.py`](tests/test_decode_batches.py) | 8 tests: batch sizes agree and match the reference on a synthetic table, TF32 off, the reference cache, the environment record, the GPU-format digest equals `decode_gpu.id_digest`, the default output folder never targets `decode_gpu/`, an end-to-end parent/child run on a synthetic table, and the committed CPU report against the GPU report |
