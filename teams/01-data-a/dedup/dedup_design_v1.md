@@ -88,7 +88,7 @@ raw sample ─▶ clean.py (TSAI, spec v1) ─▶ cleaned parts (doc_id, text, u
 | Measure and qualify | `overlap.py`, `overlap_rules.py`, `h1_sha256.py`, `jaccard_matrix.py`, `overlap_report.py`, tests; config `overlap.json` (38 cleaned packs) | Done (Aneesha Das, Vijay Patil). Job `jobs/2026-11-04-overlap.md`, run by TSAI on 5 Nov |
 | Reviewed matrix | `overlap_report.py`, `confirm_matrix.py` → `dedup/overlap_matrix.csv` | Done (Aneesha Das, 10 Nov): byte-identical to TSAI's matrix; `matrix_confirmation.md` |
 | Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, set aside matches between empty documents, form clusters, apply `source_priority_v1.md`, write the remove list and log. A scope switch can turn the cross-pack pass off without rerunning the overlap job | Written (Kunal Sinha), with tests and `README_dedup.md`. Local run on TSAI's outputs (no urls): 1,345 removed. Job `jobs/2026-11-10-dedup.md` pending approval |
-| Check | Harm check of the remove list against gold | Built into `dedup.py`; `not_testable` on sample v0; to run on the diagnosis packs |
+| Check | Harm check of the remove list against gold | Built into `dedup.py`. `not_testable` on sample v0; **pass** on 4 diagnosis packs (314 gold, 0 removed) |
 
 **What TSAI receives:** this design and `source_priority_v1.md`; the code, configs, tests and test logs above; the reviewed overlap matrix (`dedup/overlap_matrix.csv`); and a job request for `dedup.py` on sample v0 ("which documents would v1 remove, per pack and stage, and does it remove any gold?"). After approval, TSAI filters the full cleaned data with the remove list, as it applies spec v1. Our code never rewrites the data, so every removal can be reversed from the log. This is not a cleaning job request.
 
@@ -117,8 +117,8 @@ Plus `remove_list.csv` (`pack_id, split, part, row_in_part, doc_id`: what TSAI f
 | E1 | **Threshold sweep and hand review per family:** pair counts at 0.70–0.95 (`overlap_histogram.csv`), ~20 pairs read on each side of the threshold | Whether each threshold sits in the gap between "same text" and "related text" | Math reviewed (findings below). Prose and code: counts in, hand review open |
 | E2 | **Within-pack vs cross-pack** removal counts | Whether the cross-pack pass is worth applying (Risk 1) | Answered by the TSAI run: applied |
 | E3 | **Known pairs:** an exact copy, a whitespace/case variant, an edited sentence, a forked code file, a truncated copy (must be caught); math problems differing in a number, same-topic pages, code sharing only imports (must be kept) | The rules behave as specified | Partly covered: the tests check an edited copy, exact scores against brute force, the math numbers rule, code comment removal and mixed families. Still to add: the whitespace/case variant, the truncated copy, same-topic pages and code sharing only imports |
-| E4 | **Indic threshold check:** E1 on at least one Indic pack | Whether the prose rules suit Indic text (Risk 2) | Open; required for v1 |
-| Harm | **No gold document is removed.** Gold is `<pack>_gold.csv` from `build_gold.py` (`teams/01-data-a/gold/`, `teams/02-data-b/gold/`), matched on `(pack_id, doc_id)`. The number of gold IDs present in the input is reported first; if it is zero, the check fails, because it tested nothing | No harm to reviewed clean documents | Open. Gold comes from the week-1 diagnosis packs and none of it is in sample v0, so the check runs on the diagnosis packs |
+| E4 | **Indic threshold check:** E1 on at least one Indic pack | Whether the prose rules suit Indic text (Risk 2) | Measured (`results_v1.md`, section 3): the 50-word minimum causes every rejection of a near-identical pair in the three Indic `sangraha-s` packs (106 pairs), and 19.9% of Indic documents are under 50 words. Open: a reader to judge whether those pairs are true copies |
+| Harm | **No gold document is removed.** Gold is `<pack>_gold.csv` from `build_gold.py` (`teams/01-data-a/gold/`, `teams/02-data-b/gold/`), matched on `(pack_id, doc_id)`. The number of gold IDs present in the input is reported first; if it is zero, the check fails, because it tested nothing | No harm to reviewed clean documents | Done on the 4 diagnosis packs on hand (`math-finemath`, `math-megamath`, `sci-finepdfs`, `cadj-commits`): 314 gold IDs present, 0 removed, and no gold document in any pair at word Jaccard ≥ 0.50 (`results_v1.md`, section 3). Limit: 3 of the 13 Data A packs have gold here ||
 
 ## Evidence
 
@@ -149,8 +149,7 @@ Findings from local test runs on raw sample v0 parts (details in `results_v1.md`
 - **`dedup.py` TSAI run:** approve `jobs/2026-11-10-dedup.md`; TSAI runs it with the cleaned parts, so rule 2 (url) applies.
 - **Licence map** (`source_priority_v1.md`, rule 1): fill `licence_usable` in `dedup.json` from G10's licence table before the TSAI run.
 - **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates.
-- **E4:** the Indic threshold check.
-- **Harm check** on the diagnosis packs.
+- **E4:** a reader to judge a sample of the 106 rejected `sangraha-s` pairs (are they true copies?); the measured part is done.
 - **E3:** add the missing known-pair tests (whitespace/case variant, truncated copy, same-topic pages, imports-only code).
 - **Math numbers rule and same URL (team decision):** compare numbers in the body only (ignoring the title and first line), and count same-URL pairs as H2 duplicates at ≥ 0.80. Either change needs a new overlap run before it applies.
 

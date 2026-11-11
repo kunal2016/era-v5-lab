@@ -166,13 +166,53 @@ TSAI kept the large files (`overlap_docs.parquet`, `overlap_pairs.csv`) out of t
 
 Per-pack `jaccard_matrix.py` outputs for the two math packs (histogram, matrix, pairs with shingle counts) are in `out/jaccard_math/` on the local machine; they match the within-pack counts above.
 
-## 3. Still to come
+## 3. Checks on the week-1 diagnosis packs and E4 (11 Nov)
+
+### Harm check (pass)
+
+The gold sets come from the week-1 diagnosis packs, not from sample v0, so the harm check on the 38-pack run was `not_testable`. It was run on the 4 diagnosis packs on hand, through the production order: `clean.py` (main, SHA-256 `d3464bda…`), then `overlap.py`, then `dedup.py` with `gold_dirs` set. Log: `jobs/logs/2026-11-11-dedup-harm-diag-local.txt` (counts and hashes only).
+
+| | |
+|---|---|
+| Packs | `math-finemath`, `math-megamath`, `sci-finepdfs` (cleaned), `cadj-commits` (raw: `clean.py` has no rules for it) |
+| Documents after cleaning | 1,964 |
+| Gold IDs present | **314**: `math-finemath` 86, `math-megamath` 26, `sci-finepdfs` 202 (`cadj-commits` has no gold file in the repo) |
+| Qualifying duplicate pairs | 0 |
+| Documents removed / gold removed | 0 / **0** |
+| Gold dropped by `clean.py` | 0 |
+
+The result is a pass, but a check where nothing is removed is weak on its own. The stronger evidence is the margin: **no gold document is in any pair at word Jaccard ≥ 0.50**, so none came near the 0.80, 0.85 or 0.90 thresholds. The only pair at ≥ 0.50 in the 1,964 documents is two `cadj-commits` documents at 0.716, neither gold. Limits: only 3 of the 13 Data A packs have gold here, and each pack is checked on its own.
+
+### E4, measured part: the 50-word minimum and Indic text
+
+**Source:** TSAI's 38-pack run of sample v0 (all 1,416,236 documents, Data B's Indic packs included), not the gold sets or the week-1 diagnosis packs. No document text was read.
+
+**Method:**
+1. From `overlap_pairs.csv` (every pair at word Jaccard ≥ 0.50), keep the pairs inside each `sangraha-s` pack with word Jaccard ≥ 0.80.
+2. Check each pair against `overlap_matches.csv`: did it qualify under the family rules?
+3. For each pair that did not qualify, look up both documents' `words` in `overlap_docs.parquet`, the same count `overlap_rules.py` uses for the 50-word minimum.
+
+For prose (which includes Indic), a pair qualifies only if its word Jaccard is ≥ 0.80 and both documents have ≥ 50 words. Every pair kept in step 1 already passes the score, so the length rule is the only possible reason for a rejection; the "Rejected: other" column below is 0, which confirms it. The shares of documents under 50 words come from the same `words` column, over every document of each pack.
+
+Every near-identical pair (word Jaccard ≥ 0.80) that was rejected in the three `sangraha-s` packs was rejected because a document has fewer than 50 words:
+
+| Pack | Pairs ≥ 0.80 | Qualify | Rejected: a document < 50 words | Rejected: other |
+|---|---:|---:|---:|---:|
+| `ind-kn-sangraha-s` | 20 | 0 | 20 | 0 |
+| `ind-te-sangraha-s` | 32 | 0 | 32 | 0 |
+| `ind-ta-sangraha-s` | 55 | 1 | 54 | 0 |
+| `ind-hi-sangraha-s` (for comparison) | 545 | 540 | 5 | 0 |
+
+Share of documents under 50 words, by family: **Indic 19.9%**, code 14.1% (code uses a 20-line minimum, not words), science 2.8%, English 1.7%, math 1.4%, code-adjacent 1.2%. Among the Indic packs it is concentrated in `ind-hi-indiccorp` (56.3%, median 42 words) and the `sangraha-s` packs (14.5–17.1%); the `fw2` and `sangraha-v` packs are 0–3%.
+
+So the 50-word minimum, set on English, leaves about a fifth of Indic documents to H1 only (Risk 2). Still open: a reader to judge whether the 106 rejected `sangraha-s` pairs are true copies. If they are, an Indic minimum in characters, or a lower word minimum, is the fix; it changes `overlap_rules.py` and needs an overlap rerun.
+
+## 4. Still to come
 
 | Result | From | Needs |
 |---|---|---|
 | Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` | Lead approval and the licence map. Local count without urls: 1,345 |
-| Gold harm check | Diagnosis packs | `dedup.py` (written) and the diagnosis pack files |
 | Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI run | `overlap_pairs.csv` and text |
-| E4, Indic threshold check | `sangraha-s` packs first | Indic pack text |
+| E4: are the 106 rejected `sangraha-s` pairs true copies? | A reader of Kannada, Telugu or Tamil | The text of those pairs (sample-v0 parts of the three packs) |
 
 **Done on 10 Nov:** the reviewed source matrix, `dedup/overlap_matrix.csv`, byte-identical to TSAI's (`matrix_confirmation.md`); `dedup.py` written and run locally on TSAI's outputs (1,345 removed, above).
