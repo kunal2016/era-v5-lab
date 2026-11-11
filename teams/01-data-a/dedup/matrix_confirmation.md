@@ -349,9 +349,13 @@ Each test then changes one thing and checks that the script reacts correctly.
    ```
 2. **Done:** the confirmation was rerun with `overlap_docs.parquet` (22 of 22) and with `overlap_report.py --results`
    (byte-identical), and the 7 empty documents were identified by `doc_id`.
-3. Add a row to the decision log in `dedup_design_v1.md`: matrix confirmed on 10 Nov 2026, with the empty-document note.
-4. Find which cleaning rule emptied the 7 documents (raw text by `doc_id`), and have `dedup.py` leave documents with no
-   shingles out of duplicate groups.
+3. **Done:** the decision log in `dedup_design_v1.md` records the matrix confirmation and the empty-document decision
+   (both 10 Nov 2026).
+4. **Done:** `dedup.py` sets aside the matches between documents with no shingles, removes none of them and lists them in
+   `empty_documents.csv` (`README_dedup.md`, "Empty documents"). **Open:** which cleaning rule emptied the 7 documents
+   is not yet recorded. They pass `clean.py`'s empty-output check (`out.strip()`) but have no words after
+   normalisation, probably only invisible characters (`results_v1.md`, observation 6); their raw text can be found by
+   `doc_id`. Dropping them is a cleaning change for spec v1.1.
 
 ## Files
 
