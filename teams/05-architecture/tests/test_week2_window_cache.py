@@ -135,12 +135,16 @@ class WindowCacheTests(unittest.TestCase):
             with patch.object(ByteFixture, "pad_id", 258):
                 with self.assertRaises(FileNotFoundError):
                     self.native()
-            self.input.write_text(self.input.read_text() + '{"id":"extra","text":"z"}\n')
+            self.input.write_text(
+                self.input.read_text(encoding="utf8") + '{"id":"extra","text":"z"}\n',
+                encoding="utf8",
+            )
             with self.assertRaises(FileNotFoundError):
                 self.native()
 
     def test_corruption_and_truncation_fail_closed(self):
-        _, directory = self.cached()
+        # Build without opening memory maps so Windows permits overwriting files.
+        directory = build_window_cache(self.input, self.artifacts, 7, self.cache)
         token_file = directory / "tokens.bin"
         content = token_file.read_bytes()
         token_file.write_bytes(bytes([content[0] ^ 1]) + content[1:])
