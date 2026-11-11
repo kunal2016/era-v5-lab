@@ -3,6 +3,10 @@
 How the cleaned packs become token shards for training. A draft to agree with G3 (tokenizer) and G7 (infrastructure)
 before anything is written at scale. The manifest template is `shard_manifest_v0.template.json`.
 
+**Sample:** `sample/` holds a real 3-document shard's manifest and a dump of its files (header, token IDs, index,
+metadata), made by `python teams/01-data-a/shards/make_sample_shard.py --out <dir>`. The script also writes the `.bin`,
+`.idx.npy` and `.docs.parquet` (not committed: pr-guard) and checks them by reading the `.bin` with G6's `open_shard`.
+
 ## Files of one shard
 
 | File | What | Format |
@@ -105,6 +109,6 @@ corpus-v1/
 
 ## Not done yet
 
-- The shard writer, and a check that a shard matches its manifest (hashes, `payload_bytes`, `.idx.npy` ends at `token_count`).
+- The shard writer for real packs (`make_sample_shard.py` shows the format and the checks on made-up documents).
 - The loader and its run of `ckpt/loader_contract.py`.
 - The `capability_lane` values: from the training plan.
