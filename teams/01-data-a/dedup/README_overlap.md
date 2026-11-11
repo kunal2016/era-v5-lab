@@ -174,10 +174,12 @@ overlap job, including math number and code line eligibility checks on corpus te
 Unit tests remain available for edge cases and duplicate-rule behavior:
 
 ```sh
-python3 -B -m pytest teams/01-data-a/dedup/tests/test_overlap.py teams/01-data-a/dedup/tests/test_overlap_rules.py -q -p no:cacheprovider
+python3 -B -m pytest teams/01-data-a/dedup/tests/test_overlap.py teams/01-data-a/dedup/tests/test_overlap_rules.py teams/01-data-a/dedup/tests/test_known_pairs.py -q -p no:cacheprovider
 ```
 
 Tests cover raw scores against brute force, matrix directionality and distinct counts, repeated IDs, self exclusion,
 length and number guards, code comments/strings, mixed-domain rules, input inventory, and rebuilding returned results.
+`test_known_pairs.py` holds the rest of the design's E3 known pairs: a whitespace/case variant and a truncated copy
+(caught), same-topic pages and code sharing only its imports (kept).
 The real five-pack run supplies the local timing evidence; the all-38-pack cleaned population remains unbenchmarked.
 The old English/raw-sample benchmark remains historical evidence only.
