@@ -1,7 +1,7 @@
-# Shard format v0 (draft)
+# Shard format v1 (draft)
 
 How the cleaned packs become token shards for training. Agreed with G3 (tokenizer, answers below); open with G7
-(infrastructure). The manifest template is `shard_manifest_v0.template.json`; `shard_writer.py` writes one shard from one
+(infrastructure). The manifest template is `shard_manifest_v1.template.json`; `shard_writer.py` writes one shard from one
 cleaned part and checks it; `test_shard_writer.py` tests it.
 
 **Sample:** `sample/` holds `code-go-train-000000` (266 docs, 262,109 tokens) with every file below except the
@@ -16,7 +16,7 @@ was written with the baseline tokenizer and EOS id 36, before G3's answers, and 
 | `<shard_id>.bin` | the token IDs | a 1,024-byte header (256 little-endian int32: magic `20261025`, version `2`, token count, then zeros), then the tokens as little-endian uint32. Byte-compatible with G6's shards |
 | `<shard_id>.idx.npy` | where each document starts | `np.save` of int64, `doc_count + 1` entries: the start offset of each document, then `token_count` |
 | `<shard_id>.docs.parquet` | sample metadata, one row per document in shard order | `doc_id`, `input_part`, `input_row`, `n_tokens`, `n_chars`, `lang_label`. IDs and counts only, no text |
-| `<shard_id>.json` | the manifest | `shard_manifest_v0.template.json` |
+| `<shard_id>.json` | the manifest | `shard_manifest_v1.template.json` |
 
 - **The `.bin` layout is Data's format,** byte-compatible with G6's (`teams/06-performance/dataio/loader.py` opens it), so
   the perf loader reads our shards with no change. A header change is agreed with G6 and gets a new version.
@@ -55,7 +55,7 @@ A document is left out, counted, and listed by doc_id in the shard's quality rep
 
 | Field | Meaning |
 |---|---|
-| `schema_version` | the manifest layout, `shard-v0` |
+| `schema_version` | the manifest layout, `shard-v1` |
 | `dataset_version` | the corpus release this shard belongs to |
 | `shard_id` | `<pack_id>-<split>-<6 digits>`, unique within the release |
 | `format`, `token_dtype` | how to read the `.bin` |

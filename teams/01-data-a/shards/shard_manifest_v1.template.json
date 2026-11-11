@@ -1,5 +1,5 @@
 {
-  "schema_version": "shard-v0",
+  "schema_version": "shard-v1",
   "dataset_version": "corpus-v1",
   "shard_id": "en-dclm-train-000001",
   "format": "brahmic_u32_v2+doc_index",

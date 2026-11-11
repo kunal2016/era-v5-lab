@@ -1,5 +1,5 @@
 {
-  "schema_version": "shard-v0",
+  "schema_version": "shard-v1",
   "dataset_version": "sample",
   "shard_id": "code-go-train-000000",
   "format": "brahmic_u32_v2+doc_index",

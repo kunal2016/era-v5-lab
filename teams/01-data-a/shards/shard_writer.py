@@ -1,4 +1,4 @@
-"""Write one shard in the v0 format (shard_format_v0.md) from one cleaned pack part, check it, and describe it.
+"""Write one shard in the v1 format (shard_format_v1.md) from one cleaned pack part, check it, and describe it.
 
   python teams/01-data-a/shards/shard_writer.py --clean <out>/code-go_part-00001_clean.parquet \
       --summary <out>/code-go_part-00001_summary.json --tokenizer <c3>/tokenizer.json \
@@ -152,7 +152,7 @@ def main(argv=None):
     token_count = int(starts[-1])
     commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     manifest = {
-        "schema_version": "shard-v0", "dataset_version": "test" if a.any_tokenizer else "sample", "shard_id": shard_id,
+        "schema_version": "shard-v1", "dataset_version": "test" if a.any_tokenizer else "sample", "shard_id": shard_id,
         "format": "brahmic_u32_v2+doc_index", "token_dtype": "uint32",
         "payload_uri": bin_path.name, "payload_sha256": sha(bin_path), "payload_bytes": bin_path.stat().st_size,
         "index_uri": idx_path.name, "index_sha256": sha(idx_path),
