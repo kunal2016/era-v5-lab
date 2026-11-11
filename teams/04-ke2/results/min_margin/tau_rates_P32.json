@@ -810,6 +810,7 @@
   "rule": {
     "max_garbage_accept": 0.01,
     "min_correct_accept": 0.99,
+    "quality_floor_cos": 0.7,
     "quality_conditions": [
       "noise_cos_0.95",
       "noise_cos_0.9",

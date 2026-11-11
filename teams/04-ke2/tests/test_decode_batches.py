@@ -1,12 +1,19 @@
 """Decoding every id in batches of 1, 7 and 4096 gives identical ids, equal to the float64 reference."""
 
+import json
+from pathlib import Path
+
 import numpy as np
 import torch
 
 import decode_batches as db
+import decode_gpu as dg
 import decode_ref as dr
 from ke2.codec import encode_f64
+from ke2.config import RESULTS_DIR
 from ke2.tables import ByteTable
+
+GPU_ID_HASH = "31c8d0e0ac50cff5c8021f88a2b608de2298fdbf216c620a40e83d2adbe26f9a"  # determinism_gpu.md, every GPU run
 
 P = 16
 
@@ -38,9 +45,6 @@ def test_batch_sizes_agree_and_match_reference():
 
 
 def test_gpu_format_digest_matches_decode_gpu():
-    import decode_gpu as dg
-
-    assert db.GPU_ID_HASH_FORMAT == dg.ID_HASH_FORMAT
     ids = np.arange(120)
     sha = "ab" * 32
     assert db.ids_sha256_gpu_format(ids, P, sha) == dg.id_digest(P, sha, np.arange(120), ids)
@@ -78,3 +82,66 @@ def test_environment_reads_flags_back():
     env = db.environment("cpu")
     assert env["tf32_matmul"] is False and env["tf32_cudnn"] is False
     assert env["float32_matmul_precision"] == "highest"
+
+
+def test_default_out_never_targets_decode_gpu():
+    table = Path("results/tables/raw_table_P32.npz")
+    assert db.default_out("cpu", table) == RESULTS_DIR / "decode_cpu" / "raw_P32.json"
+    for dev in ("cuda", "cuda:0", "mps"):
+        out = db.default_out(dev, table)
+        assert out.parent.name != "decode_gpu" and out.parent.name.startswith(f"decode_{dev.split(':')[0]}")
+        assert out.name == "raw_P32.json"
+
+
+def test_end_to_end_cpu_run_on_a_synthetic_table(tmp_path):
+    table = synthetic_table(n=200, seed=2)
+    table_path = tmp_path / "raw_table_P16.npz"
+    table.save(table_path)
+    out = tmp_path / "out" / "raw_P16.json"
+    rc = db.main(
+        [
+            "--device",
+            "cpu",
+            "--batch-sizes",
+            "1",
+            "7",
+            "--repeats",
+            "2",
+            "--table",
+            str(table_path),
+            "--tokenizer-sha256",
+            "synthetic",
+            "--out",
+            str(out),
+            "--reference-cache",
+            str(tmp_path / "ref.npz"),
+        ]
+    )
+    assert rc == 0 and out.is_file() and out.with_suffix(".md").is_file()
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert set(report["batch_sizes"]) == {"1", "7"} and all(len(v["runs"]) == 2 for v in report["batch_sizes"].values())
+    assert report["all_runs_equal_reference"] and report["same_ids_across_batch_sizes"]
+    ct = dr.CodeTable.from_byte_table(table)
+    assert report["ids_sha256_gpu_format"] == [
+        db.ids_sha256_gpu_format(np.arange(table.vocab_size), P, ct.table_sha256)
+    ]
+    assert report["reference"]["ids_sha256_gpu_format"] == report["ids_sha256_gpu_format"][0]
+    assert report["reference"]["sha256"] == report["batch_sizes"]["1"]["runs"][0]["ids_body_sha256"]
+    assert "ke2-decode-gpu-ids-v1" in out.with_suffix(".md").read_text(encoding="utf-8")
+
+
+def test_committed_cpu_run_matches_the_gpu_report():
+    report = json.loads((RESULTS_DIR / "decode_cpu" / "raw_P32.json").read_text(encoding="utf-8"))
+    assert report["device"] == "cpu" and report["P"] == 32 and report["vocab_size"] == 131072
+    assert set(report["batch_sizes"]) == {"1", "7", "4096"}
+    assert all(
+        v["hashes_match"] and v["all_equal_reference"] and len(v["runs"]) == 3 for v in report["batch_sizes"].values()
+    )
+    assert report["all_runs_equal_reference"] and report["same_ids_across_batch_sizes"]
+    assert report["ids_sha256_gpu_format"] == [GPU_ID_HASH]
+    assert report["environment"]["tf32_matmul"] is False and report["environment"]["dtype"] == "float32"
+    gpu_lines = (RESULTS_DIR / "decode_gpu" / "raw_P32_sha256.txt").read_text(encoding="utf-8").splitlines()
+    gpu_hashes = {line.split()[3] for line in gpu_lines if line and not line.startswith("#")}
+    assert gpu_hashes == {GPU_ID_HASH}
+    gpu_report = json.loads((RESULTS_DIR / "decode_gpu" / "raw_P32.json").read_text(encoding="utf-8"))
+    assert report["table_sha256"] == gpu_report["inputs"]["table_sha256"]

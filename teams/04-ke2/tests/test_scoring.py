@@ -92,3 +92,14 @@ def test_empty_token_scores_zero_without_nan():
     assert not np.isnan(got).any()
     assert np.all(got[0] == 0)
     assert np.abs(got - ct.cosine_scores(Q).T).max() < 1e-12
+
+
+def test_rejects_bf16_scoring_dtype_and_non_finite_queries(synthetic_p8):
+    ct = dr.CodeTable.from_byte_table(synthetic_p8)
+    with pytest.raises(ValueError, match="float32 or float64"):
+        StructuredScorer(ct, "cpu", torch.bfloat16)
+    scorer = StructuredScorer(ct, "cpu", torch.float32)
+    q = encode_f64(synthetic_p8.bytes[:3], synthetic_p8.lengths[:3].astype(np.int64), synthetic_p8.pos_dim)
+    q[1, 0] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        scorer.top2(torch.from_numpy(q))

@@ -184,8 +184,8 @@ Every number below is in `results/proof_checks.json`. The tokenizer files are no
 
 ## 5. Theorem 2: exact structural decode (week 2)
 
-Section 4 lists decoding from a predicted vector as not covered by the week-1 proof. Sections 6 and 7 now cover it
-(noisy input and margins). The choice of tau is still not covered.
+Section 4 lists decoding from a predicted vector as not covered by the week-1 proof. This section and section 6 now
+cover it (noisy input and margins). The choice of tau is still not covered.
 
 **Decoder.** For a vector q of length D = 256P and a cut-off theta, let C = {cells i with q_i > theta}.
 

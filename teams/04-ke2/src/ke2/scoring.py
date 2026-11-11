@@ -24,6 +24,10 @@ class StructuredScorer:
     """Scores queries against every token of a ``decode_ref.CodeTable``."""
 
     def __init__(self, code_table, device: str | torch.device = "cpu", dtype: torch.dtype = torch.float32) -> None:
+        if dtype not in (torch.float32, torch.float64):
+            raise ValueError(
+                f"StructuredScorer scores in float32 or float64, not {dtype}; bf16 queries are cast on entry"
+            )
         self.V = int(code_table.vocab_size)
         self.D = int(code_table.dim)
         self.device = torch.device(device)
@@ -69,6 +73,9 @@ class StructuredScorer:
             Q = Q[None, :]
         if Q.shape[1] != self.D:
             raise ValueError(f"queries must have width {self.D}, got {Q.shape[1]}")
+        if not torch.isfinite(Q).all():
+            bad = torch.nonzero(~torch.isfinite(Q).all(dim=1)).flatten()[:5].tolist()
+            raise ValueError(f"non-finite query vector at rows {bad}")
         qnorm = torch.linalg.vector_norm(Q, dim=1)
         if (qnorm == 0).any():
             bad = torch.nonzero(qnorm == 0).flatten()[:5].tolist()

@@ -31,7 +31,7 @@ correct decodes under mild noise.
 
 Outputs, next to build_min_margin.py's in results/min_margin/: margins_P32_{fp32,bf16}.{npz,csv} (the per-token pass the
 sweep needs: best and second-best cosine and the rival id for every token), tau_margin_pass_P32.md (the per-class minima
-of that pass; it must agree with min_margin_P32.md), tau_rates_P32.{json,md} and tau_summary_P32.json.
+of that pass; they agree with min_margin_P32.md in every class minimum, though a tie may name another token of the pair), tau_rates_P32.{json,md} and tau_summary_P32.json.
 
 usage: python src/margins/tau_sweep.py --tokenizer <tokenizer.json or folder> [--out results/min_margin] [--sample 10000] [--chunk 4096]
        python src/margins/tau_sweep.py --skip-margins [--vectors team5.npz]   # reuse the saved margin passes, redo only the tau sweep
@@ -101,12 +101,26 @@ def margin_rows(table: ByteTable, res: dict, classes: list[str]) -> list[dict]:
         r = int(res["second_id"][q])
         qb, rb = table.row(q), table.row(r)
         L, Lp, k = int(table.lengths[q]), int(table.lengths[r]), match_count(qb, rb)
-        rows.append({"script_class": c, "n_tokens": int(idx.size), "min_margin": float(res["margin"][q]),
-                     "query_id": q, "query_bytes_hex": qb.hex(), "query_text": _text(qb), "query_len": L,
-                     "runner_up_id": r, "runner_up_bytes_hex": rb.hex(), "runner_up_text": _text(rb), "runner_up_len": Lp,
-                     "overlap_k": k, "measured_runner_cos": float(res["second"][q]),
-                     "closed_form_runner_cos": float(closed_form_cosine(L, Lp, k, table.pos_dim)),
-                     "best_cos": float(res["best"][q]), "decoded_correctly": bool(res["best_id"][q] == q)})
+        rows.append(
+            {
+                "script_class": c,
+                "n_tokens": int(idx.size),
+                "min_margin": float(res["margin"][q]),
+                "query_id": q,
+                "query_bytes_hex": qb.hex(),
+                "query_text": _text(qb),
+                "query_len": L,
+                "runner_up_id": r,
+                "runner_up_bytes_hex": rb.hex(),
+                "runner_up_text": _text(rb),
+                "runner_up_len": Lp,
+                "overlap_k": k,
+                "measured_runner_cos": float(res["second"][q]),
+                "closed_form_runner_cos": float(closed_form_cosine(L, Lp, k, table.pos_dim)),
+                "best_cos": float(res["best"][q]),
+                "decoded_correctly": bool(res["best_id"][q] == q),
+            }
+        )
     return rows
 
 
@@ -114,13 +128,18 @@ def margin_markdown(rows_by_dtype: dict[str, list[dict]], P: int) -> str:
     out = []
     for name, rows in rows_by_dtype.items():
         V = sum(r["n_tokens"] for r in rows)
-        out += [f"**Queries encoded in {name}**, P = {P}, raw byte table, cosine over all {V:,} codes.", "",
-                "| script class | tokens | smallest margin | query (id, bytes) | runner-up (id, bytes) | L, L', shared cells k | measured runner cos | Theorem 3 cos |",
-                "|---|---|---|---|---|---|---|---|"]
+        out += [
+            f"**Queries encoded in {name}**, P = {P}, raw byte table, cosine over all {V:,} codes.",
+            "",
+            "| script class | tokens | smallest margin | query (id, bytes) | runner-up (id, bytes) | L, L', shared cells k | measured runner cos | Theorem 3 cos |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
         for r in sorted(rows, key=lambda r: r["min_margin"]):
-            out.append(f"| {r['script_class']} | {r['n_tokens']:,} | {r['min_margin']:.5f} | {r['query_id']} `{r['query_bytes_hex']}` {r['query_text']!r} | "
-                       f"{r['runner_up_id']} `{r['runner_up_bytes_hex']}` {r['runner_up_text']!r} | {r['query_len']}, {r['runner_up_len']}, {r['overlap_k']} | "
-                       f"{r['measured_runner_cos']:.6f} | {r['closed_form_runner_cos']:.6f} |")
+            out.append(
+                f"| {r['script_class']} | {r['n_tokens']:,} | {r['min_margin']:.5f} | {r['query_id']} `{r['query_bytes_hex']}` {r['query_text']!r} | "
+                f"{r['runner_up_id']} `{r['runner_up_bytes_hex']}` {r['runner_up_text']!r} | {r['query_len']}, {r['runner_up_len']}, {r['overlap_k']} | "
+                f"{r['measured_runner_cos']:.6f} | {r['closed_form_runner_cos']:.6f} |"
+            )
         out.append("")
     return "\n".join(out)
 
@@ -142,12 +161,30 @@ def load_external_vectors(path: Path, D: int) -> tuple[np.ndarray, np.ndarray]:
         raise ValueError(f"{path}: vectors must have shape (N, {D}), got {vectors.shape}")
     if true_ids.shape[0] != vectors.shape[0]:
         raise ValueError(f"{path}: true_ids has {true_ids.shape[0]} entries for {vectors.shape[0]} vectors")
+    bad = np.flatnonzero(~np.isfinite(vectors).all(axis=1))
+    if bad.size:
+        raise ValueError(f"{path}: {bad.size} vectors contain NaN or inf (first rows {bad[:5].tolist()})")
+    zero = np.flatnonzero(~vectors.any(axis=1))
+    if zero.size:
+        raise ValueError(
+            f"{path}: {zero.size} vectors are all zero and have no direction (first rows {zero[:5].tolist()})"
+        )
     return vectors, true_ids
 
 
-def tau_sweep(table: ByteTable, ct, scorer: StructuredScorer, ids: np.ndarray, taus=TAUS, noise_targets=NOISE_TARGETS,
-              seed: int = 0, chunk: int = 4096, runner_up_ids: np.ndarray | None = None, rival_mixes=RIVAL_MIXES,
-              external: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
+def tau_sweep(
+    table: ByteTable,
+    ct,
+    scorer: StructuredScorer,
+    ids: np.ndarray,
+    taus=TAUS,
+    noise_targets=NOISE_TARGETS,
+    seed: int = 0,
+    chunk: int = 4096,
+    runner_up_ids: np.ndarray | None = None,
+    rival_mixes=RIVAL_MIXES,
+    external: tuple[np.ndarray, np.ndarray] | None = None,
+) -> dict:
     """Accept / wrong-accept bookkeeping per condition and tau.
 
     Conditions: ``clean_fp32``, ``clean_bf16``, ``noise_cos_<c>`` for c in ``noise_targets``, ``garbage``
@@ -198,25 +235,50 @@ def tau_sweep(table: ByteTable, ct, scorer: StructuredScorer, ids: np.ndarray, t
                 tc = (Q * z64).sum(1) / (np.linalg.norm(Q, axis=1) * np.linalg.norm(z64, axis=1))
                 true_cos[sl] = np.where(t >= 0, tc, np.nan)
                 want = [table.row(int(i)) if i >= 0 else None for i in t]
-                struct_ok[sl] = [w is not None and g == w for g, w in zip(decode_structural_batch(Q, P), want, strict=False)]
+                struct_ok[sl] = [
+                    w is not None and g == w for g, w in zip(decode_structural_batch(Q, P), want, strict=False)
+                ]
         correct = np.zeros(n, bool) if kind == "garbage" else (best_id == truth) & known
         rows = []
         for tau in taus:
             acc = best >= tau
-            rows.append({"tau": tau, "accept_rate": float(acc.mean()),
-                         "accuracy_among_accepted": float(correct[acc].mean()) if acc.any() else None,
-                         "accept_rate_among_correct": float(acc[correct].mean()) if correct.any() else None,
-                         "correct_accept_rate": float((acc & correct).mean()), "wrong_accept_rate": float((acc & ~correct).mean()),
-                         "reject_correct_rate": float((~acc & correct).mean())})
+            rows.append(
+                {
+                    "tau": tau,
+                    "accept_rate": float(acc.mean()),
+                    "accuracy_among_accepted": float(correct[acc].mean()) if acc.any() else None,
+                    "accept_rate_among_correct": float(acc[correct].mean()) if correct.any() else None,
+                    "correct_accept_rate": float((acc & correct).mean()),
+                    "wrong_accept_rate": float((acc & ~correct).mean()),
+                    "reject_correct_rate": float((~acc & correct).mean()),
+                }
+            )
         has_truth = kind != "garbage" and bool(known.any())
-        conditions.append({"name": name, "kind": kind, "queries": int(n), "unknown_truth": int((~known).sum()),
-                           "target_cos": param if kind == "noise" else None, "mix": param if kind == "rival" else None,
-                           "mean_true_cos": float(np.nanmean(true_cos)) if has_truth else None,
-                           "mean_best_cos": float(best.mean()), "min_best_cos": float(best.min()), "max_best_cos": float(best.max()),
-                           "argmax_accuracy": float(correct.mean()),
-                           "structural_accuracy": float(struct_ok[known].mean()) if has_truth else None, "taus": rows})
-    return {"P": int(P), "vocab_size": int(table.vocab_size), "queries": int(ids.size), "seed": seed, "taus": list(taus),
-            "conditions": conditions}
+        conditions.append(
+            {
+                "name": name,
+                "kind": kind,
+                "queries": int(n),
+                "unknown_truth": int((~known).sum()),
+                "target_cos": param if kind == "noise" else None,
+                "mix": param if kind == "rival" else None,
+                "mean_true_cos": float(np.nanmean(true_cos)) if has_truth else None,
+                "mean_best_cos": float(best.mean()),
+                "min_best_cos": float(best.min()),
+                "max_best_cos": float(best.max()),
+                "argmax_accuracy": float(correct.mean()),
+                "structural_accuracy": float(struct_ok[known].mean()) if has_truth else None,
+                "taus": rows,
+            }
+        )
+    return {
+        "P": int(P),
+        "vocab_size": int(table.vocab_size),
+        "queries": int(ids.size),
+        "seed": seed,
+        "taus": list(taus),
+        "conditions": conditions,
+    }
 
 
 def _row(cond: dict, tau: float) -> dict:
@@ -227,7 +289,12 @@ def _quality_conditions(sweep: dict, floor_cos: float = QUALITY_FLOOR_COS) -> li
     return [c for c in sweep["conditions"] if c.get("kind") == "noise" and c["target_cos"] >= floor_cos]
 
 
-def propose_tau(sweep: dict, max_garbage_accept: float = 0.01, min_correct_accept: float = 0.99, floor_cos: float = QUALITY_FLOOR_COS) -> float:
+def propose_tau(
+    sweep: dict,
+    max_garbage_accept: float = 0.01,
+    min_correct_accept: float = 0.99,
+    floor_cos: float = QUALITY_FLOOR_COS,
+) -> float:
     """tau is a garbage filter. Rule: the smallest tau in the grid that rejects at least 99% of ``garbage``
     queries (wrong-accept <= 1% on that condition) while accepting at least 99% of the correct decodes in
     every isotropic condition with target cosine >= 0.7 (``noise_cos_0.95``, ``_0.9``, ``_0.8``, ``_0.7``).
@@ -237,7 +304,12 @@ def propose_tau(sweep: dict, max_garbage_accept: float = 0.01, min_correct_accep
     return proposal_report(sweep, max_garbage_accept, min_correct_accept, floor_cos)["proposed_tau"]
 
 
-def proposal_report(sweep: dict, max_garbage_accept: float = 0.01, min_correct_accept: float = 0.99, floor_cos: float = QUALITY_FLOOR_COS) -> dict:
+def proposal_report(
+    sweep: dict,
+    max_garbage_accept: float = 0.01,
+    min_correct_accept: float = 0.99,
+    floor_cos: float = QUALITY_FLOOR_COS,
+) -> dict:
     """``propose_tau`` plus its bookkeeping: whether the quality floor held, and the wrong-accept rate at the
     proposed tau in every ``rival_mix`` condition (the confusions tau does not catch)."""
     garbage = next((c for c in sweep["conditions"] if c["name"] == "garbage"), None)
@@ -260,10 +332,17 @@ def proposal_report(sweep: dict, max_garbage_accept: float = 0.01, min_correct_a
     else:
         tau, ok = max(sweep["taus"]), False
     rivals = {c["name"]: _row(c, tau)["wrong_accept_rate"] for c in sweep["conditions"] if c.get("kind") == "rival"}
-    return {"proposed_tau": float(tau), "proposal_satisfies_quality_floor": ok,
-            "rule": {"max_garbage_accept": max_garbage_accept, "min_correct_accept": min_correct_accept,
-                     "quality_conditions": [c["name"] for c in quality]},
-            "rival_wrong_accept_at_tau": rivals}
+    return {
+        "proposed_tau": float(tau),
+        "proposal_satisfies_quality_floor": ok,
+        "rule": {
+            "max_garbage_accept": max_garbage_accept,
+            "min_correct_accept": min_correct_accept,
+            "quality_floor_cos": floor_cos,
+            "quality_conditions": [c["name"] for c in quality],
+        },
+        "rival_wrong_accept_at_tau": rivals,
+    }
 
 
 def _fmt(x, spec=".3f") -> str:
@@ -272,29 +351,54 @@ def _fmt(x, spec=".3f") -> str:
 
 def tau_markdown(sweep: dict, report: dict) -> str:
     proposed = report["proposed_tau"]
-    out = [f"{sweep['queries']:,} query tokens (seed {sweep['seed']}), P = {sweep['P']}, raw byte table of {sweep['vocab_size']:,} codes. "
-           f"Proposed tau = **{proposed}**"
-           + ("" if report["proposal_satisfies_quality_floor"] else " (quality floor NOT met; garbage criterion only)") + ".", "",
-           "| condition | mean cos to true code | argmax accuracy | structural (Theorem 2) accuracy | " + " | ".join(f"tau {t}: accept / acc. among accepted / wrong-accept" for t in sweep["taus"]) + " |",
-           "|---|---|---|---|" + "---|" * len(sweep["taus"])]
+    out = [
+        f"{sweep['queries']:,} query tokens (seed {sweep['seed']}), P = {sweep['P']}, raw byte table of {sweep['vocab_size']:,} codes. "
+        f"Proposed tau = **{proposed}**"
+        + ("" if report["proposal_satisfies_quality_floor"] else " (quality floor NOT met; garbage criterion only)")
+        + ".",
+        "",
+        "| condition | mean cos to true code | argmax accuracy | structural (Theorem 2) accuracy | "
+        + " | ".join(f"tau {t}: accept / acc. among accepted / wrong-accept" for t in sweep["taus"])
+        + " |",
+        "|---|---|---|---|" + "---|" * len(sweep["taus"]),
+    ]
     for c in sweep["conditions"]:
-        cells = [f"{r['accept_rate']:.3f} / {_fmt(r['accuracy_among_accepted'])} / {r['wrong_accept_rate']:.3f}" for r in c["taus"]]
-        label = c["name"] + (f" ({c['queries']:,} vectors, {c['unknown_truth']:,} without known truth)" if c.get("kind") == "external" else "")
-        out.append(f"| {label} | {_fmt(c['mean_true_cos'])} | {c['argmax_accuracy']:.4f} | {_fmt(c['structural_accuracy'], '.4f')} | " + " | ".join(cells) + " |")
+        cells = [
+            f"{r['accept_rate']:.3f} / {_fmt(r['accuracy_among_accepted'])} / {r['wrong_accept_rate']:.3f}"
+            for r in c["taus"]
+        ]
+        label = c["name"] + (
+            f" ({c['queries']:,} vectors, {c['unknown_truth']:,} without known truth)"
+            if c.get("kind") == "external"
+            else ""
+        )
+        out.append(
+            f"| {label} | {_fmt(c['mean_true_cos'])} | {c['argmax_accuracy']:.4f} | {_fmt(c['structural_accuracy'], '.4f')} | "
+            + " | ".join(cells)
+            + " |"
+        )
     rivals = [c for c in sweep["conditions"] if c.get("kind") == "rival"]
-    out += ["",
-            "Rule: tau is the smallest value in the grid that rejects at least 99% of `garbage` queries (wrong-accept <= 1% on "
-            "that condition) while accepting at least 99% of the correct decodes in every isotropic condition with target "
-            "cosine >= 0.7 (" + ", ".join(f"`{n}`" for n in report["rule"]["quality_conditions"]) + "); if no tau satisfies both, "
-            "the smallest that rejects garbage is returned and the quality floor is reported as not met."]
+    rule = report["rule"]
+    out += [
+        "",
+        f"Rule: tau is the smallest value in the grid that accepts at most {rule['max_garbage_accept']:.0%} of `garbage` queries "
+        f"while keeping at least {rule['min_correct_accept']:.0%} of the correct decodes in every isotropic condition with target "
+        f"cosine >= {rule['quality_floor_cos']} ("
+        + ", ".join(f"`{n}`" for n in rule["quality_conditions"])
+        + "); if no tau "
+        "satisfies both, the smallest that rejects garbage is returned and the quality floor is reported as not met; if none "
+        "rejects garbage, the largest tau in the grid.",
+    ]
     if rivals:
         floor = min(c["min_best_cos"] for c in rivals)
         caught = ", ".join(f"{k}: {v:.3f}" for k, v in report["rival_wrong_accept_at_tau"].items())
-        out += ["",
-                "tau is a garbage filter: it rejects vectors far from every code; it cannot separate a near-code wrong answer "
-                f"from a right one (best cosine above {np.floor(floor * 100) / 100:.2f} in every rival_mix condition). Wrong-accept rate at "
-                f"tau = {proposed} by condition (the confusions tau does not catch): {caught}. The margin (best minus second-best "
-                "cosine) is the quantity that detects rival confusions, and Team 5's decoder should report both."]
+        out += [
+            "",
+            "tau is a garbage filter: it rejects vectors far from every code; it cannot separate a near-code wrong answer "
+            f"from a right one (best cosine above {np.floor(floor * 100) / 100:.2f} in every rival_mix condition). Wrong-accept rate at "
+            f"tau = {proposed} by condition (the confusions tau does not catch): {caught}. The margin (best minus second-best "
+            "cosine) is the quantity that detects rival confusions, and Team 5's decoder should report both.",
+        ]
     return "\n".join(out) + "\n"
 
 
@@ -306,10 +410,17 @@ def main(argv=None) -> int:
     ap.add_argument("--sample", type=int, default=10000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--chunk", type=int, default=4096, help="queries scored per block")
-    ap.add_argument("--skip-margins", action="store_true",
-                    help="reuse the saved margins_P32_*.npz and tau_summary_P32.json in --out; redo only the tau sweep")
-    ap.add_argument("--vectors", type=Path, default=None,
-                    help="npz with 'vectors' (N, D) and 'true_ids' (N,) (-1 = unknown): added to the sweep as condition 'external'")
+    ap.add_argument(
+        "--skip-margins",
+        action="store_true",
+        help="reuse the saved margins_P32_*.npz and tau_summary_P32.json in --out; redo only the tau sweep",
+    )
+    ap.add_argument(
+        "--vectors",
+        type=Path,
+        default=None,
+        help="npz with 'vectors' (N, D) and 'true_ids' (N,) (-1 = unknown): added to the sweep as condition 'external'",
+    )
     a = ap.parse_args(argv)
     t0 = time.perf_counter()
     tb = load_tokenizer(str(resolve_tokenizer_path(a.tokenizer)), expected_sha256=TOKENIZER_SHA256)
@@ -320,16 +431,23 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     P = table.pos_dim
     if a.skip_margins:
-        summary = json.loads((a.out / f"tau_summary_P{P}.json").read_text(encoding="utf-8"))
+        summary_path = a.out / f"tau_summary_P{P}.json"
+        if not summary_path.is_file():
+            raise SystemExit(f"--skip-margins needs {summary_path}; run once without it first")
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
         if summary["table_sha256"] != ct.table_sha256:
-            raise SystemExit(f"saved tau_summary is for table {summary['table_sha256'][:12]}..., not {ct.table_sha256[:12]}...")
+            raise SystemExit(
+                f"saved tau_summary is for table {summary['table_sha256'][:12]}..., not {ct.table_sha256[:12]}..."
+            )
         with np.load(a.out / f"margins_P{P}_fp32.npz") as z:
             runner_up = np.asarray(z["second_id"])
-        summary["margin_pass_seconds"] = summary.pop("seconds", summary.get("margin_pass_seconds"))  # key renamed
         print("skip-margins: reusing saved margin passes", flush=True)
     else:
         classes = classify_vocab(tb)
-        rows_by_dtype, summary = {}, {"P": P, "table_sha256": ct.table_sha256, "tokenizer_sha256": tb.sha256, "dtypes": {}}
+        rows_by_dtype, summary = (
+            {},
+            {"P": P, "table_sha256": ct.table_sha256, "tokenizer_sha256": tb.sha256, "dtypes": {}},
+        )
         runner_up = None
         for name, dtype in DTYPES.items():
             res = score_vocabulary(table, ct, scorer, dtype, chunk=a.chunk)
@@ -342,10 +460,17 @@ def main(argv=None) -> int:
                 w = csv.DictWriter(f, fieldnames=list(rows[0]))
                 w.writeheader()
                 w.writerows(rows)
-            summary["dtypes"][name] = {"decoded_correctly": int((res["best_id"] == np.arange(table.vocab_size)).sum()),
-                                       "min_margin": float(res["margin"].min()), "argmin_id": int(res["margin"].argmin()),
-                                       "median_margin": float(np.median(res["margin"])), "min_best_cos": float(res["best"].min())}
-            print(f"{name}: decoded {summary['dtypes'][name]['decoded_correctly']}/{table.vocab_size}, min margin {summary['dtypes'][name]['min_margin']:.5f}", flush=True)
+            summary["dtypes"][name] = {
+                "decoded_correctly": int((res["best_id"] == np.arange(table.vocab_size)).sum()),
+                "min_margin": float(res["margin"].min()),
+                "argmin_id": int(res["margin"].argmin()),
+                "median_margin": float(np.median(res["margin"])),
+                "min_best_cos": float(res["best"].min()),
+            }
+            print(
+                f"{name}: decoded {summary['dtypes'][name]['decoded_correctly']}/{table.vocab_size}, min margin {summary['dtypes'][name]['min_margin']:.5f}",
+                flush=True,
+            )
         (a.out / f"tau_margin_pass_P{P}.md").write_text(margin_markdown(rows_by_dtype, P), encoding="utf-8")
         summary["margin_pass_seconds"] = round(time.perf_counter() - t0, 1)
     t1 = time.perf_counter()
@@ -354,10 +479,17 @@ def main(argv=None) -> int:
     report = proposal_report(sweep)
     (a.out / f"tau_rates_P{P}.json").write_text(json.dumps({**sweep, **report}, indent=2) + "\n", encoding="utf-8")
     (a.out / f"tau_rates_P{P}.md").write_text(tau_markdown(sweep, report), encoding="utf-8")
-    summary.pop("rival_confusions_caught_by_tau", None)  # key renamed to rival_wrong_accept_at_tau
-    summary.update(**report, external_vectors=str(a.vectors) if a.vectors is not None else None,
-                   tau_sweep_seconds=round(time.perf_counter() - t1, 1),
-                   environment={"python": platform.python_version(), "torch": torch.__version__, "numpy": np.__version__, "device": "cpu"})
+    summary.update(
+        **report,
+        external_vectors=str(a.vectors) if a.vectors is not None else None,
+        tau_sweep_seconds=round(time.perf_counter() - t1, 1),
+        environment={
+            "python": platform.python_version(),
+            "torch": torch.__version__,
+            "numpy": np.__version__,
+            "device": "cpu",
+        },
+    )
     (a.out / f"tau_summary_P{P}.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     if not a.skip_margins:
         print((a.out / f"tau_margin_pass_P{P}.md").read_text())

@@ -206,7 +206,9 @@ For every condition and every tau the sweep records the accept rate (best cosine
 accuracy among accepted vectors, and the wrong-accept rate. The same pass also recomputes every
 token's best and second-best cosine (`margins_P32_fp32.npz`, `margins_P32_bf16.npz`) because the
 rival mixtures need each token's rival; its per-class minima (`tau_margin_pass_P32.md`) agree with
-the table above, pair for pair.
+the table above in every class; where several pairs tie at the minimum, the sweep's lowest-id rule can
+name a different token of the tie (Gurmukhi in fp32, Other in bf16), and it reports the 21 partial-UTF-8
+subclasses as one class.
 
 **What came out** ([`tau_rates_P32.md`](results/min_margin/tau_rates_P32.md),
 [`tau_summary_P32.json`](results/min_margin/tau_summary_P32.json)).
@@ -219,11 +221,13 @@ the table above, pair for pair.
 | correct answers kept at cosine 0.5 | 100% | 100% | 50% | 0% | 0% |
 | `rival_mix_0.55` accepted (the answer is the rival, so wrong) | 100% | 100% | 100% | 100% | 99.9% |
 
-Garbage vectors reach a best cosine of only about 0.05, so any tau above that removes them; blurry
-but correct vectors keep a best cosine close to their cosine to the true code, so a high tau starts
-to throw away right answers. **Proposed tau = 0.3**: the smallest value in the grid that rejects
-every garbage vector while keeping every correct answer down to cosine 0.5. The rule is in the
-script's `propose_tau` docstring.
+Garbage vectors never reach a best cosine above 0.065, so any tau above that removes them; blurry but
+correct vectors keep a best cosine close to their cosine to the true code, so a high tau starts to
+throw away right answers. **Proposed tau = 0.3**, by the rule in the script's `propose_tau`: the
+smallest value in the grid that accepts at most 1% of garbage and keeps at least 99% of the correct
+answers under noise at cosine 0.7 or above. The safe band is wide: correct answers at cosine 0.5
+never fall below 0.472, so every tau between 0.065 and 0.472 gives exactly this table, and 0.3 is
+simply the grid point inside that band, not a tuned value.
 
 **What tau cannot do.** A vector torn between two similar tokens still has a best cosine above
 0.77 in every rival mixture, so every tau in the grid accepts it, and above a = 0.5 the accepted

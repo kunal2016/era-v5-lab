@@ -139,7 +139,7 @@ GPU process:
 | Batch 7 | 79 W | ~865 MHz | 94–97% | 71–72 °C |
 | Batch 4,096 | 101–104 W | ~1,000 MHz | 54–65% | 72 °C |
 
-The table is averaged from the CSV; each batch-4,096 run lasted about 25 s, so its row rests on 4 to 5 samples. The
+The table is averaged from the CSV; each batch-4,096 run lasted about 25 s at one sample every 6.5 s, so its row rests on 3 to 4 samples per run, about 11 in all. The
 clock, power-state, power-limit and worker-memory figures in the bullets below were read from `nvidia-smi` and the task
 manager during the run and have no committed source.
 
@@ -180,11 +180,12 @@ manager during the run and have no committed source.
 
 ### 7. The same protocol on CPU gives the same IDs
 
-The GPU runs above compare against one CPU reference process. The lead's run repeats the GPU protocol itself on
-CPU (`src/determinism/decode_batches.py`): three fresh processes at each of batch sizes 1, 7 and 4,096, fp32 with
+The GPU runs above compare against one CPU reference process. The lead's run repeats the GPU protocol on CPU
+(`src/determinism/decode_batches.py`): the same three fresh processes at each of batch sizes 1, 7 and 4,096, fp32 with
 TF32 off and matmul precision `highest`, every one of the 131,072 IDs, scored by the structured cosine scorer
-(`ke2.scoring`, Lemma 1) instead of a dense GEMM, and compared ID for ID with the float64 `decode_ref.decode`
-reference (macOS arm64, torch 2.15.0).
+(`ke2.scoring`; the two-valued code structure of proof.md Lemma 1) instead of a dense GEMM. The deterministic-algorithms
+mode and the cuBLAS workspace setting are CUDA-only and not set on CPU. Every run is compared ID for ID with the
+float64 `decode_ref.decode` reference (macOS arm64, torch 2.15.0).
 
 | batch size | runs | hashes match within the batch size | every ID equal to the reference |
 |---|---|---|---|
@@ -194,7 +195,7 @@ reference (macOS arm64, torch 2.15.0).
 
 Every CPU run decodes every ID to itself, so its ID hash in this document's format (`ke2-decode-gpu-ids-v1`, the
 identity map over the committed table) is `31c8d0e0…`, the value of all nine GPU runs. Two decoders (dense fp32
-GEMM on CUDA, structured fp64-pinned cosine on CPU), two devices and three batch shapes give the same
+GEMM on CUDA, structured fp32 cosine on CPU), two devices and three batch shapes give the same
 131,072 IDs. The run's own per-run hash (`ke2-decode-batches-v1`) names the batch size in its header, so it differs
 across batch sizes by construction; the ID bodies are identical.
 
@@ -229,7 +230,7 @@ KE2_RUN_GPU_TESTS=1 python -m pytest teams/04-ke2/tests/test_decode_gpu.py -q
 The CPU counterpart (section 7) needs no GPU and no tokenizer:
 
 ```sh
-python teams/04-ke2/src/determinism/decode_batches.py --device cpu   # ~25 min on an M1; writes results/decode_cpu/raw_P32.{json,md}
+python teams/04-ke2/src/determinism/decode_batches.py --device cpu   # about 25 min on an Apple-silicon laptop; writes results/decode_cpu/raw_P32.{json,md}
 python -m pytest teams/04-ke2/tests/test_decode_batches.py -q
 ```
 
@@ -270,4 +271,4 @@ little-endian.
 | [`tests/test_decode_gpu.py`](tests/test_decode_gpu.py) | 8 tests: hash framing, decoder logic against `decode_ref` and the tie rule (portable), the committed results, and an opt-in CUDA run (`KE2_RUN_GPU_TESTS=1`) |
 | [`src/determinism/decode_batches.py`](src/determinism/decode_batches.py) | The CPU counterpart (section 7): three fresh processes per batch size on a chosen device, compared with the float64 reference; reports the ID hash in this document's format |
 | [`results/decode_cpu/raw_P32.json`](results/decode_cpu/raw_P32.json), [`raw_P32.md`](results/decode_cpu/raw_P32.md) | Every CPU run: per-run hash, equality with the reference, seconds; the cached reference is `decode_ref_full_raw_P32_b3f5476e.npz` next to them |
-| [`tests/test_decode_batches.py`](tests/test_decode_batches.py) | 5 tests: batch sizes agree and match the reference on a synthetic table, TF32 off, the reference cache, the environment record, and that the GPU-format digest equals `decode_gpu.id_digest` |
+| [`tests/test_decode_batches.py`](tests/test_decode_batches.py) | 8 tests: batch sizes agree and match the reference on a synthetic table, TF32 off, the reference cache, the environment record, the GPU-format digest equals `decode_gpu.id_digest`, the default output folder never targets `decode_gpu/`, an end-to-end parent/child run on a synthetic table, and the committed CPU report against the GPU report |
