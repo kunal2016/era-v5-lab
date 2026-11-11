@@ -220,7 +220,7 @@ Every near-identical pair (word Jaccard ≥ 0.80) that was rejected in the three
 
 Share of documents under 50 words, by family: **Indic 19.9%**, code 14.1% (code uses a 20-line minimum, not words), science 2.8%, English 1.7%, math 1.4%, code-adjacent 1.2%. Among the Indic packs it is concentrated in `ind-hi-indiccorp` (56.3%, median 42 words) and the `sangraha-s` packs (14.5–17.1%); the `fw2` and `sangraha-v` packs are 0–3%.
 
-So the 50-word minimum, set on English, leaves about a fifth of Indic documents to H1 only (Risk 2). Still open: a reader to judge whether the 106 rejected `sangraha-s` pairs are true copies. If they are, an Indic minimum in characters, or a lower word minimum, is the fix; it changes `overlap_rules.py` and needs an overlap rerun.
+So the 50-word minimum, set on English, leaves about a fifth of Indic documents to H1 only (Risk 2). Still open: a reader to judge whether the 106 rejected `sangraha-s` pairs are true copies. If they are, a lower word minimum for Indic is the fix (a minimum in characters would not separate these pairs; see the rebuild below); it changes `overlap_rules.py` and needs an overlap rerun.
 
 ### E4, rebuilt from the raw text (11 Nov)
 
@@ -258,7 +258,7 @@ To repeat this, run `python3 -B teams/01-data-a/dedup/e4_review.py` from the rep
 
 | Result | From | Needs |
 |---|---|---|
-| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` | Lead approval and the licence map. Local count without urls: 1,345 |
+| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` | Lead approval (the licence map is decided: all 38 packs usable, `dedup.json` unchanged). Local count without urls: 1,345 |
 | Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI run | `overlap_pairs.csv` and text |
 | E4: are the 106 rejected `sangraha-s` pairs true copies? | A human reader of Kannada, Telugu and Tamil | Their labels on the blind sheets in `out/e4/review/` (made by `e4_review.py`; the text is ready) |
 
