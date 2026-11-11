@@ -1,8 +1,8 @@
 # Runbook: restoring a run from its last checkpoint
 
 Second version. It covers restore (the steps and the restore time) and restart after a killed trainer
-(`ckpt/supervisor.py`, `results/restart_cpu.txt`). The restart on the lab node, the 2-GPU restore and the GPU timing
-are marked **pending** below.
+(`ckpt/supervisor.py`, `results/restart_cpu.txt`, and on 1 lab GPU `results/restart_node.txt`). The 2-GPU restore
+and the GPU timing are marked **pending** below.
 
 > **In simple words.** Machines break and runs stop. Every few hundred steps the run saves a *checkpoint*: a
 > copy of everything the next step needs. To restore, the new copy of the run reads the newest good checkpoint,
@@ -176,6 +176,7 @@ Numbers. The committed result names macOS arm64, Python 3.13.14, torch 2.14.1 (C
 | committed result, `results/restart_cpu.txt` (**reference**) | 140 | 125 | 15 | 200 of 200 | 2.4 s / 3.9 s |
 | same, kills after step 32, 100 and 165 (**reference**) | 32, 100, 165 | 25, 75, 150 | not listed | PASS on each | not listed |
 | member runs, 3 repetitions, same command (**measured**) | 140, 141, 141 | 125 each | 15, 16, 16 | 200 of 200 each | 1.3 to 1.5 s / 2.0 s |
+| 1 lab GPU, TSAI job on #258, `results/restart_node.txt` (**reference**) | 140 | 125 | 15 | 200 of 200 | 154.6 s / 63.2 s |
 
 The supervisor log in all of them: attempt 0 exit -9 (crash: killed by SIGKILL), restart with `latest.json` at
 step 125; attempt 1 exit 0 (done), stop. Work lost per kill = the steps since the last checkpoint: 15 or 16 steps
@@ -186,10 +187,10 @@ here, with a checkpoint every 25 (**computed**: killed-after step minus restarte
 - The kill always lands after step 140, when the step-125 checkpoint is already committed, so it never kills a
   trainer in the middle of a save. That case is covered by the checkpoint drills (`kill_during_save`,
   `kill_during_restore`; `support/docs/sim_results.md`) and tests T3, T4 and T19 in `support/tests/test_ckpt.py`.
-- One CPU process only. Not run on a GPU yet.
-- The run as a TSAI job under queue rules v1.1 (`docs/queue_rules_v1.md`, `--run-id`, output in
-  `./out/<run_id>/`, checked with `python queue/queue_rules.py check-out ./out --run-id <run_id>`; merged in
-  theschoolofai/era-v5-lab#245). The restart on the lab node (`results/restart_node.txt`) is **pending**.
+- One process only (1 CPU process, or 1 GPU). No 2-process restart yet.
+- The queue rules check on the GPU job. TSAI ran it as a job under queue rules v1 (`--run-id`, output in
+  `./out/<run_id>/`, `results/restart_node.txt`, PASS), but its last line, `python queue/queue_rules.py check-out
+  ./out --run-id <run_id>`, did not run: `queue_rules.py` came with theschoolofai/era-v5-lab#245, merged later.
 
 ### 5.2 Roll back on purpose (after a NaN or a loss spike)
 
@@ -327,17 +328,17 @@ A killed trainer was back and training in about 50 s (median of 3 runs), a preem
 
 | Item | Owner | Status |
 |---|---|---|
-| Restart job on the lab node (`results/restart_node.txt`) | Lead | **pending**, due Sat 14 Nov |
+| Restart job on the lab node (`results/restart_node.txt`) | Lead | **done**: TSAI job on #258, 1 GPU, PASS, 200 of 200 bit-equal |
 | Restore on 2 GPUs | TSAI, after Gate 2 | **pending** |
 | Speed of the four proofs on 1 GPU (`restore_time.py --device cuda`) | G7 | **pending**: separate 1-GPU job request, still to be filed |
 | Restore time with the real store and config v1 sizes | G7 | **pending**, config v1 arrives Sat 14 Nov |
 | Queue rules v1.1: `docs/queue_rules_v1.md`, `queue/queue_rules.py` (theschoolofai/era-v5-lab#245; COMPLETE = `MANIFEST.json` plus `latest.json` or `commits.jsonl` naming the folder) | G7 | merged; this runbook follows it (section 5.1) |
 | Parallel layout: `docs/parallel_layout_v0.md` | G7 | merged (theschoolofai/era-v5-lab#246); not part of this file |
-| Restart test on a GPU, as a TSAI job | G7 | **pending** |
+| Restart test on a GPU, as a TSAI job | G7 | **done**, same job (`results/restart_node.txt`); `queue_rules.py check-out` not run on it |
 
 ## 9. Sources
 
 `USER_GUIDE.md` (sections 1.3 to 1.6, 5.2, 5.4), `ckpt/README.md`, `ckpt/ckpt.py` (`restore`, `_restore_one`),
 `ckpt/supervisor.py`, `ckpt/test_supervisor.py`, `jobs/restore_time/README.md`, `jobs/restore_test/README.md`, `jobs/restart_test/README.md`,
-`results/restart_cpu.txt`, `results/restore_test_cpu.txt`, `results/restore_test_gpu.txt`,
+`results/restart_cpu.txt`, `results/restart_node.txt`, `results/restore_test_cpu.txt`, `results/restore_test_gpu.txt`,
 `support/docs/codes_and_actions.md`, `common/reasons.py`, `metrics/catalog.yaml`, `queue/README.md`.
