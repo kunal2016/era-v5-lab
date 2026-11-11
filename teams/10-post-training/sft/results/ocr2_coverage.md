@@ -31,18 +31,19 @@ revision is not established. Rendered and kept rows were counted in every shard;
 
 ### How many distinct problems this actually is
 
-| | Count |
-|---|---:|
-| Joined rows | 542,286 |
-| Distinct problems by position | **19,825** |
-| Distinct problems by content, Jaccard 0.8 | **15,402** |
-| Rows per content cluster, mean / max | 27.7 / 349 |
-| Trained tokens | **2,539,177,884** |
-| Tokens per content cluster, mean | 176,274 |
+| | Joined | Kept (after the scan) |
+|---|---:|---:|
+| Rows | 542,286 | 427,152 |
+| Distinct problems by position | **19,825** | **15,670** |
+| Distinct problems by content, Jaccard 0.8 | **19,340** | **15,402** |
+| Trained tokens | **3,400,978,077** (over the 542,219 rendered rows; the 67 converter-rejected rows have none) | **2,539,177,884** |
+| Rows per content cluster, mean / max | not recorded | 27.7 / 349 |
+| Tokens per content cluster, mean (all rendered tokens, not trained-only) | not recorded | 176,274 |
 
 The 1,398,166 figure is rows, not problems. The same problem recurs across shards within a source;
-cross-source collapse is small (169 clusters at 0.8). **2.54B trained tokens across roughly 15,400 distinct
-problems** is the supply figure, not a row count.
+cross-source collapse is small (365 clusters at 0.8 over the joined rows, 169 over the kept rows). The supply
+figure for the mix is the kept one: **2.54B trained tokens across roughly 15,400 distinct problems** (15,402 by
+content at Jaccard 0.8), not a row count.
 
 ### What the full run does not settle
 
