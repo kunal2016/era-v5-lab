@@ -222,12 +222,44 @@ Share of documents under 50 words, by family: **Indic 19.9%**, code 14.1% (code 
 
 So the 50-word minimum, set on English, leaves about a fifth of Indic documents to H1 only (Risk 2). Still open: a reader to judge whether the 106 rejected `sangraha-s` pairs are true copies. If they are, an Indic minimum in characters, or a lower word minimum, is the fix; it changes `overlap_rules.py` and needs an overlap rerun.
 
+### E4, rebuilt from the raw text (11 Nov)
+
+**Source:** the same 106 pairs, from TSAI's `overlap_pairs.csv`, `overlap_matches.csv` and `overlap_docs.parquet`, with each document's text taken from the raw sample-v0 parts of the three packs (all 6 match `inputs/sample_v0/SHA256SUMS`). `e4_review.py` rebuilds each document's H1 key and 5-grams as `overlap.py` does. Document text stays in the git-ignored `out/e4/`; only counts are given here.
+
+**Raw text versus what TSAI scored.** TSAI scored the cleaned parts, and cleaning changed two of the three packs:
+
+| Pack | Documents, raw → cleaned | Cleaned documents whose raw text gives TSAI's word and 5-gram counts | Rejected pairs whose raw text gives TSAI's score |
+|---|---:|---:|---:|
+| `ind-kn-sangraha-s` | 5,244 → 5,222 | 4,615 (88.4%) | 20 of 20 |
+| `ind-te-sangraha-s` | 4,829 → 4,468 | 4,275 (95.7%) | 32 of 32 |
+| `ind-ta-sangraha-s` | 4,372 → 4,372 | 4,372 (100%) | 54 of 54 |
+
+Every rejected pair gives TSAI's score from the raw text (to its 6 decimals), so all 106 were rebuilt from the text TSAI scored, even in the two packs that cleaning changed.
+
+**What the pairs are, by the numbers** (no reading needed):
+
+| Pack | Rejected pairs | Distinct documents | Clusters (sizes) | Shorter document of each pair | Words that differ, each side | Would qualify with a minimum of 40 / 30 / 20 / 10 words |
+|---|---:|---:|---|---|---|---|
+| `ind-kn-sangraha-s` | 20 | 10 | 2 (8, 2) | 17 words (1 pair), 30–39 (19) | 1–4 | 0 / 19 / 19 / 20 |
+| `ind-te-sangraha-s` | 32 | 9 | 1 (9) | 30–39 (29), 40–49 (3) | 1–5 | 3 / 32 / 32 / 32 |
+| `ind-ta-sangraha-s` | 54 | 16 | 1 (16) | 30–39 (54) | 1–4 | 0 / 54 / 54 / 54 |
+
+- The 106 pairs come from only **35 documents in 4 clusters**. Every pair is within the train split, and the two documents differ by only 1–5 words per side. That fits either short copies or one fixed text with a word changed; only a reader can say which.
+- A character minimum would not separate them either: their H1 keys have 148–366 characters.
+- **What is at stake:** with one document kept per cluster, a 30-word minimum would remove 30 documents of the 14,062 in the three packs (31 with a 10-word minimum).
+
+**Across all `ind-*` packs** (TSAI's outputs only): the 50-word minimum rejects 135 prose pairs ≥ 0.80 with an `ind-*` side, among 69 documents, and no other rule rejects any. A minimum of 40 / 30 / 20 / 10 words would admit 3 / 106 / 111 / 135 of them (3 / 35 / 42 / 69 documents). So although 19.9% of Indic documents are under 50 words, few of them are in near-identical pairs: lowering the minimum affects at most 69 documents across the 22 Indic packs.
+
+**Still open: the reading.** The blind review sheets are ready in `out/e4/review/<pack>/`, on the local machine and not in the repo. Each sheet shows the two texts of every pair side by side, in random order, without scores, lengths or IDs, and comes with a `labels.csv` to fill in (copy, template, different or unsure). The labels must come from a human reader of the language, and theirs are the E4 result.
+
+To repeat this, run `python3 -B teams/01-data-a/dedup/e4_review.py` from the repo root. It needs the raw parts in `inputs/sample_v0/packs` and TSAI's outputs in `out/overlap_tsai`; its tests are in `tests/test_e4_review.py`.
+
 ## 4. Still to come
 
 | Result | From | Needs |
 |---|---|---|
 | Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` | Lead approval and the licence map. Local count without urls: 1,345 |
 | Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI run | `overlap_pairs.csv` and text |
-| E4: are the 106 rejected `sangraha-s` pairs true copies? | A reader of Kannada, Telugu or Tamil | The text of those pairs (sample-v0 parts of the three packs) |
+| E4: are the 106 rejected `sangraha-s` pairs true copies? | A human reader of Kannada, Telugu and Tamil | Their labels on the blind sheets in `out/e4/review/` (made by `e4_review.py`; the text is ready) |
 
 **Done on 10 Nov:** the reviewed source matrix, `dedup/overlap_matrix.csv`, byte-identical to TSAI's (`matrix_confirmation.md`); `dedup.py` written and run locally on TSAI's outputs (1,345 removed, above).
