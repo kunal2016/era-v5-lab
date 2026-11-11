@@ -253,6 +253,7 @@ last COMPLETE checkpoint (every 25 steps). All **PASS**: steps 1–200 bit-equal
 | R2 | 140 / 140–141 | 125 | 15–16 | not recorded | 3 runs; wall time A 1.3–1.5 s, B 2.0 s |
 | R4 | 140 / 140 | 125 | 15 | not recorded | job form (`--run-id`), `queue_rules.py check-out` PASS |
 | committed, [`results/restart_cpu.txt`](../results/restart_cpu.txt) | 140 / 140 | 125 | 15 | - | kill points 32, 100, 165 also PASS |
+| TSAI job on #258, 1 lab GPU, [`results/restart_node.txt`](../results/restart_node.txt) | 140 / 140 | 125 | 15 | not recorded | job form (`--run-id`); `queue_rules.py check-out` not run (#245 merged later) |
 
 ### 8.4 How restore time grows with checkpoint size (synthetic, CPU)
 
@@ -352,14 +353,14 @@ are in PR order (names are not used in team files).
 
 Other evidence: [`results/restore_test_cpu.txt`](../results/restore_test_cpu.txt) (CPU, 1 and 2 processes),
 [`results/restore_test_gpu.txt`](../results/restore_test_gpu.txt) (TSAI, 1 GPU), [`results/restart_cpu.txt`](../results/restart_cpu.txt)
-(restart, CPU), PR #249, open (restore test on Windows, CPU).
+(restart, CPU), [`results/restart_node.txt`](../results/restart_node.txt) (restart, TSAI, 1 GPU), PR #249, open (restore test on Windows, CPU).
 
 ## 11. Open items
 
 | Item | Owner | Due |
 |---|---|---|
 | 1-GPU `restore_s` and size sweep as a TSAI job (8.2, 8.4) | Lead files the request | after Gate 2 if not run by Sat 14 Nov |
-| Restart on the lab node, `results/restart_node.txt` | Lead | request Thu 12 Nov, result Sat 14 Nov |
+| Restart on the lab node, `results/restart_node.txt` | Lead | **done**: TSAI job on #258, 1 GPU, PASS (8.3) |
 | Real restore time at config v1 size on the real store (8.5) | checkpoint owner + Team 6 | after Sat 14 Nov |
 | Manifests record `git_sha=unknown` when `GIT_SHA` is unset | checkpoint owner | issue #298 |
 | 2-GPU restore | TSAI | after Gate 2 |
