@@ -80,5 +80,4 @@ Preferring the copy that cleaning changed least was considered and dropped, beca
 ## Open items
 
 - G10: the final licence decision, including `code-js-ts` and `ind-hi-hplt` (not verified; treated as usable for this experiment only).
-- `dedup.py`: write each group's survivors (for example `dedup_groups.csv`), so the F2 step can count and list the groups whose survivor it removes.
 - Data B lead: any objection to the alphabetical order of their 25 packs, with a reason, by Fri 13 Nov 2026.

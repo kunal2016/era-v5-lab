@@ -257,3 +257,57 @@ def test_main_returns_2_on_error_and_0_on_success(repo, capsys):
     assert dedup.main(["--config", str(config(repo))]) == 0
     assert "removed 1" in capsys.readouterr().out
     assert dedup.main(["--config", str(config(repo, pack_order=["zz"]))]) == 2
+
+
+# ---------------------------------------------------------------- dedup_groups.csv (for the F2 step)
+
+def groups(repo):
+    with (repo / "out/dedup/dedup_groups.csv").open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    by = {}
+    for r in rows:
+        by.setdefault(r["group_id"], {"survivor": set(), "removed": set(), "size": int(r["group_size"]),
+                                      "rule": int(r["priority_rule"])})[r["role"]].add(r["doc_id"])
+    return by
+
+
+def test_groups_list_every_member_once_with_its_role(repo):
+    # two groups: a~b~c (b longest survives) and d~e (e longest survives); f has no match and is in no group
+    make_run(repo, [("a", "en-a", "train", 100), ("b", "en-a", "train", 120), ("c", "en-a", "train", 90),
+                    ("d", "en-b", "train", 80), ("e", "en-b", "train", 95), ("f", "en-b", "train", 70)],
+             [(0, 1, "H2", 0.9, ""), (1, 2, "H2", 0.85, ""), (3, 4, "H1", 1.0, "")])
+    s, log = run(repo)
+    g = groups(repo)
+    assert list(g) == ["G000001", "G000002"]                      # numbered by lowest row: same ids every run
+    assert g["G000001"] == {"survivor": {"b"}, "removed": {"a", "c"}, "size": 3, "rule": 3}
+    assert g["G000002"] == {"survivor": {"e"}, "removed": {"d"}, "size": 2, "rule": 3}
+    assert {d for x in g.values() for d in x["removed"]} == set(log)   # removed rows = the remove list
+    assert s["outputs"]["dedup_groups.csv"]["sha256"] == sha(repo / "out/dedup/dedup_groups.csv")
+
+
+def test_group_keeps_every_heldout_copy_as_a_survivor(repo):
+    # rule 0: both held-out copies survive, the train copy goes; F2 must see both survivors
+    make_run(repo, [("h1", "en-a", "heldout", 100), ("h2", "en-b", "heldout", 90), ("t", "en-a", "train", 120)],
+             [(0, 2, "H2", 0.9, ""), (1, 2, "H2", 0.88, "")])
+    s, _ = run(repo)
+    assert groups(repo)["G000001"] == {"survivor": {"h1", "h2"}, "removed": {"t"}, "size": 3, "rule": 0}
+    assert s["groups_with_several_survivors"] == 1 and s["groups_without_survivor"] == 0
+
+
+def test_group_with_no_usable_copy_has_no_survivor(repo):
+    make_run(repo, [("a", "code-js-ts", "train", 100), ("b", "code-js-ts", "train", 120)], [(0, 1, "H1", 1.0, "")])
+    s, _ = run(repo, licence_usable={"code-js-ts": False})
+    assert groups(repo)["G000001"] == {"survivor": set(), "removed": {"a", "b"}, "size": 2, "rule": 1}
+    assert s["groups_without_survivor"] == 1
+
+
+def test_heldout_only_group_is_listed_with_no_removal(repo):
+    make_run(repo, [("h1", "en-a", "heldout", 100), ("h2", "en-a", "heldout", 100)], [(0, 1, "H1", 1.0, "")])
+    s, log = run(repo)
+    assert log == {} and groups(repo)["G000001"] == {"survivor": {"h1", "h2"}, "removed": set(), "size": 2, "rule": 0}
+
+
+def test_empty_documents_are_in_no_group(repo):
+    make_run(repo, [("e1", "code-java", "train", 0), ("e2", "code-java", "train", 0)], [(0, 1, "H1", 1.0, "")])
+    run(repo)
+    assert groups(repo) == {}

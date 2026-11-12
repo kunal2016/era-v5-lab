@@ -50,6 +50,10 @@ WHAT IT WRITES (in out)
   heldout_duplicates.csv   held-out <-> held-out matches, reported to G3; nothing is removed for them
   empty_documents.csv      documents with no shingles (pack_id, split, part, row_in_part, doc_id), for the cleaning
                            team; nothing is removed for them
+  dedup_groups.csv         every duplicate group, one row per member: group_id, group_size, priority_rule, role
+                           (survivor or removed), pack_id, split, part, row_in_part, doc_id. A group can have several
+                           survivors (every held-out copy, rule 0) or none (no usable licence, rule 1). For the F2 step
+                           after dedup: it counts and lists the groups whose survivor F2 removes (TSAI, 12 Nov)
   dedup_summary.json       per pack: documents in, removed by H1 / H2 / cross-pack, documents out; totals; how often
                            each rule decided; empty documents and the matches set aside for them; the harm check; the
                            config; each output's size and sha256
@@ -296,10 +300,11 @@ def run(cfg):
             if x not in strongest or score > strongest[x][1]:
                 strongest[x] = (rule, score)
 
-    removed, log, decided = [], [], Counter()
-    for cl in clusters(matches):
+    removed, log, decided, groups = [], [], Counter(), []
+    for cl in sorted(clusters(matches), key=lambda g: g[0]):   # by lowest row: the same group_id on every run
         keep, drop, rule, ref = decide(cl, docs, rank, usable, urls)
         decided[rule] += 1
+        groups.append((cl, keep, drop, rule))
         for r in drop:
             d = docs[r]
             if ref is not None:
@@ -345,6 +350,16 @@ def run(cfg):
         for d in sorted(empty, key=lambda d: (d["pack"], d["split"], d["part"], d["row_in_part"])):
             w.writerow([d["pack"], d["split"], d["part"], d["row_in_part"], d["doc_id"]])
 
+    with (out / "dedup_groups.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["group_id", "group_size", "priority_rule", "role", "pack_id", "split", "part", "row_in_part", "doc_id"])
+        place = lambda d: (d["pack"], d["split"], d["part"], d["row_in_part"])
+        for i, (cl, keep, drop, rule) in enumerate(groups, 1):
+            for role, members in (("survivor", keep), ("removed", drop)):
+                for d in sorted((docs[r] for r in members), key=place):
+                    w.writerow([f"G{i:06d}", len(cl), rule, role, d["pack"], d["split"], d["part"], d["row_in_part"],
+                                d["doc_id"]])
+
     by_pack = {p: Counter() for p in packs}
     for e in log:
         c = by_pack[e["removed_pack_id"]]
@@ -358,7 +373,8 @@ def run(cfg):
                "documents_out": per_pack[p] - by_pack[p]["removed"]} for p in packs}
     harm = harm_check(cfg["gold_dirs"], ids_by_pack, {(e["removed_pack_id"], e["removed_id"]) for e in log})
     files = {f: {"bytes": (out / f).stat().st_size, "sha256": sha256_file(out / f)}
-             for f in ("remove_list.csv", "dedup_log.jsonl", "heldout_duplicates.csv", "empty_documents.csv")}
+             for f in ("remove_list.csv", "dedup_log.jsonl", "heldout_duplicates.csv", "empty_documents.csv",
+                       "dedup_groups.csv")}
     summary = {
         "status": "complete",
         "config": cfg,
@@ -370,6 +386,8 @@ def run(cfg):
         "empty_document_matches_set_aside": empty_matches,
         "clusters": sum(decided.values()),
         "clusters_decided_by_rule": {str(k): v for k, v in sorted(decided.items())},
+        "groups_without_survivor": sum(1 for _, keep, _, _ in groups if not keep),
+        "groups_with_several_survivors": sum(1 for _, keep, _, _ in groups if len(keep) > 1),
         "documents_all": sum(per_pack.values()),
         "removed": len(log),
         "removed_share": round(len(log) / max(sum(per_pack.values()), 1), 6),
@@ -410,7 +428,8 @@ def main(argv=None):
     if s["licence_default_used_for"]:
         print(f"note: licence map not filled for {len(s['licence_default_used_for'])} packs; default used")
     print(f"harm check: {s['harm_check']['status']}")
-    print(f"wrote remove_list.csv, dedup_log.jsonl, heldout_duplicates.csv, empty_documents.csv and dedup_summary.json to "
+    print(f"wrote remove_list.csv, dedup_log.jsonl, heldout_duplicates.csv, empty_documents.csv, dedup_groups.csv and "
+          f"dedup_summary.json to "
           f"{(REPO / s['config']['out']).relative_to(REPO)}")
     return 0
 

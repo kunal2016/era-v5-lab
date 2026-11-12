@@ -63,6 +63,7 @@ Applied to each cluster in order; each breaks the ties left by the one above (`s
 | `dedup_log.jsonl` | One row per removed document: the removed and kept copies, `rule` (H1/H2), `similarity`, `priority_rule` (0–4), `stage` (`within_pack`, `cross_pack`, or `none` when no copy could survive), and `direct` (`false` when the copy reached the survivor only through other copies) |
 | `heldout_duplicates.csv` | Held-out ↔ held-out matches, for G3 |
 | `empty_documents.csv` | Documents with no shingles, for the cleaning team: `pack_id, split, part, row_in_part, doc_id`. Nothing is removed for them |
+| `dedup_groups.csv` | Every duplicate group, one row per member: `group_id, group_size, priority_rule, role` (`survivor` or `removed`), `pack_id, split, part, row_in_part, doc_id`. Group IDs follow the lowest overlap row, so they are the same on every run of the same inputs. A group can have several survivors (every held-out copy, rule 0) or none (no usable licence, rule 1). For the F2 step after dedup: the groups whose survivor F2 removes are counted and listed from it (TSAI, 12 Nov) |
 | `dedup_summary.json` | Per pack: documents in, removed by H1 / H2 / cross-pack, documents out; totals; how often each rule decided; the number of empty documents and of matches set aside for them; the harm check; the config; each output's size and SHA-256 |
 
 A document is always identified by `(pack_id, split, part, row_in_part)` and its `doc_id`, never by `doc_id` alone: exact copies in different packs share a `doc_id`.
