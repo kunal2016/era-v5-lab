@@ -300,11 +300,15 @@ def run(cfg):
             if x not in strongest or score > strongest[x][1]:
                 strongest[x] = (rule, score)
 
-    removed, log, decided, groups = [], [], Counter(), []
-    for cl in sorted(clusters(matches), key=lambda g: g[0]):   # by lowest row: the same group_id on every run
+    removed, log, decided, member = [], [], Counter(), []   # member: (group_id, group_size, rule, role, row)
+    no_survivor = several_survivors = 0
+    for i, cl in enumerate(sorted(clusters(matches), key=lambda g: g[0]), 1):   # by lowest row: same group_id every run
         keep, drop, rule, ref = decide(cl, docs, rank, usable, urls)
         decided[rule] += 1
-        groups.append((cl, keep, drop, rule))
+        no_survivor += not keep
+        several_survivors += len(keep) > 1
+        member += [(f"G{i:06d}", len(cl), rule, "survivor", r) for r in keep]
+        member += [(f"G{i:06d}", len(cl), rule, "removed", r) for r in drop]
         for r in drop:
             d = docs[r]
             if ref is not None:
@@ -353,12 +357,11 @@ def run(cfg):
     with (out / "dedup_groups.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["group_id", "group_size", "priority_rule", "role", "pack_id", "split", "part", "row_in_part", "doc_id"])
-        place = lambda d: (d["pack"], d["split"], d["part"], d["row_in_part"])
-        for i, (cl, keep, drop, rule) in enumerate(groups, 1):
-            for role, members in (("survivor", keep), ("removed", drop)):
-                for d in sorted((docs[r] for r in members), key=place):
-                    w.writerow([f"G{i:06d}", len(cl), rule, role, d["pack"], d["split"], d["part"], d["row_in_part"],
-                                d["doc_id"]])
+        place = lambda r: (docs[r]["pack"], docs[r]["split"], docs[r]["part"], docs[r]["row_in_part"])
+        member.sort(key=lambda m: (m[0], m[3] != "survivor", place(m[4])))
+        for g, size, rule, role, r in member:
+            d = docs[r]
+            w.writerow([g, size, rule, role, d["pack"], d["split"], d["part"], d["row_in_part"], d["doc_id"]])
 
     by_pack = {p: Counter() for p in packs}
     for e in log:
@@ -386,8 +389,8 @@ def run(cfg):
         "empty_document_matches_set_aside": empty_matches,
         "clusters": sum(decided.values()),
         "clusters_decided_by_rule": {str(k): v for k, v in sorted(decided.items())},
-        "groups_without_survivor": sum(1 for _, keep, _, _ in groups if not keep),
-        "groups_with_several_survivors": sum(1 for _, keep, _, _ in groups if len(keep) > 1),
+        "groups_without_survivor": no_survivor,
+        "groups_with_several_survivors": several_survivors,
         "documents_all": sum(per_pack.values()),
         "removed": len(log),
         "removed_share": round(len(log) / max(sum(per_pack.values()), 1), 6),
