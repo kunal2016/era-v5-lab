@@ -54,6 +54,7 @@ files, so these rotators do not download any benchmark for this task.
 | `avnishbm` (to confirm) |
 | `rajiviyer` |
 | `ranjani-cse` (to confirm) |
+| `sourav-dhar` |
 | `truesrini` |
 | `tanmays369` |
 | `TEJASKUMAR-REDDY-J` |
