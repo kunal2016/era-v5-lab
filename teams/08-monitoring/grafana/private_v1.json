@@ -1874,6 +1874,56 @@
         }
       ],
       "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "gpu_memory_used: memory in use on the whole GPU by all processes (nvidia-smi memory.used), in bytes, shown as GiB. One line per run and GPU, the largest value in each 10-second window (metric_list_v1.yaml). G6's GpuSampler sends mem_used_mib about once a second; clickhouse/load_jsonl.py and metrics_logger/metrics_writer.py (gpu_memory_used) multiply it by 1,048,576. Panel 6 (gpu_alloc_gib) counts only PyTorch's allocations, so this line is higher: the gap is PyTorch's cache, the CUDA context and other processes. Close to the GPU's total memory means close to out-of-memory.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "GPU memory used",
+            "lineWidth": 2
+          },
+          "decimals": 1,
+          "min": 0,
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 108
+      },
+      "id": 26,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT toStartOfInterval(time_1s, INTERVAL 10 second) AS time, concat(run_id, ' gpu', toString(rank)) AS series, max(max) AS value FROM gpu_telemetry_1s WHERE name = 'gpu_memory_used' AND run_id IN ($run) AND $__timeFilter(time_1s) GROUP BY time, series ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU memory used (gpu_memory_used)",
+      "type": "timeseries"
     }
   ],
   "refresh": "",

@@ -7,8 +7,11 @@ the row you want to see after a crash.
 
 Only metrics from the metric list are written; an unknown name (a typo, or a dropped metric such as
 `loss` or `loss_by_lane`) is skipped with one warning per name. `gpu_alloc_gb` (the name train.py uses; the value is GiB) is
-mapped to `gpu_alloc_gib`, and `temp_c` (the G6 sampler's name) to `gpu_temp_c`. The 10-second system metrics from G6 (`gpu_utilization`,
-`gpu_memory_used`) have no step, so they are not written here.
+mapped to `gpu_alloc_gib`, and `temp_c` (the G6 sampler's name) to `gpu_temp_c`. G6's 10-second `gpu_utilization` has no step,
+so it is not written here. GPU memory passed as `mem_used_mib` (in MiB, as nvidia-smi reports it) is written as
+`gpu_memory_used` in bytes (x 1,048,576); a `gpu_memory_used` value the trainer passes itself wins.
+
+    writer.write(step, loss_ntp=..., mem_used_mib=31009)     # gpu_memory_used = 32515293184.0 bytes (30.28 GiB)
 
 `gradient_clipping_applied` (0 / 1) is worked out from `gradient_norm` (the value clip_grad_norm_ returns, before
 clipping) when the trainer also passes `grad_clip`, the threshold: 1 when gradient_norm > grad_clip. The threshold is
@@ -73,7 +76,7 @@ METRICS = frozenset({
     "update_weight_ratio", "expert_load", "router_max_vio",
     "dead_experts_count", "dead_experts_by_layer", "expert_utilization_min",
     "model_flops_utilization", "loader_wait_time",
-    "gpu_temp_c", "gpu_thermal_throttle",
+    "gpu_temp_c", "gpu_thermal_throttle", "gpu_memory_used",
     "tokens_per_byte", "tokens_per_byte_by_lang",
 })
 
@@ -191,6 +194,30 @@ def gradient_clipping_applied(gradient_norm, grad_clip):
     if math.isnan(norm) or not math.isfinite(clip) or clip <= 0:
         return None
     return int(norm > clip)
+
+
+BYTES_PER_MIB = 1024 * 1024  # 1,048,576 bytes in one MiB
+
+
+def gpu_memory_used(mem_used_mib):
+    """GPU memory in use, in bytes: mem_used_mib x 1,048,576; None when it cannot be told.
+
+    mem_used_mib is nvidia-smi's memory.used in MiB (the field name G6's GpuSampler uses): memory used on the whole
+    GPU by all processes, not only what PyTorch allocated (that is gpu_alloc_gib). 31009 MiB gives 32515293184.0
+    bytes (30.28 GiB). A missing, True / False, negative, NaN or infinite value, or one that is not a number, gives
+    None, so the row gets no value instead of a wrong one.
+    """
+    try:
+        if hasattr(mem_used_mib, "item"):  # numpy / torch scalar
+            mem_used_mib = mem_used_mib.item()
+        if mem_used_mib is None or isinstance(mem_used_mib, bool):
+            return None
+        mib = float(mem_used_mib)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(mib) or mib < 0:
+        return None
+    return mib * BYTES_PER_MIB
 
 
 def _clean(value):
@@ -393,6 +420,12 @@ class MetricsWriter:
         data_ms = metrics.pop("data_ms", None)
         if "loader_wait_time" not in metrics and data_ms is not None:
             metrics["loader_wait_time"] = float(data_ms) / 1000.0
+        # mem_used_mib (MiB) is stored as gpu_memory_used in bytes. A gpu_memory_used passed by the trainer wins.
+        mem_used_mib = metrics.pop("mem_used_mib", None)
+        if metrics.get("gpu_memory_used") is None:
+            used = gpu_memory_used(mem_used_mib)
+            if used is not None:
+                metrics["gpu_memory_used"] = used
         # gradient_clipping_applied is worked out from gradient_norm and grad_clip (the threshold, not stored).
         # A flag passed by the trainer wins; a bool (G5's train_week2.py writes one) is stored as 0 / 1.
         grad_clip = metrics.pop("grad_clip", None)
