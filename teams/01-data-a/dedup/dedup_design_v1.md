@@ -70,17 +70,24 @@ Detecting translations needs multilingual embeddings or translate-then-match, a 
 
 ```
 raw sample ─▶ clean.py (TSAI, spec v1) ─▶ cleaned parts (doc_id, text, url, lang_label, pack_id)
+                                              │                                │
+                                              ▼                                │ url (rule 2),
+                  overlap.py   MEASURES + QUALIFIES: H1 key, exact Jaccard     │ doc_id check
+                               of every pair, family rules                     │
+                               → overlap_matches.csv, overlap_docs.parquet,    │
+                                 overlap_summary.json (status, SHA-256),       │
+                                 overlap_pairs.csv (≥ 0.50), histogram, matrix │
+                                              │                                │
+                                              ▼                                │
+  dedup.json ─────────▶  dedup.py    DECIDES: clusters, which copy survives ◀──┘
+  (pack order, licences,             (rules 0–4), and runs the harm check:
+   cross-pack switch)    gold ─────▶ gold matched on (pack_id, doc_id)
+                               → remove_list.csv, dedup_log.jsonl, dedup_summary.json,
+                                 heldout_duplicates.csv (for G3), empty_documents.csv (for cleaning)
                                               │
                                               ▼
-                     overlap.py   MEASURES + QUALIFIES: H1 key, exact Jaccard of every pair, family rules
-                                  → overlap_matches.csv, overlap_matrix.csv, overlap_docs.parquet, summary
-                                              │
-                                              ▼
-                     dedup.py     DECIDES: clusters, which copy survives
-                                  → remove_list.csv, dedup_log.jsonl, dedup_summary.json
-                                              │
-                                              ▼
-                     harm check   gold, matched on (pack_id, doc_id)
+                  TSAI         filters the cleaned parts with remove_list.csv
+                               → deduplicated sample (every removal reversible from the log)
 ```
 
 | Step | Code | Status |
