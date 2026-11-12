@@ -30,8 +30,8 @@ Rule 0 overrides rule 1: a held-out document is kept even if its pack's licence 
 - **Not usable:** any NC (non-commercial), any ND (no derivatives), and unstated licences. A copy with an unusable licence never survives.
 - If no copy in a group has a usable licence, every train copy is removed.
 - **Applied per pack.** The sample has no per-document licence column, so a pack's licence applies to all its documents. `dedup.json` holds the map (`licence_usable`, with `default_licence_usable` for packs not listed).
-- **v1: all 38 sample-v0 packs are usable.** TSAI approved every pack into sample v0, and G10's licence table on `main` (`teams/10-post-training/licences/licence_table.md`, "Stage 0: Foundation data") excludes none of them: it lists 8 of the 38 (`code-python`, `code-go`, `code-js-ts`, `ind-mr-fw2`, `ind-kn-fw2`, `ind-ta-sangraha-v`, `ind-hi-indiccorp`, `ind-hi-hplt`), all with the decision "TSAI reserves", and does not list the other 30. So `licence_usable` stays empty and every pack uses `default_licence_usable: true`; `dedup.json` is unchanged.
-- **Two entries the table itself leaves open:** `code-js-ts` ("training-use rights require further verification") and `ind-hi-hplt` (CC0 for the packaging only; web terms for the text). Neither changes the v1 remove list: `code-js-ts`'s only cross-pack matches are the empty documents, which are set aside, and `ind-hi-hplt` has no qualifying duplicates. If TSAI excludes a pack, set it to `false` in `licence_usable` and rerun `dedup.py` (seconds).
+- **For this experiment only, all 38 sample-v0 packs are treated as usable** (TSAI, 12 Nov). TSAI approved every pack into sample v0, and G10's licence table on `main` (`teams/10-post-training/licences/licence_table.md`, "Stage 0: Foundation data") excludes none of them: it lists 8 of the 38 (`code-python`, `code-go`, `code-js-ts`, `ind-mr-fw2`, `ind-kn-fw2`, `ind-ta-sangraha-v`, `ind-hi-indiccorp`, `ind-hi-hplt`), all with the decision "TSAI reserves", and does not list the other 30. So `licence_usable` stays empty and every pack uses `default_licence_usable: true`; `dedup.json` is unchanged. **G10 owns the final licence decision.**
+- **Not verified: `code-js-ts` and `ind-hi-hplt`.** G10's table leaves both open: `code-js-ts` ("training-use rights require further verification") and `ind-hi-hplt` (CC0 for the packaging only; web terms for the text). On the 5 Nov run neither changed the remove list: `code-js-ts`'s only cross-pack matches were the empty documents, which are set aside, and `ind-hi-hplt` had no qualifying duplicates. This is checked again on the rerun. If G10 excludes a pack, set it to `false` in `licence_usable` and rerun `dedup.py` (seconds).
 
 ## Rule 2: provenance
 
@@ -51,7 +51,7 @@ The spec defines no pack order, so v1 uses the order in which `clean.py` lists t
 
 Within one pack, the lowest `(split, part, doc_id)` wins.
 
-**Effect on the sample:** the order of the Data B packs matters only for cross-pack pairs with a Data B pack on at least one side: 23 of the 50 cross-pack qualifying pairs in TSAI's 38-pack run (14 between two Data B packs, 9 between a Data A and a Data B pack), out of 1,416,236 documents. Most are the same Indic text in a FineWeb-2 (`fw2`) pack and a Sangraha (`sangraha-v`) pack; with this order the `fw2` copy survives. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov 2026.
+**Effect on the sample:** the order of the Data B packs matters only for cross-pack pairs with a Data B pack on at least one side: 23 of the 50 cross-pack qualifying pairs in TSAI's 38-pack run of 5 Nov, to be recounted on the rerun (14 between two Data B packs, 9 between a Data A and a Data B pack), out of 1,416,236 documents. Most are the same Indic text in a FineWeb-2 (`fw2`) pack and a Sangraha (`sangraha-v`) pack; with this order the `fw2` copy survives. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov 2026.
 
 ## Example
 
@@ -65,11 +65,20 @@ Three copies of the same article:
 
 If B were in `heldout/`, B would survive at rule 0, and A and C would be removed.
 
+## After dedup: F2
+
+The pipeline order is **Clean, then Dedup, then F2** (TSAI, 12 Nov). F2 (benchmark contamination, matched against G9's fingerprints) runs on the deduplicated data, so among the copies of a group it sees only the survivors.
+
+- If F2 removes the survivor of a duplicate group, the removal stands. **No other copy of the group is promoted** in its place, so the group can end with no copy in the data.
+- These groups are **counted and listed in the report**: for each, the survivor F2 removed, as `(pack_id, split, part, doc_id)`, and the group's size.
+- A group can have more than one survivor, because every held-out copy survives (rule 0). Reading used here: such a group counts as soon as F2 removes any one of its survivors.
+
 ## Not used in v1: fewer fixes
 
 Preferring the copy that cleaning changed least was considered and dropped, because no per-document record of fixes exists: `clean.py` returns only the action and the new text, `run_clean.py` records only dropped and failed IDs, and `run_tokenizer_sample.py` counts rules per part, not per document. The v2 candidate needs no change to the cleaning tools: raw and cleaned text share a `doc_id`, so dedup can measure how much each copy changed (e.g. `1 − difflib` ratio) for the pairs it finds and keep the copy that changed least.
 
 ## Open items
 
-- TSAI: `code-js-ts` and `ind-hi-hplt` licences (open in G10's table; no effect on the v1 remove list).
+- G10: the final licence decision, including `code-js-ts` and `ind-hi-hplt` (not verified; treated as usable for this experiment only).
+- `dedup.py`: write each group's survivors (for example `dedup_groups.csv`), so the F2 step can count and list the groups whose survivor it removes.
 - Data B lead: any objection to the alphabetical order of their 25 packs, with a reason, by Fri 13 Nov 2026.

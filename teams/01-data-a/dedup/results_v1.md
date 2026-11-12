@@ -8,7 +8,11 @@ The measurements behind `dedup_design_v1.md`, for discussion. The design states 
 - **Local** means a test run on raw (not cleaned) sample v0 parts. It shows the code works and gives findings for the hand review; the TSAI run supersedes its counts.
 - Every number is for the Week-2 tokenizer sample v0 (1.4 million documents). Applied to the full data, the counts will differ.
 
-## 1. TSAI 38-pack run (final, except the removal estimates)
+**12 Nov 2026: the 5 Nov run is superseded.** TSAI answered in G1 on 12 Nov that #244 changes the cleaner, so the cleaned sample of 3 Nov is out of date. After #244 merges, TSAI reruns the cleaning on sample v0, the overlap measurement is run again on the new cleaned output, and the `dedup.py` job runs on that output. The 5 Nov results are not used for the remove list. Section 1 and the E4 part of section 3 come from the 5 Nov run; they stay here as the record until the rerun's numbers replace them.
+
+**Licence (TSAI, 12 Nov).** These runs treat all 38 packs as usable (`default_licence_usable: true` and an empty `licence_usable` in `dedup.json`). This holds for this experiment only. The licences of `code-js-ts` and `ind-hi-hplt` are **not verified**: G10's licence table leaves both open (`code-js-ts`: training-use rights need further verification; `ind-hi-hplt`: CC0 covers the packaging only, and the text keeps its web terms). G10 owns the final licence decision.
+
+## 1. TSAI 38-pack run of 5 Nov (superseded; see the top)
 
 Job `jobs/2026-11-04-overlap.md`, approved by the Data A lead; run by TSAI on a CPU host on 5 Nov 2026 at commit `86ecdd4`. Results: `jobs/results/2026-11-04-overlap/` (merged to `main` in PR #307). Input: the 38 cleaned sample v0 packs, 86 parts, train + held-out.
 
@@ -256,10 +260,17 @@ To repeat this, run `python3 -B teams/01-data-a/dedup/e4_review.py` from the rep
 
 ## 4. Still to come
 
+In the order TSAI set on 12 Nov:
+
 | Result | From | Needs |
 |---|---|---|
-| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` | Lead approval (the licence map is decided: all 38 packs usable, `dedup.json` unchanged). Local count without urls: 1,345 |
-| Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI run | `overlap_pairs.csv` and text |
-| E4: are the 106 rejected `sangraha-s` pairs true copies? | A human reader of Kannada, Telugu and Tamil | Their labels on the blind sheets in `out/e4/review/` (made by `e4_review.py`; the text is ready) |
+| The cleaned sample with the #244 cleaner | TSAI's cleaning job on sample v0 | #244 merged, with a job request that pins the current `clean.py` |
+| Overlap measurement on the new cleaned sample | TSAI's rerun of `overlap.py` (`jobs/2026-11-12-overlap-rerun.md`) | The cleaned sample above; lead approval |
+| Reviewed source matrix from the rerun | `confirm_matrix.py` on the returned files → `dedup/overlap_matrix.csv` | The rerun's results. The matrix there now is from 5 Nov |
+| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` on the rerun's output | The rerun's results, then lead approval. Licence: all 38 packs usable for this experiment only (see the top). On the 5 Nov run, without urls: 1,345 |
+| Groups whose survivor F2 removes: count and list | The F2 step, after dedup (Clean → Dedup → F2) | F2's removals, and a list of each group's survivors, which `dedup.py` does not write yet |
+| Harm check with the #244 cleaner | Local, on the 4 diagnosis packs | #244 merged |
+| Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI rerun | `overlap_pairs.csv` and text |
+| E4: are the rejected `sangraha-s` pairs true copies? | A human reader of Kannada, Telugu and Tamil | `e4_review.py` run again on the rerun's outputs, since the #244 cleaner can change these pairs; then the reader's labels on the new blind sheets |
 
-**Done on 10 Nov:** the reviewed source matrix, `dedup/overlap_matrix.csv`, byte-identical to TSAI's (`matrix_confirmation.md`); `dedup.py` written and run locally on TSAI's outputs (1,345 removed, above).
+**Done on 10 Nov, on the 5 Nov run:** the reviewed source matrix, `dedup/overlap_matrix.csv`, byte-identical to TSAI's (`matrix_confirmation.md`); `dedup.py` written and run locally on TSAI's outputs (1,345 removed, above). Both are redone on the rerun.

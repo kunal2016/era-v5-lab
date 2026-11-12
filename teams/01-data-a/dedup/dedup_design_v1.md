@@ -10,8 +10,8 @@
 | H1, exact duplicates | SHA-256 of the H1 key: spec v1 `normalize.match_key`, then NFKC, casefold, whitespace collapse | Decided |
 | H2, near duplicates | Exact Jaccard of every pair. Prose: word 5-grams ≥ 0.80, both ≥ 50 words. Math: ≥ 0.90 and the same numbers. Code: token 5-grams ≥ 0.85, both ≥ 20 non-blank lines. A pair from two families must pass both families' rules | Decided; code threshold under review |
 | H3, another source or language | Same-language copies from another source: covered by H1/H2 within and across packs. Translations: out of scope for v1 | Agreed |
-| Where dedup runs | After `clean.py`; within each pack, across packs and across both teams (Data A and Data B) | Agreed |
-| Which copy survives | `source_priority_v1.md`: held-out first, licence, provenance, completeness, pack order | Agreed |
+| Where dedup runs | After `clean.py` and before F2 (Clean → Dedup → F2); within each pack, across packs and across both teams (Data A and Data B) | Agreed; order with F2 set by TSAI, 12 Nov |
+| Which copy survives | `source_priority_v1.md`: held-out first, licence, provenance, completeness, pack order. A survivor that F2 later removes is not replaced | Agreed |
 | Hand-off to TSAI | A remove list `(pack_id, split, part, doc_id)` and `dedup_log.jsonl`; TSAI filters the cleaned data, our code never rewrites it | Agreed |
 | Validation | Known pairs, threshold sweep and hand review per family, gold harm check on the diagnosis packs | Partly done |
 
@@ -65,6 +65,7 @@ Detecting translations needs multilingual embeddings or translate-then-match, a 
 1. **After `clean.py`.** Cleaning can make two different pages identical, so deduplicating earlier would miss those copies.
 2. **Within each pack**, the analogue of FineWeb's per-snapshot dedup (Session 3, §7).
 3. **Across packs, and across both teams' packs.** Data B's Indic and `cadj-*` packs join the H1/H2 pass. Translations between the teams stay out of v1. The cross-pack pass was gated on experiment E2 because of Risk 1; on the 38-pack run it adds very few removals (see Evidence), so v1 applies it. Its removals carry `stage = cross_pack` in the log and can be reversed.
+4. **Before F2.** The order is Clean, then Dedup, then F2 (TSAI, 12 Nov). F2 runs on the deduplicated data. If it removes the survivor of a duplicate group, the removal stands and no other copy is promoted; these groups are counted and listed in the report (`source_priority_v1.md`, "After dedup: F2").
 
 ## Pipeline and hand-off to TSAI
 
@@ -88,16 +89,22 @@ raw sample ─▶ clean.py (TSAI, spec v1) ─▶ cleaned parts (doc_id, text, u
                                               ▼
                   TSAI         filters the cleaned parts with remove_list.csv
                                → deduplicated sample (every removal reversible from the log)
+                                              │
+                                              ▼
+                  F2           benchmark contamination (G9's fingerprints) on the
+                               deduplicated sample. A survivor it removes is not replaced;
+                               those groups are counted and listed in the report
 ```
 
 | Step | Code | Status |
 |---|---|---|
-| Measure and qualify | `overlap.py`, `overlap_rules.py`, `h1_sha256.py`, `jaccard_matrix.py`, `overlap_report.py`, tests; config `overlap.json` (38 cleaned packs) | Done (Aneesha Das, Vijay Patil). Job `jobs/2026-11-04-overlap.md`, run by TSAI on 5 Nov |
-| Reviewed matrix | `overlap_report.py`, `confirm_matrix.py` → `dedup/overlap_matrix.csv` | Done (Aneesha Das, 10 Nov): byte-identical to TSAI's matrix; `matrix_confirmation.md` |
-| Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, set aside matches between empty documents, form clusters, apply `source_priority_v1.md`, write the remove list and log. A scope switch can turn the cross-pack pass off without rerunning the overlap job | Written (Kunal Sinha), with tests and `README_dedup.md`. Local run on TSAI's outputs (no urls): 1,345 removed. Job `jobs/2026-11-10-dedup.md` pending approval |
-| Check | Harm check of the remove list against gold | Built into `dedup.py`. `not_testable` on sample v0; **pass** on 4 diagnosis packs (727 gold, 0 removed) |
+| Measure and qualify | `overlap.py`, `overlap_rules.py`, `h1_sha256.py`, `jaccard_matrix.py`, `overlap_report.py`, tests; config `overlap.json` (38 cleaned packs) | Done (Aneesha Das, Vijay Patil). Job `jobs/2026-11-04-overlap.md`, run by TSAI on 5 Nov; superseded. Rerun on the #244 cleaning: `jobs/2026-11-12-overlap-rerun.md` |
+| Reviewed matrix | `overlap_report.py`, `confirm_matrix.py` → `dedup/overlap_matrix.csv` | Done on the 5 Nov run (Aneesha Das, 10 Nov): byte-identical to TSAI's matrix; `matrix_confirmation.md`. Redone from the rerun |
+| Decide | `dedup.py` + `dedup.json`: read `overlap_matches.csv` and `overlap_docs.parquet`, set aside matches between empty documents, form clusters, apply `source_priority_v1.md`, write the remove list and log. A scope switch can turn the cross-pack pass off without rerunning the overlap job | Written (Kunal Sinha), with tests and `README_dedup.md`. Local run on TSAI's 5 Nov outputs (no urls): 1,345 removed. Job `jobs/2026-11-10-dedup.md` runs on the rerun's output; approval follows the rerun |
+| Check | Harm check of the remove list against gold | Built into `dedup.py`. `not_testable` on sample v0; **pass** on 4 diagnosis packs (727 gold, 0 removed), to be repeated with the #244 cleaner |
+| Filter contamination | F2 with G9's fingerprints, after dedup (optional in `clean.py` from #244) | Order set by TSAI, 12 Nov. The groups whose survivor F2 removes are counted and listed; `dedup.py` does not yet write each group's survivors |
 
-**What TSAI receives:** this design and `source_priority_v1.md`; the code, configs, tests and test logs above; the reviewed overlap matrix (`dedup/overlap_matrix.csv`); and a job request for `dedup.py` on sample v0 ("which documents would v1 remove, per pack and stage, and does it remove any gold?"). After approval, TSAI filters the full cleaned data with the remove list, as it applies spec v1. Our code never rewrites the data, so every removal can be reversed from the log. This is not a cleaning job request.
+**What TSAI receives:** this design and `source_priority_v1.md`; the code, configs, tests and test logs above; the reviewed overlap matrix (`dedup/overlap_matrix.csv`, rebuilt from the rerun); a job request for the overlap rerun on the #244 cleaning; and a job request for `dedup.py` on sample v0 ("which documents would v1 remove, per pack and stage, and does it remove any gold?"). After approval, TSAI filters the full cleaned data with the remove list, as it applies spec v1. Our code never rewrites the data, so every removal can be reversed from the log. This is not a cleaning job request.
 
 ## What is recorded
 
@@ -129,7 +136,7 @@ Plus `remove_list.csv` (`pack_id, split, part, row_in_part, doc_id`: what TSAI f
 
 ## Evidence
 
-The full numbers, per pack and per run, are in **`results_v1.md`**. This section lists only what the decisions rest on. Final measurements come from TSAI's run of `overlap.py` (commit `86ecdd4`) on the 38 cleaned sample v0 packs, 5 Nov 2026 (`jobs/results/2026-11-04-overlap/`). Document removal counts come from `dedup.py`.
+The full numbers, per pack and per run, are in **`results_v1.md`**. This section lists only what the decisions rest on. The measurements come from TSAI's run of `overlap.py` (commit `86ecdd4`) on the 38 cleaned sample v0 packs, 5 Nov 2026 (`jobs/results/2026-11-04-overlap/`). Document removal counts come from `dedup.py`. **That run is superseded** (TSAI, 12 Nov): #244 changes the cleaner, so the cleaning and the overlap measurement are run again. The numbers below are replaced when the rerun returns, and each decision that rests on them is checked again.
 
 - **Scale:** 1,416,236 documents in 56 minutes with a 9.6 GiB peak, within the requested 60 minutes and 32 GiB, so exact all-pairs scoring fits (Risk 4).
 - **Duplicates are rare:** 98 H1 pairs and 2,613 H2 pairs. 21 of the H1 pairs are between 7 documents that cleaning emptied without dropping (1 `code-cpp`, 4 `code-java`, 2 `code-js-ts`); they share one H1 key but are not copies, so `dedup.py` sets them aside and lists them for the cleaning team. On the sample, `dedup.py` removes 1,345 documents (0.095%).
@@ -153,10 +160,16 @@ Findings from local test runs on raw sample v0 parts (details in `results_v1.md`
 
 ## Open items before the final (Fri 13 Nov)
 
-- **`dedup.py` TSAI run:** approve `jobs/2026-11-10-dedup.md`; TSAI runs it with the cleaned parts, so rule 2 (url) applies.
-- **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates.
-- **E4:** a human Kannada, Telugu and Tamil reader to label the 106 rejected `sangraha-s` pairs (copy, template, different or unsure) on the blind sheets in `out/e4/review/`. The measured part and the rebuild from the raw text are done (`results_v1.md`, section 3). Whatever the labels, a lower minimum would affect at most 69 Indic documents.
-- **Math numbers rule and same URL (team decision):** compare numbers in the body only (ignoring the title and first line), and count same-URL pairs as H2 duplicates at ≥ 0.80. Either change needs a new overlap run before it applies.
+- **The rerun, in TSAI's order (12 Nov):**
+  1. TSAI runs the #244 cleaning job on sample v0 after #244 merges.
+  2. The overlap measurement runs again on the new cleaned output (`jobs/2026-11-12-overlap-rerun.md`).
+  3. The `dedup.py` job (`jobs/2026-11-10-dedup.md`) is approved and run on that output, with the cleaned parts, so rule 2 (url) applies. The 5 Nov results are not used.
+  4. From the rerun: `overlap_matrix.csv` and `matrix_confirmation.md`, E4 (`e4_review.py`), and the numbers in `results_v1.md`, this file and `source_priority_v1.md`.
+- **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates. On the rerun's pairs.
+- **E4:** a human Kannada, Telugu and Tamil reader to label the rejected `sangraha-s` pairs (copy, template, different or unsure) on blind sheets. The measured part and the rebuild from the raw text are done on the 5 Nov run (`results_v1.md`, section 3: 106 pairs; whatever the labels, a lower minimum would affect at most 69 Indic documents). The #244 cleaner can change these pairs, so `e4_review.py` is run again on the rerun's outputs before the reader starts.
+- **Math numbers rule and same URL (team decision):** compare numbers in the body only (ignoring the title and first line), and count same-URL pairs as H2 duplicates at ≥ 0.80. Either change needs an overlap run before it applies, so decide before the rerun is submitted, or leave both for v1.1. The same holds for a lower Indic word minimum from E4.
+- **F2 groups:** `dedup.py` writes no list of each group's survivors yet. Add one (for example `dedup_groups.csv`), so the F2 step can count and list the groups whose survivor it removes.
+- **Licence:** G10 owns the final decision. `code-js-ts` and `ind-hi-hplt` are not verified; all 38 packs are treated as usable for this experiment only.
 
 ## Decision log
 
@@ -178,3 +191,6 @@ It covers this file and `source_priority_v1.md`. The body states the decisions; 
 | 10 Nov 2026 | Reviewed source matrix: `dedup/overlap_matrix.csv` is TSAI's returned matrix, unchanged; rebuilt byte-identically with and without `overlap_docs.parquet` and with `overlap_report.py --results` | Aneesha Das (Data A) | `matrix_confirmation.md`; PR #255 |
 | 10 Nov 2026 | Empty documents (no shingles) are not duplicates: `dedup.py` sets aside their matches, removes none of them and lists them in `empty_documents.csv` for the cleaning team. On the sample: 7 documents, 21 matches; 1,345 removed instead of 1,351. The 7 documents stay in the data; dropping them is a cleaning change for spec v1.1 | Data A team (proposed by Aneesha Das, agreed by Kunal Sinha; Kunal's Windows rerun gave the same result, `remove_list.csv` `913e66a6…`) | PR #255, commit `497dbd3`; `dedup.py`, `README_dedup.md`, `jobs/2026-11-10-dedup.md` |
 | 11 Nov 2026 | Licence (rule 1): all 38 sample-v0 packs usable; `dedup.json` unchanged (empty `licence_usable`, default true). G10's table on `main` lists 8 of the packs, none excluded; `code-js-ts` and `ind-hi-hplt` left open for TSAI, with no effect on the v1 remove list | Data A team (Vijay pointed to the table) | `source_priority_v1.md`, rule 1; G10 `licence_table.md` |
+| 12 Nov 2026 | Cleaning rerun: #244 changes the cleaner, so the 3 Nov cleaned sample is out of date. TSAI reruns the cleaning on sample v0 after #244 merges; the overlap measurement is run again on the new output, then the `dedup.py` job on that output. The 5 Nov results are not used | TSAI | G1, TSAI's answers to Vijay, points 1–2 |
+| 12 Nov 2026 | Licence: `default_licence_usable: true` for this experiment only; `code-js-ts` and `ind-hi-hplt` are not verified; G10 owns the final licence decision | TSAI | G1, point 3; `results_v1.md`; `source_priority_v1.md`, rule 1 |
+| 12 Nov 2026 | Pipeline order: Clean, then Dedup, then F2. If F2 removes the survivor of a duplicate group, the removal stands and no other copy is promoted; these groups are counted and listed in the report | TSAI | G1, point 4; `source_priority_v1.md`, "After dedup: F2" |

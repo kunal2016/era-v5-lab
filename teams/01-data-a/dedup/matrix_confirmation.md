@@ -3,6 +3,9 @@
 **Date:** Tuesday 10 November 2026. **By:** Aneesha Das (aneeshads).
 **Run confirmed:** job `jobs/2026-11-04-overlap.md`, run by TSAI on 5 Nov 2026 at commit `86ecdd4`, results in
 `teams/01-data-a/jobs/results/2026-11-04-overlap/`.
+**Superseded (12 Nov):** TSAI reruns the cleaning with #244 and then the overlap measurement, and the 5 Nov results
+are not used. This confirmation is repeated on the rerun's results (`jobs/2026-11-12-overlap-rerun.md`), and
+`overlap_matrix.csv` is replaced by the rerun's matrix.
 
 ## Result
 

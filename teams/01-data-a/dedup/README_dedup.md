@@ -89,4 +89,4 @@ The same inputs and config give byte-identical outputs on any system (checked on
 
 ## Results so far
 
-On TSAI's 38-pack run of 5 Nov 2026 (1,416,236 documents), without urls: 1,345 documents removed (0.095%: 1,289 H2, 56 H1; 1,309 within a pack, 36 across packs), 0 held-out removed, 63 train copies removed by rule 0. The 7 empty documents are listed in `empty_documents.csv`, not removed; before they were set aside, 1,351 documents were removed, 6 of them empty. Details in `results_v1.md`.
+On TSAI's 38-pack run of 5 Nov 2026 (1,416,236 documents; superseded by the rerun on the #244 cleaning, TSAI 12 Nov), without urls: 1,345 documents removed (0.095%: 1,289 H2, 56 H1; 1,309 within a pack, 36 across packs), 0 held-out removed, 63 train copies removed by rule 0. The 7 empty documents are listed in `empty_documents.csv`, not removed; before they were set aside, 1,351 documents were removed, 6 of them empty. Details in `results_v1.md`.
