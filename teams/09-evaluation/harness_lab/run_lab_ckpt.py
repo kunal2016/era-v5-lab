@@ -20,8 +20,8 @@ Scorers (``--scorer``):
   smoke               top-1 next-token accuracy of the tiny MoE on a held-out slice of Team 5's seeded token stream.
                       It exercises the whole path (pointer -> manifest -> export -> score -> v1 -> check) on CPU.
                       It is NOT an eval-mini task and its numbers say nothing about model quality.
-  <module>:<function> a scorer for a real model (see ``Scorer`` below); this is where lm-eval tasks plug in once
-                      Teams 3 to 5 publish a tokenizer and a model wrapper.
+  <module>:<function> reserved for a real-model scorer (not wired yet): it needs an lm-eval wrapper that loads
+                      the Team 5 model and tokenizer, which do not exist yet.
 """
 from __future__ import annotations
 
@@ -241,8 +241,8 @@ def main(argv=None) -> int:
     if torch.__version__ < MIN_TORCH:
         ap.error(f"needs torch {MIN_TORCH} or newer, found {torch.__version__}")
     if a.scorer != "smoke":
-        raise SystemExit("--scorer <module>:<function> is not wired yet: it needs a model factory and a tokenizer from "
-                         "Teams 3 to 5 (see the module docstring). Use --scorer smoke for the CPU test.")
+        raise SystemExit("--scorer <module>:<function> is not wired yet: it needs an lm-eval wrapper that loads the "
+                         "Team 5 model and tokenizer. Use --scorer smoke for the CPU test.")
     run_dir = a.run_dir.resolve()
     pointer = read_pointer(run_dir, a.step)
     facts = checkpoint_facts(run_dir, a.run_dir.as_posix().rstrip("/"), pointer, a.run_name)

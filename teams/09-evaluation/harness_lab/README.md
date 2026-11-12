@@ -22,7 +22,7 @@ CPU log: `logs/cpu_test.log`. Needs torch >= 2.14.1, safetensors, and the pinned
 |---|---|
 | Pointer, manifest, `model_revision`, `checkpoint` block, export, `check(doc, 0)` | Done, tested on the tiny MoE on CPU |
 | `--scorer smoke` (next-token accuracy on Team 5's seeded stream) | Done. It tests the pipeline. It is not an eval-mini task and says nothing about quality |
-| lm-eval tasks on a real lab model | **Not wired.** Needs a tokenizer and a model wrapper from Teams 3 to 5. Plug in with `--scorer <module>:<function>` |
+| lm-eval tasks on a real lab model | **Not wired.** The tokenizer (BrahmicTokenizer-131K) and Team 5's model (`week2/model.py`) exist; an lm-eval wrapper that loads them does not. `--scorer <module>:<function>` is reserved for it |
 | Team 5 `checkpoint.pt` + `manifest.json` layout (section 6, last paragraph) | Not done |
 | `--run-name` for queue jobs (`<job_run_id>/<arm>`) | Done, not tested on a real queue job |
 
