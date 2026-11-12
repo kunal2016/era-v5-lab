@@ -7,7 +7,7 @@ changed, and no text is written out: IDs, hashes and counts only.
 
 THE H1 KEY
 ==========
-  1. normalize.match_key(text) from spec_v1/tools/normalize.py, unchanged (spec v1 is frozen): HTML entities, control
+  1. normalize.match_key(text) from spec_v1/normalize.py (spec_v1/tools/ before #244), unchanged: HTML entities, control
      and invisible characters, NFC with its listed folds, casefold, spaces.
   2. Then the H1 normalisation of dedup_design_v1.md on top: NFKC, casefold, every run of whitespace to one space,
      ends stripped. NFKC is applied only here, never in normalize.py, so spec v1 and G9's fingerprints are unchanged.
@@ -35,7 +35,11 @@ from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "spec_v1" / "tools"))
+# normalize.py is spec_v1/normalize.py after #244 and spec_v1/tools/normalize.py before it; the file is the same
+# (NORMALIZE_ID "g1-spec-v1"). Look in the new place first.
+_SPEC = Path(__file__).resolve().parents[1] / "spec_v1"
+sys.path.insert(0, str(_SPEC / "tools"))
+sys.path.insert(0, str(_SPEC))
 from normalize import NORMALIZE_ID, match_key  # noqa: E402
 
 
