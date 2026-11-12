@@ -28,7 +28,9 @@ picks of the whole optimizer step, summed over micro-batches and data-parallel r
 call an expert dead.
 
 When `expert_load` is logged, `router_max_vio` (DeepSeek MaxVio, the largest over MoE layers) is
-computed from it and written in the same row, unless the caller passed it explicitly.
+computed from it and written in the same row, unless the caller passed it explicitly. So is
+`expert_load_imbalance`, the single summary number from the metric list: busiest expert / average expert
+(max(shares) * num_experts) in the worst MoE layer. 1.0 is perfectly balanced; it equals router_max_vio + 1.
 
 `validation_loss` (nats per scored token on the held-out set) is worked out from the result of G5's
 `week2.evaluation.evaluate()` when the row has it: `val/nll_nats` (the summed loss) / `val/scored_tokens`. It is the
@@ -70,7 +72,7 @@ FLUSH_EVERY = 10
 METRICS = frozenset({
     "loss_ntp", "loss_mtp", "lr", "tokens_per_second", "gpu_alloc_gib",
     "gradient_norm", "gradient_clipping_applied", "validation_loss",
-    "update_weight_ratio", "expert_load", "router_max_vio",
+    "update_weight_ratio", "expert_load", "router_max_vio", "expert_load_imbalance",
     "dead_experts_count", "dead_experts_by_layer", "expert_utilization_min",
     "model_flops_utilization", "loader_wait_time",
     "gpu_temp_c", "gpu_thermal_throttle",
@@ -131,6 +133,35 @@ def router_max_vio(expert_load):
     if any(math.isnan(v) for v in per_layer):
         return float("nan")
     return max(per_layer)
+
+
+def expert_load_imbalance(expert_load):
+    """Busiest expert / average expert for one step: max_i(s_i) / mean_i(s_i), the worst over MoE layers.
+
+    With shares that add up to 1 in a layer this is max(shares) * num_experts. 1.0 means every expert gets the
+    same share; 2.0 means the busiest expert gets twice the average. Per layer it equals router_max_vio + 1.
+    Takes the shapes `expert_load_stats` takes; counts and shares give the same answer. None when it cannot be
+    told: no layers, an empty layer, a layer with no picks, or a negative or non-finite value.
+    """
+    if hasattr(expert_load, "tolist"):  # numpy array, torch tensor
+        expert_load = expert_load.tolist()
+    if isinstance(expert_load, dict):
+        expert_load = list(expert_load.values())
+    if not isinstance(expert_load, (list, tuple)) or not expert_load:
+        return None
+    layers = [expert_load] if all(_number(x) for x in expert_load) else expert_load
+    worst = None
+    for layer in layers:
+        if hasattr(layer, "tolist"):
+            layer = layer.tolist()
+        if not isinstance(layer, (list, tuple)) or not layer or not all(_number(x) and math.isfinite(x) and x >= 0 for x in layer):
+            return None
+        total = sum(layer)
+        if total <= 0:
+            return None
+        ratio = max(layer) * len(layer) / total  # max / (total / n)
+        worst = ratio if worst is None else max(worst, ratio)
+    return worst
 
 # An expert is dead below this fraction of the uniform share of its layer's picks.
 DEAD_EXPERT_SHARE = 0.1
@@ -425,6 +456,11 @@ class MetricsWriter:
             vio = router_max_vio(metrics["expert_load"])
             if vio is not None:
                 metrics["router_max_vio"] = vio
+        # expert_load_imbalance (busiest / average expert) likewise; a value passed by the trainer wins.
+        if metrics.get("expert_load") is not None and metrics.get("expert_load_imbalance") is None:
+            imbalance = expert_load_imbalance(metrics["expert_load"])
+            if imbalance is not None:
+                metrics["expert_load_imbalance"] = imbalance
         row = {"step": step, "time": time.time()}
         nonfinite = False
         for name, value in metrics.items():
