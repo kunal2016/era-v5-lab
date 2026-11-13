@@ -1225,6 +1225,124 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "${ds}"
       },
+      "description": "expert_load_imbalance per optimizer step: busiest expert / average expert, max(load) / mean(load) (= max(shares) x number of experts) in the worst MoE layer. 1.0 = perfectly balanced; 2.0 = the busiest expert gets twice the average share; the number of experts = every pick goes to one expert. Equals router_max_vio + 1 (panel 21). Computed from expert_load by metrics_writer.py.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1.5
+              },
+              {
+                "color": "red",
+                "value": 2.0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^value.*"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "busiest / average"
+              },
+              {
+                "id": "min",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 60
+      },
+      "id": 27,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'expert_load_imbalance' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "MoE Expert Load Imbalance (expert_load_imbalance)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
       "description": "gpu_temp_c per optimizer step (degrees C, rank 0's GPU, from NVML) with gpu_thermal_throttle next to it: 1 when NVML reports HW (0x40) or SW (0x20) thermal slowdown, so the GPU lowered its clocks because of heat. Colours: green below 75 C, yellow from 75 C, red from 85 C. Slower steps with throttle 1 mean heat, not the code. Every GPU at 1 s is in panel 12 (gpu_telemetry_1s).",
       "fieldConfig": {
         "defaults": {
