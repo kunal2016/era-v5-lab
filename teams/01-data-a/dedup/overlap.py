@@ -311,7 +311,7 @@ def main():
         "config": cfg,
         "normalize_id": NORMALIZE_ID,
         "key": "h1_key of h1_sha256.py: normalize.match_key, then NFKC, casefold, whitespace runs to one space",
-        "shingles": f"word {cfg['k']}-grams of the key as 8-byte BLAKE2b digests; a key under {cfg['k']} words is one shingle",
+        "shingles": f"word {cfg['k']}-grams of the key as 64-bit hashes (gram_hashes: pandas SipHash per word, combined per window); a key under {cfg['k']} words is one shingle",
         "inputs": {"root": cfg["inputs"], "checksum_verification": "deferred",
                    "parts": [{"part": f"{sp}/{pt}", "documents": n}
                              for (sp, pt, _), n in zip(parts, part_docs)]},

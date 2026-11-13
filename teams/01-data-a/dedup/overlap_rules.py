@@ -9,6 +9,7 @@ import hashlib
 import re
 
 from h1_sha256 import h1_key
+from jaccard_matrix import gram_hashes
 
 CODE_LEXERS = {"code-cpp": "cpp", "code-go": "go", "code-java": "java",
                "code-js-ts": "typescript", "code-python": "python", "code-rust": "rust"}
@@ -52,11 +53,8 @@ def code_shingles(text, pack):
         lines.append(value)
         if value.strip():
             tokens.append(value)
-    # Each token is encoded once, with its length as a prefix, so a 5-gram's bytes are unambiguous for any token
-    # ("ab","c" never equals "a","bc"). This replaced a json.dumps per 5-gram: same 5-gram sets, about 4x faster.
-    enc = [f"{len(t)}:{t}".encode("utf-8") for t in tokens]
-    grams = {hashlib.blake2b(b"".join(enc[i:i + 5]), digest_size=8).digest() for i in range(max(len(enc) - 4, 0))}
-    return b"".join(sorted(grams)), sum(bool(line.strip()) for line in "".join(lines).splitlines())
+    # Token 5-grams hashed in bulk (jaccard_matrix.gram_hashes): no Python loop per token or per 5-gram.
+    return gram_hashes(tokens, 5), sum(bool(line.strip()) for line in "".join(lines).splitlines())
 
 
 def gram_set(blob):

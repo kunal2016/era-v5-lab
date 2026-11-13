@@ -1,5 +1,7 @@
 numpy
 scipy
 pyarrow
+# pandas.util.hash_array hashes words and code tokens in bulk (jaccard_matrix.gram_hashes).
+pandas
 # Lexer token boundaries affect the code H2 decision; pin the tested version.
 pygments==2.21.0
