@@ -1,14 +1,15 @@
 # Overlap rerun on the #244 cleaning of sample v0 — Thursday 12 November 2026
 
 **Updated 13 Nov 2026.** The code pin, scoring-file audit, input provenance and fresh local log are filled in.
-Lead approval remains pending. The speed work in
+Vijay Patil (`patilvijay23`) [approved the overlap rerun only](https://github.com/theschoolofai/era-v5-lab/pull/255#issuecomment-6871794399).
+Dedup approval remains dependent on the returned overlap results and local validation. The speed work in
 [kunal2016/era-v5-lab#1](https://github.com/kunal2016/era-v5-lab/pull/1) is merged. This request pins merged commit
 `7526194f6a9cafd64416ff30fd149d19660d31f8`, validated with 115 tests and a fresh 38-pack synthetic smoke run.
 
 ```text
 Team:            01-data-a
 Owner:           Aneesha Das (aneeshads)
-Lead approval:   Pending team-lead review/approval on the job-request PR
+Lead approval:   Vijay Patil (patilvijay23), overlap rerun only: https://github.com/theschoolofai/era-v5-lab/pull/255#issuecomment-6871794399
 Question:        On the sample v0 cleaned with #244, what share of documents in each source has an H1 exact or eligible H2 near duplicate in each source, including its own?
 Script:          teams/01-data-a/dedup/overlap.py (with h1_sha256.py, jaccard_matrix.py, overlap_rules.py, overlap_report.py and the frozen spec v1 normalize.py), PR #255 at commit 7526194f6a9cafd64416ff30fd149d19660d31f8
 Command:         python -I teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
