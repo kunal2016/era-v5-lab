@@ -8,13 +8,17 @@ overlap.py  ──▶  overlap_summary.json, overlap_matches.csv, overlap_docs.p
 
 ## Run it
 
-Python 3.9 or later with `pyarrow`. Nothing else, so it runs on Windows, macOS and Linux (no WSL needed).
+Python 3.10 or later with `pyarrow`, `numpy` and `scipy` (pinned in `requirements_overlap.txt`). It runs on Windows, macOS and Linux
+(no WSL needed).
 
 ```sh
 python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt pytest
 python3 -m pytest -q teams/01-data-a/dedup/tests/test_dedup.py
 python3 teams/01-data-a/dedup/dedup.py --config teams/01-data-a/dedup/dedup.json
 ```
+
+Speed and equivalence evidence (PyArrow/SciPy rewrite, timings, exact command and output, how to rerun it with
+`benchmark_dedup.py`): [benchmarks/2026-11-14-dedup-speed/README.md](benchmarks/2026-11-14-dedup-speed/README.md).
 
 On Windows, if PowerShell refuses to run the venv's `Activate.ps1`, call the venv's Python directly (`<venv>\Scripts\python.exe ...`) or use Git Bash (`source <venv>/Scripts/activate`). Paths in the config are relative to the repository root, so the script can be started from any folder.
 
