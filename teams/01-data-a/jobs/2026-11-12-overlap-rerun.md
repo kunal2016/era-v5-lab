@@ -6,6 +6,9 @@ Dedup approval remains dependent on the returned overlap results and local valid
 [kunal2016/era-v5-lab#1](https://github.com/kunal2016/era-v5-lab/pull/1) is merged. This request pins merged commit
 `7526194f6a9cafd64416ff30fd149d19660d31f8`, validated with 115 tests and a fresh 38-pack synthetic smoke run.
 
+**Updated 14 Nov 2026.** "Inputs and execution" names the folder TSAI's cleaning rerun wrote to and how to stage it.
+The code pin, command and config are unchanged.
+
 ```text
 Team:            01-data-a
 Owner:           Aneesha Das (aneeshads)
@@ -14,7 +17,7 @@ Question:        On the sample v0 cleaned with #244, what share of documents in 
 Script:          teams/01-data-a/dedup/overlap.py (with h1_sha256.py, jaccard_matrix.py, overlap_rules.py, overlap_report.py and the frozen spec v1 normalize.py), PR #255 at commit 7526194f6a9cafd64416ff30fd149d19660d31f8
 Command:         python -I teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
 Config:          teams/01-data-a/dedup/overlap.json (unchanged from the 5 Nov run: the 38 sample-v0 packs)
-Inputs:          All 38 sample-v0 packs from TSAI's completed #244 cleaning rerun (confirmed 13 Nov), staged under ./out/tokenizer_sample_v0_clean/{train,heldout}/; each Parquet row has pack_id, doc_id and text. Not the 3 Nov cleaned parts
+Inputs:          All 38 sample-v0 packs from TSAI's completed #244 cleaning rerun (confirmed 13 Nov), staged under ./out/tokenizer_sample_v0_clean/{train,heldout}/ from TSAI's output folder ./out/tokenizer_sample_v0_clean_pr244_2026-11-12/ (see "Inputs and execution"); each Parquet row has pack_id, doc_id and text. Not the 3 Nov cleaned parts
 Hardware:        CPU (single process; request 2 vCPU and 32 GiB RAM; no GPU)
 Max time:        90 minutes
 Precision:       not used
@@ -106,10 +109,12 @@ counts or runtime on the actual cleaned sample or replace diagnosis-pack harm ev
 
 ## Inputs and execution
 
-Stage the cleaned parts returned by the #244 cleaning job in `out/tokenizer_sample_v0_clean/train/` and
-`out/tokenizer_sample_v0_clean/heldout/`, as on 5 Nov. That folder must hold only the new parts: move the 3 Nov parts
-aside first. The #244 runner refuses an existing output folder, so they are likely moved for the cleaning job anyway. If
-the cleaning job writes elsewhere, stage its parts here, or change `inputs` in `overlap.json` and say so in the run log.
+TSAI's #244 cleaning rerun wrote its parts to `out/tokenizer_sample_v0_clean_pr244_2026-11-12/{train,heldout}/`
+(`output_root` in `teams/01-data-a/jobs/2026-11-12-pr244-rerun/tokenizer_sample_v0_clean.json`). `overlap.json` reads
+`out/tokenizer_sample_v0_clean/`, so stage those parts there before the run, as on 5 Nov: first move any 3 Nov parts out
+of `out/tokenizer_sample_v0_clean/`, so that it holds only the 12 Nov parts (48 train, 38 held-out). The command and the
+config stay as approved. The inventory check above shows if the wrong parts were read: the 12 Nov parts have 1,414,996
+rows, the 3 Nov parts had 1,416,236. The dedup job (`2026-11-10-dedup.md`) reads the same staged folder.
 
 `overlap.json` asserts the exact 38-pack inventory before scoring; a missing or unexpected pack fails. Packs that #244's
 cleaner does not support pass through it unchanged and are still in the inventory.
