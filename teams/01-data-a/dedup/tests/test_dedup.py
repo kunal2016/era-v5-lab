@@ -311,3 +311,16 @@ def test_empty_documents_are_in_no_group(repo):
     make_run(repo, [("e1", "code-java", "train", 0), ("e2", "code-java", "train", 0)], [(0, 1, "H1", 1.0, "")])
     run(repo)
     assert groups(repo) == {}
+
+
+def test_gold_id_counts_once_per_pack_and_only_in_its_own_pack(repo):
+    # "g" is gold for en-a: held by two en-a rows (counts once) and one en-b row (not en-a's gold, so not counted)
+    make_run(repo, [("g", "en-a", "train", 100), ("g", "en-a", "heldout", 100), ("g", "en-b", "train", 100),
+                    ("x", "en-a", "train", 90)], [(0, 3, "H2", 0.9, "")])
+    gold = repo / "gold"
+    gold.mkdir()
+    (gold / "en-a_gold.csv").write_text("doc_id,reader_1,reader_2\ng,x,y\nmissing,x,y\n", encoding="utf-8")
+    s, _ = run(repo, gold_dirs=["gold"])
+    assert s["harm_check"]["gold_ids_in_input_by_pack"] == {"en-a": 1}
+    assert s["harm_check"]["gold_ids_in_input"] == 1
+

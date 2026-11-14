@@ -25,8 +25,9 @@ THE RULES (source_priority_v1.md), applied in order to each cluster
 
 HOW TO RUN IT
 =============
-Python 3.9 or later with pyarrow (python -m pip install pyarrow). Pure Python otherwise, so it runs on Windows, macOS
-and Linux. Paths in the config are relative to the repository root, so it can be started from any folder.
+Python 3.10 or later with pyarrow, numpy and scipy (pip install -r teams/01-data-a/dedup/requirements_overlap.txt).
+Runs on Windows, macOS and Linux. The work over all documents runs in PyArrow, and the duplicate groups come from
+SciPy's connected components. Paths in the config are relative to the repository root, so it can be started from any folder.
 
     python teams/01-data-a/dedup/dedup.py --config teams/01-data-a/dedup/dedup.json
 
@@ -140,26 +141,39 @@ def read_matches(results, cross_pack):
     return out, dropped
 
 
-def read_docs(results, rows):
-    """Run-local row -> document fields for the matched rows, and every document with no shingles (empty)."""
+def read_docs(results, rows, gold_dirs):
+    """Run-local row -> document fields for the matched rows, documents per pack, the gold IDs (read for the packs in
+    the run) with how many of them are in it, and every document with no shingles (empty).
+
+    The work over all documents runs in PyArrow: only the matched and empty rows, and rows holding a gold ID, become
+    Python objects. A gold ID counts once per pack, however many rows hold it."""
+    import pyarrow as pa
+    import pyarrow.compute as pc
     import pyarrow.parquet as pq
     cols = ["row", "doc_id", "pack", "split", "part", "row_in_part", "words", "shingles"]
     t = pq.read_table(results / "overlap_docs.parquet", columns=cols)
-    data = {c: t.column(c).to_pylist() for c in cols}
+    is_matched = pc.is_in(t["row"], value_set=pa.array(sorted(rows), type=t.schema.field("row").type))
+    is_empty = pc.equal(t["shingles"], 0)
     docs, empty = {}, []
-    for i, row in enumerate(data["row"]):
-        if row in rows:
-            docs[row] = {c: data[c][i] for c in cols}
-        if data["shingles"][i] == 0:
-            empty.append({c: data[c][i] for c in cols})
+    for d in t.filter(pc.or_(is_matched, is_empty)).to_pylist():   # file order, as before
+        if d["row"] in rows:
+            docs[d["row"]] = d
+        if d["shingles"] == 0:
+            empty.append(d)
     missing = rows - docs.keys()
     if missing:
         raise Fatal(f"{len(missing)} matched rows are not in overlap_docs.parquet, e.g. {sorted(missing)[:3]}")
-    per_pack = Counter(data["pack"])
-    ids_by_pack = defaultdict(set)
-    for p, d in zip(data["pack"], data["doc_id"]):
-        ids_by_pack[p].add(d)
-    return docs, per_pack, ids_by_pack, empty
+    counts = pc.value_counts(t["pack"])
+    per_pack = dict(zip(counts.field("values").to_pylist(), counts.field("counts").to_pylist()))
+    gold = read_gold(gold_dirs, per_pack)
+    present = {p: 0 for p in gold}
+    all_gold = sorted({d for ids in gold.values() for d in ids})
+    if all_gold:
+        hits = t.filter(pc.is_in(t["doc_id"], value_set=pa.array(all_gold, type=t.schema.field("doc_id").type)))
+        for p, d in {(p, d) for p, d in zip(hits["pack"].to_pylist(), hits["doc_id"].to_pylist())}:
+            if d in gold.get(p, ()):
+                present[p] += 1
+    return docs, per_pack, gold, present, empty
 
 
 def read_urls(inputs, docs):
@@ -176,34 +190,37 @@ def read_urls(inputs, docs):
         if not path.is_file():
             raise Fatal(f"missing cleaned part {path} (needed for rule 2's url)")
         t = pq.read_table(path, columns=["doc_id", "url"])
-        ids, us = t.column("doc_id").to_pylist(), t.column("url").to_pylist()
-        for r_in_part, row in rows.items():
-            if r_in_part >= len(ids) or ids[r_in_part] != docs[row]["doc_id"]:
+        wanted = sorted(rows)                                   # only these rows become Python objects
+        if wanted[-1] >= t.num_rows:
+            raise Fatal(f"{path} row {wanted[-1]} is not doc_id {docs[rows[wanted[-1]]]['doc_id']}: "
+                        "inputs do not match the run")
+        got = t.take(wanted)
+        for r_in_part, doc_id, url in zip(wanted, got["doc_id"].to_pylist(), got["url"].to_pylist()):
+            row = rows[r_in_part]
+            if doc_id != docs[row]["doc_id"]:
                 raise Fatal(f"{path} row {r_in_part} is not doc_id {docs[row]['doc_id']}: inputs do not match the run")
-            urls[row] = us[r_in_part] or ""
+            urls[row] = url or ""
     return urls
 
 
 # ---------------------------------------------------------------- clusters and survivors
 
 def clusters(matches):
-    parent = {}
-
-    def find(x):
-        parent.setdefault(x, x)
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    for a, b, *_ in matches:
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[max(ra, rb)] = min(ra, rb)
-    groups = defaultdict(list)
-    for x in parent:
-        groups[find(x)].append(x)
-    return [sorted(g) for g in groups.values()]
+    """Duplicate groups: the connected components of the match graph (SciPy), each as a sorted list of run rows."""
+    import numpy as np
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    if not matches:
+        return []
+    a = np.fromiter((m[0] for m in matches), dtype=np.int64, count=len(matches))
+    b = np.fromiter((m[1] for m in matches), dtype=np.int64, count=len(matches))
+    nodes, idx = np.unique(np.concatenate([a, b]), return_inverse=True)
+    n = len(nodes)
+    graph = coo_matrix((np.ones(len(a), dtype=np.int8), (idx[:len(a)], idx[len(a):])), shape=(n, n))
+    _, label = connected_components(graph, directed=False)
+    order = np.lexsort((nodes, label))                         # by group, rows ascending inside each group
+    cuts = np.flatnonzero(np.diff(label[order])) + 1
+    return [g.tolist() for g in np.split(nodes[order], cuts)]
 
 
 def rank_key(d, rank, urls):
@@ -245,18 +262,22 @@ def decide(cluster, docs, rank, usable, urls):
 
 # ---------------------------------------------------------------- harm check
 
-def harm_check(gold_dirs, ids_by_pack, removed_keys):
-    """Gold documents present in the input, and gold documents removed, matched on (pack_id, doc_id)."""
-    if not gold_dirs:
-        return {"status": "not_run", "reason": "no gold_dirs in the config"}
+def read_gold(gold_dirs, packs):
+    """{pack: gold doc_ids} from <pack>_gold.csv in gold_dirs, for the packs in the run."""
     gold = defaultdict(set)
     for g in gold_dirs:
         for f in sorted((REPO / g).glob("*_gold.csv")):
             pack = f.name[: -len("_gold.csv")]
-            if pack in ids_by_pack:
+            if pack in packs:
                 with f.open(newline="", encoding="utf-8") as fh:
                     gold[pack] |= {r["doc_id"] for r in csv.DictReader(fh)}
-    present = {p: len(ids & ids_by_pack[p]) for p, ids in gold.items()}
+    return gold
+
+
+def harm_check(gold_dirs, gold, present, removed_keys):
+    """Gold documents present in the input, and gold documents removed, matched on (pack_id, doc_id)."""
+    if not gold_dirs:
+        return {"status": "not_run", "reason": "no gold_dirs in the config"}
     removed = sorted((p, d) for p, d in removed_keys if d in gold.get(p, ()))
     n_present = sum(present.values())
     status = "not_testable" if n_present == 0 else ("fail" if removed else "pass")
@@ -274,7 +295,7 @@ def run(cfg):
     summary_in, checked = check_results(results)
     matches, dropped_cross = read_matches(results, cfg["cross_pack"])
     rows = {x for a, b, *_ in matches for x in (a, b)}
-    docs, per_pack, ids_by_pack, empty = read_docs(results, rows)
+    docs, per_pack, gold, present, empty = read_docs(results, rows, cfg["gold_dirs"])
     empty_rows = {d["row"] for d in empty}
     n_matches = len(matches)
     matches = [m for m in matches if m[0] not in empty_rows and m[1] not in empty_rows]   # not duplicates: set aside
@@ -374,7 +395,7 @@ def run(cfg):
                "removed_H1": by_pack[p]["removed_H1"], "removed_H2": by_pack[p]["removed_H2"],
                "removed_cross_pack": by_pack[p]["removed_cross_pack"],
                "documents_out": per_pack[p] - by_pack[p]["removed"]} for p in packs}
-    harm = harm_check(cfg["gold_dirs"], ids_by_pack, {(e["removed_pack_id"], e["removed_id"]) for e in log})
+    harm = harm_check(cfg["gold_dirs"], gold, present, {(e["removed_pack_id"], e["removed_id"]) for e in log})
     files = {f: {"bytes": (out / f).stat().st_size, "sha256": sha256_file(out / f)}
              for f in ("remove_list.csv", "dedup_log.jsonl", "heldout_duplicates.csv", "empty_documents.csv",
                        "dedup_groups.csv")}
