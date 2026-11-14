@@ -88,3 +88,10 @@ def test_order_matters_and_short_input():
     assert gram_hashes(list("abcd"), 5) == b""
     blob, words = shingles("short key", 5)
     assert words == 2 and len(blob) == 8 and shingles("", 5) == (b"", 0)
+
+
+def test_gram_set_preserves_binary_digests():
+    from overlap_rules import gram_set
+    values = [b"\x00" * 8, b"a" + b"\x00" * 7, b"\xff" * 8]
+    assert gram_set(b"".join(values + values)) == set(values)
+    assert gram_set(b"") == set()

@@ -12,7 +12,7 @@ shingle found in only one document is left out of X (it can never be shared) but
 
 HOW TO RUN IT
 =============
-Run from teams/01-data-a/. Python 3.9 or later with numpy, scipy and pyarrow (python3 -m pip install numpy scipy pyarrow).
+Run from teams/01-data-a/ with the packages pinned in dedup/requirements_overlap.txt.
 
     python3 -I dedup/jaccard_matrix.py --pack <packs folder>/en-dclm --out <output folder, outside the repo>
     python3 -I dedup/jaccard_matrix.py --pack <packs folder>/en-dclm --out <...> --floor 0.3
@@ -88,9 +88,11 @@ def main():
         ap.error("--floor must be above 0 and at most 1; the histogram still counts every pair")
     try:
         import numpy as np
+        import pandas
         from scipy import sparse
     except ImportError:
-        sys.exit("ERROR: needs numpy and scipy: python3 -m pip install numpy scipy")
+        sys.exit("ERROR: needs numpy, scipy and pandas: "
+                 "python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt")
     pack, out = Path(args.pack), Path(args.out)
     dirs = pack_folders(pack)
     if not dirs:

@@ -13,8 +13,8 @@ folders are ignored. Input checksum verification is deferred; no manifest or SHA
 
 HOW TO RUN IT
 =============
-With the cleaner outputs under out/tokenizer_sample_v0_clean/ in the repository root. Python 3.9 or later with
-numpy, scipy, pyarrow and pygments (see requirements_overlap.txt). It needs no network and no keys, reads only its
+With the cleaner outputs under out/tokenizer_sample_v0_clean/ in the repository root. Python 3.10 or later with
+numpy, scipy, pandas, pyarrow and pygments (see requirements_overlap.txt). It needs no network and no keys, reads only its
 inputs and writes only to out/ in the repository root. Paths in the config are relative to the repository root, the
 job's working directory, so the script can also be started from any other folder.
 
@@ -152,10 +152,12 @@ def main():
         import pyarrow as pa
         import pyarrow.parquet as pq
         import scipy
+        import pandas
         import pygments
         from scipy import sparse
     except ImportError:
-        sys.exit("ERROR: needs numpy, scipy, pyarrow and pygments: python3 -m pip install numpy scipy pyarrow pygments")
+        sys.exit("ERROR: needs numpy, scipy, pandas, pyarrow and pygments: "
+                 "python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt")
     t0 = time.time()
     inputs, out, splits = REPO / cfg["inputs"], REPO / cfg["out"], cfg["splits"]
     parts = find_parts(inputs, splits)
@@ -340,7 +342,8 @@ def main():
         "wall_seconds": round(time.time() - t0, 1),
         "peak_rss_mb": peak_rss_mb(),
         "versions": {"python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
-                     "pyarrow": pa.__version__, "pygments": pygments.__version__, "platform": platform.platform()},
+                     "pandas": pandas.__version__, "pyarrow": pa.__version__, "pygments": pygments.__version__,
+                     "platform": platform.platform()},
         "outputs": files,
         "output_mb": output_mb,
     }

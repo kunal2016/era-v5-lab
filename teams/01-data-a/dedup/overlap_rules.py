@@ -53,12 +53,14 @@ def code_shingles(text, pack):
         lines.append(value)
         if value.strip():
             tokens.append(value)
-    # Token 5-grams hashed in bulk (jaccard_matrix.gram_hashes): no Python loop per token or per 5-gram.
+    # Hashing is bulk; the Pygments iterator above still needs Python filtering to preserve v1 token semantics.
     return gram_hashes(tokens, 5), sum(bool(line.strip()) for line in "".join(lines).splitlines())
 
 
 def gram_set(blob):
-    return {blob[i:i + 8] for i in range(0, len(blob), 8)}
+    """Decode fixed-width digests in NumPy; preserve all eight bytes, including trailing NULs."""
+    import numpy as np
+    return set(np.frombuffer(blob, dtype="V8").tolist())
 
 
 def code_scores(code, block):

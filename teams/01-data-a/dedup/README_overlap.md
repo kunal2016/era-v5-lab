@@ -6,12 +6,15 @@ or rank documents. The job request is `teams/01-data-a/jobs/2026-11-04-overlap.m
 
 ## Run on TSAI
 
-Prepare Python 3.9+ on Linux or macOS with the packages in `requirements_overlap.txt` installed before the offline job:
+Prepare Python 3.10+ on Linux or macOS with the pinned packages in `requirements_overlap.txt` installed before the offline job:
 
 ```sh
 python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt
 python3 teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
 ```
+
+Speed implementation, remaining Pygments constraint, reproducible input/config preparation, full console logs and
+pytest output: [benchmarks/2026-11-13-speed/README.md](benchmarks/2026-11-13-speed/README.md).
 
 The run needs no network or keys and writes only under `out/`. `resource` supplies peak RSS. The script imports
 `h1_sha256.py`, `jaccard_matrix.py`, `overlap_rules.py`, `overlap_report.py`, and the frozen

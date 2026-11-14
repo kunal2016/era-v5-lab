@@ -314,3 +314,19 @@ def test_a_good_config_gets_the_defaults(tmp_path, monkeypatch):
     cfg = ov.load_config(make_config(tmp_path, _comment="ignored"))
     assert (cfg["floor"], cfg["k"], cfg["splits"], cfg["max_output_mb"]) == (0.5, 5, ["train", "heldout"], 50)
     assert "_comment" not in cfg
+
+
+def test_missing_pandas_has_install_guidance(tmp_path, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def without_pandas(name, *args, **kwargs):
+        if name == "pandas":
+            raise ImportError("pandas deliberately unavailable")
+        return real_import(name, *args, **kwargs)
+
+    cfg = make_config(tmp_path)
+    monkeypatch.setattr(builtins, "__import__", without_pandas)
+    monkeypatch.setattr(sys, "argv", ["overlap.py", "--config", str(cfg)])
+    with pytest.raises(SystemExit, match="pandas.*requirements_overlap.txt"):
+        ov.main()
