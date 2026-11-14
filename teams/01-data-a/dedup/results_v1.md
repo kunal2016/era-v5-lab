@@ -4,7 +4,7 @@ The measurements behind `dedup_design_v1.md`, for discussion. The design states 
 
 **How to read it**
 - **Final** means measured by TSAI on the approved input with committed code. It changes only if the rules change.
-- **Estimate** means computed by us from TSAI's files without `dedup.py`. Removal counts from `dedup.py` itself are given separately; they are local (no urls) until TSAI runs `jobs/2026-11-10-dedup.md`.
+- **Estimate** means computed by us from TSAI's files without `dedup.py`. Removal counts from `dedup.py` itself are given separately; they are local (no urls) until TSAI runs `jobs/2026-11-14-dedup.md`.
 - **Local** means a test run on raw (not cleaned) sample v0 parts. It shows the code works and gives findings for the hand review; the TSAI run supersedes its counts.
 - Every number is for the Week-2 tokenizer sample v0 (1.4 million documents). Applied to the full data, the counts will differ.
 
@@ -270,7 +270,7 @@ still needed below; see `jobs/2026-11-12-overlap-rerun.md` for the input provena
 | The cleaned sample with the #244 cleaner | TSAI's cleaning job on sample v0 | Complete: 86/86 parts, 0 errors, 1,414,996 rows; provenance in the overlap rerun request |
 | Overlap measurement on the new cleaned sample | TSAI's rerun of `overlap.py` (`jobs/2026-11-12-overlap-rerun.md`) | The cleaned sample above; lead approval |
 | Reviewed source matrix from the rerun | `confirm_matrix.py` on the returned files → `dedup/overlap_matrix.csv` | The rerun's results. The matrix there now is from 5 Nov |
-| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-10-dedup.md` on the rerun's output | The rerun's results, then lead approval. Licence: all 38 packs usable for this experiment only (see the top). On the 5 Nov run, without urls: 1,345 |
+| Final removal counts and remove list, with urls | TSAI's run of `jobs/2026-11-14-dedup.md` on the rerun's output | The rerun's results, then lead approval. Licence: all 38 packs usable for this experiment only (see the top). On the 5 Nov run, without urls: 1,345 |
 | Groups whose survivor F2 removes: count and list | The F2 step, after dedup (Clean → Dedup → F2) | F2's removals and the new dedup run's `dedup_groups.csv`; the export is implemented, but the F2 count/list remains downstream work |
 | Harm check with the #244 cleaner | Local, on the 4 diagnosis packs | Still needs to run with the merged cleaner; sample-v0 and synthetic `not_testable` checks do not replace it |
 | Hand review: prose 0.80, code 0.85, `cadj-commits` sample | Pairs from the TSAI rerun | `overlap_pairs.csv` and text |
