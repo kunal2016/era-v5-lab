@@ -161,10 +161,10 @@ Findings from local test runs on raw sample v0 parts (details in `results_v1.md`
 ## Open items before the final (Fri 13 Nov)
 
 - **The rerun, in TSAI's order (12 Nov):**
-  1. TSAI runs the #244 cleaning job on sample v0 after #244 merges.
-  2. The overlap measurement runs again on the new cleaned output (`jobs/2026-11-12-overlap-rerun.md`).
-  3. The `dedup.py` job (`jobs/2026-11-10-dedup.md`) is approved and run on that output, with the cleaned parts, so rule 2 (url) applies. The 5 Nov results are not used.
-  4. From the rerun: `overlap_matrix.csv` and `matrix_confirmation.md`, E4 (`e4_review.py`), and the numbers in `results_v1.md`, this file and `source_priority_v1.md`.
+  1. Complete (TSAI confirmation, 13 Nov): #244 cleaning of sample v0, 86/86 parts, 0 errors, 1,414,996 output rows.
+  2. Approve and run overlap on those cleaned parts (`jobs/2026-11-12-overlap-rerun.md`), using merged speed commit `7526194`. Fresh local evidence: 115 passing tests and the synthetic 38-pack overlap/matrix/dedup hand-off; it does not predict real-data counts.
+  3. Confirm/review the returned matrix and run `dedup.py` locally on the returned artifacts without urls; record expected total removals and held-out checks in `jobs/2026-11-10-dedup.md` before approving that job.
+  4. Run the approved dedup job on the same cleaned parts, so rule 2 (url) applies. Replace the superseded matrix/results and rerun E4 (`e4_review.py`) on the new outputs. The 5 Nov results are not used for removals.
 - **Hand review:** prose (0.80) and code (0.85), as done for math; and a sample of `cadj-commits`, the pack with the most duplicates. On the rerun's pairs.
 - **E4:** a human Kannada, Telugu and Tamil reader to label the rejected `sangraha-s` pairs (copy, template, different or unsure) on blind sheets. The measured part and the rebuild from the raw text are done on the 5 Nov run (`results_v1.md`, section 3: 106 pairs; whatever the labels, a lower minimum would affect at most 69 Indic documents). The #244 cleaner can change these pairs, so `e4_review.py` is run again on the rerun's outputs before the reader starts.
 - **Math numbers rule and same URL (team decision):** compare numbers in the body only (ignoring the title and first line), and count same-URL pairs as H2 duplicates at ≥ 0.80. Either change needs an overlap run before it applies, so decide before the rerun is submitted, or leave both for v1.1. The same holds for a lower Indic word minimum from E4.

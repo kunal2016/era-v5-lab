@@ -2,7 +2,8 @@
 
 `overlap.py` measures H1 exact and H2 near duplicates within and across all 38 sample-v0 packs, after cleaning.
 It writes the source-by-source document shares needed to inform `source_priority_v1.md`. It does not remove
-or rank documents. The job request is `teams/01-data-a/jobs/2026-11-04-overlap.md`, following `JOB_REQUEST.md`.
+or rank documents. The current rerun request is `teams/01-data-a/jobs/2026-11-12-overlap-rerun.md`, following
+`JOB_REQUEST.md`; `2026-11-04-overlap.md` records the superseded run on the earlier cleaning.
 
 ## Run on TSAI
 
@@ -10,7 +11,7 @@ Prepare Python 3.10+ on Linux or macOS with the pinned packages in `requirements
 
 ```sh
 python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt
-python3 teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
+python3 -I teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
 ```
 
 Speed implementation, remaining Pygments constraint, reproducible input/config preparation, full console logs and
@@ -140,12 +141,12 @@ for the TSAI run or `overlap_local.json` for the local run; the historical Engli
 ## Returned results and the Friday 13 November deliverable
 
 TSAI returns the successful job's nine output files plus its console log to
-`teams/01-data-a/jobs/results/2026-11-04-overlap/`, following `JOB_REQUEST.md`.
+`teams/01-data-a/jobs/results/2026-11-12-overlap-rerun/`, following `JOB_REQUEST.md`.
 Review the actual pack/part/split inventory, rules, runtime, output limit and result plausibility first.
 Rebuild the matrix from returned artifacts without corpus text:
 
 ```sh
-python3 teams/01-data-a/dedup/overlap_report.py --results teams/01-data-a/jobs/results/2026-11-04-overlap
+python3 -I teams/01-data-a/dedup/overlap_report.py --results teams/01-data-a/jobs/results/2026-11-12-overlap-rerun
 ```
 
 This checks the document table and matches file against the returned summary's SHA-256 hashes, then writes
