@@ -28,7 +28,7 @@ Test log:        teams/01-data-a/jobs/logs/2026-11-13-overlap-rerun-merged.txt (
 
 TSAI answered in G1 on 12 Nov: #244 changes the cleaner, so the cleaned sample of 3 Nov is out of date. TSAI runs the
 #244 cleaning job on sample v0 after #244 is merged. The overlap measurement is then run again on the new cleaned output,
-and the `dedup.py` job (`2026-11-10-dedup.md`) is approved and run on that output. The 5 Nov results
+and the `dedup.py` job (`2026-11-14-dedup.md`) is approved and run on that output. The 5 Nov results
 (`2026-11-04-overlap.md`) are not used.
 
 This is the same measurement as `2026-11-04-overlap.md`, on new inputs. That request describes the method, the matrix
@@ -131,7 +131,7 @@ and the matrix confirmation, E4 and the hand review need both.
 1. Rebuild and confirm the matrix: `python teams/01-data-a/dedup/confirm_matrix.py --results <returned folder>`, and
    with `--docs` once `overlap_docs.parquet` is here. Replace `teams/01-data-a/dedup/overlap_matrix.csv` with the
    confirmed matrix and update `matrix_confirmation.md`.
-2. Run `dedup.py` locally on the returned files without urls and add its counts to `2026-11-10-dedup.md`; then the lead
+2. Run `dedup.py` locally on the returned files without urls and add its counts to `2026-11-14-dedup.md`; then the lead
    approves that job.
 3. Run `e4_review.py` again on the new outputs before an Indic reader labels the pairs.
 4. Replace the 5 Nov numbers in `results_v1.md`, `dedup_design_v1.md` and `source_priority_v1.md`.
