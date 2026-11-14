@@ -6,10 +6,10 @@ Raw word-Jaccard measurements remain separate from the eligible duplicate pairs.
 from collections import Counter, defaultdict
 from functools import lru_cache
 import hashlib
-import json
 import re
 
 from h1_sha256 import h1_key
+from jaccard_matrix import gram_hashes
 
 CODE_LEXERS = {"code-cpp": "cpp", "code-go": "go", "code-java": "java",
                "code-js-ts": "typescript", "code-python": "python", "code-rust": "rust"}
@@ -53,13 +53,14 @@ def code_shingles(text, pack):
         lines.append(value)
         if value.strip():
             tokens.append(value)
-    grams = {hashlib.blake2b(json.dumps(tokens[i:i + 5], ensure_ascii=False).encode("utf-8"),
-                             digest_size=8).digest() for i in range(max(len(tokens) - 4, 0))}
-    return b"".join(sorted(grams)), sum(bool(line.strip()) for line in "".join(lines).splitlines())
+    # Hashing is bulk; the Pygments iterator above still needs Python filtering to preserve v1 token semantics.
+    return gram_hashes(tokens, 5), sum(bool(line.strip()) for line in "".join(lines).splitlines())
 
 
 def gram_set(blob):
-    return {blob[i:i + 8] for i in range(0, len(blob), 8)}
+    """Decode fixed-width digests in NumPy; preserve all eight bytes, including trailing NULs."""
+    import numpy as np
+    return set(np.frombuffer(blob, dtype="V8").tolist())
 
 
 def code_scores(code, block):
@@ -82,7 +83,13 @@ def code_scores(code, block):
         mask = b > a
         a, b, inter = a[mask], b[mask], P.data[mask].astype(np.int64)
         score = inter / (sizes[a] + sizes[b] - inter)
-        for x, y, s in zip(a[score >= 0.85], b[score >= 0.85], score[score >= 0.85]):
+        keep = score >= 0.85
+        a, b, score = a[keep], b[keep], score[keep]
+        # Emit in (row_a, row_b) order. The sparse product's column order follows the 5-gram hash values, so without
+        # this the order of the rows in overlap_matches.csv would change whenever the hashing changes, with the same
+        # pairs and scores.
+        order = np.lexsort((b, a))
+        for x, y, s in zip(a[order], b[order], score[order]):
             yield ids[x], ids[y], float(s)
 
 

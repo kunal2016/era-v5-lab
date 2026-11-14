@@ -30,7 +30,7 @@ Two documents are H1 duplicates when the SHA-256 of their keys is equal. H1 bypa
 
 **Terms.** A document's *shingles* are the set of its word 5-grams (overlapping 5-word windows of the H1 key; repeats count once). The *Jaccard similarity* of two documents is shingles in both ÷ shingles in either. Example with 3-word shingles: "the cat sat on the mat" and "the cat sat on a mat" share 2 of 6 distinct shingles, J = 0.33; compared word by word they would score 5/6 = 0.83, which is why single words are not used.
 
-**Method: exact Jaccard of every pair** (`overlap.py`, `jaccard_matrix.py`). Each shingle is stored as an 8-byte BLAKE2b digest. The documents × shingles matrix times its transpose gives the shared count of every pair that shares a shingle, block by block. There is no sampling and no MinHash estimate, so every score is exact and is the value logged. On the 38-pack sample (1.4 million documents) this ran in 56 minutes. MinHash + LSH remains the fallback for a run that does not fit.
+**Method: exact Jaccard of every pair** (`overlap.py`, `jaccard_matrix.py`). Each shingle is stored as a 64-bit hash (`gram_hashes` in `jaccard_matrix.py`: each word hashed once, combined per 5-word window with NumPy). The documents × shingles matrix times its transpose gives the shared count of every pair that shares a shingle, block by block. There is no sampling and no MinHash estimate, so every score is exact and is the value logged. On the 38-pack sample (1.4 million documents) this ran in 56 minutes. MinHash + LSH remains the fallback for a run that does not fit.
 
 `overlap.py` keeps every pair at word Jaccard ≥ 0.5 (at most 0.80, so no prose candidate is lost). `overlap_rules.py` decides which pairs qualify (`overlap_matches.csv`):
 
