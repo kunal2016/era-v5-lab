@@ -1,24 +1,26 @@
 # Overlap rerun on the #244 cleaning of sample v0 — Thursday 12 November 2026
 
-**DRAFT: not ready to submit.** Before this request goes to TSAI, fill in the items marked TODO (the #255 commit, the
-code changes since `86ecdd4` and a fresh local test log), and confirm the input path with the #244 cleaning job.
+**Updated 13 Nov 2026.** The code pin, scoring-file audit, input provenance and fresh local log are filled in.
+Lead approval remains pending. This request pins the current base-branch scoring code; the speed work in
+[kunal2016/era-v5-lab#1](https://github.com/kunal2016/era-v5-lab/pull/1) is reviewed separately. If that PR is merged
+before submission, update the pin and rerun the local validation at the merged commit before approval.
 
 ```text
 Team:            01-data-a
 Owner:           Aneesha Das (aneeshads)
 Lead approval:   Pending team-lead review/approval on the job-request PR
 Question:        On the sample v0 cleaned with #244, what share of documents in each source has an H1 exact or eligible H2 near duplicate in each source, including its own?
-Script:          teams/01-data-a/dedup/overlap.py (with h1_sha256.py, jaccard_matrix.py, overlap_rules.py, overlap_report.py and the frozen spec v1 normalize.py), PR #255 at commit TODO
-Command:         python teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
+Script:          teams/01-data-a/dedup/overlap.py (with h1_sha256.py, jaccard_matrix.py, overlap_rules.py, overlap_report.py and the frozen spec v1 normalize.py), PR #255 at commit 5740710735ce30bfcb98f389c1c75def378853f6
+Command:         python -I teams/01-data-a/dedup/overlap.py --config teams/01-data-a/dedup/overlap.json
 Config:          teams/01-data-a/dedup/overlap.json (unchanged from the 5 Nov run: the 38 sample-v0 packs)
-Inputs:          All 38 sample-v0 packs from TSAI's #244 cleaning job (run after #244 merges), staged under ./out/tokenizer_sample_v0_clean/{train,heldout}/; each Parquet row has pack_id, doc_id and text. Not the 3 Nov cleaned parts
+Inputs:          All 38 sample-v0 packs from TSAI's completed #244 cleaning rerun (confirmed 13 Nov), staged under ./out/tokenizer_sample_v0_clean/{train,heldout}/; each Parquet row has pack_id, doc_id and text. Not the 3 Nov cleaned parts
 Hardware:        CPU (single process; request 2 vCPU and 32 GiB RAM; no GPU)
 Max time:        90 minutes
 Precision:       not used
 Measures:        Directional source-by-source document shares; matched-document numerators and source denominators; H1/H2 qualifying pairs; raw word-Jaccard threshold sweep and histogram; pack/part/split document counts; wall time, peak RSS, versions and output SHA-256
 Expected result: 38 x 38 source matrix with values in [0,1], potentially asymmetric; counts to be measured. The 5 Nov run on the 3 Nov cleaning gives the scale, not expected values: 1,416,236 documents, 2,711 qualifying pairs (98 H1, 2,613 H2; 50 cross-pack), 7 empty documents, 56 minutes, 9.6 GiB peak
 Outputs:         out/overlap/{overlap_matrix.csv,overlap_matrix_counts.csv,overlap_matches.csv,overlap_pairs.csv,overlap_by_pack.csv,overlap_histogram.csv,overlap_matrix.npz,overlap_docs.parquet,overlap_summary.json}; 50 MiB maximum including summary
-Test log:        TODO: a local run of overlap.py at the commit above (overlap_local.json), saved under teams/01-data-a/jobs/logs/
+Test log:        teams/01-data-a/jobs/logs/2026-11-13-overlap-rerun-local.txt (pinned scoring code; reproducible synthetic 38-pack smoke run and 106 tests; not a measurement of TSAI data)
 ```
 
 ## Why a rerun
@@ -37,12 +39,49 @@ are in `dedup/README_overlap.md`.
 | | 5 Nov run | This run |
 |---|---|---|
 | Cleaned input | #244's cleaner as of 3 Nov | #244's cleaner as merged (it changed on 10, 11 and 12 Nov) |
-| Code | PR #255 at `86ecdd4` | PR #255 at the commit above. `h1_sha256.py` now finds `normalize.py` both where #244 puts it and where it was before. TODO: list any other change to the five scoring files since `86ecdd4` |
-| Rules | v1: prose 0.80 and 50 words, math 0.90 and the same numbers, code 0.85 tokens and 20 lines | The same, unless the team changes a rule before this request is submitted (open: the math numbers rule, same-URL pairs, a lower Indic word minimum from E4). A change after submission needs another run |
+| Code | PR #255 at `86ecdd4` | PR #255 at the commit above. `h1_sha256.py` now finds `normalize.py` both where #244 puts it and where it was before. No other scoring-file changes; audit below |
+| Rules | v1: prose 0.80 and 50 words, math 0.90 and the same numbers, code 0.85 tokens and 20 lines | Unchanged v1 rules for this request; math numbers, same-URL and Indic minimum changes remain separate proposals requiring evidence and approval |
 | Max time | 60 minutes (it took 56) | 90 minutes, for headroom |
 
 If #244 changes the contents of `normalize.py`, and not only its place, the H1 keys change. The run records what it
 used, so this shows in the results; it is not assumed either way.
+
+## Scoring-file audit and completed cleaner provenance
+
+At the pinned commit, `git diff 86ecdd4..5740710 --` on `overlap.py`, `h1_sha256.py`, `jaccard_matrix.py`,
+`overlap_rules.py` and `overlap_report.py` changes only `h1_sha256.py`: the import path fallback from `5ac143a`.
+The old `spec_v1/tools/normalize.py` and new `spec_v1/normalize.py` are byte-identical, SHA-256
+`b96e39af6b048cf135e5915acb13c2d5630d1a238760df494776c6783a0a6669`.
+
+[TSAI's confirmation](https://github.com/theschoolofai/era-v5-lab/pull/255#issuecomment-6870892120)
+reports 86/86 parts, 0 errors and 1,414,996 cleaned rows from 1,444,766 input rows, using
+`teams/01-data-a/jobs/2026-11-12-pr244-rerun/tokenizer_sample_v0_clean.json`:
+
+| Cleaner provenance | SHA-256 |
+|---|---|
+| clean | `22d818c72c9f30bf338de344a0fcda230e2d1de30a1aaec5d92bc525bae99179` |
+| config | `8c58030f51e3d9f338f59719daa91b6ab59614f3ffdb9c60bb35997b35ea63ec` |
+| manifest | `7fd647c8d4662d17e2310efbcc20981d70656fdad2fabb7663c266a2153a1b7e` |
+
+Stage those completed cleaner outputs at the configured input path. Check the returned overlap inventory against
+86 parts and 1,414,996 rows before accepting results. These checks establish counts and provenance; cleaned-input
+checksum verification inside `overlap.py` remains deferred.
+
+## Reproduce the local test
+
+From the repository root, with the overlap requirements and pytest installed:
+
+```sh
+python -I teams/01-data-a/jobs/2026-11-12-overlap-rerun/prepare_local.py
+python -I teams/01-data-a/dedup/overlap.py --config out/overlap_rerun_local/overlap.json
+python -I teams/01-data-a/dedup/dedup.py --config out/overlap_rerun_local/dedup.json
+python -B -m pytest teams/01-data-a/dedup/tests -q -p no:cacheprovider
+```
+
+The preparation script refuses an existing `out/overlap_rerun_local/` directory. It creates 152 artificial documents
+in 76 parts across all 38 configured packs, including train/heldout copies. Its configs write to a separate smoke
+output directory. The attached log records the commands, versions, complete overlap/dedup console output and pytest
+result. It checks execution and the hand-off; it cannot predict counts or runtime on the actual cleaned sample.
 
 ## Inputs and execution
 
