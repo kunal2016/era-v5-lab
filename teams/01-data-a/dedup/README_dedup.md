@@ -11,7 +11,7 @@ overlap.py  ──▶  overlap_summary.json, overlap_matches.csv, overlap_docs.p
 Python 3.9 or later with `pyarrow`. Nothing else, so it runs on Windows, macOS and Linux (no WSL needed).
 
 ```sh
-python3 -m pip install pyarrow pytest
+python3 -m pip install -r teams/01-data-a/dedup/requirements_overlap.txt pytest
 python3 -m pytest -q teams/01-data-a/dedup/tests/test_dedup.py
 python3 teams/01-data-a/dedup/dedup.py --config teams/01-data-a/dedup/dedup.json
 ```
