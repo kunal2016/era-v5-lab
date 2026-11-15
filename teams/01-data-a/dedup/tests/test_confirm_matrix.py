@@ -169,6 +169,17 @@ def test_docs_parquet_with_another_hash_fails(repo):
     assert code == 1 and "overlap_docs.parquet SHA-256 equals the summary" in failed
 
 
+def test_docs_parquet_with_rows_out_of_order_returns_2(repo):
+    res = make_run(repo, docs=True)
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    path = res / "overlap_docs.parquet"
+    t = pq.read_table(path)
+    pq.write_table(t.set_column(0, "row", pa.array([1, 0, *range(2, t.num_rows)])), path)
+    refresh_hash(res, "overlap_docs.parquet")
+    assert confirm_matrix.main(["--results", str(res), "--docs", str(path)]) == 2
+
+
 def test_missing_input_returns_2(repo):
     res = make_run(repo)
     (res / "overlap_matrix_counts.csv").unlink()

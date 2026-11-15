@@ -5,9 +5,12 @@ python teams/01-data-a/dedup/overlap_report.py --results teams/01-data-a/jobs/re
 Writes only to out/. The input must contain overlap_docs.parquet and overlap_matches.csv from overlap.py.
 """
 import argparse
+import bisect
 from collections import Counter, defaultdict
+from collections.abc import Mapping
 import csv
 import hashlib
+from itertools import chain, repeat
 import json
 from pathlib import Path
 import sys
@@ -47,6 +50,51 @@ def write_matrix(out, documents, pairs):
                 writer.writerow([a, b, len(hits[a, b]), totals[a]])
 
 
+class RowRuns(Mapping):
+    """Row -> value (pack or split) for rows 0..N-1, kept as one entry per run of rows with the same value."""
+
+    def __init__(self, starts, labels, total):
+        self.starts, self.labels, self.total = starts, labels, total
+
+    def __getitem__(self, row):
+        if not (isinstance(row, int) and 0 <= row < self.total):
+            raise KeyError(row)
+        return self.labels[bisect.bisect_right(self.starts, row) - 1]
+
+    def __iter__(self):
+        return iter(range(self.total))
+
+    def __len__(self):
+        return self.total
+
+    def values(self):
+        """Every row's value in row order, repeated per run in C (write_matrix counts them per pack)."""
+        sizes = [b - a for a, b in zip(self.starts, self.starts[1:] + [self.total])]
+        return chain.from_iterable(map(repeat, self.labels, sizes))
+
+
+def read_docs(path, columns):
+    """One RowRuns per column of overlap_docs.parquet, with the runs found by NumPy.
+
+    None unless the rows are 0..N-1 in order (as overlap.py writes them) and every row has a value in each column.
+    """
+    import numpy as np
+    import pyarrow.compute as pc
+    import pyarrow.parquet as pq
+    t = pq.read_table(path, columns=["row", *columns])
+    n = t.num_rows
+    if not np.array_equal(t["row"].to_numpy(), np.arange(n)) or any(t[c].null_count for c in columns):
+        return None
+    maps = []
+    for name in columns:
+        encoded = pc.dictionary_encode(t[name].combine_chunks())
+        codes = encoded.indices.to_numpy(zero_copy_only=False)
+        starts = np.flatnonzero(np.r_[True, codes[1:] != codes[:-1]]) if n else np.zeros(0, dtype=np.int64)
+        labels = encoded.dictionary.to_pylist()
+        maps.append(RowRuns(starts.tolist(), [labels[c] for c in codes[starts]], n))
+    return maps
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results", required=True, type=Path)
@@ -66,11 +114,10 @@ def main():
                 digest.update(chunk)
         if digest.hexdigest() != expected:
             parser.error(f"returned artifact checksum mismatch: {name}")
-    import pyarrow.parquet as pq
-    docs = pq.read_table(args.results / "overlap_docs.parquet", columns=["row", "pack"]).to_pylist()
-    documents = {d["row"]: d["pack"] for d in docs}
-    if len(documents) != len(docs) or len(docs) != summary["documents_all"]:
-        parser.error("duplicate row IDs or wrong document count in overlap_docs.parquet")
+    maps = read_docs(args.results / "overlap_docs.parquet", ["pack"])
+    if maps is None or len(maps[0]) != summary["documents_all"]:
+        parser.error("overlap_docs.parquet needs rows 0..N-1 in order, a pack on every row and documents_all rows")
+    documents = maps[0]
     with (args.results / "overlap_matches.csv").open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         if not {"row_a", "row_b", "rule"} <= set(reader.fieldnames or []):

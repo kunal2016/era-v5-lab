@@ -28,7 +28,6 @@ WHAT IT WRITES (in --out, default out/matrix_confirmation, inside out/)
 Exit 0 when every check passes, 1 when one fails, 2 on unusable input.
 """
 import argparse
-import bisect
 import csv
 import hashlib
 import json
@@ -38,7 +37,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from overlap_report import write_matrix  # noqa: E402
+from overlap_report import RowRuns, read_docs, write_matrix  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[3]   # teams/01-data-a/dedup/confirm_matrix.py -> the repository root
 NEEDED = ("overlap_summary.json", "overlap_matches.csv", "overlap_matrix.csv", "overlap_matrix_counts.csv")
@@ -96,27 +95,27 @@ class Checks:
 
 
 def row_map_from_docs(path, summary, checks):
-    import pyarrow.parquet as pq
+    """(row -> pack, row -> split) from overlap_docs.parquet, or (None, None) when its rows are not 0..N-1 in order."""
     want = summary["outputs"]["overlap_docs.parquet"]["sha256"]
     got = sha256(path)
     checks.add("overlap_docs.parquet SHA-256 equals the summary", got == want, f"{got} (summary {want})")
-    t = pq.read_table(path, columns=["row", "pack", "split"]).to_pydict()
-    row_pack = dict(zip(t["row"], t["pack"]))
-    row_split = dict(zip(t["row"], t["split"]))
-    checks.add("overlap_docs.parquet has one entry per document", len(row_pack) == len(t["row"]) == summary["documents_all"],
-               f"{len(t['row']):,} rows")
+    maps = read_docs(path, ["pack", "split"])
+    if maps is None:
+        return None, None
+    row_pack, row_split = maps
+    checks.add("overlap_docs.parquet has one entry per document", len(row_pack) == summary["documents_all"],
+               f"{len(row_pack):,} rows")
     return row_pack, row_split.get
 
 
 def row_map_from_parts(summary, checks):
-    starts, splits, row_pack, per = [], [], {}, Counter()
+    starts, splits, packs, per = [], [], [], Counter()
     r = 0
     for p in summary["inputs"]["parts"]:
         split, pack = p["part"].split("/")[:2]
         starts.append(r)
         splits.append(split)
-        for i in range(r, r + p["documents"]):
-            row_pack[i] = pack
+        packs.append(pack)
         per[pack, split] += p["documents"]
         r += p["documents"]
     checks.add("the parts add up to documents_all", r == summary["documents_all"],
@@ -125,7 +124,7 @@ def row_map_from_parts(summary, checks):
            if per[pk, sp] != d[sp]]
     checks.add("per-pack train / held-out counts from the parts equal the summary (pack_id based)", not bad,
                f"{len(bad)} differ: {bad[:3]}" if bad else "38 packs x 2 splits agree")
-    return row_pack, (lambda row: splits[bisect.bisect_right(starts, row) - 1])
+    return RowRuns(starts, packs, r), RowRuns(starts, splits, r).get
 
 
 def main(argv=None):
@@ -175,6 +174,9 @@ def main(argv=None):
 
     # Step 3: row -> pack map, checked against the matches
     row_pack, split_of = row_map_from_docs(docs, summary, checks) if docs else row_map_from_parts(summary, checks)
+    if row_pack is None:
+        print("ERROR: overlap_docs.parquet needs rows 0..N-1 in order and a pack and split on every row", file=sys.stderr)
+        return 2
     matches = read_csv(res / "overlap_matches.csv")
     pairs = [(int(m["row_a"]), int(m["row_b"])) for m in matches]
     mis = sum(1 for (a, b), m in zip(pairs, matches) if (row_pack.get(a), row_pack.get(b)) != (m["pack_a"], m["pack_b"]))
