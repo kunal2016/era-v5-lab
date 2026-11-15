@@ -7,7 +7,7 @@ Owner:           Max (uz9ai)
 Lead approval:   pending, sureshmantha
 Question:        What are the tokens per second and the memory of T2 with Muon on one GPU at 1 sequence per forward and 1 forward per optimizer step?
 Script:          teams/05-architecture/harness/train_week2.py   (Team 5, merged; not edited)
-Command:         python teams/05-architecture/harness/train_week2.py --config teams/05-architecture/configs/arms/exp2_muon.yaml --runtime teams/05-architecture/configs/runtime.yaml --tokenizer ./inputs/tokenizer_v0.json --byte-table ./inputs/raw_table_P32.npz --train-data ./inputs/train.jsonl --heldout-data ./inputs/heldout.jsonl --device cuda --seed 1234 --smoke --smoke-steps 110 --no-checkpoint --smoke-batch-size 1 --out ./out/t2-b1-m1
+Command:         python teams/05-architecture/harness/train_week2.py --config teams/05-architecture/configs/arms/exp2_muon.yaml --runtime teams/05-architecture/configs/runtime.yaml --tokenizer ./inputs/tokenizer_v0.json --byte-table ./inputs/raw_table_P32.npz --train-data ./inputs/train.jsonl --heldout-data ./inputs/heldout.jsonl --device cuda --seed 1234 --smoke --smoke-steps 110 --no-checkpoint --smoke-batch-size 1 --out ./out/t2-b1-m1 && python teams/07-infrastructure/jobs/calculate_metrics.py
 Config:          teams/05-architecture/configs/arms/exp2_muon.yaml + teams/05-architecture/configs/runtime.yaml
 Inputs:          the TSAI-staged bundle of official job #310: tokenizer v0, its P32 raw byte table, train and held-out JSONL
 Hardware:        1 GPU with native bf16 and at least 24 GiB (peak estimate 8.1 GiB)
@@ -36,6 +36,17 @@ the speed of Team 5's model with Muon was never measured.
 
 ## Calculations for the log book
 
+#### via calculate_metrics.py
+For the job requests, I have calculated the following metrics via the calculate_metrics.py script.
+
+A sample response (which TSAI should provide after each run):
+
+```
+out/t2-b1-m1/metrics.jsonl tok/s median 5192  p10 4978  p90 5607  gpu_alloc_gb 3.41
+name, memory.total [MiB]
+NVIDIA RTX PRO 4500 Blackwell Server Edition, 32623 MiB
+```
+#### Manually (not needed; just for reference)
 **Read** `metrics.jsonl` in each folder. It has one line per step, including `tokens_per_second`, `perf/step_ms` and `gpu_alloc_gb`. Skip step 0 (an evaluation row with no speed) and the first 10 steps (warm-up), then take the medians:
 
 ```bash
