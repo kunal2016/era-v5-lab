@@ -1,7 +1,7 @@
 # Dedup v2 proposal: what v1 left open
 
 **Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work (Kunal Sinha, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
-**Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, with `apply_dedup.py`, which replaces `removal_list_interface_v1.md`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
+**Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
 Every v1 number quoted here comes from TSAI's 5 Nov run or the local runs in `results_v1.md`. The 5 Nov run is superseded by the rerun on the #244 cleaning, so each number is checked again on the rerun before any item below is decided.
 
@@ -62,8 +62,8 @@ All of v1.1 goes into **one** overlap run, after TSAI's v1 dedup job, so that v1
 
 ### 5. Summaries and the remove list
 
-The remover is now built: Sourav Dhar's `apply_dedup.py` (`teams/01-data-a/pipeline/`, #37 and #46 on Vijay's fork) replaces `removal_list_interface_v1.md`. It changes this item:
-- **`remove_list.csv` keeps exactly its five columns** (`pack_id, split, part, row_in_part, doc_id`). `apply_dedup.py` stops on any other header, so the `reason` and `stage` columns proposed in the interface note are dropped. The rule that removed each document is already in `dedup_log.jsonl` (`rule`, `stage`, `priority_rule`), and H3 removals are logged there too.
+The remove list is applied by Sourav Dhar's `apply_dedup.py` (`teams/01-data-a/pipeline/`, #37 and #46 on Vijay's fork). Its checks set this item:
+- **`remove_list.csv` keeps exactly its five columns** (`pack_id, split, part, row_in_part, doc_id`). `apply_dedup.py` stops on any other header, so no `reason` or `stage` column is added. The rule that removed each document is already in `dedup_log.jsonl` (`rule`, `stage`, `priority_rule`), and H3 removals are logged there too.
 - **`overlap_summary.json` and `dedup_summary.json` record `code_sha256` and the git commit** of the script that wrote them. The runner adopts the overlap and dedup jobs as TSAI ran them, and without these fields its `cleaning_pipeline.json` has `code_sha256: null` for both (Sourav's open items).
 - **`overlap_summary.json` records the SHA-256 of every input part** (today `checksum_verification: deferred`), and `dedup_summary.json` carries them on. `apply_dedup.py` checks the `doc_id` and `pack_id` of every listed row, which catches a list made from other parts; the hashes also catch a part whose unlisted rows changed.
 
