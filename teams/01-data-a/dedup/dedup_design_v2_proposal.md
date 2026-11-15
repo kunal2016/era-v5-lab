@@ -1,7 +1,7 @@
 # Dedup v2 proposal: what v1 left open
 
-**Status:** proposal for team review, 13 Nov 2026; updated 15 Nov 2026 for the new Indic sources (#461) and Aneesha Das's H3 draft (#44 on Vijay's fork) (Kunal Sinha, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
-**Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and `removal_list_interface_v1.md` (how removals are applied). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
+**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work (Kunal Sinha, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
+**Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, with `apply_dedup.py`, which replaces `removal_list_interface_v1.md`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
 Every v1 number quoted here comes from TSAI's 5 Nov run or the local runs in `results_v1.md`. The 5 Nov run is superseded by the rerun on the #244 cleaning, so each number is checked again on the rerun before any item below is decided.
 
@@ -15,12 +15,13 @@ Items are split by what they need. **v1.1** items change a rule or a setting of 
 | 2 | Math numbers rule on the body only | v1.1 | The rule rejected true copies whose only numeric difference was a date line or a number in the title | Team decision, overlap run |
 | 3 | Indic length minimum | v1.1 | The 50-word minimum rejects 135 near-identical Indic pairs (69 documents); 19.9% of Indic documents are under 50 words | E4 reader labels, overlap run |
 | 4 | Code threshold (0.85 on tokens) | v1.1 | "Under review" in v1; `code-rust` has 530 qualifying token pairs but only 3 word pairs ≥ 0.80 | Hand review of code pairs |
-| 5 | Remove list carries `reason`, `stage` and part hashes | v1.1 | `removal_list_interface_v1.md`; `overlap_summary.json` has `checksum_verification: deferred` | Code change, tests |
+| 5 | Summaries record code SHA-256, git commit and part hashes; `remove_list.csv` keeps its five columns | v1.1 | Sourav's runner adopts overlap and dedup but cannot record their code (`code_sha256` stays null); `apply_dedup.py` accepts only the exact five-column header | Code change, tests |
 | 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10 owns licences (`code-js-ts`, `ind-hi-hplt` unverified); Data B lead may reorder their packs | Their decisions; `dedup.py` rerun (seconds) |
-| 7 | **H3: translations across languages** | Own track (`h3_design_v1.md`) | Out of scope in v1 (TSAI, 5 Nov); Sanskrit packs are known to carry translations | Aneesha's E5 experiments; additions below |
+| 7 | **H3: translations across languages** | v1.1 in `h3_design_v1.md` (Aneesha); recheck in v2.0 | Out of scope in v1 (TSAI, 5 Nov); Sanskrit packs are known to carry translations | H3-a to H3-f for v1.1; H3-g to H3-m after E5 |
 | 13 | **Pack order for new packs:** a rule, not a hand-made list | Before any new pack joins | v1 ranks only the 38 sample packs; #461 proposes 15 new sources | Team decision; Data B's clean shares |
 | 14 | **Packs that are not documents** (word pairs, lexicons, single sentences, speech transcripts) | Before those packs join | #461: Aksharantar, Dakshina, BPCC, Shrutilipi, IndicVoices | A decision per pack |
 | 15 | **Licence map for the new sources** | Before those packs join | #461: card text and tag disagree for Aksharantar and MADLAD-400; BPCC's mined part repackages NC data | G10's rulings |
+| 16 | **Pipeline contract** with Sourav's runner: remove-list checks, summaries, the dedup job as a `run.json` | Now, for every release | `apply_dedup.py` stops on a list that breaks its checks; `pipeline/open-items.md` lists 7 dedup items | Code and docs; answers to Sourav |
 | 8 | Containment for truncated copies | v2 | E3 limit: a copy keeping 85 of 100 words is caught, 80 of 100 is missed | Experiment on the overlap outputs |
 | 9 | Indic-aware shingles | v2, only if 3 is not enough | Word 5-grams were set on English (Risk 2) | Experiment on Indic packs |
 | 10 | Survivor rule: the copy cleaning changed least | v2 | Dropped from v1: no per-document record of fixes | Experiment on the rerun's groups |
@@ -59,14 +60,12 @@ All of v1.1 goes into **one** overlap run, after TSAI's v1 dedup job, so that v1
 
 **Change:** keep, raise or lower 0.85, from a hand review of about 20 code pairs on each side of the threshold, as was done for math. Include a sample of `cadj-commits`, the pack with the most duplicates.
 
-### 5. Remove list and part hashes
+### 5. Summaries and the remove list
 
-As listed in `removal_list_interface_v1.md`:
-- `overlap.py` records the SHA-256 of every input part in `overlap_summary.json`.
-- `dedup.py` carries those hashes into `dedup_summary.json`.
-- `dedup.py` adds `reason` (`H1`, `H2`) and `stage` (`dedup`) to `remove_list.csv`.
-
-The remover's check 3 (part hash) then works.
+The remover is now built: Sourav Dhar's `apply_dedup.py` (`teams/01-data-a/pipeline/`, #37 and #46 on Vijay's fork) replaces `removal_list_interface_v1.md`. It changes this item:
+- **`remove_list.csv` keeps exactly its five columns** (`pack_id, split, part, row_in_part, doc_id`). `apply_dedup.py` stops on any other header, so the `reason` and `stage` columns proposed in the interface note are dropped. The rule that removed each document is already in `dedup_log.jsonl` (`rule`, `stage`, `priority_rule`), and H3 removals are logged there too.
+- **`overlap_summary.json` and `dedup_summary.json` record `code_sha256` and the git commit** of the script that wrote them. The runner adopts the overlap and dedup jobs as TSAI ran them, and without these fields its `cleaning_pipeline.json` has `code_sha256: null` for both (Sourav's open items).
+- **`overlap_summary.json` records the SHA-256 of every input part** (today `checksum_verification: deferred`), and `dedup_summary.json` carries them on. `apply_dedup.py` checks the `doc_id` and `pack_id` of every listed row, which catches a list made from other parts; the hashes also catch a part whose unlisted rows changed.
 
 ### 6. Config-only updates
 
@@ -76,15 +75,62 @@ If G10 excludes a pack, set it to `false` in `licence_usable`. If the Data B lea
 
 ### 7. H3: translations across languages
 
-H3 now has its own design: `h3_design_v1.md` (Aneesha Das, draft; #44 on Vijay's fork). It finds candidates with LaBSE and URL keys and decides by sentence coverage (aligned sentences ÷ sentences of the shorter document). That replaces the chunk-embedding sketch this file had on 13 Nov. What this proposal adds, as review points on #44:
+H3 has its own design: `h3_design_v1.md` (Aneesha Das, draft; #44 on Vijay's fork), for dedup v1.1. It finds candidates with LaBSE and URL keys and decides by sentence coverage (aligned sentences ÷ sentences of the shorter document). That replaces the chunk-embedding sketch this file had on 13 Nov.
 
-- **Keep H3 out of the survivor rules.** Form the H1/H2 groups first. An H3 edge between two groups may only remove a train copy of a held-out document (rule 0); every other H3 pair is reported. Otherwise rules 1–4 would remove one language's copy, and rule 3 ("longer") does not compare across scripts.
-- **One `dedup.py` run.** `h3.py` reads all documents of its packs (no `exclude`), so `overlap.py` and `h3.py` are independent, and one `dedup.py` run reads both match files and writes one remove list (Sourav Dhar's pipeline ask).
-- **Keys.** `h3_matches.csv` carries `(pack_id, split, part, row_in_part, doc_id)` directly.
-- **Parallel packs are never H3 duplicates.** Pralekha (document-level English–Indic) and BPCC's human parts (sentence-level) are translations on purpose (#461). No H3 edge is drawn between two documents of the same parallel pack; pairs between a parallel pack and another pack are reported like any other.
-- **Real known pairs.** Split the `ind-sa-fw2` documents that `DB-H3-001` flags into their Sanskrit and translation parts, for a recall check before E5d's hand review.
-- **Second opinion.** Translate-then-embed rather than translate-then-H2: it beat a multilingual encoder in Pasch, Petridis and Cutura (arXiv 2406.13695), 82% against 60% F1.
-- **Question for G3 and G9.** Does a train document that translates a held-out document affect their results? If not, H3 can stay measurement-only in its first release.
+The points below split into what Aneesha's v1.1 design should take up before its first TSAI run, and what is rechecked in v2.0 once E5's measurements exist.
+
+**For H3 v1.1 (owner: Aneesha Das, in `h3_design_v1.md`; raised on #44)**
+
+| # | Rule | Why |
+|---|---|---|
+| H3-a | **Keep H3 out of the survivor rules.** Form the H1/H2 groups first. An H3 edge between two groups may only remove a train copy of a held-out document (rule 0); every other H3 pair is reported, not removed | Otherwise rules 1–4 remove one language's copy, and rule 3 ("longer") does not compare across scripts |
+| H3-b | **One `dedup.py` run.** `h3.py` reads all documents of its packs (no `exclude`); `overlap.py` and `h3.py` are independent; one `dedup.py` run reads both match files and writes one remove list | Sourav Dhar's pipeline ask; excluding H1/H2 removals needs a second `dedup.py` run and saves little (0.095% removed on 5 Nov) |
+| H3-c | **Keys.** `h3_matches.csv` carries `(pack_id, split, part, row_in_part, doc_id)` | No join on `h3_docs.parquet` rows; matches the remove list's key |
+| H3-d | **Parallel packs are not H3 duplicates.** No H3 edge between two documents of the same parallel pack (Pralekha, BPCC human parts); pairs with other packs are reported as usual | They are translations on purpose (#461) |
+| H3-e | **Real known pairs.** Positives from FLORES-200 devtest (the same sentences in English, Hindi, Sanskrit and Odia; an evaluation set, read to test the encoder, never trained on). Hard negatives from `ind-sa-fw2`: its documents split by `DB-H3-001` into Sanskrit and "translation" lines are mostly a Sanskrit story with an embedded English or Hindi tweet on the same event (433 pairs, checked by hand on 15 Nov), the same-topic case H3 must keep. Scripts: `h3_checks/build_known_pairs.py`, `labse_check.py` (how it was run: below) | E5a uses a fake encoder; `DB-H3-001` removes embedded foreign-language text more than translations, so it cannot supply positives |
+| H3-f | **Ask TSAI, and G3 and G9, before building or removing anything.** Keep-or-remove for translations is not ruled yet (Shankar Pandala, 15 Nov). Does a train document that translates a held-out document affect G3's or G9's results? If not, v1.1 is measurement only (E5c) | Rule 0 is the draft's main reason to remove; it rests on these answers. G2 has no pair finder, no LaBSE/IndicTrans2 runs and no H3 review pack, so H3 is Data A's alone; G2's translation work rates quality (#440), and its proposal has 0% translated text until TSAI decides at Gate 3 |
+
+**Rechecked in v2.0 (after E5c and E5d)**
+
+| # | Question | Evidence it needs |
+|---|---|---|
+| H3-g | Is anything removed beyond rule 0, for example machine-translated copies (D4/D5)? Which copy survives? | E5d labels by pair type; a TSAI decision |
+| H3-h | Thresholds per language pair (coverage 0.6, sentence cosine 0.7, `doc_floor` 0.5 are provisional). **Measured 15 Nov** (`h3_labse_check_results_v1.md`, run steps below): at 0.7, LaBSE finds 100% of Hindi and Odia FLORES translations but only 29% of Sanskrit–English and 19% of Sanskrit–Hindi; at 0.5 Sanskrit rises to 96% / 89%, but 3 of the 7 real-page matches are not translations | E5d's sweep and hand review, per pair; a margin score or another encoder for Sanskrit |
+| H3-i | The encoder: LaBSE or an alternative, per language. **Measured 15 Nov:** Odia and Hindi fine (P@1 1.0 against English); Sanskrit found (P@1 0.95–0.98) but with low cosines (median 0.69) | The same script with `--model` for an alternative on Sanskrit |
+| H3-j | Head-only retrieval (first 4 sentences, mutual top 3): does it miss pairs on sites whose pages share their opening lines? | The share of URL-found pairs that retrieval also finds (E5b) |
+| H3-k | Coverage over at most 16 sentences: is that enough for long documents? | Coverage on long known pairs |
+| H3-l | Second opinion: translate-then-embed on a sample, rather than translate-then-H2. It beat a multilingual encoder in Pasch, Petridis and Cutura (arXiv 2406.13695), 82% against 60% F1 | Agreement with sentence coverage on the E5d sample |
+| H3-m | Wider scope: Data A ↔ Data B pairs (needs TSAI), more language pairs, and #461's new packs | v1.1's counts and cost per pair |
+
+**H3 encoder check, 15 Nov (measurement only; results in `h3_labse_check_results_v1.md`)**
+
+What was run, and how to repeat it. Scripts and README: `h3_checks/` (`build_known_pairs.py`, `labse_check.py`,
+`README_h3_checks.md`). Document text stays in a local `out/` folder outside the repo; only numbers and doc_ids are
+reported.
+
+1. **Same-page pairs from `ind-sa-fw2`** (no model needed; Kunal Sinha's machine, 7 s):
+   `python build_known_pairs.py --parts <raw ind-sa-fw2 parts> --out out`. It splits each raw document (week-1 pack,
+   5,963 documents) into its Sanskrit lines and the lines `DB-H3-001` calls translations. Result: 433 pairs (343 with
+   an English half, 90 Hindi). Read by hand, most are not translations (a Sanskrit news story with an embedded tweet on
+   the same event), so they serve as same-topic hard negatives; `DB-H3-001` cannot supply positives.
+2. **The encoder on Hugging Face models and data** (Kunal Sinha's laptop, CPU, 863 s; the sandbox cannot reach
+   Hugging Face):
+   - in a Python venv: `pip install sentence-transformers datasets pyarrow numpy`;
+   - `hf auth login` with a read token, and accept the terms once on the gated dataset page
+     `https://huggingface.co/datasets/openlanguagedata/flores_plus` (without this the script stops with
+     `DatasetNotFoundError: ... is a gated dataset`);
+   - `python labse_check.py --pairs out/known_pairs.parquet --out out/labse`. The model
+     (`sentence-transformers/LaBSE`, about 1.9 GB) downloads on first use into the Hugging Face cache; a warning about
+     symlinks on Windows is harmless.
+   - Positives: FLORES-200 devtest, 1,012 sentences in English, Hindi, Sanskrit and Odia (an evaluation set, read to
+     test the encoder and never used as training data), as sentences and as 8-sentence pseudo-documents. Negatives:
+     other FLORES blocks, and the 433 same-page pairs. H3's own settings throughout (mutual best match, sentence
+     threshold swept 0.5 to 0.9, coverage rule 0.6).
+3. **Result in one line:** Hindi and Odia are fine at the draft's 0.7 (100% of translated blocks qualify, 0% of other
+   blocks); Sanskrit is found (P@1 0.95 to 0.98) but at 0.7 only 29% of Sanskrit-English and 19% of Sanskrit-Hindi
+   blocks qualify, and at 0.5 3 of the 7 real-page matches are not translations (H3-h, H3-i).
+4. **Next run:** the same command with `--model BAAI/bge-m3` (or a multilingual-e5 model) to compare an alternative on
+   Sanskrit; a margin score in place of the plain cosine is the other option to measure.
 
 ### 8. Containment for truncated copies
 
@@ -129,7 +175,7 @@ PR #461 (Srinivasan Govindaraj, Data B, `teams/02-data-b/indic_sources_v1.md`) l
 
 **Problem.** Rule 4 is a hand-made list of the 38 sample packs: Data A in `clean.py` order, then Data B in alphabetical order. A new pack has no place in it, and a hand-placed list will not scale to 50+ packs. Alphabetical order also decides today that an `fw2` copy beats a `sangraha-v` copy of the same page, with no reason behind it.
 
-**Proposal.** Replace the list with a rule. Rank packs by their measured clean share (Data B measures it per pack: for example 85.0% for `ind-hi-indiccorp` against 25.8% for `fw2`, as #461 cites from `native_indic_share_v1.md`). Packs without a measurement go after measured ones, in a fixed fallback order: curated sources (Wikipedia, Wikisource, IndicCorp, Sangraha verified) before raw crawl (`fw2`, MADLAD-400, Sangraha unverified). Ties keep v1's order. The ranking is computed once per run and written into `dedup.json`, so a run stays reproducible.
+**Proposal.** Replace the list with a rule. Rank packs by their measured clean share (Data B measures it per pack in `native_indic_share_v1.md`. On the rebuilt gold, #439: 85.0% for `ind-hi-indiccorp`, 25.3% for `fw2`, 4.7% for `sangraha-s`, 7.4% for `ind-hi-hplt`. The rule must read the current version of that file, since the numbers moved when the gold was rebuilt; #461's figures came from the 2 Nov gold). Packs without a measurement go after measured ones, in a fixed fallback order: curated sources (Wikipedia, Wikisource, IndicCorp, Sangraha verified) before raw crawl (`fw2`, MADLAD-400, Sangraha unverified). Ties keep v1's order. The ranking is computed once per run and written into `dedup.json`, so a run stays reproducible.
 
 **Check.** On the rerun's groups, count how many survivors the new order would change, and read a sample of them: the surviving copy should look cleaner.
 
@@ -146,7 +192,7 @@ PR #461 (Srinivasan Govindaraj, Data B, `teams/02-data-b/indic_sources_v1.md`) l
 - **H1 only:** BPCC sentences, Dakshina sentences and the speech transcripts. Exact repeats are removed; near-duplicate scoring of single sentences would mostly match common phrasing.
 - **Normal rules:** every document-level source (Wikipedia, Wikisource, Pralekha, MADLAD-400, IndicCorp, FinePDFs, Sangraha).
 
-Parallel packs (Pralekha, BPCC) are also exempt from H3 within the pack (item 7).
+Parallel packs (Pralekha, BPCC) are also exempt from H3 within the pack (H3-d, item 7).
 
 ### 15. Licence map for the new sources (rule 1)
 
@@ -165,11 +211,43 @@ Also from #461:
 - **Held-out overlap.** Its FineWeb-2 extension adds Punjabi and Assamese train data, and `heldout_v1` holds FineWeb-2's test splits for both. Rule 0 handles any overlap; the first run reports pa/as train ↔ held-out pairs separately.
 - **Naming.** #461's extensions are numbered E1–E6, the same names as dedup's experiments E1–E5. Renaming them (e.g. X1–X6) avoids mixing them up.
 
+## Pipeline prerequisites (Sourav's runner and `apply_dedup.py`)
+
+### 16. What the pipeline needs from dedup
+
+Sourav Dhar's runner (`run_pipeline.py`) runs clean → overlap → dedup → apply → F2 → survivor loss → shards. Overlap and dedup are TSAI jobs that it adopts; `apply_dedup.py` applies `remove_list.csv`; `survivor_loss.py` reads `dedup_groups.csv`. Its checks make the following a contract for every dedup release, v1.1 and v2 included.
+
+**`remove_list.csv`, as `apply_dedup.py` checks it (any failure stops the run before anything is written):**
+
+| Check | What dedup must guarantee |
+|---|---|
+| Header | Exactly `pack_id, split, part, row_in_part, doc_id`. No new column (item 5) |
+| Keys | No `(split, part, row_in_part)` listed twice; `row_in_part` a whole number ≥ 0 |
+| Held-out | No held-out row. Rule 0, enforced again at apply: one held-out row means the list is broken. H3-a relies on this |
+| Part and row | `part` is the path relative to the split folder, with `/` (`code-go/part-00000.parquet`); `row_in_part` is the 0-based row in file order, as `overlap.py` numbers them |
+| Same cleaning run | The `doc_id` and `pack_id` at each listed row match the list. A list made from another cleaning run than the parts stops the run |
+| Pack column | No empty `pack_id` in any part |
+
+**Other outputs:**
+- `dedup_groups.csv` is read by `survivor_loss.py`, and the runner checks that its group count matches. Its format is part of the contract.
+- `dedup_summary.json`: the runner checks status, counts, the overlap hashes and **held-out removed = 0**.
+
+**Sourav's open items for the dedup side** (`pipeline/open-items.md`, 14 Nov):
+1. `code_sha256` and the git commit in `overlap_summary.json` and `dedup_summary.json` (item 5).
+2. Do `overlap_summary.versions` or `block` change what counts as a duplicate? (He assumes no.) Is `gold_dirs` used only by the harm check?
+3. Are `inputs`, `out` and `results` safe to override per run (the runner generates them)? Once the scripts take `--input` and `--out` flags, the runner's generated configs can go.
+4. The dedup job after the #244 cleaning: a `jobs/<date>-dedup/run.json` that adopts job 244's clean folder, with `to: dedup`, and a request whose `Command:` is `python teams/01-data-a/pipeline/run_pipeline.py --config <run.json>`. The test log is `--plan` plus a small trial with `stages.clean.only`.
+5. PR order: the runner's default `pipeline.json` points at `teams/01-data-a/dedup/*.json`, which reach `main` only with #255.
+6. Delete the untracked placeholders in `teams/01-data-a/dedup/` once dedup merges.
+7. Licence (`licence_status_before_scale_v1.md`): a preflight check that every pack of the manifest is listed in `licence_usable`.
+
+**What this means for H3:** H3 adds no second remove list. Under H3-b, one `dedup.py` run writes one `remove_list.csv` with the same five columns, so `apply_dedup.py` needs no change; H3 removals (rule 0 only, H3-a) are told apart in `dedup_log.jsonl`. One question for Sourav before H3 removes anything: how `dedup_groups.csv` shows an H3 edge between two H1/H2 groups, so that `survivor_loss.py` still counts groups correctly.
+
 ## Order of work
 
 1. **Now, in parallel with v1:**
-   - Item 5, a code change with tests and no effect on v1's decisions.
-   - H3's review points on #44 (item 7).
+   - Items 5 and 16: summaries with code SHA-256, commit and part hashes; the answers to Sourav's open items; the dedup job as a runner `run.json`.
+   - H3-a to H3-f into `h3_design_v1.md` (Aneesha, #44).
    - Decisions on items 13–15, so new packs can join with a rule ready.
 2. **After TSAI's v1 dedup job:**
    - Items 1–4 and 6 together in one v1.1 overlap run.
@@ -177,16 +255,20 @@ Also from #461:
 3. **After the v1.1 run:**
    - Item 10 on its groups.
    - Item 9 if E4 calls for it.
+   - H3-g to H3-m, once E5c and E5d have run.
 4. **When new packs join (#461) or the full-data size is known:** items 11 and 12.
 
 ## Questions for review
+
+- **Sourav Dhar:** how `dedup_groups.csv` should show an H3 edge between groups (item 16); whether the runner's preflight can check the licence map.
 
 - **TSAI:** are found translation pairs reported only, or may train copies of held-out documents be removed (rule 0, as `h3_design_v1.md` proposes)? Should anything else be removed?
 - **TSAI:** v1.1 as one overlap run after the v1 dedup job, reported as a difference from v1. Is that acceptable?
 - **Team:** item 1 (same URL) and item 2 (math body) for v1.1, or keep v1's rules?
 - **Team:** rule 4 by measured clean share for new packs (item 13); the per-pack decisions for non-document packs (item 14).
 - **G10:** licences of the H3 model weights (LaBSE, and any alternative chosen in E5) for use in the data pipeline; Aksharantar, MADLAD-400 and BPCC's mined part (item 15).
-- **Data B:** readers for Sanskrit–Hindi and Sanskrit–English pairs; clean-share measurements for each new pack (item 13).
+- **Data B (G2):** clean-share measurements for each new pack (item 13). G2 has no H3 work (15 Nov), so readers for Sanskrit–Hindi and Sanskrit–English pairs have to be found elsewhere.
+- **TSAI:** keep or remove translations at all, before `h3.py` is rebuilt for the GPU (H3-f). If G2's 0% translated text holds at Gate 3, H3's machine-translation case (H3-g) mostly disappears.
 
 ## References
 
