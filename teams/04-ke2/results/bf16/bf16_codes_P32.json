@@ -1,0 +1,63 @@
+{
+  "format": "ke2-bf16-codes-v1",
+  "tokenizer": {
+    "name": "C3-s0",
+    "file": "tokenizer.json",
+    "sha256": "15468e66457b43af79f695cbe585c0d03e3cfe7a4a5d04d189dd3c6b9f02ddc3",
+    "vocab_size": 131072,
+    "special_ids": 356,
+    "eos": {
+      "id": 130822,
+      "content": "<|endoftext|>"
+    }
+  },
+  "raw_table": {
+    "kind": "raw",
+    "pos_dim": 32,
+    "shape": [
+      131072,
+      32
+    ],
+    "n_truncated": 0,
+    "n_empty_rows": 0,
+    "sha256": "fc5e5f8ffacbe93ecdedc276661edfd43ed9a13621eb4a68166ef80e24e88f9b",
+    "rebuild": "ke2.tables.build_raw_table(tokenizer, P); not committed"
+  },
+  "codec": {
+    "char_dim": 256,
+    "pos_dim": 32,
+    "output_dim": 8192,
+    "source": "kronecker_embeddings.codec.kronecker_codec (float32) then .to(torch.bfloat16)",
+    "upstream_commit": "d07cb543f03d7a72a7c35bc68cfb795bcb02e1ec",
+    "torch": "2.14.1"
+  },
+  "compact": {
+    "file": "bf16_codes_P32.npz",
+    "arrays": {
+      "high_bits": [
+        33
+      ],
+      "low_bits": [
+        33
+      ]
+    },
+    "dtype": "uint16 bit patterns of bfloat16, indexed by byte length L",
+    "sha256": "c83e5875998f880eb7deeb87d5e6e6df848c703c48b587639becb1b010068f3f",
+    "hash_rule": "sha256('ke2-bf16-codes-v1|P|char_dim|tokenizer_sha256|raw_table_sha256|' + high_bits + low_bits, uint16 LE)"
+  },
+  "matrix": {
+    "shape": [
+      131072,
+      8192
+    ],
+    "dtype": "bfloat16",
+    "bytes": 2147483648,
+    "layout": "row t: low[L_t] everywhere, high[L_t] at index byte * P + position for position < L_t",
+    "sha256": "9218dab9f9a0aabbcb058292473e726b8a7e21ea27b537d9817db69084061092",
+    "hash_rule": "sha256 of the row-major little-endian bf16 bytes, no header",
+    "row_hashes_sha256": "eb594c8a97574db20412689e06e80471111971903425bea136101ceb95e6272d",
+    "row_hashes_rule": "sha256 of the (V, 32) array of per-row sha256 digests, in id order",
+    "file": "materialized/bf16_matrix_P32.npy (uint16 bits, only with --materialize; not committed)"
+  },
+  "verified": "every row of the codec's bf16 output equals the row rebuilt from the compact codes, bit for bit"
+}

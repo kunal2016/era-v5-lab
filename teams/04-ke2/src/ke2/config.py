@@ -25,3 +25,20 @@ TABLES_DIR = RESULTS_DIR / "tables"
 
 TOKENIZER_ENV_VARS = ("KE2_TOKENIZER", "BRAHMIC_TOKENIZER_DIR")
 """Environment variables that may point at a local tokenizer.json (or its folder)."""
+
+# --- Frozen bf16 codes (Gate 3) ---------------------------------------------------------------
+C3S0_NAME = "C3-s0"
+C3S0_TOKENIZER_SHA256 = "15468e66457b43af79f695cbe585c0d03e3cfe7a4a5d04d189dd3c6b9f02ddc3"
+"""SHA-256 of Team 3's frozen C3 sample-v0 ``tokenizer.json`` (#340); the bf16 codes are bound to it."""
+
+C3S0_TOKENIZER_ENV = "KE2_C3S0_TOKENIZER"
+"""Environment variable pointing at the C3-s0 ``tokenizer.json`` (used by the bf16 builder and tests)."""
+
+EOS_ID = 130822
+EOS_TOKEN = "<|endoftext|>"
+"""End-of-sequence token of C3-s0 (an added, special token)."""
+
+BF16_POS_DIM = 32
+"""P of the frozen bf16 codes (the Gate 2 decision; D = 8,192)."""
+
+BF16_DIR = RESULTS_DIR / "bf16"
