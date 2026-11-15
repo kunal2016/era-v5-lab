@@ -1,6 +1,14 @@
 # Licence status of the 38 sample packs, before cleaning at scale
 
 **Status:** draft for the team, 15 Nov 2026 (Kunal Sinha, Data A dedup). Nothing here is a licence decision: G10 owns those, and TSAI rules on anything G10 leaves open. A licence tag is not legal clearance.
+**Update, 15 Nov (G10's reply to Data A):** G10 has added explicit Stage 0 rows for **all 38 sample packs**, each `TSAI reserves`, on `saitej123:g10-week3-post-training` (`teams/10-post-training/licences/licence_table.md`; checked on that branch: 38 pack rows plus `chandassu`, none missing). It lands on `main` with G10's PR. What that settles and what is left:
+- **Settled:** the 19 packs covered at source level (Sangraha verified and synthetic, FineWeb-2, starcoderdata) and the 10 packs from new sources (`cadj-*`, `en-dclm`, `en-fineweb-edu`, `en-nemotroncc`, `en-nemotroncc-synth`, `math-finemath`, `math-megamath` as `megamath-web`, `sci-finepdfs`). `code-js-ts` no longer carries the "training-use rights require further verification" note.
+- **Still open:** `en-dclm`'s row reads "CC-BY-4.0 (DCLM packaging; Common Crawl terms)" and does not mention the card's "research purposes only" line, which Strategy v0 ("commercial-use data only") would turn on. `ind-hi-hplt` keeps "web terms". Both for TSAI, who reserves every decision.
+- **New for attribution:** `en-nemotroncc-synth`'s Wikipedia rewrites inherit CC-BY-SA.
+- **For dedup:** once G10's PR merges, `dedup.json` lists all 38 packs in `licence_usable` (true unless TSAI rules otherwise) with `default_licence_usable: false`. Steps 2 to 5 below (pin subsets, keep Out packs out at the input, attribution IDs for `cadj-*`) still apply.
+
+The rest of this note is the state before G10's reply, kept as the record.
+
 **Why now:** dedup v1 treats all 38 packs as usable **for this experiment only** (TSAI, 12 Nov): `licence_usable` is empty and `default_licence_usable` is `true` in `dedup/dedup.json`. A cleaning run at scale is not that experiment, so every pack needs a recorded decision first.
 
 ## What the licence decision controls, and where
