@@ -1,6 +1,6 @@
 # Dedup v2 proposal: what v1 left open
 
-**This week's scope and status:** `dedup_v1_1_plan.md` (items 1, 2, 5, 6 and 16, with the requirements they are checked against). This file is the full backlog.
+**Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them. Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
 
 **Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work (Kunal Sinha, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
 **Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
