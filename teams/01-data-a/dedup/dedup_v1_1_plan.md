@@ -1,6 +1,6 @@
 # Dedup plan for Weeks 3 and 4 (15–28 Nov 2026): v1 at scale, then the data card
 
-**Owner:** Kunal Sinha (Data A dedup). **Status:** in progress; updated at most once a day, when a row changes.
+**Owners:** Kunal Sinha and Aneesha Das (Data A dedup). **Status:** in progress; updated at most once a day, when a row changes.
 **Follows the lab schedule:** Week 3 (15–21 Nov) is cleaning, dedup, decontamination and tokenizing at scale, with
 Gate 3 on Sat 21 Nov (the first training shards pass the audit and match their manifests). Week 4 (22–28 Nov) is the
 training-week shards, dry run 2 (24 Nov), `data_card_v1.md` and TSAI's data go or no-go on Sat 28 Nov.
@@ -96,5 +96,6 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | Date | Change |
 |---|---|
 | 16 Nov | Plan written; then aligned to the lab schedule (Weeks 3 and 4): v1 frozen for the run at scale, v2 work after launch |
+| 16 Nov | Aneesha Das added as co-owner |
 | 16 Nov | General Week 3 audit left to Vijay's plan; the five dedup checks kept here |
 | 16 Nov | G10: `en-dclm` stays In (research line read as a disclaimer, noted for TSAI's Gate 3); FR4 waits on G10's PR merging |
