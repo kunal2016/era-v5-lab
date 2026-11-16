@@ -88,6 +88,7 @@ def main():
     ap.add_argument("--max-pairs", type=int, default=0, help="limit part C to this many pairs (0 = all)")
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--progress", action="store_true", help="show encoding progress bars and stage times")
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     rnd = random.Random(a.seed)
@@ -96,18 +97,22 @@ def main():
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer(a.model)
     model.max_seq_length = 128  # h3_design_v1.md: max_seq_length 128
-    enc = lambda xs: model.encode(xs, batch_size=a.batch, normalize_embeddings=True, convert_to_numpy=True,
-                                  show_progress_bar=False)
+    enc = lambda xs, bar=False: model.encode(xs, batch_size=a.batch, normalize_embeddings=True, convert_to_numpy=True,
+                                  show_progress_bar=bar)
     summary = {"model": a.model, "settings": {"min_sent_chars": MIN_SENT_CHARS, "max_sentences": MAX_SENTENCES,
                "max_seq_length": 128, "coverage_rule": COVERAGE_RULE, "block": BLOCK, "seed": a.seed}}
 
     # ---- A and B: FLORES ------------------------------------------------------------------------------------------
+    log = (lambda m: print(f"[{time.time() - t0:7.0f} s] {m}", flush=True)) if a.progress else (lambda m: None)
+    log(f"model loaded: {a.model}")
     flores = {l: load_flores(l, a.flores_dir) for l in ["eng_Latn", *a.langs]}
+    log("FLORES loaded; encoding")
     n = min(len(v) for v in flores.values())
-    emb = {l: enc(v[:n]) for l, v in flores.items()}
+    emb = {l: enc(v[:n], a.progress) for l, v in flores.items()}
     pairs = [(l, "eng_Latn") for l in a.langs]
     if "san_Deva" in a.langs and "hin_Deva" in a.langs:
         pairs.append(("san_Deva", "hin_Deva"))
+    log("FLORES encoded")
     summary["flores"] = {"sentences": n}
     for x, y in pairs:
         s = emb[x] @ emb[y].T
@@ -142,8 +147,11 @@ def main():
     rows = pq.read_table(a.pairs).to_pylist()
     if a.max_pairs:
         rows = rnd.sample(rows, min(a.max_pairs, len(rows)))
+    log(f"part C: {len(rows)} same-page pairs")
     per_pair = []
-    for r in rows:
+    for i, r in enumerate(rows):
+        if i and i % 50 == 0:
+            log(f"part C: {i} of {len(rows)} pairs")
         sa, tr = sentences(r["sa_text"]), sentences(r["tr_text"])
         if len(sa) < 3 or len(tr) < 3:
             continue

@@ -11,10 +11,11 @@ training starts; nothing in it changes this run.
 
 | When | Work (proposal item) | Done when |
 |---|---|---|
-| Mon 16 | **Item 5:** `code_sha256` and git commit in `overlap_summary.json` and `dedup_summary.json`; part SHA-256s carried from overlap to dedup | Tests pass; outputs otherwise byte-identical to v1; Sourav's `cleaning_pipeline.json` gets the code hashes |
+| Mon 16 | **Dedup job request on #255** (rebased; local run on TSAI's rerun files: 1,345 removed, 64 by rule 0, 0 held-out; pinned at `6cfc24a`) | Done; waiting on lead approval |
 | Tue 17 | **Item 16:** answers to Sourav's 7 open items; the dedup job as a runner `run.json` (adopt the cleaning job's folder, `to: dedup`) | `run_pipeline.py --plan` passes on it |
 | When G10's PR merges | **Item 6:** all 38 packs in `dedup.json` (`licence_usable`, `default_licence_usable: false`) | `licence_default_used_for` is empty in the summary |
-| After the overlap rerun | **The dedup v1 job at scale**, through the runner (overlap → dedup → apply → F2 → survivor loss) | Lead approval; TSAI's run completes |
+| After lead approval (overlap rerun done, 16 Nov) | **The dedup v1 job at scale**, through the runner (overlap → dedup → apply → F2 → survivor loss) | Lead approval; TSAI's run completes |
+| After TSAI's dedup run | **Item 5:** `code_sha256` and git commit in `overlap_summary.json` and `dedup_summary.json`; part SHA-256s carried from overlap to dedup. After the run, so its `6cfc24a` pin holds | Tests pass; outputs otherwise byte-identical to v1; Sourav's `cleaning_pipeline.json` gets the code hashes |
 | When the run's outputs are back | **Dedup audit** (checks on dedup's own numbers; no document reading): see below | Five lines in Vijay's daily audit pack; any failure filed as an issue |
 
 **The dedup audit.** The schedule's general Week 3 audit (reading cleaned documents, comparing before and after
@@ -40,14 +41,14 @@ dedup's own:
 ## After training starts: the v2 backlog
 
 All 16 items of `dedup_design_v2_proposal.md` stay in the backlog; none is dropped. Items 5, 6 and 16 are done in
-Week 3 because the run at scale needs them. The rest start after launch, in this order:
+Week 3 because the run at scale needs them (item 5 just after TSAI's dedup run). The rest start after launch, in this order:
 
 | # | Item | Waits on |
 |---|---|---|
 | 1, 2 | Same-URL rule; math numbers on the body (behind switches, off = v1) | The first overlap rerun after launch |
 | 4 | Code threshold hand review | The run's pairs |
 | 3, 9 | Indic length minimum; Indic shingles if needed | E4 readers' labels |
-| 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed | Nothing; can run any time, and is evidence for TSAI's ruling |
+| 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed. **BGE-M3 done 16 Nov** (`h3_bge_m3_check_results_v1.md`: 82–95% of Sanskrit blocks at 0.7, 8 times slower); margin score open | Nothing; can run any time, and is evidence for TSAI's ruling |
 | 7b | H3 dedup side (drafted on `g1-dedup-h3`) | Aneesha's `h3.py` format; TSAI's ruling |
 | 8, 10, 11 | Containment; "changed least" survivor rule; MinHash + LSH test | The run's outputs; full-data size |
 | 12 | Training ablation of the cross-pack pass | A pack's cross-pack removals reaching 1% |
@@ -74,8 +75,8 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | ID | Requirement | Status | Evidence |
 |---|---|---|---|
 | NFR1 | Reproducible: same inputs and config give byte-identical outputs and group IDs | Met (v1) | Windows rerun: same `remove_list.csv` (`913e66a6…`) |
-| NFR2 | Backward compatible: item 5's change leaves every other output byte-identical | This week: Mon | Same check as for H3 on 15 Nov |
-| NFR3 | Traceable: summaries record input SHA-256s, the code SHA-256 and the git commit | This week: Mon | `cleaning_pipeline.json` `code_sha256` not null |
+| NFR2 | Backward compatible: item 5's change leaves every other output byte-identical | This week: after TSAI's run | Same check as for H3 on 15 Nov |
+| NFR3 | Traceable: summaries record input SHA-256s, the code SHA-256 and the git commit | This week: after TSAI's run (the job request records the commit meanwhile) | `cleaning_pipeline.json` `code_sha256` not null |
 | NFR4 | Reversible: dedup never rewrites data; every removal is logged | Met (v1) | `dedup_log.jsonl`; `apply_dedup.py` writes new parts |
 | NFR5 | Safe: stops on mismatched inputs | Met (v1) | `check_results()`, `read_urls()`; tests |
 | NFR6 | No harm: zero gold documents removed | Met on 4 diagnosis packs; recheck in the run | Harm check in `dedup_summary.json` |
@@ -88,7 +89,7 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 
 | What | Who | Needed for |
 |---|---|---|
-| Overlap rerun on the #244 cleaning | TSAI (after lead approval) | The dedup job at scale |
+| Lead approval of the dedup job on #255 (the overlap rerun on the #244 cleaning is done) | Vijay Patil | The dedup job at scale |
 | G10's licence table on `main` | Sai Teja (G10) | FR4, item 6 |
 | Answers on item 16 | Sourav Dhar, Vijay Patil | Tue's `run.json` |
 
@@ -101,3 +102,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 16 Nov | General Week 3 audit left to Vijay's plan; the five dedup checks kept here |
 | 16 Nov | G10: `en-dclm` stays In (research line read as a disclaimer, noted for TSAI's Gate 3); FR4 waits on G10's PR merging |
 | 16 Nov | Backlog item 7 split: 7a encoder comparison on Sanskrit (BGE-M3 or e5, margin score; any time), 7b dedup side (waits on `h3.py` format and TSAI) |
+| 16 Nov | Item 5 moved after TSAI's dedup run (keeps the `6cfc24a` pin); the dedup job request on #255 is ready; 7a: BGE-M3 measured |

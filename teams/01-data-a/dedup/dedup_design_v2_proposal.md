@@ -1,8 +1,10 @@
 # Dedup v2 proposal: what v1 left open
 
-**Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them. Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
+**Lead:** Vijay Patil (Data A). **Owners:** Kunal Sinha and Aneesha Das (Data A dedup).
 
-**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
+**Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them (item 5 just after TSAI's dedup run, so the job's pin holds). Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
+
+**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work; updated 16 Nov for G10's licence rulings (all 38 packs), the BGE-M3 encoder check (H3-h, H3-i), a first containment count on the rerun (item 8) and item 5 moving after TSAI's dedup run (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
 **Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
 Every v1 number quoted here comes from TSAI's 5 Nov run or the local runs in `results_v1.md`. The 5 Nov run is superseded by the rerun on the #244 cleaning, so each number is checked again on the rerun before any item below is decided.
@@ -97,8 +99,8 @@ The points below split into what Aneesha's v1.1 design should take up before its
 | # | Question | Evidence it needs |
 |---|---|---|
 | H3-g | Is anything removed beyond rule 0, for example machine-translated copies (D4/D5)? Which copy survives? | E5d labels by pair type; a TSAI decision |
-| H3-h | Thresholds per language pair (coverage 0.6, sentence cosine 0.7, `doc_floor` 0.5 are provisional). **Measured 15 Nov** (`h3_labse_check_results_v1.md`, run steps below): at 0.7, LaBSE finds 100% of Hindi and Odia FLORES translations but only 29% of Sanskrit–English and 19% of Sanskrit–Hindi; at 0.5 Sanskrit rises to 96% / 89%, but 3 of the 7 real-page matches are not translations | E5d's sweep and hand review, per pair; a margin score or another encoder for Sanskrit |
-| H3-i | The encoder: LaBSE or an alternative, per language. **Measured 15 Nov:** Odia and Hindi fine (P@1 1.0 against English); Sanskrit found (P@1 0.95–0.98) but with low cosines (median 0.69) | The same script with `--model` for an alternative on Sanskrit |
+| H3-h | Thresholds per language pair (coverage 0.6, sentence cosine 0.7, `doc_floor` 0.5 are provisional). **Measured 15 Nov** (`h3_labse_check_results_v1.md`, run steps below): at 0.7, LaBSE finds 100% of Hindi and Odia FLORES translations but only 29% of Sanskrit–English and 19% of Sanskrit–Hindi; at 0.5 Sanskrit rises to 96% / 89%, but 3 of the 7 real-page matches are not translations. **BGE-M3, 16 Nov** (`h3_bge_m3_check_results_v1.md`): at 0.7 it finds 82% of Sanskrit–English and 95% of Sanskrit–Hindi blocks, Hindi and Odia stay at 100%, and 6 of its 8 real-page matches are translations, so one threshold fits every pair | E5d's sweep and hand review, per pair; a margin score with LaBSE |
+| H3-i | The encoder: LaBSE or an alternative, per language. **Measured 15 Nov:** Odia and Hindi fine (P@1 1.0 against English); Sanskrit found (P@1 0.95–0.98) but with low cosines (median 0.69). **BGE-M3, 16 Nov:** Sanskrit P@1 0.99, true-pair median 0.74–0.78; but unrelated text also scores higher (best wrong match median 0.57 against LaBSE's 0.41), so `doc_floor` needs retuning (about 0.6), and it is about 8 times slower on CPU (7,255 s against 863 s) | A Sanskrit reader's labels on BGE-M3's 16–27 candidates at 0.5–0.6; its cost on TSAI's GPU |
 | H3-j | Head-only retrieval (first 4 sentences, mutual top 3): does it miss pairs on sites whose pages share their opening lines? | The share of URL-found pairs that retrieval also finds (E5b) |
 | H3-k | Coverage over at most 16 sentences: is that enough for long documents? | Coverage on long known pairs |
 | H3-l | Second opinion: translate-then-embed on a sample, rather than translate-then-H2. It beat a multilingual encoder in Pasch, Petridis and Cutura (arXiv 2406.13695), 82% against 60% F1 | Agreement with sentence coverage on the E5d sample |
@@ -110,20 +112,19 @@ What was run, and how to repeat it. Scripts and README: `h3_checks/` (`build_kno
 `README_h3_checks.md`). Document text stays in a local `out/` folder outside the repo; only numbers and doc_ids are
 reported.
 
-1. **Same-page pairs from `ind-sa-fw2`** (no model needed; Kunal Sinha's machine, 7 s):
+1. **Same-page pairs from `ind-sa-fw2`** (no model needed; 7 s):
    `python build_known_pairs.py --parts <raw ind-sa-fw2 parts> --out out`. It splits each raw document (week-1 pack,
    5,963 documents) into its Sanskrit lines and the lines `DB-H3-001` calls translations. Result: 433 pairs (343 with
    an English half, 90 Hindi). Read by hand, most are not translations (a Sanskrit news story with an embedded tweet on
    the same event), so they serve as same-topic hard negatives; `DB-H3-001` cannot supply positives.
-2. **The encoder on Hugging Face models and data** (Kunal Sinha's laptop, CPU, 863 s; the sandbox cannot reach
-   Hugging Face):
-   - in a Python venv: `pip install sentence-transformers datasets pyarrow numpy`;
-   - `hf auth login` with a read token, and accept the terms once on the gated dataset page
-     `https://huggingface.co/datasets/openlanguagedata/flores_plus` (without this the script stops with
-     `DatasetNotFoundError: ... is a gated dataset`);
-   - `python labse_check.py --pairs out/known_pairs.parquet --out out/labse`. The model
-     (`sentence-transformers/LaBSE`, about 1.9 GB) downloads on first use into the Hugging Face cache; a warning about
-     symlinks on Windows is harmless.
+2. **The encoder on Hugging Face models and data** (laptop CPU, 863 s; needs internet access to Hugging Face):
+   - Prerequisites, once: in a Python venv, `pip install sentence-transformers datasets pyarrow numpy`; `hf auth login`
+     with a read token; accept the terms on the gated dataset page
+     `https://huggingface.co/datasets/openlanguagedata/flores_plus`.
+   - Run: `python labse_check.py --pairs out/known_pairs.parquet --out out/labse`. The model
+     (`sentence-transformers/LaBSE`, about 1.9 GB) downloads on first use into the Hugging Face cache.
+   - If it stops with `DatasetNotFoundError: ... is a gated dataset`, the terms were not accepted (or the token is for
+     another account). On Windows, a warning about symlinks is harmless.
    - Positives: FLORES-200 devtest, 1,012 sentences in English, Hindi, Sanskrit and Odia (an evaluation set, read to
      test the encoder and never used as training data), as sentences and as 8-sentence pseudo-documents. Negatives:
      other FLORES blocks, and the 433 same-page pairs. H3's own settings throughout (mutual best match, sentence
@@ -131,8 +132,10 @@ reported.
 3. **Result in one line:** Hindi and Odia are fine at the draft's 0.7 (100% of translated blocks qualify, 0% of other
    blocks); Sanskrit is found (P@1 0.95 to 0.98) but at 0.7 only 29% of Sanskrit-English and 19% of Sanskrit-Hindi
    blocks qualify, and at 0.5 3 of the 7 real-page matches are not translations (H3-h, H3-i).
-4. **Next run:** the same command with `--model BAAI/bge-m3` (or a multilingual-e5 model) to compare an alternative on
-   Sanskrit; a margin score in place of the plain cosine is the other option to measure.
+4. **BGE-M3, 16 Nov** (`h3_bge_m3_check_results_v1.md`): the same command with `--model BAAI/bge-m3` (7,255 s). At 0.7
+   it finds 82% of Sanskrit-English and 95% of Sanskrit-Hindi blocks (Hindi and Odia 100%, other blocks 0%); 6 of its 8
+   real-page matches are translations. Its cosines run higher for unrelated text too, and it is about 8 times slower.
+5. **Next:** a margin score in place of the plain cosine, with LaBSE (`--progress` prints stage times).
 
 ### 8. Containment for truncated copies
 
@@ -143,6 +146,18 @@ reported.
 - **A guard against short texts inside long ones.** A quote, a licence block or a boilerplate paragraph is fully contained in many long documents and is not a copy of them. The guard is a minimum length for the shorter document, plus the family's existing rules.
 
 The survivor is unchanged: rule 3 already keeps the longer copy.
+
+**First count, 16 Nov** (TSAI's rerun on the #244 cleaning, `overlap_pairs.csv`): pairs whose containment is at least 0.90 but which v1 does not match.
+
+| Family | Pairs | Shorter document about 50 words or more |
+|---|---:|---:|
+| Code | 916 | 891 |
+| Indic | 321 | 113 |
+| Math | 302 | 299 |
+| Prose | 19 | 14 |
+| Across families | 5 | 5 |
+
+At least 1,563 pairs, mostly code and math; prose hardly changes, and most short Indic pairs belong to item 3. It is a lower bound: `overlap_pairs.csv` keeps only pairs at Jaccard ≥ 0.50, so copies truncated to less than about half are not in it. None has been read yet.
 
 **Experiment.** On the rerun's outputs:
 - Count pairs at containment ≥ 0.90 that Jaccard misses, per family.
@@ -248,10 +263,11 @@ Sourav Dhar's runner (`run_pipeline.py`) runs clean → overlap → dedup → ap
 ## Order of work
 
 1. **Now, in parallel with v1:**
-   - Items 5 and 16: summaries with code SHA-256, commit and part hashes; the answers to Sourav's open items; the dedup job as a runner `run.json`.
+   - Item 16: the answers to Sourav's open items; the dedup job as a runner `run.json` if his runner still needs one.
    - H3-a to H3-f into `h3_design_v1.md` (Aneesha, #44).
    - Decisions on items 13–15, so new packs can join with a rule ready.
 2. **After TSAI's v1 dedup job:**
+   - Item 5: summaries with code SHA-256, commit and part hashes (after the job, so its `6cfc24a` pin holds).
    - Items 1–4 and 6 together in one v1.1 overlap run.
    - The containment experiment (item 8) on the same outputs.
 3. **After the v1.1 run:**
