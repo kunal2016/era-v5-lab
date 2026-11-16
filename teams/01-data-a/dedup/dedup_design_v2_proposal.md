@@ -1,5 +1,7 @@
 # Dedup v2 proposal: what v1 left open
 
+**This week's scope and status:** `dedup_v1_1_plan.md` (items 1, 2, 5, 6 and 16, with the requirements they are checked against). This file is the full backlog.
+
 **Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work (Kunal Sinha, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
 **Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
@@ -16,7 +18,7 @@ Items are split by what they need. **v1.1** items change a rule or a setting of 
 | 3 | Indic length minimum | v1.1 | The 50-word minimum rejects 135 near-identical Indic pairs (69 documents); 19.9% of Indic documents are under 50 words | E4 reader labels, overlap run |
 | 4 | Code threshold (0.85 on tokens) | v1.1 | "Under review" in v1; `code-rust` has 530 qualifying token pairs but only 3 word pairs ≥ 0.80 | Hand review of code pairs |
 | 5 | Summaries record code SHA-256, git commit and part hashes; `remove_list.csv` keeps its five columns | v1.1 | Sourav's runner adopts overlap and dedup but cannot record their code (`code_sha256` stays null); `apply_dedup.py` accepts only the exact five-column header | Code change, tests |
-| 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10 owns licences (`code-js-ts`, `ind-hi-hplt` unverified); Data B lead may reorder their packs | Their decisions; `dedup.py` rerun (seconds) |
+| 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10 now lists all 38 packs in Stage 0, `TSAI reserves` (16 Nov; PR pending); only `ind-hi-hplt`'s web terms remain for TSAI | G10's PR on `main`; `dedup.py` rerun (seconds) |
 | 7 | **H3: translations across languages** | v1.1 in `h3_design_v1.md` (Aneesha); recheck in v2.0 | Out of scope in v1 (TSAI, 5 Nov); Sanskrit packs are known to carry translations | H3-a to H3-f for v1.1; H3-g to H3-m after E5 |
 | 8 | Containment for truncated copies | v2 | E3 limit: a copy keeping 85 of 100 words is caught, 80 of 100 is missed | Experiment on the overlap outputs |
 | 9 | Indic-aware shingles | v2, only if 3 is not enough | Word 5-grams were set on English (Risk 2) | Experiment on Indic packs |
@@ -69,7 +71,7 @@ The remove list is applied by Sourav Dhar's `apply_dedup.py` (`teams/01-data-a/p
 
 ### 6. Config-only updates
 
-If G10 excludes a pack, set it to `false` in `licence_usable`. If the Data B lead asks for another order of their 25 packs, change the list in `dedup.json` and `source_priority_v1.md`. Neither needs an overlap run: rerun `dedup.py`, and its tests, on the same overlap outputs.
+G10 has added a Stage 0 row for every sample pack (16 Nov, `saitej123:g10-week3-post-training`; `en-dclm` stays In, its "research purposes only" line read as a disclaimer and noted for TSAI's Gate 3). Once that is on `main`, `dedup.json` lists all 38 packs in `licence_usable` with `default_licence_usable: false` (`licence_status_before_scale_v1.md`). If TSAI excludes a pack later, set it to `false`. If the Data B lead asks for another order of their 25 packs, change the list in `dedup.json` and `source_priority_v1.md`. Neither needs an overlap run: rerun `dedup.py`, and its tests, on the same overlap outputs.
 
 ## v2: new methods
 
@@ -241,7 +243,7 @@ Sourav Dhar's runner (`run_pipeline.py`) runs clean → overlap → dedup → ap
 6. Delete the untracked placeholders in `teams/01-data-a/dedup/` once dedup merges.
 7. Licence (`licence_status_before_scale_v1.md`): a preflight check that every pack of the manifest is listed in `licence_usable`.
 
-**What this means for H3:** H3 adds no second remove list. Under H3-b, one `dedup.py` run writes one `remove_list.csv` with the same five columns, so `apply_dedup.py` needs no change; H3 removals (rule 0 only, H3-a) are told apart in `dedup_log.jsonl`. One question for Sourav before H3 removes anything: how `dedup_groups.csv` shows an H3 edge between two H1/H2 groups, so that `survivor_loss.py` still counts groups correctly.
+**What this means for H3:** H3 adds no second remove list. Under H3-b, one `dedup.py` run writes one `remove_list.csv` with the same five columns, so `apply_dedup.py` needs no change; H3 removals (rule 0 only, H3-a) are told apart in `dedup_log.jsonl`. `dedup_groups.csv` keeps the H1/H2 groups only; a survivor removed by H3 is written as `removed`, so its group has no survivor. Checked against Sourav's `survivor_loss.py` (16 Nov): such a group is counted as `without_survivor`, as a no-licence group is, never as lost to F2, so no change is needed there. The H3 cases are told apart in `dedup_log.jsonl` (`rule: H3`) and `h3_pairs.csv`.
 
 ## Order of work
 
@@ -260,15 +262,25 @@ Sourav Dhar's runner (`run_pipeline.py`) runs clean → overlap → dedup → ap
 
 ## Questions for review
 
-- **Sourav Dhar:** how `dedup_groups.csv` should show an H3 edge between groups (item 16); whether the runner's preflight can check the licence map.
+The team reviews first; only the questions that are TSAI's go to TSAI, in one short note, after the team agrees.
 
-- **TSAI:** are found translation pairs reported only, or may train copies of held-out documents be removed (rule 0, as `h3_design_v1.md` proposes)? Should anything else be removed?
-- **TSAI:** v1.1 as one overlap run after the v1 dedup job, reported as a difference from v1. Is that acceptable?
-- **Team:** item 1 (same URL) and item 2 (math body) for v1.1, or keep v1's rules?
-- **Team:** rule 4 by measured clean share for new packs (item 13); the per-pack decisions for non-document packs (item 14).
-- **G10:** licences of the H3 model weights (LaBSE, and any alternative chosen in E5) for use in the data pipeline; Aksharantar, MADLAD-400 and BPCC's mined part (item 15).
-- **Data B (G2):** clean-share measurements for each new pack (item 13). G2 has no H3 work (15 Nov), so readers for Sanskrit–Hindi and Sanskrit–English pairs have to be found elsewhere.
-- **TSAI:** keep or remove translations at all, before `h3.py` is rebuilt for the GPU (H3-f). If G2's 0% translated text holds at Gate 3, H3's machine-translation case (H3-g) mostly disappears.
+**For the team** (Vijay Patil approves as lead):
+- Items 1 (same URL) and 2 (math body) for v1.1: turn their switches on for the overlap rerun, or keep v1's rules?
+- The two-week scope in `dedup_v1_1_plan.md`.
+- Items 13 and 14 (rule 4 by measured clean share; non-document packs), when #461's packs are about to join.
+
+**For TSAI** (after the team agrees):
+- H3 (H3-f): report-only, or may train translations of held-out documents be removed (rule 0, as `h3_design_v1.md` proposes)? Anything else? Asked before `h3.py` is rebuilt for the GPU. If G2's 0% translated text holds at Gate 3, H3's machine-translation case (H3-g) mostly disappears.
+- The overlap rerun carries items 1 and 2 if the team turns them on, and v1.1's effect is reported as a difference from v1. Acceptable?
+- Later, only when #461's packs join: rule 4 by measured clean share (item 13), since TSAI approved v1's pack order.
+
+**For other teams:**
+- Aneesha Das: `h3_matches.csv` keyed by document (H3-c).
+- Sourav Dhar: whether the runner's preflight can check the licence map (item 16).
+- G10: licences of the H3 model weights (LaBSE, and any alternative chosen in E5); Aksharantar, MADLAD-400 and BPCC's mined part (item 15).
+- Data B (G2): clean-share measurements for each new pack (item 13). G2 has no H3 work (15 Nov), so readers for Sanskrit–Hindi and Sanskrit–English pairs have to be found elsewhere.
+
+**Settled:** licence decisions for all 38 sample packs (G10, 16 Nov); how `survivor_loss.py` counts H3-emptied groups (checked, item 16).
 
 ## References
 
