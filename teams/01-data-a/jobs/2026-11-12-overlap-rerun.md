@@ -1,5 +1,11 @@
 # Overlap rerun on the #244 cleaning of sample v0 — Thursday 12 November 2026
 
+**Done, 15 Nov 2026.** TSAI ran this job (4,591 s, 77 min); results in PR #469
+(`jobs/results/2026-11-12-overlap-rerun/`); the three large files came by TSAI's links on 16 Nov. After the results
+returned: step 1 done (matrix confirmed, 20/20 and 23/23 checks; `dedup/overlap_matrix.csv` replaced; see
+`dedup/matrix_confirmation.md`); step 2 done (`logs/2026-11-16-dedup-local.txt`, counts in `2026-11-14-dedup.md`);
+steps 3 and 4 to follow.
+
 **Updated 13 Nov 2026.** The code pin, scoring-file audit, input provenance and fresh local log are filled in.
 Vijay Patil (`patilvijay23`) [approved the overlap rerun only](https://github.com/theschoolofai/era-v5-lab/pull/255#issuecomment-6871794399).
 Dedup approval remains dependent on the returned overlap results and local validation. The speed work in

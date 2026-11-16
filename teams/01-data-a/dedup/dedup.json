@@ -1,5 +1,5 @@
 {
-  "_comment": "Dedup v1 on the returned 38-pack overlap run (TSAI, 5 Nov 2026). Paths relative to the repository root. pack_order is source_priority_v1.md rule 4. licence_usable is still to be filled from G10's licence table; until then every pack uses default_licence_usable.",
+  "_comment": "Dedup v1 on the returned 38-pack overlap rerun on the #244 cleaning (TSAI, 15 Nov 2026; jobs/2026-11-12-overlap-rerun.md). Paths relative to the repository root. pack_order is source_priority_v1.md rule 4. licence_usable is still to be filled from G10's licence table; until then every pack uses default_licence_usable.",
   "results": "out/overlap",
   "inputs": "out/tokenizer_sample_v0_clean",
   "out": "out/dedup",
