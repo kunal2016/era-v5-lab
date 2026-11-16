@@ -18,15 +18,15 @@ Items are split by what they need. **v1.1** items change a rule or a setting of 
 | 5 | Summaries record code SHA-256, git commit and part hashes; `remove_list.csv` keeps its five columns | v1.1 | Sourav's runner adopts overlap and dedup but cannot record their code (`code_sha256` stays null); `apply_dedup.py` accepts only the exact five-column header | Code change, tests |
 | 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10 owns licences (`code-js-ts`, `ind-hi-hplt` unverified); Data B lead may reorder their packs | Their decisions; `dedup.py` rerun (seconds) |
 | 7 | **H3: translations across languages** | v1.1 in `h3_design_v1.md` (Aneesha); recheck in v2.0 | Out of scope in v1 (TSAI, 5 Nov); Sanskrit packs are known to carry translations | H3-a to H3-f for v1.1; H3-g to H3-m after E5 |
-| 13 | **Pack order for new packs:** a rule, not a hand-made list | Before any new pack joins | v1 ranks only the 38 sample packs; #461 proposes 15 new sources | Team decision; Data B's clean shares |
-| 14 | **Packs that are not documents** (word pairs, lexicons, single sentences, speech transcripts) | Before those packs join | #461: Aksharantar, Dakshina, BPCC, Shrutilipi, IndicVoices | A decision per pack |
-| 15 | **Licence map for the new sources** | Before those packs join | #461: card text and tag disagree for Aksharantar and MADLAD-400; BPCC's mined part repackages NC data | G10's rulings |
-| 16 | **Pipeline contract** with Sourav's runner: remove-list checks, summaries, the dedup job as a `run.json` | Now, for every release | `apply_dedup.py` stops on a list that breaks its checks; `pipeline/open-items.md` lists 7 dedup items | Code and docs; answers to Sourav |
 | 8 | Containment for truncated copies | v2 | E3 limit: a copy keeping 85 of 100 words is caught, 80 of 100 is missed | Experiment on the overlap outputs |
 | 9 | Indic-aware shingles | v2, only if 3 is not enough | Word 5-grams were set on English (Risk 2) | Experiment on Indic packs |
 | 10 | Survivor rule: the copy cleaning changed least | v2 | Dropped from v1: no per-document record of fixes | Experiment on the rerun's groups |
 | 11 | Scale to the full data: MinHash + LSH agreement test | v2, sooner if #461's sources join | Exact all-pairs took 56 min on 1.4 M documents; the full data is larger, and #461 adds more Common Crawl | Agreement test on the sample |
 | 12 | Training ablation of the cross-pack pass | v2, conditional; likely triggered by #461 | Only worth running where cross-pack removes ≥ 1% of a pack; on the sample none does, but MADLAD-400, IndicCorp and Sangraha unverified overlap fw2 | Counts with the new packs |
+| 13 | **Pack order for new packs:** a rule, not a hand-made list | Before any new pack joins | v1 ranks only the 38 sample packs; #461 proposes 15 new sources | Team decision; Data B's clean shares |
+| 14 | **Packs that are not documents** (word pairs, lexicons, single sentences, speech transcripts) | Before those packs join | #461: Aksharantar, Dakshina, BPCC, Shrutilipi, IndicVoices | A decision per pack |
+| 15 | **Licence map for the new sources** | Before those packs join | #461: card text and tag disagree for Aksharantar and MADLAD-400; BPCC's mined part repackages NC data | G10's rulings |
+| 16 | **Pipeline contract** with Sourav's runner: remove-list checks, summaries, the dedup job as a `run.json` | Now, for every release | `apply_dedup.py` stops on a list that breaks its checks; `pipeline/open-items.md` lists 7 dedup items | Code and docs; answers to Sourav |
 
 **Not dedup, handed on:**
 - Empty documents (7 in v1) are a spec v1.1 cleaning rule.
