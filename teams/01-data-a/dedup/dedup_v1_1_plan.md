@@ -1,6 +1,6 @@
 # Dedup plan for Weeks 3 and 4 (15–28 Nov 2026): v1 at scale, then the data card
 
-**Owners:** Kunal Sinha and Aneesha Das (Data A dedup). **Status:** in progress; updated at most once a day, when a row changes.
+**Lead:** Vijay Patil (Data A). **Owners:** Kunal Sinha and Aneesha Das (Data A dedup). **Status:** in progress; updated at most once a day, when a row changes.
 **Follows the lab schedule:** Week 3 (15–21 Nov) is cleaning, dedup, decontamination and tokenizing at scale, with
 Gate 3 on Sat 21 Nov (the first training shards pass the audit and match their manifests). Week 4 (22–28 Nov) is the
 training-week shards, dry run 2 (24 Nov), `data_card_v1.md` and TSAI's data go or no-go on Sat 28 Nov.
@@ -47,7 +47,8 @@ Week 3 because the run at scale needs them. The rest start after launch, in this
 | 1, 2 | Same-URL rule; math numbers on the body (behind switches, off = v1) | The first overlap rerun after launch |
 | 4 | Code threshold hand review | The run's pairs |
 | 3, 9 | Indic length minimum; Indic shingles if needed | E4 readers' labels |
-| 7 | H3 (dedup side drafted on `g1-dedup-h3`; BGE-M3 run on Sanskrit) | Aneesha's `h3.py` format; TSAI's ruling |
+| 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed | Nothing; can run any time, and is evidence for TSAI's ruling |
+| 7b | H3 dedup side (drafted on `g1-dedup-h3`) | Aneesha's `h3.py` format; TSAI's ruling |
 | 8, 10, 11 | Containment; "changed least" survivor rule; MinHash + LSH test | The run's outputs; full-data size |
 | 12 | Training ablation of the cross-pack pass | A pack's cross-pack removals reaching 1% |
 | 13, 14, 15 | New sources from #461: pack order, non-document packs, licences | #461's packs joining; G10 |
@@ -96,6 +97,7 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | Date | Change |
 |---|---|
 | 16 Nov | Plan written; then aligned to the lab schedule (Weeks 3 and 4): v1 frozen for the run at scale, v2 work after launch |
-| 16 Nov | Aneesha Das added as co-owner |
+| 16 Nov | Aneesha Das added as co-owner; Vijay Patil named as lead |
 | 16 Nov | General Week 3 audit left to Vijay's plan; the five dedup checks kept here |
 | 16 Nov | G10: `en-dclm` stays In (research line read as a disclaimer, noted for TSAI's Gate 3); FR4 waits on G10's PR merging |
+| 16 Nov | Backlog item 7 split: 7a encoder comparison on Sanskrit (BGE-M3 or e5, margin score; any time), 7b dedup side (waits on `h3.py` format and TSAI) |
