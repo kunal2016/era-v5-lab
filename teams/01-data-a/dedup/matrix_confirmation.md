@@ -17,9 +17,12 @@ This replaces the confirmation of the 5 Nov run (`jobs/2026-11-04-overlap.md`), 
 - **One caveat for the reviewed matrix:** 8 cells (code-cpp, code-java, code-js-ts) are inflated by the 7 documents
   that are empty after normalisation and therefore match each other. The cells are correct for what `overlap.py`
   measures, but these are not real duplicates (see "The empty-document group").
-- **Not yet checked:** the map against `overlap_docs.parquet` (`--docs`), the job request's own command
-  (`overlap_report.py --results`), and the SHA-256 of `overlap_docs.parquet`, `overlap_pairs.csv` and
-  `overlap_matrix.npz`. TSAI did not put these three files in #469 (see "Open").
+- **Checked on 16 Nov (Kunal Sinha), after TSAI sent the three large files by link:** with
+  `--docs out/overlap_rerun/overlap_docs.parquet`, **23 of 23 checks passed** (the map read from the parquet: 1,414,996
+  rows, 2,750 matches on 2,436 distinct rows, 0 pack mismatches; rebuilt matrices byte-identical); the job request's
+  own command, `overlap_report.py --results out/overlap_rerun`, wrote both matrix files byte-identical to the returned
+  ones; and all 9 outputs, including `overlap_docs.parquet`, `overlap_pairs.csv` and `overlap_matrix.npz`, equal the
+  SHA-256 and size in the summary. Run with this commit's `confirm_matrix.py` and `overlap_report.py`.
 
 ## What the matrix is
 
@@ -41,9 +44,9 @@ The returned files of #469 (head commit `064e054b`), in `out/overlap_rerun/` (gi
 | `overlap_by_pack.csv` | 238,211 | `2deea68e96e505b6d260ac542720ba33dad5201bf6d8e1ed9692f442e6fb786b` | yes |
 | `overlap_histogram.csv` | 1,692 | `5abf12186bcf9223ec5bf813c3e9d95011793fcdda0ca2b1ab0a648b8a9e05c4` | yes |
 | `overlap_summary.json` | 272,952 | `37e7b26ef471f8400243b0f69b9b4eaab3515fd4b51a32f2cb156037a14c41d9` | not recorded by the run |
-| `overlap_docs.parquet` | 34,015,494 (in the summary) | not returned | — |
-| `overlap_pairs.csv` | 6,643,296 (in the summary) | not returned | — |
-| `overlap_matrix.npz` | 4,400,672 (in the summary) | not returned | — |
+| `overlap_docs.parquet` | 34,015,494 | `4f61c80a23a9e49b4b12b2d6aaff639771d70fc2dd130f0a73d99a8449992e30` | yes (by TSAI's link, 16 Nov) |
+| `overlap_pairs.csv` | 6,643,296 | `de7dd2d3c056909cc1bba12ef7353a22a783d921b9ee20cdc57bc56883f828e4` | yes (by TSAI's link, 16 Nov) |
+| `overlap_matrix.npz` | 4,400,672 | `74f6cb30ae07eac5cb165bd9e80b2ff5175ad0954d86ae1be3a7af80e14930a5` | yes (by TSAI's link, 16 Nov) |
 
 ## Steps
 
@@ -302,14 +305,20 @@ Each test then changes one thing and checks that the script reacts correctly.
 
 ## Open
 
-1. **With `overlap_docs.parquet` and `overlap_pairs.csv` from TSAI**, placed in `out/overlap_rerun/`:
-   ```sh
-   python3 teams/01-data-a/dedup/confirm_matrix.py --results out/overlap_rerun --docs out/overlap_rerun/overlap_docs.parquet --out out/matrix_confirmation_rerun_docs
-   python3 teams/01-data-a/dedup/overlap_report.py --results out/overlap_rerun --out out/overlap_returned_rerun
-   cmp out/overlap_returned_rerun/overlap_matrix.csv out/overlap_rerun/overlap_matrix.csv
-   cmp out/overlap_returned_rerun/overlap_matrix_counts.csv out/overlap_rerun/overlap_matrix_counts.csv
-   ```
-   and record the 7 empty documents' `doc_id`, part and row in part.
+1. **Done 16 Nov:** the `--docs` check and `overlap_report.py --results` (see "Result"). The 7 empty documents
+   (from `empty_documents.csv` of the local dedup run, `jobs/logs/2026-11-16-dedup-local.txt`), all train:
+
+   | Pack | Part | Row in part | `doc_id` |
+   |---|---|---:|---|
+   | `code-cpp` | `code-cpp/part-00001.parquet` | 1499 | `79fa36f8339f9ebd` |
+   | `code-java` | `code-java/part-00000.parquet` | 42665 | `d5d0b4192775579c` |
+   | `code-java` | `code-java/part-00000.parquet` | 45786 | `4a67489226159c57` |
+   | `code-java` | `code-java/part-00001.parquet` | 5993 | `8a07c8e5f95eee27` |
+   | `code-java` | `code-java/part-00001.parquet` | 21846 | `91f4b8de1c11bf4b` |
+   | `code-js-ts` | `code-js-ts/part-00000.parquet` | 12129 | `a2ffa5d828d9e9ab` |
+   | `code-js-ts` | `code-js-ts/part-00000.parquet` | 56860 | `fff1410ec5527f29` |
+
+   The same 7 `doc_id`s as on 5 Nov.
 2. **Which cleaning rule emptied the 7 documents** is not yet recorded. They pass `clean.py`'s empty-output check
    (`out.strip()`) but have no words after normalisation. Dropping them is a cleaning change for spec v1.1.
 
