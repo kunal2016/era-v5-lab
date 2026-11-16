@@ -15,8 +15,19 @@ training starts; nothing in it changes this run.
 | Tue 17 | **Item 16:** answers to Sourav's 7 open items; the dedup job as a runner `run.json` (adopt the cleaning job's folder, `to: dedup`) | `run_pipeline.py --plan` passes on it |
 | When G10's PR merges | **Item 6:** all 38 packs in `dedup.json` (`licence_usable`, `default_licence_usable: false`) | `licence_default_used_for` is empty in the summary |
 | After the overlap rerun | **The dedup v1 job at scale**, through the runner (overlap → dedup → apply → F2 → survivor loss) | Lead approval; TSAI's run completes |
-| Each day of the run | **Dedup audit:** `heldout_removed` = 0; harm check `pass`; `apply_dedup_summary.json` removed = `remove_list.csv` rows; `survivor_loss` counts; removals per pack against the 5 Nov run | One line per check in the daily audit pack; any problem filed as an issue |
-| Each day (team) | **The schedule's audit duties:** daily audit packs; read 100 cleaned documents per source; compare text before and after cleaning; decode 20 documents per shard and check its manifest | Shared out by Vijay |
+| When the run's outputs are back | **Dedup audit** (checks on dedup's own numbers; no document reading): see below | Five lines in Vijay's daily audit pack; any failure filed as an issue |
+
+**The dedup audit.** The schedule's general Week 3 audit (reading cleaned documents, comparing before and after
+cleaning, decoding shards) is the whole team's, planned by Vijay Patil, and is not repeated here. These five checks are
+dedup's own:
+
+| Check | What it means | Where | Pass |
+|---|---|---|---|
+| No held-out removed | Dedup never deletes a held-out document (G3 uses them) | `heldout_removed`, `dedup_summary.json` | 0 |
+| Harm check | No gold (reviewed clean) document is removed | `harm_check.status`, `dedup_summary.json` | `pass` |
+| Apply matches the list | `apply_dedup.py` removed exactly the listed rows | `removed` in `apply_dedup_summary.json` vs rows of `remove_list.csv` | Equal |
+| Survivor loss | Groups whose kept copy F2 then removed (accepted by TSAI, 12 Nov) | `survivor_loss_summary.json` | Counted and listed |
+| Removals per pack | Each pack's removals against the 5 Nov run; a jump points to a problem | `by_pack`, `dedup_summary.json`, vs `results_v1.md` | Close to 5 Nov (about 0.1% overall) |
 
 ## Week 4 (22–28 Nov): shards and the data card · Gate 4, Sat 28 Nov
 
@@ -79,11 +90,11 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | Overlap rerun on the #244 cleaning | TSAI (after lead approval) | The dedup job at scale |
 | G10's licence table on `main` | Sai Teja (G10) | FR4, item 6 |
 | Answers on item 16 | Sourav Dhar, Vijay Patil | Tue's `run.json` |
-| Audit duties shared out | Vijay Patil (lead) | Week 3's daily audit packs |
 
 ## Log
 
 | Date | Change |
 |---|---|
 | 16 Nov | Plan written; then aligned to the lab schedule (Weeks 3 and 4): v1 frozen for the run at scale, v2 work after launch |
+| 16 Nov | General Week 3 audit left to Vijay's plan; the five dedup checks kept here |
 | 16 Nov | G10: `en-dclm` stays In (research line read as a disclaimer, noted for TSAI's Gate 3); FR4 waits on G10's PR merging |
