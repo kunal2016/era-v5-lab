@@ -70,12 +70,15 @@ L = 0 (the empty string) has `high == low == 0` by definition; no token in the v
 | 31 | 66 | 16.25 | `0x4182` | -0.061523438 | `0xbd7c` | no |
 | 32 | 10 | 15.9375 | `0x417f` | -0.0625 | `0xbd80` | no |
 
-Values are the upstream float32 codec output cast to bf16. For 32 of 33 lengths they equal the float64 closed form (`ke2.codec.code_values`) rounded to bf16.
+Values are the upstream float32 codec output cast to bf16. For 32 of 33 lengths they equal the float64 closed form (`ke2.codec.code_values`) rounded to bf16. The exceptions are L = 0 (0 tokens). At L = 0 the codec gives +0 where the closed form gives -0 for `low`, the same value with a different sign bit. No token has any of these lengths, so every token's bf16 row is the closed form rounded to bf16.
 
 ## Reproduce
 
+The raw table is not committed (lab rule, 15 Nov: script, config and SHA-256 only). Rebuild it locally with `--write-raw-table` and check it with `verify_c3s0_table.py`; TSAI rebuilds it on request.
+
 ```bash
 export KE2_C3S0_TOKENIZER=/path/to/c3-sample-v0/tokenizer.json
-python teams/04-ke2/src/build_bf16_codes.py --pos-dim 32     # add --materialize for the 2 GiB matrix
+python teams/04-ke2/src/build_bf16_codes.py --pos-dim 32 --write-raw-table   # add --materialize for the 2 GiB matrix
 python teams/04-ke2/src/check_bf16_collisions.py --pos-dim 32
+python teams/04-ke2/src/verify_c3s0_table.py teams/04-ke2/results/bf16/materialized/raw_table_P32.npz
 ```

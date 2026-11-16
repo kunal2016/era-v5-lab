@@ -35,6 +35,7 @@ src/
   run_experiment.py       every step for P = 32 and 64 -> results/, experiment.md
   build_bf16_codes.py     raw table -> compact bf16 codes (+ optional 2 GiB matrix), bound to C3-s0 -> results/bf16/
   check_bf16_collisions.py  bf16 collision checks A/B/C, row hashes, special tokens -> results/bf16/bf16_collisions_P32.*
+  verify_c3s0_table.py    checks a locally rebuilt C3-s0 raw table against the hash recorded in results/bf16/ (no tokenizer needed)
   proofs/                 forward.py (proof helpers), proof_checks.py (real tokenizer)
   margins/                pair_margins.py (exact margins), dense_check.py (fp32/bf16 scorer), build_min_margin.py (table + CLI),
                           tau_sweep.py (acceptance threshold sweep; min_margin.md)
@@ -57,9 +58,16 @@ export KE2_TOKENIZER=/path/to/BrahmicTokenizer-131K   # folder with tokenizer.js
 .venv/bin/python teams/04-ke2/src/run_experiment.py     # about 10 minutes; rewrites results/ and experiment.md
 .venv/bin/python teams/04-ke2/src/margins/build_min_margin.py   # about 11 minutes; rewrites results/min_margin/
 export KE2_C3S0_TOKENIZER=/path/to/c3-sample-v0/tokenizer.json   # frozen C3-s0 (15468e66…2ddc3)
-.venv/bin/python teams/04-ke2/src/build_bf16_codes.py [--materialize]   # seconds; rewrites results/bf16/bf16_codes_P32.*
+.venv/bin/python teams/04-ke2/src/build_bf16_codes.py [--materialize] [--write-raw-table]   # rewrites results/bf16/bf16_codes_P32.*
 .venv/bin/python teams/04-ke2/src/check_bf16_collisions.py              # rewrites results/bf16/bf16_collisions_P32.*
+.venv/bin/python teams/04-ke2/src/verify_c3s0_table.py teams/04-ke2/results/bf16/materialized/raw_table_P32.npz
 ```
+
+The C3-s0 raw table is not committed (lab rule, 15 Nov: commit the build script, the config and the SHA-256 of
+the table, not the table). A trainer or loader that needs the file rebuilds it locally with `--write-raw-table`
+(or `build_tables.py --tokenizer <C3-s0 tokenizer.json> --pos-dims 32 --out <dir>`) and runs `verify_c3s0_table.py`
+on it: `OK` means the file is byte for byte the table recorded in `results/bf16/bf16_codes_P32.json`
+(`raw_table.sha256`). TSAI rebuilds it on request or through a job request.
 
 The tokenizer is never committed and never downloaded implicitly. Without `KE2_TOKENIZER` it is
 looked up in the Hugging Face cache at the pinned revision (`src/ke2/config.py`), and every

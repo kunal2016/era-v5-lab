@@ -261,22 +261,49 @@ def markdown(r: dict) -> str:
             f"| {t['L']} | {t['n_tokens']:,} | {t['high_bf16']:.6g} | `{t['high_bits']}` | {t['low_bf16']:.8g} | "
             f"`{t['low_bits']}` | {'yes' if t['high_equals_low'] else 'no'} |"
         )
-    n_match = sum(t["f64_rounded_matches"] for t in r["per_length"])
+    out += ["", closed_form_sentence(r["per_length"], P)]
     out += [
-        "",
-        f"Values are the upstream float32 codec output cast to bf16. For {n_match} of {P + 1} lengths they equal "
-        "the float64 closed form (`ke2.codec.code_values`) rounded to bf16.",
         "",
         "## Reproduce",
         "",
+        "The raw table is not committed (lab rule, 15 Nov: script, config and SHA-256 only). Rebuild it locally with "
+        "`--write-raw-table` and check it with `verify_c3s0_table.py`; TSAI rebuilds it on request.",
+        "",
         "```bash",
         "export KE2_C3S0_TOKENIZER=/path/to/c3-sample-v0/tokenizer.json",
-        f"python teams/04-ke2/src/build_bf16_codes.py --pos-dim {P}     # add --materialize for the 2 GiB matrix",
+        f"python teams/04-ke2/src/build_bf16_codes.py --pos-dim {P} --write-raw-table   "
+        "# add --materialize for the 2 GiB matrix",
         f"python teams/04-ke2/src/check_bf16_collisions.py --pos-dim {P}",
+        f"python teams/04-ke2/src/verify_c3s0_table.py teams/04-ke2/results/bf16/materialized/raw_table_P{P}.npz",
         "```",
         "",
     ]
     return "\n".join(out)
+
+
+def closed_form_sentence(per_length: list[dict], P: int) -> str:
+    """Say exactly which lengths differ from the float64 closed form rounded to bf16, and whether any token has them."""
+    n_match = sum(t["f64_rounded_matches"] for t in per_length)
+    off = [t for t in per_length if not t["f64_rounded_matches"]]
+    text = (
+        f"Values are the upstream float32 codec output cast to bf16. For {n_match} of {P + 1} lengths they equal "
+        "the float64 closed form (`ke2.codec.code_values`) rounded to bf16."
+    )
+    if not off:
+        return text
+    where = ", ".join(f"L = {t['L']} ({t['n_tokens']:,} tokens)" for t in off)
+    used = [t for t in off if t["n_tokens"]]
+    tail = (
+        " No token has any of these lengths, so every token's bf16 row is the closed form rounded to bf16."
+        if not used
+        else f" {sum(t['n_tokens'] for t in used):,} tokens have one of these lengths."
+    )
+    zero_note = (
+        " At L = 0 the codec gives +0 where the closed form gives -0 for `low`, the same value with a different sign bit."
+        if any(t["L"] == 0 for t in off)
+        else ""
+    )
+    return f"{text} The exceptions are {where}.{zero_note}{tail}"
 
 
 def main(argv: Sequence[str] | None = None) -> int:

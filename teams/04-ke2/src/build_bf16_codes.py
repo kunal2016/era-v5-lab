@@ -13,9 +13,16 @@ Outputs (default ``teams/04-ke2/results/bf16/``):
   materialized/bf16_matrix_P{P}.npy   with ``--materialize`` only: the ``(V, D)`` matrix as uint16 bf16
                          bits (2 GiB at P = 32; git-ignored). Load with
                          ``torch.from_numpy(np.load(path)).view(torch.bfloat16)``.
+  materialized/raw_table_P{P}.npz     with ``--write-raw-table`` only: the C3-s0 raw byte table in Team 4
+                         format v2, for a local trainer or loader (git-ignored). Check it with
+                         ``verify_c3s0_table.py``: it must hash to ``raw_table.sha256`` in the config.
+
+The raw table itself is not committed (lab rule, 15 Nov: commit the build script, the config and the
+SHA-256 of the table, not the table). A team that needs the file rebuilds it with ``--write-raw-table``
+and verifies it; TSAI rebuilds it on request.
 
 Usage:
-  python build_bf16_codes.py [--tokenizer PATH] [--pos-dim 32] [--out DIR] [--materialize]
+  python build_bf16_codes.py [--tokenizer PATH] [--pos-dim 32] [--out DIR] [--materialize] [--write-raw-table]
 
 ``--tokenizer`` defaults to ``$KE2_C3S0_TOKENIZER``. Takes about two minutes at P = 32 on an M1.
 """
@@ -65,6 +72,10 @@ def config_path(out_dir: Path, pos_dim: int) -> Path:
 
 def matrix_path(out_dir: Path, pos_dim: int) -> Path:
     return Path(out_dir) / "materialized" / f"bf16_matrix_P{pos_dim}.npy"
+
+
+def raw_table_path(out_dir: Path, pos_dim: int) -> Path:
+    return Path(out_dir) / "materialized" / f"raw_table_P{pos_dim}.npz"
 
 
 def tokenizer_arg(arg: str | None) -> str:
@@ -118,7 +129,10 @@ def config_dict(tb: TokenizerBundle, table: ByteTable, codes: Bf16Codes, npz_nam
             "n_truncated": table.n_truncated,
             "n_empty_rows": table.n_empty_rows,
             "sha256": table.sha256(),
-            "rebuild": "ke2.tables.build_raw_table(tokenizer, P); not committed",
+            "committed": False,
+            "rebuild": f"python teams/04-ke2/src/build_bf16_codes.py --write-raw-table -> materialized/raw_table_P{P}.npz "
+            "(git-ignored); then python teams/04-ke2/src/verify_c3s0_table.py <path>. Lab rule 15 Nov: commit the "
+            "script, the config and the sha256, not the table; TSAI rebuilds on request.",
         },
         "codec": {
             "char_dim": codes.char_dim,
@@ -156,6 +170,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--pos-dim", type=int, default=BF16_POS_DIM)
     ap.add_argument("--out", type=Path, default=BF16_DIR)
     ap.add_argument("--materialize", action="store_true", help="also write the (V, D) bf16 matrix as .npy")
+    ap.add_argument(
+        "--write-raw-table",
+        action="store_true",
+        help="also write the C3-s0 raw byte table (format v2) under materialized/, for a local loader; not committed",
+    )
     ap.add_argument("--chunk-rows", type=int, default=1024)
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -177,6 +196,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     log.info("row-hashes sha256  %s", codes.row_hashes_sha256)
     if mpath is not None:
         log.info("materialized       %s", mpath)
+    if a.write_raw_table:
+        rpath = raw_table_path(a.out, a.pos_dim)
+        table.save(rpath)
+        log.info("raw table          %s (sha256 %s; not committed)", rpath, table.sha256())
     log.info("wrote %s and %s in %.0f s", npz, config_path(a.out, a.pos_dim), time.perf_counter() - t0)
     return 0
 

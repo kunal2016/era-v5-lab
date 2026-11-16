@@ -10,20 +10,23 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+
 from build_bf16_codes import build, codes_path, config_path
 from check_bf16_collisions import (
     check_a_identical_bytes,
     check_b_high_equals_low,
     check_c_length_pairs,
+    closed_form_sentence,
     markdown,
     row_hash_check,
     run,
 )
-
 from ke2.bf16_codes import Bf16Codes, codec_bf16_bits, compact_from_codec, expand, stream_rows
 from ke2.config import BF16_DIR, BF16_POS_DIM, C3S0_TOKENIZER_ENV, C3S0_TOKENIZER_SHA256, EOS_ID, EOS_TOKEN
 from ke2.tables import TableContractError
 from ke2.tokenizer import load_tokenizer
+from verify_c3s0_table import main as verify_main
+from verify_c3s0_table import verify
 
 # Aliases: pr-guard's email check misreads dotted pytest decorators as addresses.
 fixture = pytest.fixture
@@ -104,6 +107,25 @@ def test_results_markdown_is_current_and_quotable():
     assert r["hashes"]["matrix_sha256"] in md
 
 
+def test_only_the_empty_string_differs_from_the_closed_form():
+    """The one length whose bf16 value is not the closed form rounded is L = 0 (sign of zero); no token has it."""
+    r = results()
+    off = [t for t in r["per_length"] if not t["f64_rounded_matches"]]
+    assert [t["L"] for t in off] == [0] and off[0]["n_tokens"] == 0
+    sentence = closed_form_sentence(r["per_length"], P)
+    assert "L = 0 (0 tokens)" in sentence and "No token has any of these lengths" in sentence
+    assert closed_form_sentence([dict(t, f64_rounded_matches=True) for t in r["per_length"]], P).endswith("to bf16.")
+
+
+def test_raw_table_is_not_committed_but_its_hash_is():
+    """Lab rule (15 Nov): the script, the config and the sha256 are committed, not the table."""
+    cfg = config()
+    assert cfg["raw_table"]["committed"] is False
+    assert "verify_c3s0_table.py" in cfg["raw_table"]["rebuild"]
+    assert not (BF16_DIR / "materialized").exists() or not any((BF16_DIR / "materialized").glob("raw_table_*.npz"))
+    assert len(cfg["raw_table"]["sha256"]) == 64 and cfg["raw_table"]["sha256"] == committed().raw_table_sha256
+
+
 # --- the checks detect what they claim to ---------------------------------------------------------
 
 
@@ -147,6 +169,38 @@ def test_codes_refuse_another_raw_table(make_byte_table):
     c = _codes_for(t, *compact_from_codec(P))
     with pytest.raises(TableContractError):
         stream_rows(c, make_byte_table([b"a", b"c"], P))
+
+
+def test_verify_accepts_the_recorded_table_and_refuses_others(make_byte_table, tmp_path, capsys):
+    """verify_c3s0_table: a locally rebuilt table passes only if it hashes to the codes' raw_table_sha256."""
+    sha = "a" * 64
+    good = make_byte_table([b"a", b"bc"], P)
+    good.tokenizer_sha256 = sha
+    codes = _codes_for(good, *compact_from_codec(P))
+    codes_file = tmp_path / f"bf16_codes_P{P}.npz"
+    codes.save(codes_file)
+    good_path = tmp_path / "good.npz"
+    good.save(good_path)
+    r = verify(good_path, codes_file, tokenizer_sha256=sha)
+    assert r["raw_table_sha256"] == good.sha256() == codes.raw_table_sha256
+
+    other = make_byte_table([b"a", b"bd"], P)  # same tokenizer sha, different bytes
+    other.tokenizer_sha256 = sha
+    other_path = tmp_path / "other.npz"
+    other.save(other_path)
+    with pytest.raises(TableContractError):
+        verify(other_path, codes_file, tokenizer_sha256=sha)
+
+    foreign = make_byte_table([b"a", b"bc"], P)  # same bytes, another tokenizer
+    foreign.tokenizer_sha256 = "b" * 64
+    foreign_path = tmp_path / "foreign.npz"
+    foreign.save(foreign_path)
+    with pytest.raises(TableContractError):
+        verify(foreign_path, codes_file, tokenizer_sha256=sha)
+
+    # the CLI against the committed codes: a toy table is refused with exit status 1
+    assert verify_main([str(good_path)]) == 1
+    assert "FAIL" in capsys.readouterr().err
 
 
 # --- full rebuild from the C3-s0 tokenizer ---------------------------------------------------------

@@ -21,7 +21,8 @@
     "n_truncated": 0,
     "n_empty_rows": 0,
     "sha256": "fc5e5f8ffacbe93ecdedc276661edfd43ed9a13621eb4a68166ef80e24e88f9b",
-    "rebuild": "ke2.tables.build_raw_table(tokenizer, P); not committed"
+    "committed": false,
+    "rebuild": "python teams/04-ke2/src/build_bf16_codes.py --write-raw-table -> materialized/raw_table_P32.npz (git-ignored); then python teams/04-ke2/src/verify_c3s0_table.py <path>. Lab rule 15 Nov: commit the script, the config and the sha256, not the table; TSAI rebuilds on request."
   },
   "codec": {
     "char_dim": 256,
