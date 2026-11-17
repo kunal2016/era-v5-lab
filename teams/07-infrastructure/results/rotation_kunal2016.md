@@ -4,8 +4,8 @@
 **Setup:** exp2_muon at T2 size, muon_lr 0.01, seed 1234, tokenizer p1536 (sha256 `e6b93a93...a64b`), TSAI text bundle, 1 GPU, bf16, one process
 **Run by:** TSAI. Result posted as a comment on PR #475 (16 Nov 2026)
 **Logs read:** TSAI's result comment on PR #475. The per-step logs (`metrics.jsonl`, `losses.txt`) are **not yet returned to the repo** (checked on main at `6614178`, 17 Nov).
-**Steps assigned:** 611 to 915 (R1 is an offline review split by step range; acting lead, G7 chat, 17 Nov).
-**If the per-step logs are not returned by Wed 18 Nov EOD**, R1 stays as written here, from TSAI's summary, and says so (acting lead's rule). This PR is not held for them.
+**Steps assigned:** 611 to 915. R1 is an offline review of the logs, split by step range.
+**If the per-step logs are not returned by Wed 18 Nov EOD**, R1 stays as written here, from TSAI's summary.
 
 ---
 
@@ -51,7 +51,7 @@ No restarts in the run. The trainer ran as one process. It was not run under `ck
 save during the run (job request, open item 3), so a crash would have lost the whole run rather than restarting.
 
 The only restart this week is the restore drill (core task 5, PR #491). It is being rewritten for the
-finished run (G7 chat, 16 Nov, acting lead and task 5 owner):
+finished run (plan in PR #491):
 - **(A)** restore the saved final checkpoint with a fresh `--out`. Pass: identity check passes, step 1,221,
   `final_model_sha256` and `losses.txt` bit-equal to #475.
 - **(B)** if TSAI agrees: rerun with `--stop-after 610`, resume to 1,221, compare `losses.txt` bit for bit with #475.
@@ -77,9 +77,9 @@ finished run (G7 chat, 16 Nov, acting lead and task 5 owner):
 
 1. **Per-step logs.** TSAI returned a summary, not `metrics.jsonl` / `losses.txt`. Without them R1 has no tokens per
    second, step time or loss curve, and the "no lost steps" check cannot be done. Team 05 also needs them for
-   `dryrun1_loss.md`. Ask TSAI to return them to `teams/05-architecture/jobs/results/2026-11-15-dryrun1/`.
+   `dryrun1_loss.md`. Ask TSAI to return them to `teams/05-architecture/jobs/evidence/2026-11-15-dryrun1/`.
 2. **COMPLETE checkpoint.** The final checkpoint is the trainer's own `checkpoint.pt`, with no `MANIFEST.json` and no
-   `commits.jsonl`, so it is not COMPLETE by queue rules v1.1 (R4). **Answered** (acting lead, G7 chat, 16 Nov): dry run 1 had
+   `commits.jsonl`, so it is not COMPLETE by queue rules v1.1 (R4). **Resolved:** dry run 1 had
    zero restarts and did not use the Checkpointer; the COMPLETE-only restart evidence stays `results/restart_cpu.txt`
    and `results/restart_node.txt`.
 3. **Periodic saves.** Dry run 1 saved only at the end, so the 10-minute interval (`docs/checkpoint_interval.md`, PR #463) and
