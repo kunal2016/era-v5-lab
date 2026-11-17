@@ -1,7 +1,8 @@
 """Frozen bf16 codes (results/bf16/): zero collisions, and the committed artifact matches a rebuild.
 
-Most tests need only the upstream codec. The full rebuild (raw table, every row, matrix hash) needs
-the C3-s0 tokenizer.json via $KE2_C3S0_TOKENIZER and is skipped without it.
+The codes are built from the committed p1536 raw table, so the full rebuild (every row, matrix hash)
+needs no tokenizer. Only the special-token check needs the frozen tokenizer.json via
+$KE2_FROZEN_TOKENIZER and is skipped without it.
 """
 
 import json
@@ -11,8 +12,9 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from build_bf16_codes import build, codes_path, config_path
+from build_bf16_codes import build, codes_path, config_path, frozen_table_path, load_frozen_table
 from check_bf16_collisions import (
+    SPECIAL_TOKENS_FROM_ENV,
     check_a_identical_bytes,
     check_b_high_equals_low,
     check_c_length_pairs,
@@ -20,13 +22,21 @@ from check_bf16_collisions import (
     markdown,
     row_hash_check,
     run,
+    special_token_source,
 )
 from ke2.bf16_codes import Bf16Codes, codec_bf16_bits, compact_from_codec, expand, stream_rows
-from ke2.config import BF16_DIR, BF16_POS_DIM, C3S0_TOKENIZER_ENV, C3S0_TOKENIZER_SHA256, EOS_ID, EOS_TOKEN
+from ke2.config import (
+    BF16_DIR,
+    BF16_POS_DIM,
+    EOS_ID,
+    EOS_TOKEN,
+    FROZEN_TOKENIZER_ENV,
+    FROZEN_TOKENIZER_SHA256,
+    MAX_COMMIT_BYTES,
+)
 from ke2.tables import TableContractError
-from ke2.tokenizer import load_tokenizer
-from verify_c3s0_table import main as verify_main
-from verify_c3s0_table import verify
+from verify_frozen_table import main as verify_main
+from verify_frozen_table import verify
 
 # Aliases: pr-guard's email check misreads dotted pytest decorators as addresses.
 fixture = pytest.fixture
@@ -36,7 +46,7 @@ P = BF16_POS_DIM
 
 
 def committed():
-    return Bf16Codes.load(codes_path(BF16_DIR, P), tokenizer_sha256=C3S0_TOKENIZER_SHA256)
+    return Bf16Codes.load(codes_path(BF16_DIR, P), tokenizer_sha256=FROZEN_TOKENIZER_SHA256)
 
 
 def results():
@@ -48,17 +58,22 @@ def config():
 
 
 @fixture(scope="module")
-def c3s0():
-    path = os.environ.get(C3S0_TOKENIZER_ENV)
-    if not path:
-        pytest.skip(f"C3-s0 tokenizer not found; set {C3S0_TOKENIZER_ENV} to its tokenizer.json")
-    return load_tokenizer(path, expected_sha256=C3S0_TOKENIZER_SHA256)
+def frozen_table():
+    return load_frozen_table(frozen_table_path(P), P)
+
+
+@fixture(scope="module")
+def special_tokenizer():
+    """The tokenizer that supplies the special-token list: the frozen one, else the archived C3-s0 one."""
+    if not (os.environ.get(FROZEN_TOKENIZER_ENV) or os.environ.get(SPECIAL_TOKENS_FROM_ENV)):
+        pytest.skip(f"set {FROZEN_TOKENIZER_ENV} (p1536) or {SPECIAL_TOKENS_FROM_ENV} (archived C3-s0) tokenizer.json")
+    return special_token_source(None, None)
 
 
 # --- committed artifact, no tokenizer needed -------------------------------------------------------
 
 
-def test_committed_codes_are_bound_to_c3s0():
+def test_committed_codes_are_bound_to_the_frozen_tokenizer():
     c = committed()
     assert (c.pos_dim, c.char_dim, c.vocab_size) == (P, 256, 131072)
     with pytest.raises(TableContractError):
@@ -96,7 +111,9 @@ def test_committed_results_report_zero_collisions():
     assert r["hashes"]["matrix_sha256"] == c.matrix_sha256 == cfg["matrix"]["sha256"]
     assert r["hashes"]["row_hashes_sha256"] == c.row_hashes_sha256 == cfg["matrix"]["row_hashes_sha256"]
     assert r["hashes"]["raw_table_sha256"] == c.raw_table_sha256 == cfg["raw_table"]["sha256"]
-    assert cfg["tokenizer"]["sha256"] == C3S0_TOKENIZER_SHA256 == c.tokenizer_sha256
+    assert cfg["tokenizer"]["sha256"] == FROZEN_TOKENIZER_SHA256 == c.tokenizer_sha256 == r["tokenizer"]["sha256"]
+    assert cfg["tokenizer"]["name"] == r["tokenizer"]["name"] == "p1536"
+    assert s["rows_not_matching_added_tokens"] == []
 
 
 def test_results_markdown_is_current_and_quotable():
@@ -117,13 +134,24 @@ def test_only_the_empty_string_differs_from_the_closed_form():
     assert closed_form_sentence([dict(t, f64_rounded_matches=True) for t in r["per_length"]], P).endswith("to bf16.")
 
 
-def test_raw_table_is_not_committed_but_its_hash_is():
-    """Lab rule (15 Nov): the script, the config and the sha256 are committed, not the table."""
+def test_codes_are_built_from_the_committed_p1536_table(frozen_table):
+    """The input is the committed p1536 table (#498), the same hash as its manifest and test_every_id.py."""
     cfg = config()
-    assert cfg["raw_table"]["committed"] is False
-    assert "verify_c3s0_table.py" in cfg["raw_table"]["rebuild"]
-    assert not (BF16_DIR / "materialized").exists() or not any((BF16_DIR / "materialized").glob("raw_table_*.npz"))
-    assert len(cfg["raw_table"]["sha256"]) == 64 and cfg["raw_table"]["sha256"] == committed().raw_table_sha256
+    assert cfg["raw_table"]["file"] == "teams/04-ke2/results/tables/p1536-s0/raw_table_P32.npz"
+    assert cfg["raw_table"]["committed"] is True
+    assert frozen_table.sha256() == cfg["raw_table"]["sha256"] == committed().raw_table_sha256
+    assert frozen_table.sha256() == "21072027b19ef6f05d57ead7a2fc9fb4c52129e491186bf38d0ba079e8d5168a"
+    assert frozen_table.row(EOS_ID) == EOS_TOKEN.encode()
+
+
+def test_nothing_over_the_size_limit_is_committed():
+    """Lab rule (15 Nov): above pr-guard's 5 MB limit only the script, config and SHA-256 are committed."""
+    cfg = config()
+    assert cfg["matrix"]["committed"] is False and len(cfg["matrix"]["sha256"]) == 64
+    for f in [*BF16_DIR.glob("*"), frozen_table_path(P)]:
+        if f.is_file():
+            assert f.stat().st_size <= MAX_COMMIT_BYTES, f
+    assert (BF16_DIR / ".gitignore").read_text(encoding="utf-8").split() == ["materialized/"]
 
 
 # --- the checks detect what they claim to ---------------------------------------------------------
@@ -172,7 +200,7 @@ def test_codes_refuse_another_raw_table(make_byte_table):
 
 
 def test_verify_accepts_the_recorded_table_and_refuses_others(make_byte_table, tmp_path, capsys):
-    """verify_c3s0_table: a locally rebuilt table passes only if it hashes to the codes' raw_table_sha256."""
+    """verify_frozen_table: a table passes only if it hashes to the codes' raw_table_sha256."""
     sha = "a" * 64
     good = make_byte_table([b"a", b"bc"], P)
     good.tokenizer_sha256 = sha
@@ -198,26 +226,40 @@ def test_verify_accepts_the_recorded_table_and_refuses_others(make_byte_table, t
     with pytest.raises(TableContractError):
         verify(foreign_path, codes_file, tokenizer_sha256=sha)
 
-    # the CLI against the committed codes: a toy table is refused with exit status 1
+    # the CLI against the committed codes: a toy table is refused, the committed p1536 table accepted
     assert verify_main([str(good_path)]) == 1
     assert "FAIL" in capsys.readouterr().err
+    assert verify_main([]) == 0
+    assert "OK" in capsys.readouterr().out
 
 
-# --- full rebuild from the C3-s0 tokenizer ---------------------------------------------------------
+# --- full rebuild from the committed table; special tokens need the frozen tokenizer -----------------
 
 
-def test_full_rebuild_matches_committed_artifact(c3s0):
-    table, codes, _ = build(c3s0, P)  # runs the codec on every token and compares bit for bit
+def test_full_rebuild_matches_committed_artifact(frozen_table):
+    codes, _ = build(frozen_table)  # runs the codec on every token and compares bit for bit
     c = committed()
-    assert table.sha256() == c.raw_table_sha256
+    assert codes.raw_table_sha256 == c.raw_table_sha256
     assert codes.sha256() == c.sha256()
-    assert codes.matrix_sha256 == c.matrix_sha256
+    assert codes.matrix_sha256 == c.matrix_sha256 == config()["matrix"]["sha256"]
     assert codes.row_hashes_sha256 == c.row_hashes_sha256
 
 
-def test_full_check_has_zero_collisions(c3s0):
-    r = run(c3s0, committed())
+def test_full_check_has_zero_collisions(special_tokenizer, frozen_table):
+    tb, source = special_tokenizer
+    r = run(tb, committed(), frozen_table, source=source)
     assert r["passed"], r["failures"]
     assert r["special_tokens"]["n_special_token_collisions"] == 0
-    assert {36, EOS_ID} <= c3s0.special_ids
-    assert r == results()
+    assert r["special_tokens"]["rows_not_matching_added_tokens"] == []
+    assert {36, EOS_ID} <= tb.special_ids and len(tb.special_ids) == 356
+    expected = results()
+    for x in (r, expected):  # the source of the list may differ (frozen vs archived C3); the outcome may not
+        x["special_tokens"].pop("special_ids_source")
+    assert r == expected
+
+
+def test_special_token_source_refuses_other_tokenizers(tmp_path, monkeypatch):
+    monkeypatch.delenv(FROZEN_TOKENIZER_ENV, raising=False)
+    monkeypatch.delenv(SPECIAL_TOKENS_FROM_ENV, raising=False)
+    with pytest.raises(SystemExit):
+        special_token_source(None, None)

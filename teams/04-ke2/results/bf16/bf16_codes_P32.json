@@ -1,15 +1,14 @@
 {
   "format": "ke2-bf16-codes-v1",
   "tokenizer": {
-    "name": "C3-s0",
-    "file": "tokenizer.json",
-    "sha256": "15468e66457b43af79f695cbe585c0d03e3cfe7a4a5d04d189dd3c6b9f02ddc3",
+    "name": "p1536",
+    "sha256": "e6b93a93a60520d7b1af2e9242485f443b5596a1e116b8f8798d83bbad25a64b",
     "vocab_size": 131072,
-    "special_ids": 356,
     "eos": {
       "id": 130822,
       "content": "<|endoftext|>"
-    }
+    },
+    "release": "teams/03-tokenizer/release/ (tokenizer.json is not in the repo: over 5 MB)"
   },
   "raw_table": {
     "kind": "raw",
@@ -20,9 +19,11 @@
     ],
     "n_truncated": 0,
     "n_empty_rows": 0,
-    "sha256": "fc5e5f8ffacbe93ecdedc276661edfd43ed9a13621eb4a68166ef80e24e88f9b",
-    "committed": false,
-    "rebuild": "python teams/04-ke2/src/build_bf16_codes.py --write-raw-table -> materialized/raw_table_P32.npz (git-ignored); then python teams/04-ke2/src/verify_c3s0_table.py <path>. Lab rule 15 Nov: commit the script, the config and the sha256, not the table; TSAI rebuilds on request."
+    "sha256": "21072027b19ef6f05d57ead7a2fc9fb4c52129e491186bf38d0ba079e8d5168a",
+    "file": "teams/04-ke2/results/tables/p1536-s0/raw_table_P32.npz",
+    "bytes": 841990,
+    "committed": true,
+    "check": "python teams/04-ke2/src/verify_frozen_table.py [PATH]"
   },
   "codec": {
     "char_dim": 256,
@@ -43,7 +44,7 @@
       ]
     },
     "dtype": "uint16 bit patterns of bfloat16, indexed by byte length L",
-    "sha256": "c83e5875998f880eb7deeb87d5e6e6df848c703c48b587639becb1b010068f3f",
+    "sha256": "0bc1aa3cca5ce4af56f1280d14ea3cbe1378260aa5100a502f9b7d44f9565a26",
     "hash_rule": "sha256('ke2-bf16-codes-v1|P|char_dim|tokenizer_sha256|raw_table_sha256|' + high_bits + low_bits, uint16 LE)"
   },
   "matrix": {
@@ -53,12 +54,13 @@
     ],
     "dtype": "bfloat16",
     "bytes": 2147483648,
+    "committed": false,
     "layout": "row t: low[L_t] everywhere, high[L_t] at index byte * P + position for position < L_t",
-    "sha256": "9218dab9f9a0aabbcb058292473e726b8a7e21ea27b537d9817db69084061092",
+    "sha256": "0f96a38a959e6716d810d73bab85ad2181c1cdcd759eb4fdf2dc09796bcdfa78",
     "hash_rule": "sha256 of the row-major little-endian bf16 bytes, no header",
-    "row_hashes_sha256": "eb594c8a97574db20412689e06e80471111971903425bea136101ceb95e6272d",
+    "row_hashes_sha256": "1b166c37e1eaff2975580364f9ea4875f9e884d4aff0c4442f3e3e0da3164719",
     "row_hashes_rule": "sha256 of the (V, 32) array of per-row sha256 digests, in id order",
-    "file": "materialized/bf16_matrix_P32.npy (uint16 bits, only with --materialize; not committed)"
+    "file": "materialized/bf16_matrix_P32.npy (uint16 bits; python teams/04-ke2/src/build_bf16_codes.py --materialize; git-ignored)"
   },
   "verified": "every row of the codec's bf16 output equals the row rebuilt from the compact codes, bit for bit"
 }

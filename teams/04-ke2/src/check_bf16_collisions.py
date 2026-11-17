@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collision checks on the frozen bf16 KE2 codes (C3-s0), including special tokens.
+"""Collision checks on the frozen bf16 KE2 codes (p1536), including special tokens.
 
 Two tokens have the same bf16 row only if one of these holds; each is checked explicitly:
 
@@ -8,17 +8,25 @@ Two tokens have the same bf16 row only if one of these holds; each is checked ex
   C  bf16 rounding makes two different lengths produce the same ``(high, low)`` pair
 
 Then, end to end: every row of the ``(V, D)`` bf16 matrix (rebuilt in chunks from the committed
-compact codes and the raw table) is hashed with SHA-256 and the digests are searched for
+compact codes and the committed p1536 raw table, ``results/tables/p1536-s0/raw_table_P{P}.npz``) is hashed with SHA-256 and the digests are searched for
 duplicates. Equal rows give equal digests, so zero duplicate digests proves zero equal rows.
 The special tokens (``special: true`` in the tokenizer's ``added_tokens``) are checked on their
 own: ids 36 and 130822 (EOS ``<|endoftext|>``) must be among them, and no special token's row may
-equal any other row. The matrix and row-hash SHA-256 must equal the values the builder recorded.
+equal any other row. The special-token list needs the frozen ``tokenizer.json`` (``--tokenizer`` or
+``$KE2_FROZEN_TOKENIZER``; refused unless its SHA-256 is the frozen hash), and each special token's
+raw-table row must be its ``added_tokens`` content in UTF-8. The matrix and row-hash SHA-256 must
+equal the values the builder recorded.
+
+Without the frozen tokenizer, ``--special-tokens-from`` (or ``$KE2_SPECIAL_TOKENS_FROM``) takes the
+special-token list from the archived C3-s0 ``tokenizer.json`` (SHA-256 pinned below): Team 3's release
+note says p1536's 356 ``added_tokens`` are byte-for-byte C3's, and the row check above confirms each
+one against the committed p1536 table. The report names the source used.
 
 Outputs (default ``teams/04-ke2/results/bf16/``): ``bf16_collisions_P{P}.json`` and the short
 results page ``bf16_collisions_P{P}.md``. Exit status 1 if any check fails.
 
 Usage:
-  python check_bf16_collisions.py [--tokenizer PATH] [--pos-dim 32] [--out DIR]
+  python check_bf16_collisions.py [--tokenizer PATH | --special-tokens-from C3_PATH] [--table PATH] [--pos-dim 32]
 """
 
 from __future__ import annotations
@@ -35,16 +43,34 @@ if __package__ in (None, ""):
 
 import numpy as np
 
-from build_bf16_codes import codes_path, tokenizer_arg
+from build_bf16_codes import codes_path, frozen_table_path, load_frozen_table
 from ke2.bf16_codes import Bf16Codes, float_to_bits, stream_rows
 from ke2.codec import code_values
-from ke2.config import BF16_DIR, BF16_POS_DIM, C3S0_NAME, C3S0_TOKENIZER_SHA256, EOS_ID, EOS_TOKEN
-from ke2.tables import ByteTable, build_raw_table
+from ke2.config import (
+    BF16_DIR,
+    BF16_POS_DIM,
+    EOS_ID,
+    EOS_TOKEN,
+    FROZEN_NAME,
+    FROZEN_TOKENIZER_ENV,
+    FROZEN_TOKENIZER_SHA256,
+)
+from ke2.tables import ByteTable
 from ke2.tokenizer import TokenizerBundle, load_tokenizer
 
 log = logging.getLogger("check_bf16_collisions")
 
 REQUIRED_SPECIAL_IDS = (36, EOS_ID)
+
+SPECIAL_TOKENS_FROM_ENV = "KE2_SPECIAL_TOKENS_FROM"
+ARCHIVED_C3S0_SHA256 = "15468e66457b43af79f695cbe585c0d03e3cfe7a4a5d04d189dd3c6b9f02ddc3"
+"""The archived C3-s0 tokenizer.json, accepted only as the source of the special-token list."""
+
+FROZEN_SOURCE = "frozen p1536 tokenizer.json added_tokens with special: true"
+C3_SOURCE = (
+    "archived C3-s0 tokenizer.json (15468e66…2ddc3) added_tokens with special: true; Team 3's release note "
+    "(teams/03-tokenizer/release/README.md) says p1536's 356 added_tokens are byte-for-byte the same"
+)
 """Special ids Gate 3 names: 36 (``<|end_of_text|>``) and 130822 (EOS ``<|endoftext|>``)."""
 
 
@@ -101,7 +127,10 @@ def check_c_length_pairs(codes: Bf16Codes) -> dict:
 
 
 def row_hash_check(
-    tb: TokenizerBundle, digests: np.ndarray, required_ids: Sequence[int] = REQUIRED_SPECIAL_IDS
+    tb: TokenizerBundle,
+    digests: np.ndarray,
+    required_ids: Sequence[int] = REQUIRED_SPECIAL_IDS,
+    source: str = FROZEN_SOURCE,
 ) -> tuple[dict, dict]:
     keys = np.ascontiguousarray(digests).view(np.dtype((np.void, 32))).ravel()
     _, inverse, counts = np.unique(keys, return_inverse=True, return_counts=True)
@@ -125,7 +154,7 @@ def row_hash_check(
     a, b = required_ids
     spec = {
         "n_special": len(special),
-        "special_ids_source": "tokenizer.json added_tokens with special: true",
+        "special_ids_source": source,
         "required_ids": required,
         "required_ids_present": all(i in tb.special_ids for i in required_ids),
         "required_ids_distinct": a != b and bytes(digests[a]) != bytes(digests[b]),
@@ -140,14 +169,49 @@ def row_hash_check(
     return rows, spec
 
 
-def run(tb: TokenizerBundle, codes: Bf16Codes, *, chunk_rows: int = 1024) -> dict:
-    table = build_raw_table(tb, codes.pos_dim)
+def special_token_source(tokenizer: str | None, special_from: str | None) -> tuple[TokenizerBundle, str]:
+    """The tokenizer that supplies the special-token list, and how the report names it.
+
+    The frozen tokenizer (``--tokenizer`` / ``$KE2_FROZEN_TOKENIZER``) wins; otherwise the archived C3-s0
+    one (``--special-tokens-from`` / ``$KE2_SPECIAL_TOKENS_FROM``). Each is refused on any other SHA-256.
+    """
+    import os
+
+    path = tokenizer or os.environ.get(FROZEN_TOKENIZER_ENV)
+    if path:
+        return load_tokenizer(path, expected_sha256=FROZEN_TOKENIZER_SHA256), FROZEN_SOURCE
+    path = special_from or os.environ.get(SPECIAL_TOKENS_FROM_ENV)
+    if path:
+        return load_tokenizer(path, expected_sha256=ARCHIVED_C3S0_SHA256), C3_SOURCE
+    raise SystemExit(
+        f"pass --tokenizer (or ${FROZEN_TOKENIZER_ENV}) with the frozen {FROZEN_NAME} tokenizer.json, or "
+        f"--special-tokens-from (or ${SPECIAL_TOKENS_FROM_ENV}) with the archived C3-s0 one"
+    )
+
+
+def special_rows_match(tb: TokenizerBundle, table: ByteTable) -> list[int]:
+    """Special ids whose raw-table row is not their ``added_tokens`` content (should be none)."""
+    return [i for i in sorted(tb.special_ids) if table.row(i) != tb.added[i]["content"].encode("utf-8")]
+
+
+def run(
+    tb: TokenizerBundle,
+    codes: Bf16Codes,
+    table: ByteTable | None = None,
+    *,
+    source: str = FROZEN_SOURCE,
+    chunk_rows: int = 1024,
+) -> dict:
+    """All checks; ``tb`` supplies the special-token list, ``table`` defaults to the committed frozen raw table."""
+    if table is None:
+        table = load_frozen_table(frozen_table_path(codes.pos_dim), codes.pos_dim)
     codes.check_table(table)
     res = stream_rows(codes, table, chunk_rows=chunk_rows)
     present = {int(L) for L in np.unique(table.lengths)}
-    rows, spec = row_hash_check(tb, res.row_digests)
+    rows, spec = row_hash_check(tb, res.row_digests, source=source)
+    spec["rows_not_matching_added_tokens"] = special_rows_match(tb, table)
     out = {
-        "tokenizer": {"name": C3S0_NAME, "sha256": tb.sha256, "vocab_size": tb.vocab_size},
+        "tokenizer": {"name": FROZEN_NAME, "sha256": codes.tokenizer_sha256, "vocab_size": table.vocab_size},
         "pos_dim": codes.pos_dim,
         "output_dim": codes.output_dim,
         "hashes": {
@@ -184,6 +248,8 @@ def failures(r: dict) -> list[str]:
     s = r["special_tokens"]
     if not (s["required_ids_present"] and s["required_ids_distinct"] and s["eos"]["matches_tokenizer"]):
         f.append("special: ids 36 / 130822 missing, not special, or not distinct")
+    if s.get("rows_not_matching_added_tokens"):
+        f.append("special: a special token's raw-table row is not its added_tokens content")
     if s["n_special_token_collisions"]:
         f.append("special: a special token's row equals another row")
     h = r["hashes"]
@@ -247,7 +313,8 @@ def markdown(r: dict) -> str:
         "",
         "## Special tokens",
         "",
-        f"{s['n_special']} special ids are read from the tokenizer's `added_tokens` (`special: true`). "
+        f"{s['n_special']} special ids are read from the {s['special_ids_source']}. Each one's raw-table row is its "
+        "`added_tokens` content in UTF-8. "
         f"Id 36 is `{req['36']['content']}` and id {EOS_ID} is the EOS token `{req[str(EOS_ID)]['content']}`. Both "
         f"are special and their bf16 rows differ. {sentence}.",
         "",
@@ -266,15 +333,16 @@ def markdown(r: dict) -> str:
         "",
         "## Reproduce",
         "",
-        "The raw table is not committed (lab rule, 15 Nov: script, config and SHA-256 only). Rebuild it locally with "
-        "`--write-raw-table` and check it with `verify_c3s0_table.py`; TSAI rebuilds it on request.",
+        f"The codes are built from the committed raw table `teams/04-ke2/results/tables/p1536-s0/raw_table_P{P}.npz`. "
+        "Lab rule (15 Nov): files over pr-guard's 5 MB limit are not committed, only their script, config and "
+        "SHA-256; so the bf16 matrix is rebuilt with `--materialize` (git-ignored). The tokenizer is needed only for "
+        "the special-token list (`teams/03-tokenizer/release/README.md` says where to get it).",
         "",
         "```bash",
-        "export KE2_C3S0_TOKENIZER=/path/to/c3-sample-v0/tokenizer.json",
-        f"python teams/04-ke2/src/build_bf16_codes.py --pos-dim {P} --write-raw-table   "
-        "# add --materialize for the 2 GiB matrix",
+        f"python teams/04-ke2/src/build_bf16_codes.py --pos-dim {P}     # add --materialize for the 2 GiB matrix",
+        f"python teams/04-ke2/src/verify_frozen_table.py --pos-dim {P}   # the committed table matches the codes",
+        "export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # or KE2_SPECIAL_TOKENS_FROM=<C3-s0 tokenizer.json>",
         f"python teams/04-ke2/src/check_bf16_collisions.py --pos-dim {P}",
-        f"python teams/04-ke2/src/verify_c3s0_table.py teams/04-ke2/results/bf16/materialized/raw_table_P{P}.npz",
         "```",
         "",
     ]
@@ -308,16 +376,24 @@ def closed_form_sentence(per_length: list[dict], P: int) -> str:
 
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--tokenizer", default=None, help="C3-s0 tokenizer.json (default: $KE2_C3S0_TOKENIZER)")
+    ap.add_argument("--tokenizer", default=None, help=f"frozen tokenizer.json (default: ${FROZEN_TOKENIZER_ENV})")
+    ap.add_argument(
+        "--special-tokens-from",
+        default=None,
+        help=f"archived C3-s0 tokenizer.json for the special-token list when the frozen one is not available "
+        f"(default: ${SPECIAL_TOKENS_FROM_ENV})",
+    )
+    ap.add_argument("--table", type=Path, default=None, help="raw table .npz (default: the committed p1536 table)")
     ap.add_argument("--pos-dim", type=int, default=BF16_POS_DIM)
     ap.add_argument("--out", type=Path, default=BF16_DIR)
     ap.add_argument("--chunk-rows", type=int, default=1024)
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    tb = load_tokenizer(tokenizer_arg(a.tokenizer), expected_sha256=C3S0_TOKENIZER_SHA256)
-    codes = Bf16Codes.load(codes_path(a.out, a.pos_dim), tokenizer=tb)
-    r = run(tb, codes, chunk_rows=a.chunk_rows)
+    tb, source = special_token_source(a.tokenizer, a.special_tokens_from)
+    codes = Bf16Codes.load(codes_path(a.out, a.pos_dim), tokenizer_sha256=FROZEN_TOKENIZER_SHA256)
+    table = load_frozen_table(a.table or frozen_table_path(a.pos_dim), a.pos_dim)
+    r = run(tb, codes, table, source=source, chunk_rows=a.chunk_rows)
     print(length_table_text(r["per_length"]))
     print()
     for line in markdown(r).splitlines()[4:6]:
