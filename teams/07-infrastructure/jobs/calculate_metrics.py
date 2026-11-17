@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 import statistics as st
 
 for f in sorted(glob.glob("out/*/metrics.jsonl")):
