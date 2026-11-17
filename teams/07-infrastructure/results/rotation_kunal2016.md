@@ -3,12 +3,18 @@
 **Run:** dry run 1 (Team 05 job request, PR #475, merged 16 Nov)  |  **Run ID:** `dryrun1-1234` (output folder in the request)
 **Setup:** exp2_muon at T2 size, muon_lr 0.01, seed 1234, tokenizer p1536 (sha256 `e6b93a93...a64b`), TSAI text bundle, 1 GPU, bf16, one process
 **Run by:** TSAI. Result posted as a comment on PR #475 (16 Nov 2026)
-**Logs read:** TSAI's result comment on PR #475. The per-step logs (`metrics.jsonl`, `losses.txt`) are **not yet returned to the repo** (checked on main at `85639f0`, 16 Nov 15:45 IST).
-**Shift watched:** the whole run, steps 1 to 1,221, from the summary only (see §5)
+**Logs read:** TSAI's result comment on PR #475. The per-step logs (`metrics.jsonl`, `losses.txt`) are **not yet returned to the repo** (checked on main at `6614178`, 17 Nov).
+**Steps assigned:** 611 to 915 (R1 is an offline review split by step range; acting lead, G7 chat, 17 Nov).
+**If the per-step logs are not returned by Wed 18 Nov EOD**, R1 stays as written here, from TSAI's summary, and says so (acting lead's rule). This PR is not held for them.
 
 ---
 
 ## 1. Shift summary (R1, due Wed 18 Nov)
+
+For steps 611 to 915, check step continuity, loss spikes, gradient norm and throughput, and run Team 08's alarms
+offline (`alarms.py --jsonl`). None of these can be done yet: the evidence folder
+`teams/05-architecture/jobs/evidence/2026-11-15-dryrun1/` still holds only the 3-step smoke run (checked on main at
+`6614178`, 17 Nov). The values below are TSAI's whole-run summary.
 
 | Item | Value | Source |
 |---|---|---|
