@@ -51,7 +51,7 @@ The spec defines no pack order, so v1 uses the order in which `clean.py` lists t
 
 Within one pack, the lowest `(split, part, doc_id)` wins.
 
-**Effect on the sample:** the order of the Data B packs matters only for cross-pack pairs with a Data B pack on at least one side: 23 of the 50 cross-pack qualifying pairs in TSAI's 38-pack run of 5 Nov, to be recounted on the rerun (14 between two Data B packs, 9 between a Data A and a Data B pack), out of 1,416,236 documents. Most are the same Indic text in a FineWeb-2 (`fw2`) pack and a Sangraha (`sangraha-v`) pack; with this order the `fw2` copy survives. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov 2026.
+**Effect on the sample:** the order of the Data B packs matters only for cross-pack pairs with a Data B pack on at least one side: 23 of the 50 cross-pack qualifying pairs in TSAI's overlap rerun on the #244 cleaning (14 between two Data B packs, 9 between a Data A and a Data B pack; the same counts as on 5 Nov), out of 1,414,996 documents. Most are the same Indic text in a FineWeb-2 (`fw2`) pack and a Sangraha (`sangraha-v`) pack; with this order the `fw2` copy survives. The Data B lead may ask for a different order, with a reason, by Fri 13 Nov 2026.
 
 ## Example
 
