@@ -47,20 +47,23 @@ To confirm when the logs come back: step numbers run 1 to 1,221 with none missin
 
 ## 3. Restart log (R2)
 
-No restarts in the run. The trainer ran as one process. It was not run under `ckpt/supervisor.py` and it does not
+No restarts in dry run 1 itself. The trainer ran as one process. It was not run under `ckpt/supervisor.py` and it does not
 save during the run (job request, open item 3), so a crash would have lost the whole run rather than restarting.
 
-The only restart this week is the restore drill (core task 5, PR #491). It is being rewritten for the
-finished run (plan in PR #491):
-- **(A)** restore the saved final checkpoint with a fresh `--out`. Pass: identity check passes, step 1,221,
-  `final_model_sha256` and `losses.txt` bit-equal to #475.
-- **(B)** if TSAI agrees: rerun with `--stop-after 610`, resume to 1,221, compare `losses.txt` bit for bit with #475.
+The only restarts this week were the two restore drill jobs (core task 5). TSAI ran both on 17 Nov, single GPU,
+same setup as #475. Source: `results/restore_dryrun1.md` §5 (PR #573).
 
-**To log here when its logs return:**
+| # | Failure | Restored from | Resumed at | Steps skipped | Loss vs dry run 1 | Time (job start to exit) | Result |
+|---|---|---|---|---|---|---|---|
+| R1 | none: job A restores dry run 1's final checkpoint | final `checkpoint.pt` (step 1,221) | n/a (exit 0, 1,221 steps, COMPLETED) | 0 | `losses.txt` identical, 1,221 of 1,221 lines; `final_model_sha256` equal | about 6 min 8 s | PASS |
+| R2 | planned stop at step 610 (job B run 1: INCOMPLETE_NOT_A_RESULT, lines 1–610 identical) | `checkpoint.pt` at step 610 | **611** | 0 (steps 1 to 1,221 all present) | `losses.txt` identical, 1,221 of 1,221 lines; `final_model_sha256` equal | about 30 min 39 s (load, steps 611–1,221, save) | PASS |
 
-| # | Failure | Restored from | Steps restored / resumed | Steps skipped | Loss before / after | Result |
-|---|---|---|---|---|---|---|
-| R1 (planned drill) | planned stop | final checkpoint (A) or step 610 (B) | | | | |
+**For my R1 range.** Job B's restart point is the start of my range: it resumed at step 611 and matched dry run 1
+bit for bit from 611 to 915 (and on to 1,221). So the step 610 → 611 boundary is clean in the restore drill.
+
+**What it does not show.** Both jobs used `train_week2.py`'s own `checkpoint.pt` after a clean stop, not a kill, and not
+Team 07's Checkpointer. The COMPLETE-only restart after a kill is shown by `results/restart_cpu.txt` and
+`results/restart_node.txt`.
 
 ---
 
@@ -71,7 +74,7 @@ finished run (plan in PR #491):
 - [x] No restart during the run, so no restart from a non-COMPLETE checkpoint
 - [ ] No step lost or repeated: **needs `metrics.jsonl`** to check every step from 1 to 1,221
 - [x] COMPLETE-only restarts: shown by `results/restart_cpu.txt` and `results/restart_node.txt` (dry run 1 had none)
-- [ ] Restore drill (#491) gives the same loss and model hash as #475: **waits for its logs**
+- [x] Restore drill: jobs A and B bit-equal to dry run 1 on all 1,221 steps, same final model (`restore_dryrun1.md`, PR #573)
 
 ## 5. Gaps and questions for the team
 
