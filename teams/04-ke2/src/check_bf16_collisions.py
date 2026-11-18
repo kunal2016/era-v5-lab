@@ -20,13 +20,18 @@ equal the values the builder recorded.
 Without the frozen tokenizer, ``--special-tokens-from`` (or ``$KE2_SPECIAL_TOKENS_FROM``) takes the
 special-token list from the archived C3-s0 ``tokenizer.json`` (SHA-256 pinned below): Team 3's release
 note says p1536's 356 ``added_tokens`` are byte-for-byte C3's, and the row check above confirms each
-one against the committed p1536 table. The report names the source used.
+one against the committed p1536 table. With neither file, the 356 ids come from Team 3's committed
+p1536 build manifest (``teams/03-tokenizer/train/p1536_s0_manifest.json``, bound to the frozen SHA-256),
+so the collision check itself needs no download; only the ``added_tokens`` content check is then limited
+to ids 36 and 130822, whose contents are documented. A tokenizer's special ids must equal the
+manifest's. The report names the source used.
 
 Outputs (default ``teams/04-ke2/results/bf16/``): ``bf16_collisions_P{P}.json`` and the short
 results page ``bf16_collisions_P{P}.md``. Exit status 1 if any check fails.
 
 Usage:
   python check_bf16_collisions.py [--tokenizer PATH | --special-tokens-from C3_PATH] [--table PATH] [--pos-dim 32]
+  (no tokenizer: the special ids come from Team 3's committed manifest)
 """
 
 from __future__ import annotations
@@ -36,6 +41,7 @@ import json
 import logging
 import sys
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 if __package__ in (None, ""):
@@ -54,6 +60,7 @@ from ke2.config import (
     FROZEN_NAME,
     FROZEN_TOKENIZER_ENV,
     FROZEN_TOKENIZER_SHA256,
+    TEAM_DIR,
 )
 from ke2.tables import ByteTable
 from ke2.tokenizer import TokenizerBundle, load_tokenizer
@@ -72,6 +79,60 @@ C3_SOURCE = (
     "(teams/03-tokenizer/release/README.md) says p1536's 356 added_tokens are byte-for-byte the same"
 )
 """Special ids Gate 3 names: 36 (``<|end_of_text|>``) and 130822 (EOS ``<|endoftext|>``)."""
+
+SPECIAL_MANIFEST = TEAM_DIR.parent / "03-tokenizer" / "train" / "p1536_s0_manifest.json"
+"""Team 3's committed p1536 build manifest: ``layout.specials`` gives the 356 special ids, ``sha256`` the tokenizer."""
+
+ID36_TOKEN = "<|end_of_text|>"
+"""Id 36: the baseline's old eos, special with no role (``teams/03-tokenizer/release/SPECIAL_TOKENS.md``)."""
+
+MANIFEST_SOURCE = (
+    "Team 3 p1536 build manifest (teams/03-tokenizer/train/p1536_s0_manifest.json, layout.specials: 9 listed ids "
+    "plus the top block, bound to the frozen tokenizer sha256); row contents checked for ids 36 and 130822 only, "
+    "the added_tokens contents of all 356 need a tokenizer.json"
+)
+
+
+@dataclass
+class SpecialTokenList:
+    """The special-token ids, and the contents known without a ``tokenizer.json``; shaped like ``TokenizerBundle``."""
+
+    special_ids: set[int]
+    added: dict[int, dict]
+    vocab_size: int
+    path: Path
+
+
+def manifest_special_tokens(
+    path: Path = SPECIAL_MANIFEST, tokenizer_sha256: str = FROZEN_TOKENIZER_SHA256
+) -> SpecialTokenList:
+    """The 356 special ids from Team 3's committed manifest, refused unless its ``sha256`` is the frozen one.
+
+    The manifest lists the special ids outside the top block; the rest fill the top of the vocabulary
+    (the same reading as ``src/export/fold_check.py``). Contents are known for ids 36 and 130822 only.
+    """
+    path = Path(path)
+    m = json.loads(path.read_text(encoding="utf-8"))
+    if m.get("sha256") != tokenizer_sha256:
+        raise SystemExit(f"{path}: manifest sha256 {m.get('sha256')} is not the frozen tokenizer {tokenizer_sha256}")
+    spec, vocab = m["layout"]["specials"], int(m["vocab_size"])
+    outside = [int(i) for i in spec["ids_outside_top_block"]]
+    count = int(spec["count"])
+    ids = {*outside, *range(vocab - (count - len(outside)), vocab)}
+    if len(ids) != count or not ids <= set(range(vocab)):
+        raise SystemExit(f"{path}: {len(ids)} special ids found, the manifest says {count}")
+    added = {
+        36: {"id": 36, "content": ID36_TOKEN, "special": True},
+        EOS_ID: {"id": EOS_ID, "content": EOS_TOKEN, "special": True},
+    }
+    return SpecialTokenList(ids, added, vocab, path)
+
+
+def check_against_manifest(tb: TokenizerBundle, manifest: SpecialTokenList) -> None:
+    """A tokenizer's special ids must be exactly the manifest's; if the two sources disagree, stop."""
+    if set(tb.special_ids) != manifest.special_ids:
+        diff = sorted(set(tb.special_ids) ^ manifest.special_ids)
+        raise SystemExit(f"special ids of {tb.path} differ from Team 3's manifest {manifest.path}: {diff[:20]}")
 
 
 def length_table(codes: Bf16Codes, lengths: np.ndarray) -> list[dict]:
@@ -127,7 +188,7 @@ def check_c_length_pairs(codes: Bf16Codes) -> dict:
 
 
 def row_hash_check(
-    tb: TokenizerBundle,
+    tb: TokenizerBundle | SpecialTokenList,
     digests: np.ndarray,
     required_ids: Sequence[int] = REQUIRED_SPECIAL_IDS,
     source: str = FROZEN_SOURCE,
@@ -169,33 +230,45 @@ def row_hash_check(
     return rows, spec
 
 
-def special_token_source(tokenizer: str | None, special_from: str | None) -> tuple[TokenizerBundle, str]:
-    """The tokenizer that supplies the special-token list, and how the report names it.
+def special_token_source(
+    tokenizer: str | None, special_from: str | None
+) -> tuple[TokenizerBundle | SpecialTokenList, str]:
+    """What supplies the special-token list, and how the report names it.
 
-    The frozen tokenizer (``--tokenizer`` / ``$KE2_FROZEN_TOKENIZER``) wins; otherwise the archived C3-s0
-    one (``--special-tokens-from`` / ``$KE2_SPECIAL_TOKENS_FROM``). Each is refused on any other SHA-256.
+    The frozen tokenizer (``--tokenizer`` / ``$KE2_FROZEN_TOKENIZER``) wins; then the archived C3-s0 one
+    (``--special-tokens-from`` / ``$KE2_SPECIAL_TOKENS_FROM``); each is refused on any other SHA-256, and
+    its special ids must equal Team 3's manifest. With neither file, the committed manifest itself is the
+    source, so the check runs on any checkout.
     """
     import os
 
+    manifest = manifest_special_tokens()
     path = tokenizer or os.environ.get(FROZEN_TOKENIZER_ENV)
     if path:
-        return load_tokenizer(path, expected_sha256=FROZEN_TOKENIZER_SHA256), FROZEN_SOURCE
-    path = special_from or os.environ.get(SPECIAL_TOKENS_FROM_ENV)
-    if path:
-        return load_tokenizer(path, expected_sha256=ARCHIVED_C3S0_SHA256), C3_SOURCE
-    raise SystemExit(
-        f"pass --tokenizer (or ${FROZEN_TOKENIZER_ENV}) with the frozen {FROZEN_NAME} tokenizer.json, or "
-        f"--special-tokens-from (or ${SPECIAL_TOKENS_FROM_ENV}) with the archived C3-s0 one"
-    )
+        tb, source = load_tokenizer(path, expected_sha256=FROZEN_TOKENIZER_SHA256), FROZEN_SOURCE
+    else:
+        path = special_from or os.environ.get(SPECIAL_TOKENS_FROM_ENV)
+        if not path:
+            log.info("no tokenizer.json given; special ids from %s", manifest.path)
+            return manifest, MANIFEST_SOURCE
+        tb, source = load_tokenizer(path, expected_sha256=ARCHIVED_C3S0_SHA256), C3_SOURCE
+    check_against_manifest(tb, manifest)
+    return tb, source
 
 
-def special_rows_match(tb: TokenizerBundle, table: ByteTable) -> list[int]:
-    """Special ids whose raw-table row is not their ``added_tokens`` content (should be none)."""
-    return [i for i in sorted(tb.special_ids) if table.row(i) != tb.added[i]["content"].encode("utf-8")]
+def special_rows_match(tb: TokenizerBundle | SpecialTokenList, table: ByteTable) -> list[int]:
+    """Special ids whose raw-table row is not their ``added_tokens`` content (should be none).
+
+    Checked for the ids whose content the source knows: all 356 from a tokenizer.json, ids 36 and 130822
+    from the manifest.
+    """
+    return [
+        i for i in sorted(tb.special_ids) if i in tb.added and table.row(i) != tb.added[i]["content"].encode("utf-8")
+    ]
 
 
 def run(
-    tb: TokenizerBundle,
+    tb: TokenizerBundle | SpecialTokenList,
     codes: Bf16Codes,
     table: ByteTable | None = None,
     *,
@@ -313,9 +386,14 @@ def markdown(r: dict) -> str:
         "",
         "## Special tokens",
         "",
-        f"{s['n_special']} special ids are read from the {s['special_ids_source']}. Each one's raw-table row is its "
-        "`added_tokens` content in UTF-8. "
-        f"Id 36 is `{req['36']['content']}` and id {EOS_ID} is the EOS token `{req[str(EOS_ID)]['content']}`. Both "
+        f"{s['n_special']} special ids are read from the {s['special_ids_source']}. "
+        + (
+            "The rows of ids 36 and 130822 are their documented contents in UTF-8; the other 354 contents are "
+            "checked when a `tokenizer.json` is given. "
+            if s["special_ids_source"] == MANIFEST_SOURCE
+            else "Each one's raw-table row is its `added_tokens` content in UTF-8. "
+        )
+        + f"Id 36 is `{req['36']['content']}` and id {EOS_ID} is the EOS token `{req[str(EOS_ID)]['content']}`. Both "
         f"are special and their bf16 rows differ. {sentence}.",
         "",
         "## bf16 code values per length",
@@ -335,13 +413,15 @@ def markdown(r: dict) -> str:
         "",
         f"The codes are built from the committed raw table `teams/04-ke2/results/tables/p1536-s0/raw_table_P{P}.npz`. "
         "Lab rule (15 Nov): files over pr-guard's 5 MB limit are not committed, only their script, config and "
-        "SHA-256; so the bf16 matrix is rebuilt with `--materialize` (git-ignored). The tokenizer is needed only for "
-        "the special-token list (`teams/03-tokenizer/release/README.md` says where to get it).",
+        "SHA-256; so the bf16 matrix is rebuilt with `--materialize` (git-ignored). The special-token ids come from "
+        "Team 3's committed manifest, so no download is needed; a `tokenizer.json` "
+        "(`teams/03-tokenizer/release/README.md` says where to get it) adds the check that every special row is its "
+        "`added_tokens` content.",
         "",
         "```bash",
         f"python teams/04-ke2/src/build_bf16_codes.py --pos-dim {P}     # add --materialize for the 2 GiB matrix",
         f"python teams/04-ke2/src/verify_frozen_table.py --pos-dim {P}   # the committed table matches the codes",
-        "export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # or KE2_SPECIAL_TOKENS_FROM=<C3-s0 tokenizer.json>",
+        "export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # optional (or KE2_SPECIAL_TOKENS_FROM=<C3-s0 tokenizer.json>)",
         f"python teams/04-ke2/src/check_bf16_collisions.py --pos-dim {P}",
         "```",
         "",
@@ -381,7 +461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--special-tokens-from",
         default=None,
         help=f"archived C3-s0 tokenizer.json for the special-token list when the frozen one is not available "
-        f"(default: ${SPECIAL_TOKENS_FROM_ENV})",
+        f"(default: ${SPECIAL_TOKENS_FROM_ENV}; with neither, Team 3's committed manifest supplies the ids)",
     )
     ap.add_argument("--table", type=Path, default=None, help="raw table .npz (default: the committed p1536 table)")
     ap.add_argument("--pos-dim", type=int, default=BF16_POS_DIM)

@@ -1,12 +1,11 @@
 """Frozen bf16 codes (results/bf16/): zero collisions, and the committed artifact matches a rebuild.
 
 The codes are built from the committed p1536 raw table, so the full rebuild (every row, matrix hash)
-needs no tokenizer. Only the special-token check needs the frozen tokenizer.json via
-$KE2_FROZEN_TOKENIZER and is skipped without it.
+needs no tokenizer. The special-token ids come from Team 3's committed manifest, so the collision check
+runs everywhere; a frozen tokenizer.json via $KE2_FROZEN_TOKENIZER adds the added_tokens content check.
 """
 
 import json
-import os
 from types import SimpleNamespace
 
 import numpy as np
@@ -14,11 +13,15 @@ import pytest
 
 from build_bf16_codes import build, codes_path, config_path, frozen_table_path, load_frozen_table
 from check_bf16_collisions import (
+    MANIFEST_SOURCE,
+    SPECIAL_MANIFEST,
     SPECIAL_TOKENS_FROM_ENV,
     check_a_identical_bytes,
+    check_against_manifest,
     check_b_high_equals_low,
     check_c_length_pairs,
     closed_form_sentence,
+    manifest_special_tokens,
     markdown,
     row_hash_check,
     run,
@@ -64,9 +67,7 @@ def frozen_table():
 
 @fixture(scope="module")
 def special_tokenizer():
-    """The tokenizer that supplies the special-token list: the frozen one, else the archived C3-s0 one."""
-    if not (os.environ.get(FROZEN_TOKENIZER_ENV) or os.environ.get(SPECIAL_TOKENS_FROM_ENV)):
-        pytest.skip(f"set {FROZEN_TOKENIZER_ENV} (p1536) or {SPECIAL_TOKENS_FROM_ENV} (archived C3-s0) tokenizer.json")
+    """The special-token source: the frozen tokenizer.json, else the archived C3-s0 one, else Team 3's manifest."""
     return special_token_source(None, None)
 
 
@@ -258,8 +259,26 @@ def test_full_check_has_zero_collisions(special_tokenizer, frozen_table):
     assert r == expected
 
 
-def test_special_token_source_refuses_other_tokenizers(tmp_path, monkeypatch):
+def test_manifest_supplies_the_special_ids_without_a_tokenizer(tmp_path, monkeypatch):
     monkeypatch.delenv(FROZEN_TOKENIZER_ENV, raising=False)
     monkeypatch.delenv(SPECIAL_TOKENS_FROM_ENV, raising=False)
+    tb, source = special_token_source(None, None)
+    assert source == MANIFEST_SOURCE
+    assert len(tb.special_ids) == 356 and {36, EOS_ID} <= tb.special_ids
+    assert min(tb.special_ids) == 36 and max(tb.special_ids) == 131071 and tb.vocab_size == 131072
+    assert tb.added[EOS_ID]["content"] == EOS_TOKEN and tb.added[36]["content"] == "<|end_of_text|>"
+    # the same 356 ids the committed report counted (its source was a tokenizer.json)
+    assert len(tb.special_ids) == results()["special_tokens"]["n_special"]
+
+    # bound to the frozen tokenizer: a manifest for another tokenizer is refused
+    m = json.loads(SPECIAL_MANIFEST.read_text(encoding="utf-8"))
+    m["sha256"] = "0" * 64
+    other = tmp_path / "manifest.json"
+    other.write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(SystemExit):
-        special_token_source(None, None)
+        manifest_special_tokens(other)
+
+    # a tokenizer whose special ids are not the manifest's is refused
+    with pytest.raises(SystemExit):
+        check_against_manifest(SimpleNamespace(path="other.json", special_ids=tb.special_ids - {36}), tb)
+    check_against_manifest(SimpleNamespace(path="same.json", special_ids=set(tb.special_ids)), tb)

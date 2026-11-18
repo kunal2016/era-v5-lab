@@ -60,7 +60,7 @@ export KE2_TOKENIZER=/path/to/BrahmicTokenizer-131K   # folder with tokenizer.js
 .venv/bin/python teams/04-ke2/src/run_experiment.py     # about 10 minutes; rewrites results/ and experiment.md
 .venv/bin/python teams/04-ke2/src/margins/build_min_margin.py   # about 11 minutes; rewrites results/min_margin/
 .venv/bin/python teams/04-ke2/src/build_bf16_codes.py [--materialize]   # seconds, no tokenizer; rewrites results/bf16/bf16_codes_P32.*
-export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # frozen p1536 (e6b93a93…a64b), for the special-token list
+export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # optional: frozen p1536 (e6b93a93…a64b) adds the added_tokens content check; without it the special ids come from Team 3's committed manifest
 .venv/bin/python teams/04-ke2/src/check_bf16_collisions.py              # rewrites results/bf16/bf16_collisions_P32.*
 .venv/bin/python teams/04-ke2/src/verify_frozen_table.py [PATH/raw_table_P32.npz]   # default: the committed p1536 table
 ```

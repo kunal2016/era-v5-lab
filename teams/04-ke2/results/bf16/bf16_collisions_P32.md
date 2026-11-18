@@ -74,11 +74,11 @@ Values are the upstream float32 codec output cast to bf16. For 32 of 33 lengths 
 
 ## Reproduce
 
-The codes are built from the committed raw table `teams/04-ke2/results/tables/p1536-s0/raw_table_P32.npz`. Lab rule (15 Nov): files over pr-guard's 5 MB limit are not committed, only their script, config and SHA-256; so the bf16 matrix is rebuilt with `--materialize` (git-ignored). The tokenizer is needed only for the special-token list (`teams/03-tokenizer/release/README.md` says where to get it).
+The codes are built from the committed raw table `teams/04-ke2/results/tables/p1536-s0/raw_table_P32.npz`. Lab rule (15 Nov): files over pr-guard's 5 MB limit are not committed, only their script, config and SHA-256; so the bf16 matrix is rebuilt with `--materialize` (git-ignored). The special-token ids come from Team 3's committed manifest, so no download is needed; a `tokenizer.json` (`teams/03-tokenizer/release/README.md` says where to get it) adds the check that every special row is its `added_tokens` content.
 
 ```bash
 python teams/04-ke2/src/build_bf16_codes.py --pos-dim 32     # add --materialize for the 2 GiB matrix
 python teams/04-ke2/src/verify_frozen_table.py --pos-dim 32   # the committed table matches the codes
-export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # or KE2_SPECIAL_TOKENS_FROM=<C3-s0 tokenizer.json>
+export KE2_FROZEN_TOKENIZER=/path/to/p1536/tokenizer.json   # optional (or KE2_SPECIAL_TOKENS_FROM=<C3-s0 tokenizer.json>)
 python teams/04-ke2/src/check_bf16_collisions.py --pos-dim 32
 ```
