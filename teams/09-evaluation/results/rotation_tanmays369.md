@@ -1,8 +1,8 @@
-# Week 3 rotation check — R1/R2 (Tanmay Sharma, `tanmays369`)
+# Week 3 rotation check, R1/R2 (`tanmays369`)
 
 Team 9 (Evaluation) week-3 rotation. Decontamination check of 2 training shards with fingerprints v2.
 
-- **Assigned by:** @RahulUniyal, G9 shard post, 17 Nov 2026 13:46 IST.
+- **Assigned by:** Team 9 lead (`rahulni`), G9 shard post, 17 Nov 2026.
 - **Shards:** `en-nemotroncc-train-000000`, `math-finemath-train-000000`.
 - **Chain:** `decode_shard.py` (p1536) → `decontam_check.py` (fingerprints v2, full set) → `canary_scan.py`.
 - **Repo commit:** `8de78ec` (main, 17 Nov).
@@ -13,8 +13,8 @@ Team 9 (Evaluation) week-3 rotation. Decontamination check of 2 training shards 
 
 | shard_id | payload_sha256 | docs scanned | docs flagged | canary hits | set_sha256 |
 |---|---|---:|---:|---:|---|
-| `en-nemotroncc-train-000000` | `3b64c48e320d38c58ae3e8114cdb26fabb71f387131ddebd5453184128ae2ce0` | 65,284 | 0 | 0 | `2826a3b8…a64b` |
-| `math-finemath-train-000000` | `6e84f270a53bcdd225bb2a6cd6cd053b5e8e74c3cdf93d3aa80a2606cc9597da` | 28,088 | 0 | 0 | `2826a3b8…a64b` |
+| `en-nemotroncc-train-000000` | `3b64c48e320d38c58ae3e8114cdb26fabb71f387131ddebd5453184128ae2ce0` | 65,284 | 0 | 0 | `2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a` |
+| `math-finemath-train-000000` | `6e84f270a53bcdd225bb2a6cd6cd053b5e8e74c3cdf93d3aa80a2606cc9597da` | 28,088 | 0 | 0 | `2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a` |
 
 Decode details:
 
@@ -32,5 +32,5 @@ Canary scan: 4 canaries checked (`era-v5-lab`, `gpqa_diamond`, `hle`, `terminal_
 ## Notes
 
 - Decoded `.text.parquet` files were kept local and are not committed (they hold document text; eval firewall section 4). Deleted after the run.
-- Wall time: `en-nemotroncc` 449 s user time for the full-set check; `math-finemath` 200 s. Canary scan under 3 s per shard.
+- Wall time: the full-set check took about 450 s of user time on `en-nemotroncc` and 200 s on `math-finemath`. The canary scan took under 3 s per shard.
 - The `decontam_check.py` stderr line for every run named the full set and the same `set_sha256`, so the two results are comparable.
