@@ -7,6 +7,11 @@ training-week shards, dry run 2 (24 Nov), `data_card_v1.md` and TSAI's data go o
 **So dedup runs v1's rules, frozen** (as proposed on #255). `dedup_design_v2_proposal.md` is the backlog for after
 training starts; nothing in it changes this run.
 
+> **What this plan asks for:** nothing beyond the lab schedule. Weeks 3–4 are the scheduled dedup work (the run at
+> scale, the audit, the data card). The v2 backlog and the TSAI jobs forecast are for information: each later job comes
+> as its own request, and the team or TSAI can drop any of them. The only decision needed this week is item 6 (licences
+> and pack order for Thursday's packs).
+
 ## Week 3 (15–21 Nov): dedup v1 at scale · Gate 3, Sat 21 Nov
 
 | When | Work (proposal item) | Done when |
@@ -124,3 +129,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 16 Nov | Dedup job on #255 approved by the lead; with TSAI |
 | 17 Nov | TSAI's dedup run returned (#547), as expected; #255 merged |
 | 18 Nov | #610 merged (H3, report-only); E5c job request #625; Thu 19 combined job: overlap and dedup must rerun on its cleaning (asked Vijay); item 6 now waits on that job's pack list; TSAI jobs forecast added |
+| 18 Nov | "What this plan asks for" note added: the backlog and the forecast are for information, not requests |
