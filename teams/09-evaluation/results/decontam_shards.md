@@ -10,13 +10,13 @@ Team 9 (Evaluation), week-3 task 2. Gate 3 evidence: "the first shards have zero
   cleaner rules) and held-out parts are not sharded, as the notice says.
 - **Chain:** [`decode_shard.py`](../decontam/decode_shard.py) (p1536) → [`decontam_check.py`](../decontam/decontam_check.py)
   (fingerprints v2, full set: no `--benchmarks`, `--tags` or `--exclude`) → [`canary_scan.py`](../decontam/canary_scan.py).
-- **Repo commit:** `8732384` (main, 17 Nov). The decontam scripts are unchanged on main since then.
+- **Repo commit:** `8732384` (main, 17 Nov). The decontam scripts are unchanged on main up to `431f9b3` (18 Nov).
 - **Tokenizer:** frozen p1536, sha256 `e6b93a93a60520d7b1af2e9242485f443b5596a1e116b8f8798d83bbad25a64b`; every shard's
   manifest names it.
 - **Fingerprint set:** v2, `set_sha256 2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a`, scope `full set`
   (the same line on all 41 runs).
 - **Canaries:** 4 checked on every shard (`era-v5-lab`, `gpqa_diamond`, `hle`, `terminal_bench_2`).
-- **Run:** 17 Nov 2026, 16:35–18:14 UTC, laptop CPU (Apple Silicon), 3 shards at a time.
+- **Run:** 17 Nov 2026, 16:33–18:14 UTC, laptop CPU (Apple Silicon), 3 shards at a time.
 
 ## Per shard
 
@@ -84,18 +84,18 @@ A zero result is only useful if the chain would have found a leak. Four checks:
    exactly the token IDs in the `.bin` (final EOS excluded), and the `doc_id` order matches each `.docs.parquet`.
 3. **Planted leaks are caught.** In a copy of a decoded shard (`ind-hi-indiccorp-train-000000`, 109,668 documents), text
    from 5 benchmark items (MILU, FLORES-200 ×2, LiveCodeBench, held-out G5) was inserted into 5 documents and the lab
-   canary into a sixth. `decontam_check.py` flagged exactly those 6 documents with the right items, and nothing else;
+   canary into a sixth. `decontam_check.py` flagged exactly those 6 documents, each with the planted item (the sixth as
+   `era-v5-lab:canary`), and nothing else;
    `canary_scan.py` found the canary in the planted document only. The copy was then deleted.
-4. **Same numbers as the rotators.** The rotators' R1 / task-2 results posted in G9 by 18 Nov cover 20 of the 41 shards;
-   all 20 have the same document counts and 0 flagged, 0 canary hits. The full cross-check against the rotation files
-   (docs and `payload_sha256`) is on this PR.
+4. **Same numbers as the rotators.** The rotation files on main and in open PRs on 18 Nov (17:30 UTC) cover 30 of the 41
+   shards: all 30 have the same `payload_sha256` and document count as this table, and 0 flagged, 0 canary hits. The other
+   11 are still with rotators (due Thu 19); the cross-check of every rotation file is on this PR.
 
 ## Notes
 
-- Decoded `.text.parquet` files hold document text: kept local, not committed (eval firewall section 4), and deleted once
-  this PR merges. The shard download links are not repeated here.
-- Expected result: TSAI ran F2 (fingerprints v2) inside cleaning before sharding, so this is the independent check of
-  that step.
+- Decoded `.text.parquet` files hold document text: kept local, not committed, and deleted once this PR merges. The shard download links are not repeated here.
+- A zero is the expected result: TSAI ran the F2 (benchmark leak) cleaning step before sharding. This check is the
+  independent test of that step.
 - Reproduce one shard:
 
 ```bash
