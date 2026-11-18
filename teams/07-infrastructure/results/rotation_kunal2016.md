@@ -3,18 +3,19 @@
 **Run:** dry run 1 (Team 05 job request, PR #475, merged 16 Nov)  |  **Run ID:** `dryrun1-1234` (output folder in the request)
 **Setup:** exp2_muon at T2 size, muon_lr 0.01, seed 1234, tokenizer p1536 (sha256 `e6b93a93...a64b`), TSAI text bundle, 1 GPU, bf16, one process
 **Run by:** TSAI. Result posted as a comment on PR #475 (16 Nov 2026)
-**Logs read:** TSAI's result comment on PR #475. The per-step logs (`metrics.jsonl`, `losses.txt`) are **not yet returned to the repo** (checked on main at `6614178`, 17 Nov).
+**Logs read:** TSAI's result comment on PR #475. **The per-step logs (`metrics.jsonl`, `losses.txt`, `summary.json`) were not available**: the evidence folder holds only the 3-step smoke run (checked on main at `dfdb6a6`, 18 Nov).
 **Steps assigned:** 611 to 915. R1 is an offline review of the logs, split by step range.
-**If the per-step logs are not returned by Wed 18 Nov EOD**, R1 stays as written here, from TSAI's summary.
+**R1 is therefore written from TSAI's whole-run summary.** The per-step checks for steps 611 to 915 could not be run.
 
 ---
 
 ## 1. Shift summary (R1, due Wed 18 Nov)
 
 For steps 611 to 915, check step continuity, loss spikes, gradient norm and throughput, and run Team 08's alarms
-offline (`alarms.py --jsonl`). None of these can be done yet: the evidence folder
-`teams/05-architecture/jobs/evidence/2026-11-15-dryrun1/` still holds only the 3-step smoke run (checked on main at
-`6614178`, 17 Nov). The values below are TSAI's whole-run summary.
+offline (`alarms.py --jsonl`). None of these could be done: the evidence folder
+`teams/05-architecture/jobs/evidence/2026-11-15-dryrun1/` holds only the 3-step smoke run (checked on main at
+`dfdb6a6`, 18 Nov). The values below are TSAI's whole-run summary. If the per-step logs are released later, the
+checks for 611 to 915 can be added in a follow-up.
 
 | Item | Value | Source |
 |---|---|---|
@@ -25,10 +26,10 @@ offline (`alarms.py --jsonl`). None of these can be done yet: the evidence folde
 | Held-out val/bpb | 1.5159 (English 1.9844, code 1.8901, Indic mean 1.3289, three-group 1.7345) | TSAI comment |
 | Same arm with old tokenizer v0, seed 1234 | 1.6443 (change −0.1284) | TSAI comment |
 | Checkpoints written | 1, at the last step (about 2.2 GB), kept by TSAI | TSAI comment; job request open item 3 |
-| Tokens per second, step time, wall time | **not reported yet** | needs `metrics.jsonl` |
-| Loss curve, spikes | **not reported yet** | needs `metrics.jsonl` / `losses.txt` |
+| Tokens per second, step time, wall time | **not available** | per-step logs not released |
+| Loss curve, spikes | **not available** | per-step logs not released |
 | Alerts | none reported | Team 08 has `alarms_dryrun1.md` (#494); no alert posted |
-| Overall | finished cleanly by the summary; the curve is not yet checked | |
+| Overall | finished cleanly by the summary; the per-step curve could not be checked | |
 
 ---
 
@@ -40,8 +41,7 @@ No failures reported. TSAI reports the run COMPLETED, 1,221 of 1,221 steps, with
 |---|---|---|---|---|---|---|
 | — | — | — | — | none reported | TSAI comment, PR #475 | — |
 
-To confirm when the logs come back: step numbers run 1 to 1,221 with none missing and none repeated
-(a repeat would mean an unlogged restart).
+Step continuity (none missing, none repeated) could not be checked without `metrics.jsonl`.
 
 ---
 
@@ -72,7 +72,7 @@ Team 07's Checkpointer. The COMPLETE-only restart after a kill is shown by `resu
 - [x] The run ended: 1,221 of 1,221 steps, COMPLETED (TSAI)
 - [x] No NaN or inf in the loss (TSAI)
 - [x] No restart during the run, so no restart from a non-COMPLETE checkpoint
-- [ ] No step lost or repeated: **needs `metrics.jsonl`** to check every step from 1 to 1,221
+- [ ] No step lost or repeated in dry run 1: **not checkable**, per-step logs not released (the restore drill's job B has every step 1 to 1,221)
 - [x] COMPLETE-only restarts: shown by `results/restart_cpu.txt` and `results/restart_node.txt` (dry run 1 had none)
 - [x] Restore drill: jobs A and B bit-equal to dry run 1 on all 1,221 steps, same final model (`restore_dryrun1.md`, PR #573)
 
