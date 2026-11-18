@@ -11,11 +11,11 @@ training starts; nothing in it changes this run.
 
 | When | Work (proposal item) | Done when |
 |---|---|---|
-| Mon 16 | **Dedup job request on #255** (rebased; local run on TSAI's rerun files: 1,345 removed, 64 by rule 0, 0 held-out; pinned at `6cfc24a`) | Done; waiting on lead approval |
+| Mon 16 | **Dedup job request on #255** (rebased; local run on TSAI's rerun files: 1,345 removed, 64 by rule 0, 0 held-out; pinned at `6cfc24a`) | **Done:** approved by Vijay Patil (16 Nov); TSAI ran it (17 Nov, #547): 1,345 removed, 64 by rule 0, 0 held-out, matching the local run; #255 merged (17 Nov) |
 | Tue 17 | **Item 16:** answers to Sourav's 7 open items; the dedup job as a runner `run.json` (adopt the cleaning job's folder, `to: dedup`) | `run_pipeline.py --plan` passes on it |
 | When G10's PR merges | **Item 6:** all 38 packs in `dedup.json` (`licence_usable`, `default_licence_usable: false`) | `licence_default_used_for` is empty in the summary |
-| After lead approval (overlap rerun done, 16 Nov) | **The dedup v1 job at scale**, through the runner (overlap → dedup → apply → F2 → survivor loss) | Lead approval; TSAI's run completes |
-| After TSAI's dedup run | **Item 5:** `code_sha256` and git commit in `overlap_summary.json` and `dedup_summary.json`; part SHA-256s carried from overlap to dedup. After the run, so its `6cfc24a` pin holds | Tests pass; outputs otherwise byte-identical to v1; Sourav's `cleaning_pipeline.json` gets the code hashes |
+| Thu 19 Nov (the combined job on the first sources) | **The dedup v1 job at scale**, through the runner (overlap → dedup → apply → F2 → survivor loss). #547's list fits only the #244 sample v0, so overlap and dedup run again on this job's cleaned output | Vijay confirms the job includes overlap + dedup (asked 18 Nov); `pack_order` and `licence_usable` cover its sources; TSAI's run completes |
+| Now (TSAI's dedup run done, 17 Nov) | **Item 5:** `code_sha256` and git commit in `overlap_summary.json` and `dedup_summary.json`; part SHA-256s carried from overlap to dedup. After the run, so its `6cfc24a` pin holds | Tests pass; outputs otherwise byte-identical to v1; Sourav's `cleaning_pipeline.json` gets the code hashes |
 | When the run's outputs are back | **Dedup audit** (checks on dedup's own numbers; no document reading): see below | Five lines in Vijay's daily audit pack; any failure filed as an issue |
 
 **The dedup audit.** The schedule's general Week 3 audit (reading cleaned documents, comparing before and after
@@ -89,7 +89,7 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 
 | What | Who | Needed for |
 |---|---|---|
-| Lead approval of the dedup job on #255 (the overlap rerun on the #244 cleaning is done) | Vijay Patil | The dedup job at scale |
+| Whether the Thu 19 Nov job includes overlap + dedup, and its source list (asked 18 Nov) | Vijay Patil | The dedup job at scale |
 | G10's licence table on `main` | Sai Teja (G10) | FR4, item 6 |
 | Answers on item 16 | Sourav Dhar, Vijay Patil | Tue's `run.json` |
 
@@ -103,3 +103,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 16 Nov | G10: `en-dclm` stays In (research line read as a disclaimer, noted for TSAI's Gate 3); FR4 waits on G10's PR merging |
 | 16 Nov | Backlog item 7 split: 7a encoder comparison on Sanskrit (BGE-M3 or e5, margin score; any time), 7b dedup side (waits on `h3.py` format and TSAI) |
 | 16 Nov | Item 5 moved after TSAI's dedup run (keeps the `6cfc24a` pin); the dedup job request on #255 is ready; 7a: BGE-M3 measured |
+| 18 Nov | Dedup v1 on sample v0 done: TSAI's run #547 matches the local run, #255 merged (17 Nov). H3 v1.1 in #610 (report-only). The run at scale moves to the Thu 19 Nov job; item 5 can start now |
