@@ -54,7 +54,7 @@ The 50 rows cover 18 benchmarks and 21 source parts.
 
 ## 2. How each document was checked
 
-Each document was read next to its benchmark item, with the matched spans marked. The text came from the local copy of tokenizer sample v0-clean (part files checked against `cleaned_manifest.json`). The verdict uses the same rubric as `tokenizer_sample_scan.md`, section 3 (`real`, `real-short`, `same-repo-code`, `translation-source`, `public-text`, `false-hit`). `real` and `real-short` count as contaminated.
+Each document was read next to its benchmark item. A local viewer showed the item text from the benchmark cache and a window of the document around the match `offset` in `verdicts_v0-clean.csv`. The text came from the local copy of tokenizer sample v0-clean. The 21 part files that the 50 documents use match their `output_sha256` in `cleaned_manifest.json`. The verdict uses the same rubric as `tokenizer_sample_scan.md`, section 3 (`real`, `real-short`, `same-repo-code`, `translation-source`, `public-text`, `false-hit`). `real` and `real-short` count as contaminated.
 
 No document text and no benchmark text is in this file or in the repo. The notes describe what matched, not the text itself.
 
