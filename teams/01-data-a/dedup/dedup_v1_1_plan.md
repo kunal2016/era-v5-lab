@@ -21,7 +21,8 @@ training starts; nothing in it changes this run.
 | Before the Thu 19 job | **Item 6:** every pack of the job's input manifest in `dedup.json` (`licence_usable`, `default_licence_usable: false`) and in `pack_order` (G10's table covers the 38 sample packs) | `licence_default_used_for` is empty in the summary; waits on the job's pack list (asked 18 Nov) |
 | Thu 19 | **The combined Data A job** (TSAI, 17 Nov: spec v1.1 cleaning, then shards). #547's list fits only the #244 cleaning, so overlap and dedup must run again on this job's cleaned output, through the runner (clean → overlap → dedup → apply → F2 → shards); asked Vijay on 18 Nov | Vijay confirms the stages and the pack list; TSAI's run completes |
 | After TSAI's dedup run | **Item 5:** `code_sha256` and git commit in `overlap_summary.json` and `dedup_summary.json`; part SHA-256s carried from overlap to dedup. After the run, so its `6cfc24a` pin holds. When the runner runs dedup itself (run mode), it records the script's SHA-256, which covers #503 for that job | Tests pass; outputs otherwise byte-identical to v1; Sourav's `cleaning_pipeline.json` gets the code hashes |
-| Wed 18 | **H3:** #610 merged (`h3.py` and the report-only H3 step in `dedup.py`); E5c job request #625 (report-only measurement, 1 GPU) | Lead approval on #625; TSAI's run |
+| Wed 18 | **H3:** #610 merged (`h3.py` and the report-only H3 step in `dedup.py`); E5c job request #625 (report-only measurement, 1 GPU) | Approved by Vijay Patil (18 Nov); TSAI's go-ahead (19 Nov); TSAI's run |
+| Thu 19 | **H3: TSAI's ruling** (#625): rule 0 removal once E5c and the harm check pass; direct edges only, fixed in #663; four follow-up questions asked on #625. The H3 harm test on the diagnosis packs (Aneesha Das), since sample v0 has no gold | #663 merged; TSAI's answers; the harm test passes with H3 removals in it |
 | When the run's outputs are back | **Dedup audit** (checks on dedup's own numbers; no document reading): see below | Five lines in Vijay's daily audit pack; any failure filed as an issue |
 
 **The dedup audit.** The schedule's general Week 3 audit (reading cleaned documents, comparing before and after
@@ -55,7 +56,7 @@ Week 3 because the run at scale needs them (item 5 just after TSAI's dedup run).
 | 4 | Code threshold hand review | The run's pairs |
 | 3, 9 | Indic length minimum; Indic shingles if needed. Kannada done 18 Nov (#393): 20/20 template, the 50-word minimum stays | E4 readers' labels for Telugu (#394) and Tamil (#395) |
 | 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed. **BGE-M3 done 16 Nov** (`h3_bge_m3_check_results_v1.md`: 82–95% of Sanskrit blocks at 0.7, 8 times slower); margin score open | Nothing; can run any time, and is evidence for TSAI's ruling |
-| 7b | H3: `h3.py` and the dedup side, report-only. **Merged 18 Nov (#610)**; E5c measurement job #625 | TSAI's ruling on removal and scope (asked on #610); E5d readers for the thresholds |
+| 7b | H3: `h3.py` and the dedup side, report-only. **Merged 18 Nov (#610)**; E5c measurement job #625 | Ruled 19 Nov (#625): removal once E5c and the harm check pass, direct edges only (#663); E5d readers for the Sanskrit threshold |
 | 8, 10, 11 | Containment; "changed least" survivor rule; MinHash + LSH test | The run's outputs; full-data size |
 | 12 | Training ablation of the cross-pack pass | A pack's cross-pack removals reaching 1% |
 | 13, 14, 15 | New sources from #461: pack order, non-document packs, licences | #461's packs joining; G10 |
@@ -64,14 +65,14 @@ Week 3 because the run at scale needs them (item 5 just after TSAI's dedup run).
 
 A forecast for TSAI's planning: the jobs the backlog needs on TSAI's machines. Each comes as its own job request with a
 local test log. Items 3, 4, 9, 13–15 and E5d need no job of their own (readers, hand reviews, local experiments,
-decisions, configs); a rule they change goes into job 2 or 3.
+decisions, configs); a rule they change goes into job 2 or 3. The H3 harm test runs locally on the diagnosis packs.
 
 | # | Job | Items | Hardware, rough time | When | Depends on |
 |---|---|---|---|---|---|
-| 1 | H3 E5c measurement (#625), report-only | 7 | 1 GPU, ≤ 120 min | Now | Lead approval |
+| 1 | H3 E5c measurement (#625), report-only | 7 | 1 GPU, ≤ 120 min | Now | Approved (18 Nov); TSAI's go-ahead (19 Nov) |
 | 2 | Overlap v1.1 rerun: same URL, math body, Indic minimum, code threshold; containment pairs written too | 1–4, 8 | CPU, about 80–90 min (the rerun took 77) | First week after launch | The team's call on items 1–2; E4 labels for item 3 |
 | 3 | Dedup v1.1 on that rerun | 1–4, 6 | CPU, minutes | Right after job 2 | Job 2 |
-| 4 | H3 removal run (`dedup.py` with `h3.remove: true`) | 7 | CPU, minutes | After E5d | TSAI allowing rule 0 removal; readers' thresholds |
+| 4 | H3 removal run (`dedup.py` with `h3.remove: true`), in v1 | 7 | CPU, minutes | After E5c and the H3 harm test pass | TSAI's ruling (19 Nov); #663 merged; E5d for the Sanskrit threshold |
 | 5 | "Changed least" survivor test (raw and cleaned text) | 10 | CPU, under an hour | After job 3 | Job 3's groups |
 | 6 | MinHash + LSH agreement test on the sample | 11 | CPU, about 1–2 h | When the full-data size is known or #461's packs join | Full-data size |
 | 7 | Training ablation of the cross-pack pass | 12 | GPU training | Only if a pack's cross-pack removals reach 1% | Counts with new packs |
@@ -112,7 +113,8 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | What | Who | Needed for |
 |---|---|---|
 | The Thu 19 job's stages (overlap and dedup in?) and its pack list | Vijay Patil, TSAI | Item 6, FR4 and the dedup settings for that job |
-| Lead approval of #625, then TSAI's run | Vijay Patil, TSAI | H3 E5c counts |
+| TSAI's E5c run (#625, approved) | TSAI | H3 E5c counts |
+| Answers to the four H3 questions (#625, 19 Nov); review of #663 | TSAI; Vijay Patil, Aneesha Das | The H3 removal run (job 4) |
 | G10's licence table on `main` | Sai Teja (G10) | FR4, item 6 |
 | Answers on item 16 | Sourav Dhar, Vijay Patil | Tue's `run.json` |
 
@@ -131,3 +133,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 18 Nov | #610 merged (H3, report-only); E5c job request #625; Thu 19 combined job: overlap and dedup must rerun on its cleaning (asked Vijay); item 6 now waits on that job's pack list; TSAI jobs forecast added |
 | 18 Nov | "What this plan asks for" note added: the backlog and the forecast are for information, not requests |
 | 19 Nov | E4 Kannada scored (#393): 20/20 template, so item 3 keeps v1's minimum for Kannada; Telugu and Tamil still with readers |
+| 19 Nov | TSAI ruled on H3 (#625): rule 0 removal in v1 once E5c and the harm check pass, direct edges only; #663 fixes `h3_join.py`; harm test on the diagnosis packs (Aneesha); job 4 moves to after E5c and the harm test |
