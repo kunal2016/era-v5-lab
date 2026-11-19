@@ -10,29 +10,32 @@ in directly. `make_writer` returns an object with the trainer's interface that p
         python train_week2.py ... --out runs/r1 --logger-factory g5_adapter:make_writer
 
 G8 rows go to `<out>/g8/metrics.jsonl`. G5's own `<out>/metrics.jsonl` is left alone (its JsonWriter opens it
-with "w", so the two must not share a file). Load the G8 file into ClickHouse with the run name:
+with "w", so the two must not share a file). The adapter reads `run_id` from the trainer's manifest
+and writes it in every G8 row. ClickHouse can use the embedded ID directly:
 
-    python teams/08-monitoring/clickhouse/load_jsonl.py runs/r1/g8/metrics.jsonl --run-id r1
+    python teams/08-monitoring/clickhouse/load_jsonl.py runs/r1/g8/metrics.jsonl
 
 What happens to G5's row:
 - `loss_ntp`, `loss_mtp`, `tokens_per_second` are written as they are; `gpu_alloc_gb` becomes `gpu_alloc_gib`.
 - `gradient_clipping_applied` (a bool in G5's row) is stored as 0 / 1.
-- On validation steps, `val/nll_nats` / `val/scored_tokens` give `validation_loss` (MetricsWriter does this).
+- On validation steps, `val/nll_nats` / `val/scored_tokens` give `validation_loss`, and `val/nll_nats` /
+  (ln(2) x `val/utf8_bytes`) gives `validation_bpb` (G5's `val/bpb`). MetricsWriter does both.
 - `tokens_per_byte` is worked out as `train/scored_tokens / train/utf8_bytes` (the whole batch), unless the
   row already has it.
-- G5-only names that have no G8 metric (`train/ce_loss`, `loss_total`, `perf/step_ms`, `val/bpb`, ...) are
+- G5-only names that have no G8 metric (`train/ce_loss`, `loss_total`, `perf/step_ms`, `val/perplexity`, ...) are
   dropped without a warning. Any other unknown name still gets MetricsWriter's one-time warning, so a new G5
   field is noticed.
 """
 
-import os
+import json
+from pathlib import Path
 
 from metrics_writer import FLUSH_EVERY, MetricsWriter
 
 # Fields in G5's row that have no G8 metric. Dropped quietly (MetricsWriter would warn once for each).
 G5_ONLY = frozenset({
     "train/ce_loss", "loss_total", "train/scored_tokens", "train/input_positions", "train/utf8_bytes",
-    "perf/step_ms", "val/bpb", "val/perplexity",
+    "perf/step_ms", "val/perplexity",
 })
 
 
@@ -52,8 +55,8 @@ def _tokens_per_byte(row):
 class G5Writer:
     """The trainer's writer interface (write(row) / flush() / close()) over a MetricsWriter."""
 
-    def __init__(self, path, flush_every=FLUSH_EVERY):
-        self.writer = MetricsWriter(path, flush_every=flush_every)
+    def __init__(self, path, flush_every=FLUSH_EVERY, *, run_id=None):
+        self.writer = MetricsWriter(path, flush_every=flush_every, run_id=run_id)
         self.path = path
 
     def write(self, row):
@@ -75,4 +78,7 @@ class G5Writer:
 
 def make_writer(out_dir):
     """Factory for train_week2.py's --logger-factory: rows go to <out_dir>/g8/metrics.jsonl."""
-    return G5Writer(os.path.join(os.fspath(out_dir), "g8", "metrics.jsonl"))
+    out = Path(out_dir)
+    manifest = out / "manifest.json"
+    run_id = json.loads(manifest.read_text(encoding="utf-8")).get("run_id") if manifest.is_file() else None
+    return G5Writer(out / "g8" / "metrics.jsonl", run_id=run_id)

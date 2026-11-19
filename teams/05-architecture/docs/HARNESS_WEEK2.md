@@ -2,7 +2,7 @@
 
 ## Contract
 
-Input: arm setting `embedding: ke1`, implemented by the native G4 raw-byte-code projection. This is an explicit adapter mapping, not a change to the arm. The physical raw table must match tokenizer v0 and G4 format v2. G4-shipped artifact verification is still required; passing a locally rebuilt table does not imply G4 approval.
+Input: arm setting `embedding: ke2`, implemented by the native G4 raw-byte-code projection (`week2.model.KE2`). `ke1` is the older arm value for the same path and is still accepted, so arm files and pinned job requests written before 15 Nov load unchanged. The value is recorded in the manifest as the arm file writes it. KE1 is not in use in this harness. `t1.yaml`, `t2.yaml` and `t3.yaml` still say `ke1`: Team 6's arm timing jobs read the same files through Team 6's loader, where `ke1` and `ke2` are two different modules. This is an explicit adapter mapping, not a change to the arm. The physical raw table must match tokenizer v0 and G4 format v2. G4-shipped artifact verification is still required; passing a locally rebuilt table does not imply G4 approval.
 
 Output: dense untied `nn.Linear(d_model, vocab_size, bias=False)` only, per TSAI's 1 Nov decision. No KE-tied output code, output-head switch or EXP-5 remains. Input projection and output parameters are independent.
 
@@ -55,3 +55,17 @@ Aggregate `val/bpb` remains available. Each slice reports `val/slices/<slice>/bp
 Winner helper: `python teams/05-architecture/harness/week2/scoring.py comparison.json`. Input has challenger and runner_up arrays, each with exactly seeds 1234/1235/1236, eligible_for_quality_comparison=true, and the three-group/code/Indic metrics. It requires score improvement greater than the larger seed spread, and code/Indic regression no greater than the larger corresponding spread. This conservative interpretation of seed noise is explicit for lead review. Smoke/incomplete runs cannot win. Caller supplies the family baseline or actual runner-up according to the plan; the helper does not choose or manufacture experiment results.
 
 PR197 selects train_week2.py for EXP-1. All five learning rates/seeds must use the same version and data. Reconcile with the final approved plan; no lead-owned plan or holdout is included in this code overlay.
+
+## Token cache (optional, off by default)
+
+Set `G5_DOCUMENT_CACHE_DIR=/path/to/cache` to cache the tokenized train and heldout files.
+The first run tokenizes each file once with the unchanged `Artifacts.encode`, verifies the
+numeric windows and stores them under a key made from the input file hash, tokenizer and
+byte-table identity, sequence length, ID/source settings and the loader source hash. A later
+run with the same file and tokenizer loads the verified token ids through a read-only memory
+map and does not tokenize again. A changed file, tokenizer, table or sequence length gets a
+new key, so an old cache is never reused. Token ids, sample order, loss and BPB are identical
+to the uncached loader. Without the variable the loader is unchanged. An empty value is an
+error. `notebooks/build_window_cache.py` can still prebuild the same cache with parallel workers.
+If two jobs start on an empty cache folder, both build the same key; the job that publishes
+second verifies and reuses the published cache instead of failing.

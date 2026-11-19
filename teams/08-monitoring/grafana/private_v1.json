@@ -304,7 +304,28 @@
           },
           "unit": "decgbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -373,7 +394,28 @@
           },
           "unit": "percentunit"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -447,6 +489,26 @@
           "displayName": "${__field.labels.series}"
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byRegexp",
@@ -1163,6 +1225,124 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "${ds}"
       },
+      "description": "expert_load_imbalance per optimizer step: busiest expert / average expert, max(load) / mean(load) (= max(shares) x number of experts) in the worst MoE layer. 1.0 = perfectly balanced; 2.0 = the busiest expert gets twice the average share; the number of experts = every pick goes to one expert. Equals router_max_vio + 1 (panel 21). Computed from expert_load by metrics_writer.py.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1.5
+              },
+              {
+                "color": "red",
+                "value": 2.0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^value.*"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "busiest / average"
+              },
+              {
+                "id": "min",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 60
+      },
+      "id": 27,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'expert_load_imbalance' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "MoE Expert Load Imbalance (expert_load_imbalance)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
       "description": "gpu_temp_c per optimizer step (degrees C, rank 0's GPU, from NVML) with gpu_thermal_throttle next to it: 1 when NVML reports HW (0x40) or SW (0x20) thermal slowdown, so the GPU lowered its clocks because of heat. Colours: green below 75 C, yellow from 75 C, red from 85 C. Slower steps with throttle 1 mean heat, not the code. Every GPU at 1 s is in panel 12 (gpu_telemetry_1s).",
       "fieldConfig": {
         "defaults": {
@@ -1197,6 +1377,26 @@
           "displayName": "${__field.labels.series}"
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byRegexp",
@@ -1319,7 +1519,28 @@
           "unit": "short",
           "displayName": "${__field.labels.series}"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -1388,7 +1609,28 @@
           },
           "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -1583,10 +1825,30 @@
               }
             ]
           },
-          "displayName": "${__field.labels.series}",
-          "max": 1
+          "displayName": "${__field.labels.series}"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -1619,6 +1881,343 @@
         }
       ],
       "title": "Gradient clipping rate (gradient_clipping_applied)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "update_weight_ratio per logged optimizer step: global L2 update-to-weight ratio ||lr * update||_2 / ||W||_2 (one scalar for the whole model). Equals ||ΔW||_2 / ||W||_2 when update is the parameter change. Very large values may mean unstable steps; near-zero may mean learning has stalled. Worked out by metrics_logger/metrics_writer.py compute_update_weight_ratio (default every 10 steps).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "update / weight L2",
+            "lineWidth": 2,
+            "showPoints": "auto"
+          },
+          "decimals": 4,
+          "min": 0,
+          "unit": "short",
+          "displayName": "${__field.labels.run_id}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 92
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT step, run_id, value FROM metrics_raw WHERE name = 'update_weight_ratio' AND run_id IN ($run) AND value IS NOT NULL ORDER BY step",
+          "refId": "A"
+        }
+      ],
+      "title": "Update-to-weight ratio (update_weight_ratio)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "run_id"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "Held-out bits per UTF-8 byte (validation_bpb) at each validation run, one line of points per run. It counts bytes, not tokens, so runs with different G3 tokenizers can be compared on this axis (validation_loss, panel 20, cannot). Lower is better. Read from validation_bpb rows (written by metrics_writer.py); for G5 train_week2.py's own metrics.jsonl, from val/bpb, or worked out in the query as val/nll_nats / (log(2) * val/utf8_bytes). One value per run and step, in that order.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "bits per byte",
+            "lineWidth": 2,
+            "showPoints": "always",
+            "spanNulls": true,
+            "pointSize": 7
+          },
+          "decimals": 3,
+          "unit": "none",
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "step"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT x AS step, series, y AS value FROM (SELECT step AS x, concat(run_id, ' validation_bpb') AS series, multiIf(countIf(name = 'validation_bpb') > 0, anyIf(value, name = 'validation_bpb'), countIf(name = 'val/bpb') > 0, anyIf(value, name = 'val/bpb'), countIf(name = 'val/nll_nats') = 1 AND countIf(name = 'val/utf8_bytes') = 1 AND sumIf(value, name = 'val/utf8_bytes') > 0, sumIf(value, name = 'val/nll_nats') / (log(2) * sumIf(value, name = 'val/utf8_bytes')), NULL) AS y FROM metrics_raw WHERE name IN ('validation_bpb', 'val/bpb', 'val/nll_nats', 'val/utf8_bytes') AND run_id IN ($run) AND value IS NOT NULL GROUP BY run_id, step) WHERE y IS NOT NULL ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "Validation bits per byte (validation_bpb)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "series"
+            ],
+            "naming": {
+              "asLabels": true
+            }
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "step",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "trend"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "gpu_memory_used: memory in use on the whole GPU by all processes (nvidia-smi memory.used), in bytes, shown as GiB. One line per run and GPU, the largest value in each 10-second window (metric_list_v1.yaml). G6's GpuSampler sends mem_used_mib about once a second; clickhouse/load_jsonl.py and metrics_logger/metrics_writer.py (gpu_memory_used) multiply it by 1,048,576. Panel 6 (gpu_alloc_gib) counts only PyTorch's allocations, so this line is higher: the gap is PyTorch's cache, the CUDA context and other processes. Close to the GPU's total memory means close to out-of-memory.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "GPU memory used",
+            "lineWidth": 2
+          },
+          "decimals": 1,
+          "min": 0,
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 108
+      },
+      "id": 26,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT toStartOfInterval(time_1s, INTERVAL 10 second) AS time, concat(run_id, ' gpu', toString(rank)) AS series, max(max) AS value FROM gpu_telemetry_1s WHERE name = 'gpu_memory_used' AND run_id IN ($run) AND $__timeFilter(time_1s) GROUP BY time, series ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU memory used (gpu_memory_used)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${ds}"
+      },
+      "description": "Team 9 eval-mini score of each lab checkpoint (eval_mini table, filled by Team 9's eval_watcher.py), one line per run and task. x is the checkpoint step, y the task's primary metric in percent (acc_norm, acc, exact_match or pass@1, as in eval_mini_v1_schema.md). Higher is better. A line that goes flat or drops while the loss still falls is a reason to look at the run. Only rows with a checkpoint step are shown, so Hugging Face reference models do not appear. If one checkpoint is scored twice, or a step repeats after a restart, the row from the latest restart (checkpoint_epoch) and then the latest load wins. The branch shows in the name when it is not main; the format and item set show when they are not bf16 and full. Pick runs and tasks with the eval run and eval task variables.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "score (%)",
+            "lineWidth": 2,
+            "showPoints": "always",
+            "spanNulls": true,
+            "pointSize": 6,
+            "axisSoftMin": 0,
+            "axisSoftMax": 100
+          },
+          "decimals": 2,
+          "unit": "percent",
+          "displayName": "${__field.labels.series}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "checkpoint step"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 116
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xField": "step"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${ds}"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT assumeNotNull(checkpoint_step) AS step, concat(assumeNotNull(checkpoint_run), if(ifNull(checkpoint_branch, 'main') = 'main', '', concat('/', assumeNotNull(checkpoint_branch))), ' ', task, if(num_fewshot > 0, concat(' ', toString(num_fewshot), '-shot'), ''), ' ', metric, if(format = 'bf16', '', concat(' ', format)), if(item_set = 'full', '', concat(' [', substring(item_set, 1, 17), ']'))) AS series, argMax(value, (ifNull(checkpoint_epoch, 0), loaded_at)) AS value FROM eval_mini WHERE primary = 1 AND checkpoint_step IS NOT NULL AND checkpoint_run IN ($eval_run) AND task IN ($eval_task) GROUP BY step, series ORDER BY step, series",
+          "refId": "A"
+        }
+      ],
+      "title": "Eval-mini score per checkpoint (eval_mini, primary metric)",
       "transformations": [
         {
           "id": "partitionByValues",
@@ -1706,6 +2305,40 @@
         ],
         "query": "10,100,1000,10000",
         "type": "custom"
+      },
+      {
+        "allValue": null,
+        "current": {},
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${ds}"
+        },
+        "definition": "SELECT DISTINCT checkpoint_run FROM eval_mini WHERE checkpoint_run IS NOT NULL ORDER BY checkpoint_run",
+        "includeAll": true,
+        "label": "eval run",
+        "multi": true,
+        "name": "eval_run",
+        "query": "SELECT DISTINCT checkpoint_run FROM eval_mini WHERE checkpoint_run IS NOT NULL ORDER BY checkpoint_run",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {},
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${ds}"
+        },
+        "definition": "SELECT DISTINCT task FROM eval_mini WHERE primary = 1 AND checkpoint_step IS NOT NULL AND checkpoint_run IN ($eval_run) ORDER BY task",
+        "includeAll": true,
+        "label": "eval task",
+        "multi": true,
+        "name": "eval_task",
+        "query": "SELECT DISTINCT task FROM eval_mini WHERE primary = 1 AND checkpoint_step IS NOT NULL AND checkpoint_run IN ($eval_run) ORDER BY task",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
       }
     ]
   },
