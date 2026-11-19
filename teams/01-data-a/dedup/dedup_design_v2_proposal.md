@@ -4,7 +4,7 @@
 
 **Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them (item 5 just after TSAI's dedup run, so the job's pin holds). TSAI's v1 dedup run is done (#547, 17 Nov: 1,345 of 1,414,996 removed, 64 by rule 0, 0 held-out, as expected) and #255 is merged. H3's code is merged too (#610, 18 Nov), report-only; its first measurement job is #625. Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
 
-**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work; updated 16 Nov for G10's licence rulings (all 38 packs), the BGE-M3 encoder check (H3-h, H3-i), a first containment count on the rerun (item 8) and item 5 moving after TSAI's dedup run; updated 18 Nov for H3 v1.1 merged (#610), the end-to-end check of `h3.py` → `dedup.py`, the E5c job request (#625) and the forecast of TSAI jobs (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
+**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work; updated 16 Nov for G10's licence rulings (all 38 packs), the BGE-M3 encoder check (H3-h, H3-i), a first containment count on the rerun (item 8) and item 5 moving after TSAI's dedup run; updated 18 Nov for H3 v1.1 merged (#610), the end-to-end check of `h3.py` → `dedup.py`, the E5c job request (#625) and the forecast of TSAI jobs; updated 19 Nov for the licence map (#630) and E4's Kannada labels (item 3) (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
 **Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
 Every v1 number quoted here comes from TSAI's 5 Nov run or the local runs in `results_v1.md`. The 5 Nov run is superseded by the rerun on the #244 cleaning, so each number is checked again on the rerun before any item below is decided.
@@ -17,10 +17,10 @@ Items are split by what they need. **v1.1** items change a rule or a setting of 
 |---|---|---|---|---|
 | 1 | Same-URL pairs count as H2 at ≥ 0.80 | v1.1 | A same-URL math copy scored 0.894 and was missed; two true math copies sharing a URL were rejected by the numbers rule | Team decision, overlap run |
 | 2 | Math numbers rule on the body only | v1.1 | The rule rejected true copies whose only numeric difference was a date line or a number in the title | Team decision, overlap run |
-| 3 | Indic length minimum | v1.1 | The 50-word minimum rejects 135 near-identical Indic pairs (69 documents); 19.9% of Indic documents are under 50 words | E4 reader labels, overlap run |
+| 3 | Indic length minimum | v1.1 | The 50-word minimum rejects 135 near-identical Indic pairs (69 documents); 19.9% of Indic documents are under 50 words. Kannada (18 Nov): 20/20 template, so the minimum stays there | E4 reader labels (Telugu, Tamil), overlap run |
 | 4 | Code threshold (0.85 on tokens) | v1.1 | "Under review" in v1; `code-rust` has 530 qualifying token pairs but only 3 word pairs ≥ 0.80 | Hand review of code pairs |
 | 5 | Summaries record code SHA-256, git commit and part hashes; `remove_list.csv` keeps its five columns | v1.1 | Sourav's runner adopts overlap and dedup but cannot record their code (`code_sha256` stays null); `apply_dedup.py` accepts only the exact five-column header | Code change, tests |
-| 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10 now lists all 38 packs in Stage 0, `TSAI reserves` (16 Nov; PR pending); only `ind-hi-hplt`'s web terms remain for TSAI | G10's PR on `main`; `dedup.py` rerun (seconds) |
+| 6 | Config-only updates: licence map, Data B pack order | v1.1 | G10's table on `main` (#524, 17 Nov) lists all 38 packs in Stage 0, `TSAI reserves`; the licence map is filled in #630 (18 Nov), outputs unchanged | #630 merged; a G10 row and a `pack_order` place for any pack beyond the 38 |
 | 7 | **H3: translations across languages** | v1.1 in `h3_design_v1.md` (Aneesha); recheck in v2.0 | Out of scope in v1 (TSAI, 5 Nov); Sanskrit packs are known to carry translations | H3-a to H3-f for v1.1; H3-g to H3-m after E5 |
 | 8 | Containment for truncated copies | v2 | E3 limit: a copy keeping 85 of 100 words is caught, 80 of 100 is missed | Experiment on the overlap outputs |
 | 9 | Indic-aware shingles | v2, only if 3 is not enough | Word 5-grams were set on English (Risk 2) | Experiment on Indic packs |
@@ -59,6 +59,10 @@ All of v1.1 goes into **one** overlap run, after TSAI's v1 dedup job, so that v1
 **Evidence:** across all `ind-*` packs the 50-word minimum rejects 135 near-identical pairs (69 documents); the three `sangraha-s` packs lose almost all their pairs (106 pairs, 35 documents, 4 clusters, each pair differing by 1–5 words per side).
 **Needs:** the native readers' labels (issues #392–#395) on sheets rebuilt from the rerun. If they label the pairs as copies, lower the minimum. If they label them as templates, v1's minimum stays.
 **Bound:** whatever the labels, the change affects at most 69 Indic documents on the sample.
+**Kannada, 18 Nov (#393, Ravi Naik):** all 20 `ind-kn-sangraha-s` pairs labelled **template** ("different headword; same
+dictionary-notice body"): 10 documents of 17–41 words, Jaccard 0.82–0.94, 19 of the 20 pairs in one cluster. A 30-word
+minimum would have made 19 of them H2 duplicates, so for Kannada v1's 50-word minimum stays. Telugu (32 pairs, #394)
+and Tamil (54 pairs, #395) are still with readers.
 
 ### 4. Code threshold
 
@@ -73,7 +77,7 @@ The remove list is applied by Sourav Dhar's `apply_dedup.py` (`teams/01-data-a/p
 
 ### 6. Config-only updates
 
-G10 has added a Stage 0 row for every sample pack (16 Nov, `saitej123:g10-week3-post-training`; `en-dclm` stays In, its "research purposes only" line read as a disclaimer and noted for TSAI's Gate 3). Once that is on `main`, `dedup.json` lists all 38 packs in `licence_usable` with `default_licence_usable: false` (`licence_status_before_scale_v1.md`). If TSAI excludes a pack later, set it to `false`. If the Data B lead asks for another order of their 25 packs, change the list in `dedup.json` and `source_priority_v1.md`. Neither needs an overlap run: rerun `dedup.py`, and its tests, on the same overlap outputs.
+G10's table on `main` (#524, 17 Nov) has a Stage 0 row for every sample pack, all `TSAI reserves` (`en-dclm` stays In, its "research purposes only" line read as a disclaimer and noted for TSAI's Gate 3). **Done in #630 (18 Nov):** `dedup.json` lists all 38 packs in `licence_usable` with `default_licence_usable: false`; on the rerun's files every output is byte-identical, and a new test checks that every pack in `pack_order` has a licence entry (`jobs/logs/2026-11-18-dedup-licence-check.txt`). If TSAI excludes a pack later, set it to `false`. If the Data B lead asks for another order of their 25 packs, change the list in `dedup.json` and `source_priority_v1.md`. Neither needs an overlap run: rerun `dedup.py`, and its tests, on the same overlap outputs.
 
 ## v2: new methods
 

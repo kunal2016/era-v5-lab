@@ -53,7 +53,7 @@ Week 3 because the run at scale needs them (item 5 just after TSAI's dedup run).
 |---|---|---|
 | 1, 2 | Same-URL rule; math numbers on the body (behind switches, off = v1) | The first overlap rerun after launch |
 | 4 | Code threshold hand review | The run's pairs |
-| 3, 9 | Indic length minimum; Indic shingles if needed | E4 readers' labels |
+| 3, 9 | Indic length minimum; Indic shingles if needed. Kannada done 18 Nov (#393): 20/20 template, the 50-word minimum stays | E4 readers' labels for Telugu (#394) and Tamil (#395) |
 | 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed. **BGE-M3 done 16 Nov** (`h3_bge_m3_check_results_v1.md`: 82–95% of Sanskrit blocks at 0.7, 8 times slower); margin score open | Nothing; can run any time, and is evidence for TSAI's ruling |
 | 7b | H3: `h3.py` and the dedup side, report-only. **Merged 18 Nov (#610)**; E5c measurement job #625 | TSAI's ruling on removal and scope (asked on #610); E5d readers for the thresholds |
 | 8, 10, 11 | Containment; "changed least" survivor rule; MinHash + LSH test | The run's outputs; full-data size |
@@ -130,3 +130,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 17 Nov | TSAI's dedup run returned (#547), as expected; #255 merged |
 | 18 Nov | #610 merged (H3, report-only); E5c job request #625; Thu 19 combined job: overlap and dedup must rerun on its cleaning (asked Vijay); item 6 now waits on that job's pack list; TSAI jobs forecast added |
 | 18 Nov | "What this plan asks for" note added: the backlog and the forecast are for information, not requests |
+| 19 Nov | E4 Kannada scored (#393): 20/20 template, so item 3 keeps v1's minimum for Kannada; Telugu and Tamil still with readers |
