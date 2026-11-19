@@ -11,7 +11,9 @@ import importlib
 import json
 from pathlib import Path
 import random
+import re
 import time
+from uuid import uuid4
 import numpy as np
 import torch
 from week2.artifacts import Artifacts, sha256
@@ -165,6 +167,9 @@ def main():
     p.add_argument(
         "--logger-factory",
         help="module:function returning writer(out_dir) with write/flush/close",
+    )
+    p.add_argument(
+        "--run-id", help="Shared job run ID (letters, digits, dots, dashes, underscores)"
     )
     p.add_argument("--stop-after", type=int)
     p.add_argument(
@@ -333,9 +338,27 @@ def main():
     identity_hash = hashlib.sha256(
         json.dumps(identity, sort_keys=True).encode()
     ).hexdigest()
+    checkpoint = None
+    run_id = args.run_id
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
+        if checkpoint["identity_sha256"] != identity_hash:
+            p.error("Resume code/config/artifact/data/device/software identity changed")
+        saved_run_id = checkpoint.get("run_id")
+        if saved_run_id is None:
+            saved_run_id = sha256(args.resume)
+        if run_id is not None and run_id != saved_run_id:
+            p.error("--run-id does not match the checkpoint run ID")
+        run_id = saved_run_id
+    if run_id is None:
+        run_id = uuid4().hex
+    if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", run_id):
+        p.error("Run ID must begin with a letter or digit and use only letters, digits, dots, dashes and underscores")
+
     args.out.mkdir(parents=True, exist_ok=True)
     manifest = {
         **identity,
+        "run_id": run_id,
         "identity_sha256": identity_hash,
         "baseline_commit": cfg["provenance"]["lead_snapshot"],
         "parameters": model.parameter_count(),
@@ -352,19 +375,12 @@ def main():
         json.dumps(manifest, indent=2), encoding="utf8"
     )
     external = None
-    if args.logger_factory:
-        module, name = args.logger_factory.split(":", 1)
-        external = getattr(importlib.import_module(module), name)(args.out)
-    writer = JsonWriter(args.out, cfg["run"]["flush_every_steps"])
     rows = []
     trace = []
     ntp_trace = []
     completed = 0
     resumed_seconds = 0.0
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
-        if checkpoint["identity_sha256"] != identity_hash:
-            p.error("Resume code/config/artifact/data/device/software identity changed")
+    if checkpoint is not None:
         model.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         stream.load_state_dict(checkpoint["stream"])
@@ -391,10 +407,14 @@ def main():
         ]:
             row.setdefault(key, float(cfg["optim"]["lr"]) if key == "lr" else 0.0)
         writer.write(row)
-        if external:
+        if external is not None:
             external.write(row)
 
+    writer = JsonWriter(args.out, cfg["run"]["flush_every_steps"])
     try:
+        if args.logger_factory:
+            module, name = args.logger_factory.split(":", 1)
+            external = getattr(importlib.import_module(module), name)(args.out)
         for row in rows:
             log(row)
         if not rows:
@@ -515,7 +535,7 @@ def main():
             log(row)
         # Interrupted segments must not introduce extra validation events into resume history.
         writer.flush()
-        if external:
+        if external is not None:
             external.flush()
         wall = resumed_seconds + time.perf_counter() - started
         if not args.no_checkpoint:
@@ -534,6 +554,7 @@ def main():
                     "numpy_rng": np.random.get_state(),
                     "step": completed,
                     "identity_sha256": identity_hash,
+                    "run_id": run_id,
                     "trace": trace,
                     "ntp_trace": ntp_trace,
                     "rows": rows,
@@ -556,6 +577,7 @@ def main():
                         if args.smoke
                         else ("COMPLETED" if full else "INCOMPLETE_NOT_A_RESULT")
                     ),
+                    "run_id": run_id,
                     "steps": completed,
                     "wall_seconds": wall,
                     "timed_out": timed_out,
@@ -569,9 +591,11 @@ def main():
             encoding="utf8",
         )
     finally:
-        writer.close()
-        if external:
-            external.close()
+        try:
+            writer.close()
+        finally:
+            if external is not None:
+                external.close()
 
 
 if __name__ == "__main__":
