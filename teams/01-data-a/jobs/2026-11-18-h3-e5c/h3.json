@@ -3,7 +3,7 @@
   "inputs": "out/tokenizer_sample_v0_clean",
   "out": "out/h3",
   "cache": "out/h3_cache",
-  "model_path": "models/LaBSE",
+  "model_path": "../models/LaBSE",
   "device": "cuda",
   "precision": "auto",
   "packs": {
