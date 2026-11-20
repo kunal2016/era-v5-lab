@@ -113,7 +113,7 @@ The 5 changes:
 | 10 | `train/en-dclm/part-00000` | `2d7423e919ec3079` | `milu:test:10718` | 59/77 | real | real | same as first pass |
 | 11 | `train/math-finemath/part-00000` | `1e4c6961eec00d6b` | `milu:test:12395` | 1/6 | real-short | real-short | same as first pass |
 | 12 | `train/en-nemotroncc/part-00001` | `f850e013d31ed753` | `mmlu:test:8335` | 1/19 | real-short | **false-hit** | ordinary article sentence about CBT, not the MMLU question. 1 matching 13-gram |
-| 13 | `train/ind-hi-sangraha-v/part-00000` | `16715ac27052d77c` | `milu:test:37746` | 2/22 | real-short | **real** | exact UPSC 2014 question stem with its answer key (d) |
+| 13 | `train/ind-hi-sangraha-v/part-00000` | `16715ac27052d77c` | `milu:test:37746` | 2/22 | real-short | **real** | exact UPSC 2014 question stem with its answer key |
 | 14 | `train/math-megamath/part-00000` | `0b649af92d9a5cfc` | `mmlu:test:2064` | 13/71 | real-short | real-short | same as first pass |
 | 15 | `train/math-finemath/part-00000` | `6c473e4f9f2a6256` | `milu:test:9182` | 5/30 | real-short | **real** | complete question with the same four options |
 | 16 | `train/math-finemath/part-00000` | `982b1d00575fc7a7` | `mmlu:test:1643` | 1/11 | real-short | **false-hit** | textbook sentence on sound speed, not the MMLU question. 1 matching 13-gram |
