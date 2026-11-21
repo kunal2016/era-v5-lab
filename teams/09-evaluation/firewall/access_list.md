@@ -34,7 +34,7 @@ the date here.
 
 | Handle | From team | Benchmark (model) | Status on 4 Nov | Ended |
 |---|---|---|---|---|
-| `sandeepkunkunuru` | Team 8 lead | BBH (Qwen2.5-1.5B) | Row open, #199 | |
+| `sandeepkunkunuru` | Team 8 lead | BBH (Qwen2.5-1.5B) | Row merged, #199; deletion confirmed in G9 on 19 Nov | 11 Nov |
 | `sureshmantha` | Team 7 lead | MuSR (Qwen2.5-0.5B) | Row merged, #251; deletion to confirm | 3 Nov |
 | `udisinghania` | Team 5 | ARC-Challenge (Qwen2.5-1.5B) | Row merged, #303; deletion confirmed in G9 on 10 Nov | 10 Nov |
 | `shank343` | Team 6 | BBH (llama-3.2-3b) | Row merged, #290; deletion confirmed in G9 on 5 Nov | 4 Nov |
