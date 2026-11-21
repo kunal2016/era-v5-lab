@@ -2,9 +2,9 @@
 
 **Lead:** Vijay Patil (Data A). **Owners:** Kunal Sinha and Aneesha Das (Data A dedup).
 
-**Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them (item 5 just after TSAI's dedup run, so the job's pin holds). TSAI's v1 dedup run is done (#547, 17 Nov: 1,345 of 1,414,996 removed, 64 by rule 0, 0 held-out, as expected) and #255 is merged. H3's code is merged too (#610, 18 Nov), report-only; its first measurement job is #625, approved by Vijay Patil (18 Nov) and given TSAI's go-ahead with its ruling on H3 (19 Nov: rule 0 removal in v1 once E5c and the harm check pass; only direct edges remove, fixed in #663). Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
+**Now (Weeks 3 and 4, 15–28 Nov):** dedup runs v1's rules, frozen, at scale; only items 5, 6 and 16 are done now, because the run needs them (item 5 just after TSAI's dedup run, so the job's pin holds). TSAI's v1 dedup run is done (#547, 17 Nov: 1,345 of 1,414,996 removed, 64 by rule 0, 0 held-out, as expected) and #255 is merged. H3's code is merged too (#610, 18 Nov), report-only; its first measurement job is #625, approved by Vijay Patil (18 Nov) and given TSAI's go-ahead with its ruling on H3 (19 Nov: rule 0 removal in v1 once E5c and the harm check pass; only direct edges remove, fixed in #663). #625 and the second-encoder job #666 were merged on 20 Nov and wait for TSAI's runs. **Week 4 (22–28 Nov)** runs the merged pipeline on **corpus-v1**, the real training data, for dry run 2; H3 stays report-only in that run, because E5c has not run yet (`h3_design_v1.md`, "Decisions"). Plan and requirements: `dedup_v1_1_plan.md`. Everything else in this file is the backlog for after training starts.
 
-**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work; updated 16 Nov for G10's licence rulings (all 38 packs), the BGE-M3 encoder check (H3-h, H3-i), a first containment count on the rerun (item 8) and item 5 moving after TSAI's dedup run; updated 18 Nov for H3 v1.1 merged (#610), the end-to-end check of `h3.py` → `dedup.py`, the E5c job request (#625) and the forecast of TSAI jobs; updated 19 Nov for the licence map (#630), E4's Kannada labels (item 3), TSAI's H3 ruling on #625 and the direct-edge fix (#663) (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
+**Status:** final draft for team review, 15 Nov 2026 (first draft 13 Nov); updated 15 Nov for the new Indic sources (#461, with Shankar Pandala's review), Aneesha Das's H3 draft (#44 on Vijay's fork) and G2's note that it has no translated-pair work; updated 16 Nov for G10's licence rulings (all 38 packs), the BGE-M3 encoder check (H3-h, H3-i), a first containment count on the rerun (item 8) and item 5 moving after TSAI's dedup run; updated 18 Nov for H3 v1.1 merged (#610), the end-to-end check of `h3.py` → `dedup.py`, the E5c job request (#625) and the forecast of TSAI jobs; updated 19 Nov for the licence map (#630), E4's Kannada labels (item 3), TSAI's H3 ruling on #625 and the direct-edge fix (#663); updated 21 Nov for #625 and #666 merged, G10's sign-off on the H3 encoders (#634), the LaBSE pin, the H3 harm test's result, the CUDA timing from the 38-pack rehearsal and the week-4 work order (H3 is week-4 task 3, in `h3_design_v1.md`) (Kunal Sinha and Aneesha Das, Data A dedup). Nothing here changes v1, its job request or PR #255. v1 runs as agreed; each item below starts only after its own review.
 **Builds on:** `dedup_design_v1.md` (how duplicates are found), `source_priority_v1.md` (which copy survives), `results_v1.md` (the numbers) and Sourav Dhar's pipeline (`teams/01-data-a/pipeline/`, which applies the remove list with `apply_dedup.py`). H3 has its own design, `h3_design_v1.md` (Aneesha Das, draft); this file only adds to it.
 
 Every v1 number quoted here comes from TSAI's 5 Nov run or the local runs in `results_v1.md`. The 5 Nov run is superseded by the rerun on the #244 cleaning, so each number is checked again on the rerun before any item below is decided.
@@ -160,8 +160,14 @@ pack, 0 qualifying, 81 tests); on a laptop CPU the full scope would take about 3
   document's H1/H2 group; #663 (19 Nov) removes only the matched train document, if H1/H2 kept it. Two new outcomes:
   `already_removed` (H1/H2 had removed it) and `reported_indirect` (a train ↔ train match where a side's group holds a
   held-out copy). `dedup_summary.json` gains `h3.train_docs_targeted`, the same in report-only and remove mode.
-- **Sanskrit:** encoder and threshold not decided; E5a′ is BGE-M3 (16 Nov, H3-h, H3-i), then E5d's readers.
-- **Later:** Pralekha-type packs; LaBSE's licence sign-off from G10 (not blocking).
+- **Sanskrit:** encoder and threshold not decided; E5a′ is BGE-M3 (16 Nov, H3-h, H3-i), then E5d's readers. BGE-M3 on
+  E5c's Sanskrit pairs on the real sample is job #666 (merged 20 Nov, revision `5617a9f`, report-only).
+- **Later:** Pralekha-type packs.
+- **Licence:** G10 signed off LaBSE (Apache-2.0) and BGE-M3 (MIT) as models of the data pipeline (#634, 20 Nov).
+- **LaBSE pin:** jobs stage revision `836121a` (`model.safetensors` `77d8e1…`), not a `SentenceTransformer.save()` copy
+  (the 17 Nov local run's `deaceb…`: the same 199 weight tensors). Agreed on #625, 20 Nov.
+- **CUDA timing:** in TSAI's 38-pack rehearsal (#599) `h3.py` read all 91,559 documents of `ind-sa-fw2`, `ind-hi-fw2`
+  and `en-fineweb-edu` in 205.7 s on CUDA (fp16), 0 qualifying at 0.7 (`jobs/logs/2026-11-19-first-training-rehearsal-38packs/`).
 
 **The harm check for H3** (Aneesha Das, 19 Nov): on sample v0 it can only be `not_testable` (no gold document is in the
 sample; her 12-pack run gives `gold_ids_in_input: 0`), so E5c cannot pass it. Proposed: a separate H3 harm test on the
@@ -171,7 +177,12 @@ next to the status, since a pass with no H3 removal tests nothing. `ind-or-fw2` 
 later touches `pipeline/stage_args.py` (hard-codes `remove: False`), `run_pipeline.py`'s check that H3 is report-only,
 the `h3` section of `dedup.json` and the first-training job request, in their own PR.
 
-**Asked of TSAI on #625, 19 Nov:**
+**Result, 19 Nov** (`jobs/logs/2026-11-19-h3-harm-diag-local.txt`, on #663): pass with each language held out in turn,
+0 of 1,308 gold documents removed. No pair reached coverage 0.6 (highest 0.188; highest with a gold document 0.143), so
+`h3.train_docs_targeted` is 0 and H3 removal itself was not tested. A looser stress run (coverage about 0.18 and 0.12)
+would make H3 remove some documents on the gold packs.
+
+**Asked of TSAI on #625, 19 Nov** (no answer by 21 Nov; `h3_design_v1.md` records our proposed reading of each):
 1. Direct edge: H3 itself matching a held-out document with a train document (#663's reading); a match to a train copy
    of a held-out document is reported, not removed. Right?
 2. Does the separate harm test on the diagnosis packs count as "the harm check passes"?
@@ -306,7 +317,8 @@ Sourav Dhar's runner (`run_pipeline.py`) runs clean → overlap → dedup → ap
 1. **Now, in parallel with v1:**
    - Item 16: the answers to Sourav's open items; the dedup job as a runner `run.json` if his runner still needs one.
    - H3 v1.1: H3-a to H3-e done and merged (#610); E5c job request (#625), approved; H3-f ruled by TSAI (#625, 19 Nov);
-     direct-edge fix (#663); the H3 harm test on the diagnosis packs (Aneesha Das).
+     direct-edge fix (#663); the H3 harm test on the diagnosis packs (Aneesha Das, passed 19 Nov with 0 H3 removals);
+     the BGE-M3 job (#666); week-4 task 3, the ruling in `h3_design_v1.md` (due Wed 25 Nov).
    - Decisions on items 13–15, so new packs can join with a rule ready.
 2. **After TSAI's v1 dedup job:**
    - Item 5: summaries with code SHA-256, commit and part hashes (after the job, so its `6cfc24a` pin holds).
@@ -337,10 +349,10 @@ The team reviews first; only the questions that are TSAI's go to TSAI, in one sh
 
 **For other teams:**
 - Sourav Dhar: whether the runner's preflight can check the licence map (item 16).
-- G10: licences of the H3 model weights (LaBSE, and any alternative chosen in E5); Aksharantar, MADLAD-400 and BPCC's mined part (item 15).
+- G10: Aksharantar, MADLAD-400 and BPCC's mined part (item 15). The H3 model weights are signed off (#634); any further encoder chosen after E5d needs its own row.
 - Data B (G2): clean-share measurements for each new pack (item 13). G2 has no H3 work (15 Nov), so readers for Sanskrit–Hindi and Sanskrit–English pairs have to be found elsewhere.
 
-**Settled:** licence decisions for all 38 sample packs (G10, 16 Nov); how `survivor_loss.py` counts H3-emptied groups (checked, item 16); `h3_matches.csv` keyed by document, and H3-a to H3-e in `h3.py` (#610, 18 Nov); H3 removal, scope and direct edges only (TSAI, #625, 19 Nov).
+**Settled:** licence decisions for all 38 sample packs (G10, 16 Nov); how `survivor_loss.py` counts H3-emptied groups (checked, item 16); `h3_matches.csv` keyed by document, and H3-a to H3-e in `h3.py` (#610, 18 Nov); H3 removal, scope and direct edges only (TSAI, #625, 19 Nov); the H3 encoders' licences, LaBSE and BGE-M3 (G10, #634, 20 Nov).
 
 ## References
 

@@ -225,7 +225,8 @@ TSAI ruled on the open decisions on #625 (19 Nov):
 | 5 | Chains: a held-out document ↔ a train translation ↔ a train translation in a third language | Only direct edges remove; no transitive removal | Done (#663) |
 | 6 | Licence of the encoder weights for use in the data pipeline | G10 signs off; not a blocker for E5c | Signed off by G10: LaBSE (Apache-2.0), BGE-M3 (MIT), #634 |
 
-How the ruling is applied:
+How the ruling is applied: **proposed**, our reading of the four questions asked on #625 (19 Nov), awaiting TSAI's
+confirmation:
 
 | Question | Applied as | From |
 |---|---|---|
@@ -248,4 +249,4 @@ How the ruling is applied:
 | 20 Nov 2026 | E5c (#625) and the BGE-M3 job on E5c's Sanskrit pairs (#666) approved, report-only | TSAI | #625, #666, reviews of 20 Nov |
 | 20 Nov 2026 | LaBSE pinned at revision `836121a`; jobs stage the revision, not a `.save()` copy | TSAI | #625, review of 20 Nov |
 | 20 Nov 2026 | LaBSE (Apache-2.0) and BGE-M3 (MIT) allowed as models of the data pipeline | G10 | #634 |
-| 21 Nov 2026 | The ruling applied: a chain through an H1/H2 copy is reported, never removed; the H3 harm test on the diagnosis packs is the harm check, run again with E5c's thresholds; Odia ↔ English stays report-only until a harm check with Odia gold; E5d labels both encoders' Sanskrit candidates | Aneesha Das; Kunal Sinha | "Decisions" |
+| 21 Nov 2026 | Proposed, awaiting TSAI (#625): the ruling applied: a chain through an H1/H2 copy is reported, never removed; the H3 harm test on the diagnosis packs is the harm check, run again with E5c's thresholds; Odia ↔ English stays report-only until a harm check with Odia gold; E5d labels both encoders' Sanskrit candidates | Aneesha Das; Kunal Sinha | "Decisions" |
