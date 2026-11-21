@@ -39,7 +39,7 @@ the date here.
 | `udisinghania` | Team 5 | ARC-Challenge (Qwen2.5-1.5B) | Row merged, #303; deletion confirmed in G9 on 10 Nov | 10 Nov |
 | `shank343` | Team 6 | BBH (llama-3.2-3b) | Row merged, #290; deletion confirmed in G9 on 5 Nov | 4 Nov |
 | `millermuttu` | Team 7 | BBH (gemma-2-2b) | Row merged, #279; deletion confirmed in G9 on 14 Nov; results.json not kept | 11 Nov |
-| `saitej123` | Team 10 lead | MMLU-Pro (Qwen2.5-1.5B) | Row open, #271 | |
+| `saitej123` | Team 10 lead | MMLU-Pro (Qwen2.5-1.5B) | Row merged, #271; deletion confirmed in G9 on 18 Nov | 4 Nov |
 | `arunnayan` | to confirm | to confirm | to confirm | |
 | `tejaswivinnakota` (to confirm) | to confirm | to confirm | to confirm | |
 | `vedang-patel-10` | Team 5 | MuSR (llama-3.2-3b) | Row merged, #389; deletion confirmed in G9 on 12 Nov | 12 Nov |
