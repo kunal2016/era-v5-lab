@@ -1,0 +1,65 @@
+{
+ "packs": [
+  "code-go",
+  "code-python",
+  "code-rust"
+ ],
+ "documents": 207759,
+ "eligible_20_lines": 170373,
+ "qualifying": "{('H1', 'code-rust'): 1, ('H2', 'code-go'): 6, ('H2', 'code-python'): 24, ('H2', 'code-rust'): 529}",
+ "minhash_error_H2": {
+  "mean_abs": 0.022834430375763024,
+  "p95_abs": 0.056564708480565384
+ },
+ "configs": [
+  {
+   "bands": 32,
+   "rows": 4,
+   "candidate_pairs_upper": 34495,
+   "recall_H2": 1.0,
+   "recall_H1": 1.0,
+   "missed_H2": []
+  },
+  {
+   "bands": 25,
+   "rows": 5,
+   "candidate_pairs_upper": 19147,
+   "recall_H2": 1.0,
+   "recall_H1": 1.0,
+   "missed_H2": []
+  },
+  {
+   "bands": 21,
+   "rows": 6,
+   "candidate_pairs_upper": 11030,
+   "recall_H2": 1.0,
+   "recall_H1": 1.0,
+   "missed_H2": []
+  },
+  {
+   "bands": 16,
+   "rows": 8,
+   "candidate_pairs_upper": 5904,
+   "recall_H2": 0.9928,
+   "recall_H1": 1.0,
+   "missed_H2": [
+    [
+     "code-rust",
+     0.875
+    ],
+    [
+     "code-rust",
+     0.875
+    ],
+    [
+     "code-rust",
+     0.875
+    ],
+    [
+     "code-rust",
+     0.875
+    ]
+   ]
+  }
+ ]
+}

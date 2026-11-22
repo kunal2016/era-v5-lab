@@ -1,0 +1,137 @@
+{
+ "packs": [
+  "cadj-commits",
+  "cadj-stackexchange",
+  "en-dclm",
+  "ind-hi-sangraha-s",
+  "ind-hi-sangraha-v",
+  "ind-kn-sangraha-s",
+  "ind-sa-fw2",
+  "math-megamath"
+ ],
+ "documents": 227820,
+ "empty": 0,
+ "pairs_ge_0.50": 23207,
+ "qualifying": {
+  "H2": 1924,
+  "H1": 50
+ },
+ "minhash_error": {
+  "mean_abs": 0.03511501060024992,
+  "p95_abs": 0.08720820000000001
+ },
+ "configs": [
+  {
+   "bands": 64,
+   "rows": 2,
+   "threshold_approx": 0.125,
+   "candidate_pairs_upper": 17362359,
+   "recall_pairs_ge_0.5": 1.0,
+   "recall_pairs_ge_0.7": 1.0,
+   "recall_pairs_ge_0.8": 1.0,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 1.0,
+   "recall_H2_word": 1.0,
+   "H2_missed_by_pack": {}
+  },
+  {
+   "bands": 42,
+   "rows": 3,
+   "threshold_approx": 0.288,
+   "candidate_pairs_upper": 2130961,
+   "recall_pairs_ge_0.5": 0.9988,
+   "recall_pairs_ge_0.7": 1.0,
+   "recall_pairs_ge_0.8": 1.0,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 1.0,
+   "recall_H2_word": 1.0,
+   "H2_missed_by_pack": {}
+  },
+  {
+   "bands": 32,
+   "rows": 4,
+   "threshold_approx": 0.42,
+   "candidate_pairs_upper": 611114,
+   "recall_pairs_ge_0.5": 0.9499,
+   "recall_pairs_ge_0.7": 1.0,
+   "recall_pairs_ge_0.8": 1.0,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 1.0,
+   "recall_H2_word": 1.0,
+   "H2_missed_by_pack": {}
+  },
+  {
+   "bands": 25,
+   "rows": 5,
+   "threshold_approx": 0.525,
+   "candidate_pairs_upper": 116036,
+   "recall_pairs_ge_0.5": 0.6907,
+   "recall_pairs_ge_0.7": 0.9997,
+   "recall_pairs_ge_0.8": 1.0,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 1.0,
+   "recall_H2_word": 1.0,
+   "H2_missed_by_pack": {}
+  },
+  {
+   "bands": 21,
+   "rows": 6,
+   "threshold_approx": 0.602,
+   "candidate_pairs_upper": 55508,
+   "recall_pairs_ge_0.5": 0.5171,
+   "recall_pairs_ge_0.7": 0.9842,
+   "recall_pairs_ge_0.8": 0.9995,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 0.9995,
+   "recall_H2_word": 0.9995,
+   "H2_missed_by_pack": {
+    "ind-hi-sangraha-s": 1
+   }
+  },
+  {
+   "bands": 16,
+   "rows": 8,
+   "threshold_approx": 0.707,
+   "candidate_pairs_upper": 20376,
+   "recall_pairs_ge_0.5": 0.2756,
+   "recall_pairs_ge_0.7": 0.8854,
+   "recall_pairs_ge_0.8": 0.9869,
+   "recall_pairs_ge_0.9": 1.0,
+   "recall_H1": 1.0,
+   "recall_H2": 0.986,
+   "recall_H2_word": 0.986,
+   "H2_missed_by_pack": {
+    "cadj-commits": 19,
+    "cadj-stackexchange": 5,
+    "ind-hi-sangraha-s": 3
+   }
+  },
+  {
+   "bands": 8,
+   "rows": 16,
+   "threshold_approx": 0.878,
+   "candidate_pairs_upper": 3275,
+   "recall_pairs_ge_0.5": 0.0598,
+   "recall_pairs_ge_0.7": 0.3507,
+   "recall_pairs_ge_0.8": 0.5873,
+   "recall_pairs_ge_0.9": 0.9395,
+   "recall_H1": 1.0,
+   "recall_H2": 0.5795,
+   "recall_H2_word": 0.5795,
+   "H2_missed_by_pack": {
+    "cadj-commits": 405,
+    "ind-hi-sangraha-s": 259,
+    "cadj-stackexchange": 106,
+    "ind-hi-sangraha-v": 22,
+    "math-megamath": 10,
+    "en-dclm": 5,
+    "ind-sa-fw2": 2
+   }
+  }
+ ]
+}
