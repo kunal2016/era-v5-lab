@@ -1,0 +1,14 @@
+python 3.13.18 on Linux-6.18.44-fc-v726-x86_64-with-glibc2.39
+PASS  prepare_run.py: overlap stage script: teams/01-data-a/dedup/minhash_overlap.py
+PASS  prepare_run.py: overlap stage settings: teams/01-data-a/dedup/minhash_overlap_partial.json
+PASS  stage_args.build: command runs minhash_overlap.py: teams/01-data-a/dedup/minhash_overlap.py
+PASS  generated config: inputs is the clean folder
+PASS  generated config: out is the overlap folder
+PASS  generated config: workers 16: 16
+PASS  generated config: no required pack list: []
+PASS  generated config: 128 hashes in 32 bands: 128 x 32
+PASS  minhash_overlap.py accepts the generated config
+note  test_f2_pool.py left out: lab_canary (G9) is not importable from here
+$ python3 -B -m pytest -q -p no:warnings teams/01-data-a/pipeline/tests teams/01-data-a/jobs/2026-11-19-first-training/tests teams/01-data-a/dedup/tests/test_minhash_overlap.py --ignore=teams/01-data-a/pipeline/tests/test_f2_pool.py
+PASS  pytest: 693 passed, 2 skipped in 249.64s (0:04:09)
+ALL CHECKS PASSED
