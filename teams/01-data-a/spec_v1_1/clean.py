@@ -13260,8 +13260,8 @@ def _indic_db_b4_004():
         t = re.sub(r"\[\[(?:[^|\]\n]*\|)?([^\]\n]*)\]\]", r"\1", text)
         for p in _JUNK:
             t = re.sub(p, "", t)
-        t = re.sub(r"(?<=॥)\d{3,}(?=\s)", "", t)
-        return re.sub(r"(?<=\s)\d{3,}(?=[क-ह])|(?<=[ा-्क-ह])\d{3,}(?=[क-ह])", "", t)
+        # Shankar, #734: verse numbers and years are content; remove wiki markup only.
+        return t
 
 
     def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
@@ -13423,6 +13423,8 @@ from functools import cache
 import re
 
 _F1_TREE = {"cpp", "go", "java", "javascript", "python", "rust", "typescript"}
+_F1_CODE_PACKS = {"code-cpp": "cpp", "code-go": "go", "code-java": "java",
+                  "code-js-ts": "typescript", "code-python": "python", "code-rust": "rust"}
 _F1_LANGS = set(_F1_TREE)  # families with a harm test so far. Prose families go here after theirs; prose has no tree, so regex alone decides
 # Prose packs with their own harm test run the prose path below instead (block context, contact cards, people tables), not the
 # line regex. The pack decides, by pack_id prefix, not the language label: "en" is shared with the English family, which has its
@@ -13792,6 +13794,10 @@ def f1(doc):
     """F1: <PHONE>, <EMAIL>, <ADDRESS> for a private person. Drop when lines with such details hold most of the text."""
     text, lang = doc["text"], doc.get("lang_label")
     pack = str(doc.get("pack_id") or "")
+    # Code packs use the generic tag "code"; choose their parser without changing row metadata.
+    # Keep an explicit language tag (notably JavaScript versus TypeScript) when supplied.
+    if lang == "code":
+        lang = _F1_CODE_PACKS.get(pack, lang)
     if pack.startswith("ind-"):                 # Indic packs: any language tag
         new = _f1_indic(text)
         return ("fix" if new != text else "keep", new)

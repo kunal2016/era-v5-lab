@@ -88,6 +88,18 @@ The five source sheets do not consistently contain three exact `(doc_id, charact
 
 Source code remains CANDIDATE even after a measured pass. Semantic side effects, reviewer approval, missing examples, F1 coverage and provisional registry IDs remain release gates. Rules for <=5 observations and preservation-only science D3 are supplementary cards.
 
+### Cleaner corrections (23 Nov 2026)
+
+The shared F1 resolves a generic `lang_label="code"` using `pack_id`: `code-cpp` → `cpp`,
+`code-go` → `go`, `code-java` → `java`, `code-js-ts` → `typescript`, `code-python` → `python`,
+and `code-rust` → `rust`. Explicit language labels retain their parser. Row metadata is unchanged;
+masking remains limited to comments and strings. Its build source is
+[`build/f1_rule.py`](../build/f1_rule.py), included by the v1.1 cleaner builder.
+
+Shankar's #734 correction to `DB-B4-004` is in its executable card below: remove wiki markup,
+preserve verse numbers and years, including Devanagari digits. These corrections apply to v1.1.
+Build `clean.py` with `spec_v1_1/build/build_clean.py`; do not edit generated cleaner code directly.
+
 <!-- MERGED PIPELINE DECISIONS -->
 ### Merged PR decisions and optional F2 stage
 
@@ -25436,7 +25448,7 @@ def medicine(doc):  # added by Data B: runs only on the pack it was tested on
 - `54cba74d98069466` (ind-sa-fw2), original offset 75: `"\u0928\u0915\u092e\u094d \u0968\u096a\n[[\u0932\u0947\u0916\u0915\u0903 :|]]\n|\u0938\u094d\u0925\u093e\u0928\u0915\u0902 \u0968\u096b"` (fix).
 <!-- END CARD EVIDENCE -->
 
-2. **Medicine:** the author's code, unchanged. Main function: `medicine_b4(text)`.
+2. **Medicine:** amended per Shankar's #734: preserve verse numbers and years; retain wiki-markup removal. Main function: `medicine_b4(text)`.
 
 ```python
 RULE_ID = "DB-B4-004"
@@ -25458,8 +25470,8 @@ def medicine_b4(text):
     t = re.sub(r"\[\[(?:[^|\]\n]*\|)?([^\]\n]*)\]\]", r"\1", text)
     for p in _JUNK:
         t = re.sub(p, "", t)
-    t = re.sub(r"(?<=॥)\d{3,}(?=\s)", "", t)
-    return re.sub(r"(?<=\s)\d{3,}(?=[क-ह])|(?<=[ा-्क-ह])\d{3,}(?=[क-ह])", "", t)
+    # Shankar, #734: verse numbers and years are content; remove wiki markup only.
+    return t
 
 
 def _std(out, text):  # added by Data B, copied from Data A (medicine_english.md)
