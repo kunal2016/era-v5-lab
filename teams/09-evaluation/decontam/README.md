@@ -157,6 +157,37 @@ python teams/09-evaluation/decontam/canary_scan.py <dir>/<shard_id>.text.parquet
   Set `ERA_SHARD`, `ERA_TOKENIZER` (the shard's frozen tokenizer; the old name `ERA_C3_TOKENIZER` also works) and
   optionally `ERA_SHARD_CLEAN` to also test a real shard.
 
+## Many shards in one command (`check_shards.py`)
+
+`check_shards.py` runs the chain above on many shards: `decode_shard.py` → `decontam_check.py` (full set) and
+`canary_scan.py` at the same time on the decoded file. It calls the three scripts unchanged, so the result is the same
+as running them by hand.
+
+```bash
+python teams/09-evaluation/decontam/check_shards.py --tokenizer <p1536>/tokenizer.json --work <dir> \
+    --links shard_links.tsv --compare teams/09-evaluation/results/decontam_shards.md
+python teams/09-evaluation/decontam/check_shards.py --tokenizer <p1536>/tokenizer.json --work <dir> \
+    --shards <folder> --only code-cpp-train-000000 ind-gu-fw2-train-000000 --jobs 3
+```
+
+- **Input:** `--links` reads TSAI's `shard_links.tsv` and downloads the missing `.bin`, `.idx.npy`, `.docs.parquet` and
+  `.json` to `<work>/shards`. `--shards` uses a folder that has them. `decode_shard.py` checks every file's sha256
+  against the manifest, so a broken download fails that shard.
+- **Parallel:** `--jobs` shards at the same time (default 3).
+- **Resume:** each shard's result goes to `<work>/results/<shard_id>.json` only when all steps finish. A second run
+  skips those shards (`--force` checks them again).
+- **Compare:** `--compare <markdown>` checks payload_sha256, docs and tokens against the shard table rows.
+- **Output:** a table in the format of `results/decontam_shards.md`, plus the set_sha256, the canary count and the
+  tokenizer sha256. Exit code 0 only when every shard passed, with 0 flagged, 0 canary hits and no mismatch.
+  The decoded text is deleted after the checks (`--keep-text` keeps it). Never commit `<work>`.
+- **Tested** on 7 of the 41 sample-v0 shards (`code-cpp-train-000000`, `code-go-train-000000`,
+  `code-rust-train-000001`, `ind-gu-fw2-train-000000`, `ind-hi-sangraha-v-train-000000`,
+  `ind-kn-sangraha-v-train-000000`, `ind-mr-sangraha-v-train-000000`): all 7 match `results/decontam_shards.md` on
+  payload_sha256, docs and tokens, 0 flagged, 0 canary hits. 181,994,759 tokens in 219 s on a laptop CPU with
+  `--jobs 3` (about 4 s per million tokens). Memory: each running `decontam_check.py` used up to about 1.4 GB on
+  these shards, and the decode needs about 20 bytes per token (see above).
+- **Tests:** `pytest teams/09-evaluation/decontam/tests/test_check_shards.py -q` (no shard or tokenizer needed).
+
 ## Normalize
 
 Before the cut into runs, the text of an item and of a document is normalized, so that
