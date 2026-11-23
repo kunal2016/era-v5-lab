@@ -189,7 +189,7 @@ set) and `canary_scan.py`. It calls the three scripts unchanged, so the result i
   `code-rust-train-000001`, `ind-gu-fw2-train-000000`, `ind-hi-sangraha-v-train-000000`,
   `ind-kn-sangraha-v-train-000000`, `ind-mr-sangraha-v-train-000000`; 181,994,759 tokens): all 7 match
   `results/decontam_shards.md` on payload_sha256, docs and tokens, 0 flagged, 0 canary hits. Laptop CPU (14 cores,
-  24 GB), `--jobs 10`: 101 s. With 3 shards at a time, in name order and with no parts: 219 s. The biggest single
+  24 GB), `--jobs 10`: 98 s. With 3 shards at a time, in name order and with no parts: 219 s. The biggest single
   process used about 1.8 GB.
 - **Tests:** `pytest teams/09-evaluation/decontam/tests/test_check_shards.py -q` (no shard, tokenizer or network
   needed).
