@@ -101,7 +101,10 @@ def prepare(bundle, raw, tokenizer, pack_table, run_id, model_path=None, f2_work
             "clean": {"mode": "run", "settings": "teams/01-data-a/pipeline/clean.json",
                       "input": relative_or_absolute(raw), "manifest": relative_or_absolute(manifest_path),
                       "manifest_sha256": inventory["input_manifest_sha256"], "expected_parts": counts},
-            "overlap": {"mode": "run", "settings": "teams/01-data-a/dedup/overlap.json"},
+            # MinHash + LSH overlap (TSAI, 23 Nov 2026: exact all-pairs overlap.py is not run at corpus-v1 scale).
+            # Same three output files, so dedup, apply, F2 and the ledger are unchanged.
+            "overlap": {"mode": "run", "script": "teams/01-data-a/dedup/minhash_overlap.py",
+                        "settings": "teams/01-data-a/dedup/minhash_overlap_partial.json"},
             "h3": {"mode": "run", "settings": "teams/01-data-a/jobs/2026-11-19-first-training/h3.json"},
             "dedup": {"mode": "run", "settings": "teams/01-data-a/dedup/dedup.json"},
             "f2": {"pool": True, "workers": f2_workers},
