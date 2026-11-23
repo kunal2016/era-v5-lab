@@ -125,4 +125,4 @@ Used only as the candidate step, MinHash 32×4 keeps v1's precision (the same ru
 (no qualifying pair missed), at about a ninth of the memory. It trades v1's guarantee for a very high probability, so it
 goes to the lead and TSAI as a documented fallback, not a silent switch.
 
-Kunal Sinha (Data A dedup).
+Data A dedup.

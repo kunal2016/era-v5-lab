@@ -73,4 +73,4 @@ So the same 32×4 setting finds every qualifying code pair too. The cost of code
 - **Decision needed before using it:** it changes the method (v1's exact all-pairs is the agreed design), so it goes to
   the lead and TSAI as a fallback with this evidence, not as a silent switch.
 
-Kunal Sinha (Data A dedup).
+Data A dedup.
