@@ -5,7 +5,7 @@
   "clean_sha256": "6a57276c0e83312b09facfba656cca28db0ef59ca851bcfbfa3ef63f16fdd1f2",
   "batch_size": 128,
   "workers": 4,
-  "_workers": "parts cleaned at once, one process each (default 1 when the key is missing); the output is the same for any number. About 200 MB of memory per worker on the real sample.",
+  "_workers": "parts cleaned at once, one process each (default 1 when the key is missing); the output is the same for any number. About 250 MB of memory per worker (measured on 38 real parts).",
   "audit_samples": 5,
   "unsupported_policy": "passthrough_with_explicit_status"
 }
