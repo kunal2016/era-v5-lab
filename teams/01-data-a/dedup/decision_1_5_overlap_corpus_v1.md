@@ -4,7 +4,7 @@
 updated in #728). Before the job, `overlap.py`'s 50 MB output check is **fixed so it does not stop the run** (it fails
 at about 1.15× the sample today). If the staged rows are over the memory or time gate, TSAI **provisions a larger
 host** for the same method. **MinHash + LSH is not used for corpus-v1.** It stays a documented, tested fallback for a
-later corpus. Decided by Kunal Sinha (Data A dedup) on the Instructor's instruction of 22 Nov to decide now, on the
+later corpus. Decided by DataA Dedup on the Instructor's instruction of 22 Nov to decide now, on the
 38-pack rehearsal extrapolation.
 
 ## Basis
@@ -22,7 +22,7 @@ and shingle 770 s, word scoring 190 s, H1/H2 rules and code-token pass about 4,0
 | 4× | 174 MiB | 56 GB | 5.6 h | 6.2 h |
 | 5× | 218 MiB | 70 GB | 7.0 h | 8.0 h |
 
-The superlinear risk Vijay raised about #718 (G1, 22 Nov; job request wording fixed in #728) is real but bounded.
+The superlinear risk the lead raised about #718 (G1, 22 Nov; job request wording fixed in #728) is real but bounded.
 Only word scoring grows faster than the row count, and it was 190 s of 5,025 s, so even at 4× the quadratic case adds
 about 40 minutes. Memory and outputs stay about linear.
 
@@ -32,7 +32,7 @@ about 40 minutes. Memory and outputs stay about linear.
    caps at 50 (#728 notes this). JOB_REQUEST.md's 50 MB rule is for what a job **returns to the repository**; inside
    the pipeline job, overlap's files stay in TSAI's job storage and only summaries are returned. So the check should
    not stop a pipeline run. The change is small and does not touch the method (for example, a higher limit when the
-   runner starts overlap, or not counting `overlap_docs.parquet`); Data A (Kunal Sinha, with sourav dhar) raises it as
+   runner starts overlap, or not counting `overlap_docs.parquet`); Data A raises it as
    its own PR, with a test. H3's `h3_docs.parquet` has the same kind of limit and is checked in the same PR.
 2. **Memory and time gate, as in #718.** After `build_inventory.py`, TSAI reads the staged `raw_rows` against
    sample-v0's 1,444,766. 64 GiB covers up to about **4×**, and 720 minutes up to about **4.5×** (use the quadratic
@@ -65,8 +65,3 @@ document against v1's ~10 KB (an estimate, not measured). It is not used this we
 
 A later switch stays inside the overlap stage. Dedup (`dedup.py`) and apply (`apply_dedup.py`) read overlap's pairs
 file and do not change, as long as overlap writes the same pairs; on the tested packs it did.
-
-## Owners
-
-Kunal Sinha: this note; the output-limit PR (with sourav dhar); the MinHash follow-ups if revisited. Smita Sasindran:
-plan 1.5. TSAI: the row count, host sizing, and the go/no-go at the gate.
