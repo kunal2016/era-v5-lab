@@ -11,6 +11,7 @@ three scripts have their own tests.
 import hashlib
 import io
 import json
+from pathlib import Path
 
 import pytest
 
@@ -208,7 +209,20 @@ def test_fetch_downloads_checks_and_skips_good_files(tmp_path):
                                                       "a-train-000000.idx.npy", "a-train-000000.json"]
     calls.clear()
     assert fs.main([str(links), "--out", str(out)], opener=opener) == 0
-    assert calls == []  # every file is there with the manifest's sha256
+    assert calls == ["https://h/a-train-000000.json"]  # only the manifest again: the data files match it
+
+
+def test_fetch_replaces_an_old_manifest_with_the_same_shard_name(tmp_path):
+    out = tmp_path / "out"
+    old = fake_store("a-train-000000")
+    fs.main([str(links_file(tmp_path, old)), "--out", str(out)], opener=lambda u, timeout=None: io.BytesIO(old[u]))
+    new = {u: (b if not u.endswith(".bin") else b"new payload") for u, b in old.items()}
+    m = json.loads(new["https://h/a-train-000000.json"])
+    m["payload_sha256"] = hashlib.sha256(b"new payload").hexdigest()
+    new["https://h/a-train-000000.json"] = json.dumps(m).encode()
+    assert fs.main([str(links_file(tmp_path, new)), "--out", str(out)],
+                   opener=lambda u, timeout=None: io.BytesIO(new[u])) == 0
+    assert (out / "a-train-000000.bin").read_bytes() == b"new payload"
 
 
 def test_fetch_refuses_a_file_with_the_wrong_sha256(tmp_path, monkeypatch):
@@ -219,3 +233,35 @@ def test_fetch_refuses_a_file_with_the_wrong_sha256(tmp_path, monkeypatch):
                    opener=lambda url, timeout=None: io.BytesIO(store[url]))
     assert code == 1
     assert not (out / "a-train-000000.bin").exists() and not (out / "a-train-000000.bin.part").exists()
+
+
+def test_old_text_is_deleted_at_the_start(tmp_path, monkeypatch):
+    folder, tok = make_shards(tmp_path, {"a-train-000000": 1})
+    text = tmp_path / "w" / "text"
+    text.mkdir(parents=True)
+    for name in ("a-train-000000.text.parquet", "a-train-000000.part000.text.parquet", "x.text.parquet.tmp"):
+        (text / name).write_text("document text")
+    monkeypatch.setattr(cs, "check_one", lambda s, a, t, p: result(s))
+    assert run_main(tmp_path, folder, tok, "w") == 0
+    assert list(text.iterdir()) == []
+
+
+def test_no_text_is_left_when_a_step_fails(tmp_path, monkeypatch):
+    """check_one with a decode that writes text and a split that fails: the decoded text is deleted."""
+    folder, tok = make_shards(tmp_path, {"a-train-000000": 1})
+    work = tmp_path / "w"
+
+    def fake_run(cmd):
+        out = Path(cmd[cmd.index("--out") + 1])
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "a-train-000000.text.parquet").write_text("document text")
+        return 0, json.dumps({"out": str(out / "a-train-000000.text.parquet"), "payload_sha256": SHA_A, "docs": 1,
+                              "tokens": 1, "dataset_version": "v0", "split": "train"}), ""
+
+    def bad_split(*args):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(cs, "run", fake_run)
+    monkeypatch.setattr(cs, "split_parts", bad_split)
+    assert run_main(tmp_path, folder, tok, "w") == 1
+    assert list((work / "text").iterdir()) == []

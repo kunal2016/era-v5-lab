@@ -22,6 +22,9 @@ fingerprint set, about 1.4 GB). Peak disk use is about two decoded copies of --j
   --compare  a markdown file with shard table rows (shard_id, payload_sha256, docs, tokens). Each checked shard must
              match its first row there; a mismatch or a missing row is reported and makes the exit code 1.
 
+A .bin in the folder without its three other shard files counts as an incomplete download and fails the run, so keep
+only shards in the folder. Decoded text left in <work>/text by a stopped run is deleted at the start.
+
 Results go to <work>/results/<shard_id>.json, one file per shard, written only when all steps finish. A second run
 skips a shard that already has a result for the same tokenizer and shard payload (resume after a stop). Use --force to
 check again. The decoded text is deleted after the checks unless --keep-text is given.
@@ -47,6 +50,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SHARD_EXTS = (".bin", ".idx.npy", ".docs.parquet", ".json")
 GB_PER_JOB = 2.5
+SPLITS_AT_ONCE = 2  # a split holds one decoded shard in this process: limit how many at a time
 SET_LINE = re.compile(r"^fingerprints (\S+) set_sha256 ([0-9a-f]{64}) \((.+)\)$", re.M)
 DECONTAM_LINE = re.compile(r"^docs (\d+) flagged (\d+) ", re.M)
 CANARY_COUNT = re.compile(r"^canaries (\d+) from (.+)$", re.M)
@@ -123,7 +127,8 @@ def check_one(shard_id, a, tok_sha, pool):
     text_path = Path(summary["out"])
     parts = []
     try:
-        parts = split_parts(text_path, a.part_tokens, text_dir)
+        with a.split_lock:
+            parts = split_parts(text_path, a.part_tokens, text_dir)
         if not a.keep_text:
             text_path.unlink(missing_ok=True)
         fp = ["--fingerprints", str(a.fingerprints)] if a.fingerprints else []
@@ -131,9 +136,11 @@ def check_one(shard_id, a, tok_sha, pool):
         f_can = pool.submit(run, [sys.executable, str(HERE / "canary_scan.py")] + [str(p) for p in parts] + fp)
         dec = [f.result() for f in f_dec]
         code_c, out_c, err_c = f_can.result()
-    finally:
+    finally:  # never leave document text behind, also when a step fails
         for p in parts:
             p.unlink(missing_ok=True)
+        if not a.keep_text:
+            text_path.unlink(missing_ok=True)
 
     sets, n_docs, n_flagged, flagged_ids = set(), 0, 0, []
     for code_d, out_d, err_d in dec:
@@ -254,6 +261,9 @@ def main(argv=None):
     tok_sha = sha256_file(a.tokenizer)
     for sub in ("text", "results"):
         (a.work / sub).mkdir(parents=True, exist_ok=True)
+    for old in (a.work / "text").glob("*.text.parquet*"):  # left by a stopped run: text, never a valid input
+        old.unlink()
+    a.split_lock = threading.Semaphore(SPLITS_AT_ONCE)
 
     ids, incomplete = find_shards(a.shards)
     if a.only:
@@ -305,7 +315,8 @@ def main(argv=None):
     for version, sha, scope in sets:
         print(f"\nFingerprint set: {version}, set_sha256 `{sha}`, scope `{scope}`")
     canaries = sorted({r["canaries_checked"] for r in results})
-    print(f"Canaries checked per shard: {', '.join(map(str, canaries))}")
+    if canaries:
+        print(f"Canaries checked per shard: {', '.join(map(str, canaries))}")
     print(f"Tokenizer sha256: `{tok_sha}`")
     print(f"Total: {len(results)} shards, {sum(r['docs'] for r in results):,} docs, "
           f"{sum(r['tokens'] for r in results):,} tokens, {sum(r['flagged'] for r in results)} flagged, "

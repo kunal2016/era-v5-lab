@@ -6,7 +6,8 @@
 This is the only step that uses the network. check_shards.py reads the folder this writes and does not download, so
 the check can run as a TSAI job with no network that reads only its inputs.
 
-For each shard it downloads <shard_id>.json (the manifest) first, then .bin, .idx.npy and .docs.parquet, several
+For each shard it downloads <shard_id>.json (the manifest) first, every time, because an old manifest with the same
+shard name must not be used, then .bin, .idx.npy and .docs.parquet, several
 files at the same time (--parallel, default 8). Each file is checked against the sha256 in the manifest
 (payload_sha256, index_sha256, sample_metadata_sha256) before it gets its final name, so a broken or cut download never
 looks like a shard. A file that is already there with the right sha256 is not downloaded again. The quality report is
@@ -81,12 +82,16 @@ def download(url, dest, want_sha=None, tries=3, opener=urllib.request.urlopen):
 
 
 def manifest_of(shard_id, links, out, opener):
+    """Download the manifest every time (it is small): a manifest already in the folder can be from an older shard
+    with the same name, and the data files are checked against it."""
     path = out / f"{shard_id}.json"
-    if not path.exists():
-        if f"{shard_id}.json" not in links:
-            raise FetchError(f"{shard_id}.json is not in the links file")
-        download(links[f"{shard_id}.json"], path, opener=opener)
-    return json.loads(path.read_text(encoding="utf-8"))
+    if f"{shard_id}.json" not in links:
+        raise FetchError(f"{shard_id}.json is not in the links file")
+    download(links[f"{shard_id}.json"], path, opener=opener)
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as e:
+        raise FetchError(f"{shard_id}.json is not valid JSON: {e}") from None
 
 
 def file_jobs(shard_id, manifest, links, out):
