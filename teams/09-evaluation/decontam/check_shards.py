@@ -1,25 +1,30 @@
 """Run the full shard check on many training shards in one command (G9).
 
-    python check_shards.py --tokenizer <p1536>/tokenizer.json --work <dir> --shards <folder>
-    python check_shards.py --tokenizer <p1536>/tokenizer.json --work <dir> --links shard_links.tsv \
-        --only code-cpp-train-000000 ind-gu-fw2-train-000000
-    python check_shards.py ... --compare ../results/decontam_shards.md
+    python fetch_shards.py shard_links.tsv --out <shards>          # step 1, the only step with network
+    python check_shards.py <shards> --tokenizer <p1536>/tokenizer.json --work <dir> \
+        --compare ../results/decontam_shards.md                    # step 2, no network
+    python check_shards.py <shards> ... --only code-cpp-train-000000 ind-gu-fw2-train-000000
 
 For each shard this runs the same chain as results/decontam_shards.md, with the scripts unchanged:
 decode_shard.py (checks the shard against its manifest) -> decontam_check.py (full set: no --benchmarks, --tags or
---exclude) -> canary_scan.py. decontam_check.py and canary_scan.py run at the same time on the decoded file.
+--exclude) and canary_scan.py on the decoded text. It does not download and needs no network, so it can run as a job
+that reads only its inputs.
 
-  --links    TSAI's shard_links.tsv (columns file, url). Files missing under <work>/shards are downloaded first
-             (.bin, .idx.npy, .docs.parquet, .json; no quality report). decode_shard.py checks each file's sha256
-             against the manifest, so a broken download fails the shard and is not counted.
-  --jobs     shards checked at the same time (default 3). Peak memory is about 20 bytes per token per shard for the
-             decode, plus one fingerprint set per running decontam_check.py.
-  --compare  a markdown file with a shard table (shard_id, payload_sha256, docs, tokens). Each checked shard must
-             match its row there; a mismatch or a missing row is reported and makes the exit code 1.
+Speed. All steps of all shards share one pool of --jobs worker processes:
+  - the biggest shards (by .bin size) start first, so a big shard does not start last and hold up the end;
+  - a decoded shard is cut into parts of about --part-tokens tokens (whole documents, in shard order), and
+    decontam_check.py runs on each part in its own process, so one big shard uses many cores. The flagged count is
+    the sum over the parts. A document is checked alone, so the parts give the same result as one run on the shard;
+  - canary_scan.py reads all parts of a shard in one process.
+--jobs defaults to the number of cores, but at most one per 2.5 GB of memory (one decontam_check.py holds the
+fingerprint set, about 1.4 GB). Peak disk use is about two decoded copies of --jobs shards.
 
-Results go to <work>/results/<shard_id>.json, one file per shard, written only when all three steps finish. A second
-run skips a shard that already has a result for the same tokenizer, fingerprint set and payload (resume after a
-stop). Use --force to check again. The decoded text is deleted after the checks unless --keep-text is given.
+  --compare  a markdown file with shard table rows (shard_id, payload_sha256, docs, tokens). Each checked shard must
+             match its first row there; a mismatch or a missing row is reported and makes the exit code 1.
+
+Results go to <work>/results/<shard_id>.json, one file per shard, written only when all steps finish. A second run
+skips a shard that already has a result for the same tokenizer and shard payload (resume after a stop). Use --force to
+check again. The decoded text is deleted after the checks unless --keep-text is given.
 
 At the end it prints a markdown table in the format of results/decontam_shards.md, plus the fingerprint set_sha256
 and the canary count. Exit code: 0 when every shard passed with 0 flagged and 0 canary hits and matched --compare;
@@ -29,77 +34,39 @@ and the canary count. Exit code: 0 when every shard passed with 0 flagged and 0 
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
 import sys
+import threading
 import time
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SHARD_EXTS = (".bin", ".idx.npy", ".docs.parquet", ".json")
+GB_PER_JOB = 2.5
 SET_LINE = re.compile(r"^fingerprints (\S+) set_sha256 ([0-9a-f]{64}) \((.+)\)$", re.M)
 DECONTAM_LINE = re.compile(r"^docs (\d+) flagged (\d+) ", re.M)
 CANARY_COUNT = re.compile(r"^canaries (\d+) from (.+)$", re.M)
 CANARY_LINE = re.compile(r"^docs (\d+) with_canary (\d+) hits (\d+)", re.M)
-ROW = re.compile(r"^\|[^|]*\|\s*`?([a-z0-9-]+-\d{6})`?\s*\|\s*`?([0-9a-f]{64})`?\s*\|\s*([\d,]+)\s*\|\s*([\d,]+)\s*\|")
+# A table row: an optional "| # |" column, then shard_id, payload_sha256, docs, tokens.
+ROW = re.compile(r"^\|(?:\s*\d+\s*\|)?\s*`?([a-z0-9-]+-\d{6})`?\s*\|\s*`?([0-9a-f]{64})`?\s*\|\s*([\d,]+)\s*\|"
+                 r"\s*([\d,]+)\s*\|")
 
 
 class CheckError(Exception):
     pass
 
 
-def read_links(path):
-    """{file name: url} from shard_links.tsv (lines starting with # are comments; header row 'file url')."""
-    links = {}
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
-        if not line.strip() or line.startswith("#"):
-            continue
-        parts = line.split("\t")
-        if len(parts) < 2 or parts[0] == "file":
-            continue
-        links[parts[0]] = parts[1]
-    return links
-
-
-def shard_ids_from_links(links):
-    ids = set()
-    for name in links:
-        if name.endswith(".bin"):
-            ids.add(name[: -len(".bin")])
-    return sorted(ids)
-
-
-def download(url, dest, tries=3):
-    tmp = dest.with_name(dest.name + ".part")
-    for attempt in range(1, tries + 1):
-        try:
-            with urllib.request.urlopen(url, timeout=120) as r, open(tmp, "wb") as f:
-                while True:
-                    chunk = r.read(1 << 20)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-            os.replace(tmp, dest)
-            return
-        except Exception as e:  # network error or expired link: retry, then report
-            tmp.unlink(missing_ok=True)
-            if attempt == tries:
-                raise CheckError(f"download of {dest.name} failed: {type(e).__name__}: {e}") from None
-            time.sleep(2 * attempt)
-
-
-def fetch_shard(shard_id, links, shard_dir):
-    for ext in SHARD_EXTS:
-        name = shard_id + ext
-        dest = shard_dir / name
-        if dest.exists():
-            continue
-        if name not in links:
-            raise CheckError(f"{name} is not in the links file")
-        download(links[name], dest)
+def default_jobs():
+    cores = os.cpu_count() or 1
+    try:
+        mem_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
+    except (ValueError, OSError, AttributeError):  # no sysconf (Windows): use the core count with a safe cap
+        return max(1, min(cores, 4))
+    return max(1, min(cores, int(mem_gb // GB_PER_JOB)))
 
 
 def sha256_file(path):
@@ -115,46 +82,77 @@ def run(cmd):
     return p.returncode, p.stdout, p.stderr
 
 
-def check_one(shard_id, a, tok_sha):
-    """Decode one shard, run both checks, return the result dict (never document text)."""
-    shard_dir = a.work / "shards"
-    text_dir = a.work / "text"
-    bin_path = shard_dir / f"{shard_id}.bin"
-    t0 = time.time()
-    if a.links_map is not None:
-        fetch_shard(shard_id, a.links_map, shard_dir)
-    if not bin_path.exists():
-        raise CheckError(f"{bin_path} not found")
+def first_line(err, code):
+    lines = [ln for ln in err.strip().splitlines() if ln.strip()]
+    return lines[0] if lines else f"exit {code}"
 
-    code, out, err = run([sys.executable, str(HERE / "decode_shard.py"), str(bin_path),
-                          "--tokenizer", str(a.tokenizer), "--out", str(text_dir)])
+
+def split_parts(text_path, part_tokens, out_dir):
+    """Cut a decoded shard into parts of whole documents, about part_tokens each. Return the part paths."""
+    import pyarrow.parquet as pq
+
+    table = pq.read_table(text_path, columns=["doc_id", "text", "n_tokens"])
+    sizes = table.column("n_tokens").to_pylist()
+    n_parts = max(1, min(len(sizes), math.ceil(sum(sizes) / part_tokens)))
+    target = sum(sizes) / n_parts
+    bounds, acc = [0], 0
+    for i, s in enumerate(sizes):
+        acc += s
+        if acc >= target * len(bounds) and len(bounds) < n_parts and i + 1 < len(sizes):
+            bounds.append(i + 1)
+    bounds.append(len(sizes))
+    stem = text_path.name[: -len(".text.parquet")]
+    paths = []
+    for k in range(len(bounds) - 1):
+        p = out_dir / f"{stem}.part{k:03d}.text.parquet"
+        pq.write_table(table.slice(bounds[k], bounds[k + 1] - bounds[k]).select(["doc_id", "text"]), p)
+        paths.append(p)
+    return paths
+
+
+def check_one(shard_id, a, tok_sha, pool):
+    """Decode one shard, run both checks on its parts, return the result dict (never document text)."""
+    bin_path = a.shards / f"{shard_id}.bin"
+    text_dir = a.work / "text"
+    t0 = time.time()
+    code, out, err = pool.submit(run, [sys.executable, str(HERE / "decode_shard.py"), str(bin_path),
+                                       "--tokenizer", str(a.tokenizer), "--out", str(text_dir)]).result()
     if code != 0:
-        raise CheckError(f"decode_shard.py failed: {err.strip().splitlines()[0] if err.strip() else code}")
+        raise CheckError(f"decode_shard.py failed: {first_line(err, code)}")
     summary = json.loads(out.strip().splitlines()[-1])
     text_path = Path(summary["out"])
+    parts = []
+    try:
+        parts = split_parts(text_path, a.part_tokens, text_dir)
+        if not a.keep_text:
+            text_path.unlink(missing_ok=True)
+        fp = ["--fingerprints", str(a.fingerprints)] if a.fingerprints else []
+        f_dec = [pool.submit(run, [sys.executable, str(HERE / "decontam_check.py"), str(p)] + fp) for p in parts]
+        f_can = pool.submit(run, [sys.executable, str(HERE / "canary_scan.py")] + [str(p) for p in parts] + fp)
+        dec = [f.result() for f in f_dec]
+        code_c, out_c, err_c = f_can.result()
+    finally:
+        for p in parts:
+            p.unlink(missing_ok=True)
 
-    cmd_d = [sys.executable, str(HERE / "decontam_check.py"), str(text_path)]
-    cmd_c = [sys.executable, str(HERE / "canary_scan.py"), str(text_path)]
-    if a.fingerprints:
-        cmd_d += ["--fingerprints", str(a.fingerprints)]
-        cmd_c += ["--fingerprints", str(a.fingerprints)]
-    with ThreadPoolExecutor(2) as ex:
-        fd, fc = ex.submit(run, cmd_d), ex.submit(run, cmd_c)
-        (code_d, out_d, err_d), (code_c, out_c, err_c) = fd.result(), fc.result()
-    if not a.keep_text:
-        text_path.unlink(missing_ok=True)
-
-    m_set, m_dec = SET_LINE.search(err_d), DECONTAM_LINE.search(err_d)
-    if code_d != 0 or not m_set or not m_dec:
-        raise CheckError(f"decontam_check.py failed (exit {code_d}): {err_d.strip()[-300:]}")
+    sets, n_docs, n_flagged, flagged_ids = set(), 0, 0, []
+    for code_d, out_d, err_d in dec:
+        m_set, m_dec = SET_LINE.search(err_d), DECONTAM_LINE.search(err_d)
+        if code_d != 0 or not m_set or not m_dec:
+            raise CheckError(f"decontam_check.py failed (exit {code_d}): {err_d.strip()[-300:]}")
+        sets.add(m_set.groups())
+        n_docs += int(m_dec.group(1))
+        n_flagged += int(m_dec.group(2))
+        flagged_ids += [json.loads(line)["doc_id"] for line in out_d.splitlines() if line.strip()]
+    if len(sets) != 1:
+        raise CheckError(f"the parts used different fingerprint sets: {sorted(sets)}")
+    version, set_sha, scope = sets.pop()
     m_cc, m_can = CANARY_COUNT.search(err_c), CANARY_LINE.search(err_c)
     if code_c not in (0, 1) or not m_cc or not m_can:  # 1 = hits (counted below), 2 = a file was skipped
         raise CheckError(f"canary_scan.py failed (exit {code_c}): {err_c.strip()[-300:]}")
-    if int(m_dec.group(1)) != summary["docs"] or int(m_can.group(1)) != summary["docs"]:
-        raise CheckError(f"document counts differ: decode {summary['docs']}, decontam {m_dec.group(1)}, "
+    if n_docs != summary["docs"] or int(m_can.group(1)) != summary["docs"]:
+        raise CheckError(f"document counts differ: decode {summary['docs']}, decontam {n_docs}, "
                          f"canary {m_can.group(1)}")
-
-    flagged_ids = [json.loads(line)["doc_id"] for line in out_d.splitlines() if line.strip()]
     canary_hits = [json.loads(line) for line in out_c.splitlines() if line.strip()]
     return {
         "shard_id": shard_id,
@@ -164,20 +162,21 @@ def check_one(shard_id, a, tok_sha):
         "dataset_version": summary["dataset_version"],
         "split": summary["split"],
         "tokenizer_sha256": tok_sha,
-        "fingerprints_version": m_set.group(1),
-        "set_sha256": m_set.group(2),
-        "scope": m_set.group(3),
-        "flagged": int(m_dec.group(2)),
+        "fingerprints_version": version,
+        "set_sha256": set_sha,
+        "scope": scope,
+        "flagged": n_flagged,
         "flagged_doc_ids": flagged_ids,
         "canaries_checked": int(m_cc.group(1)),
         "canary_hits": int(m_can.group(3)),
         "canary_hit_list": [{"canary": h["canary"], "doc_id": h["doc_id"], "offset": h["offset"]} for h in canary_hits],
+        "parts": len(dec),
         "seconds": round(time.time() - t0, 1),
     }
 
 
 def read_reference(path):
-    """{shard_id: (payload_sha256, docs, tokens)} from the rows of a markdown shard table."""
+    """{shard_id: (payload_sha256, docs, tokens)} from the first row of each shard in a markdown file."""
     ref = {}
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         m = ROW.match(line)
@@ -214,18 +213,31 @@ def table(results, ref):
     return "\n".join(lines)
 
 
+def find_shards(folder):
+    """Shard IDs in a folder: every .bin with all four shard files next to it, biggest .bin first."""
+    ids, incomplete = [], []
+    for b in Path(folder).glob("*.bin"):
+        shard_id = b.name[: -len(".bin")]
+        if all((b.parent / f"{shard_id}{ext}").exists() for ext in SHARD_EXTS):
+            ids.append((b.stat().st_size, shard_id))
+        else:
+            incomplete.append(shard_id)
+    return [s for _, s in sorted(ids, key=lambda x: (-x[0], x[1]))], sorted(incomplete)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("shards", type=Path, help="folder with the shard files (fetch_shards.py --out)")
     ap.add_argument("--tokenizer", type=Path, required=True, help="the frozen tokenizer.json the shards name")
     ap.add_argument("--work", type=Path, required=True,
-                    help="work folder: shards/, text/ (deleted after use) and results/ (holds text while running: "
-                         "never commit it)")
-    src = ap.add_mutually_exclusive_group(required=True)
-    src.add_argument("--shards", type=Path, help="a folder with the shard files (all four per shard)")
-    src.add_argument("--links", type=Path, help="TSAI's shard_links.tsv: download missing files to <work>/shards")
+                    help="work folder: text/ (decoded text while it runs: never commit it) and results/")
     ap.add_argument("--only", nargs="+", metavar="SHARD_ID", help="check only these shards")
     ap.add_argument("--fingerprints", type=Path, help="fingerprint set folder (default: the scripts' default, v2)")
-    ap.add_argument("--jobs", type=int, default=3, help="shards at the same time (default 3)")
+    ap.add_argument("--jobs", type=int, default=default_jobs(),
+                    help=f"worker processes (default {default_jobs()} here: cores, at most one per "
+                         f"{GB_PER_JOB} GB of memory)")
+    ap.add_argument("--part-tokens", type=int, default=16_000_000,
+                    help="tokens per decontam_check.py part (default 16,000,000)")
     ap.add_argument("--compare", type=Path, help="markdown shard table to check payload_sha256, docs and tokens")
     ap.add_argument("--keep-text", action="store_true", help="keep <work>/text/<shard_id>.text.parquet")
     ap.add_argument("--force", action="store_true", help="check again shards that already have a result")
@@ -233,60 +245,60 @@ def main(argv=None):
 
     if a.jobs < 1:
         ap.error("--jobs must be 1 or more")
+    if a.part_tokens < 1:
+        ap.error("--part-tokens must be 1 or more")
     if not a.tokenizer.is_file():
         ap.error(f"{a.tokenizer} not found")
+    if not a.shards.is_dir():
+        ap.error(f"{a.shards} is not a folder")
     tok_sha = sha256_file(a.tokenizer)
-    for sub in ("shards", "text", "results"):
+    for sub in ("text", "results"):
         (a.work / sub).mkdir(parents=True, exist_ok=True)
 
-    a.links_map = None
-    if a.links:
-        a.links_map = read_links(a.links)
-        ids = shard_ids_from_links(a.links_map)
-    else:
-        if a.shards.resolve() != (a.work / "shards").resolve():
-            for ext in SHARD_EXTS:  # link the given folder's files into <work>/shards, no copy
-                for f in a.shards.glob(f"*{ext}"):
-                    dest = a.work / "shards" / f.name
-                    if not dest.exists():
-                        dest.symlink_to(f.resolve())
-        ids = sorted(p.name[: -len(".bin")] for p in (a.work / "shards").glob("*.bin"))
+    ids, incomplete = find_shards(a.shards)
     if a.only:
-        missing = sorted(set(a.only) - set(ids))
+        missing = sorted(set(a.only) - set(ids) - set(incomplete))
         if missing:
             ap.error(f"not found: {' '.join(missing)}")
         ids = [i for i in ids if i in set(a.only)]
-    if not ids:
+        incomplete = [i for i in incomplete if i in set(a.only)]
+    for shard_id in incomplete:
+        print(f"{shard_id}: FAILED: a shard file is missing (run fetch_shards.py again)", file=sys.stderr)
+    if not ids and not incomplete:
         ap.error("no shards to check")
     ref = read_reference(a.compare) if a.compare else None
+    lock = threading.Lock()
 
-    def result_path(shard_id):
-        return a.work / "results" / f"{shard_id}.json"
-
-    def task(shard_id):
-        rp = result_path(shard_id)
+    def task(shard_id, pool):
+        rp = a.work / "results" / f"{shard_id}.json"
         if rp.exists() and not a.force:
             old = json.loads(rp.read_text())
-            if old.get("tokenizer_sha256") == tok_sha:
-                print(f"{shard_id}: result kept from an earlier run (use --force to check again)", file=sys.stderr)
+            manifest = json.loads((a.shards / f"{shard_id}.json").read_text())
+            if old.get("tokenizer_sha256") == tok_sha and old.get("payload_sha256") == manifest.get("payload_sha256"):
+                with lock:
+                    print(f"{shard_id}: result kept from an earlier run (use --force to check again)", file=sys.stderr)
                 return old
         try:
-            r = check_one(shard_id, a, tok_sha)
-        except CheckError as e:
-            print(f"{shard_id}: FAILED: {e}", file=sys.stderr)
+            r = check_one(shard_id, a, tok_sha, pool)
+        except Exception as e:  # one bad shard must not stop the others
+            with lock:
+                print(f"{shard_id}: FAILED: {e}", file=sys.stderr)
             return None
         tmp = rp.with_name(rp.name + ".tmp")
         tmp.write_text(json.dumps(r, indent=1) + "\n")
         os.replace(tmp, rp)
-        print(f"{shard_id}: docs {r['docs']} tokens {r['tokens']} flagged {r['flagged']} "
-              f"canary hits {r['canary_hits']} ({r['seconds']} s)", file=sys.stderr)
+        with lock:
+            print(f"{shard_id}: docs {r['docs']} tokens {r['tokens']} flagged {r['flagged']} "
+                  f"canary hits {r['canary_hits']} ({r['parts']} part(s), {r['seconds']} s)", file=sys.stderr)
         return r
 
     t0 = time.time()
-    with ThreadPoolExecutor(a.jobs) as ex:
-        out = list(ex.map(task, ids))
-    results = [r for r in out if r is not None]
-    failed = [i for i, r in zip(ids, out) if r is None]
+    # pool runs the worker processes. shard_pool runs one thread per shard in progress, which only waits on pool;
+    # its size limits the decoded text on disk to --jobs shards at a time.
+    with ThreadPoolExecutor(a.jobs) as pool, ThreadPoolExecutor(a.jobs) as shard_pool:
+        out = list(shard_pool.map(lambda s: task(s, pool), ids))
+    results = sorted((r for r in out if r is not None), key=lambda r: r["shard_id"])
+    failed = sorted([i for i, r in zip(ids, out) if r is None] + incomplete)
 
     print(table(results, ref))
     sets = sorted({(r["fingerprints_version"], r["set_sha256"], r["scope"]) for r in results})
@@ -295,12 +307,11 @@ def main(argv=None):
     canaries = sorted({r["canaries_checked"] for r in results})
     print(f"Canaries checked per shard: {', '.join(map(str, canaries))}")
     print(f"Tokenizer sha256: `{tok_sha}`")
-    total_docs = sum(r["docs"] for r in results)
-    total_tokens = sum(r["tokens"] for r in results)
-    print(f"Total: {len(results)} shards, {total_docs:,} docs, {total_tokens:,} tokens, "
-          f"{sum(r['flagged'] for r in results)} flagged, {sum(r['canary_hits'] for r in results)} canary hits")
-    print(f"checked {len(results)} of {len(ids)} shard(s) in {time.time() - t0:.0f} s"
-          + (f"; FAILED: {' '.join(failed)}" if failed else ""), file=sys.stderr)
+    print(f"Total: {len(results)} shards, {sum(r['docs'] for r in results):,} docs, "
+          f"{sum(r['tokens'] for r in results):,} tokens, {sum(r['flagged'] for r in results)} flagged, "
+          f"{sum(r['canary_hits'] for r in results)} canary hits")
+    print(f"checked {len(results)} of {len(ids) + len(incomplete)} shard(s) in {time.time() - t0:.0f} s with "
+          f"--jobs {a.jobs}" + (f"; FAILED: {' '.join(failed)}" if failed else ""), file=sys.stderr)
 
     bad = bool(failed) or len(sets) > 1
     bad |= any(r["flagged"] or r["canary_hits"] for r in results)
