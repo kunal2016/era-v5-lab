@@ -1,6 +1,6 @@
 """Reference GQA/RoPE/SwiGLU MoE with G4-compatible projected byte codes.
 
-Dense untied output head per TSAI review; Kronecker projection is input-only.
+Historical arms use the dense untied head; kas_v2 selects the public #765 codec/head.
 No fused kernels, reversible layers or expert parallelism are claimed.
 """
 
@@ -297,16 +297,36 @@ class LanguageModel(nn.Module):
     def __init__(self, m, rows, lengths):
         super().__init__()
         self.spec = m
-        self.embedding = KE2(rows, lengths, m["n_embd"])
+        kas = m.get("head_mode") == "kas_v2"
+        if kas:
+            from .kas_v2 import KASCodec, KASInput, KASHead, initialize_prior
+            if len(rows) != m["vocab_size"]:
+                raise ValueError("KAS model/token table vocabulary mismatch")
+            self.codec = KASCodec()
+            self.embedding = KASInput(rows, lengths, m["n_embd"], self.codec)
+        else:
+            self.embedding = KE2(rows, lengths, m["n_embd"])
         self.blocks = nn.ModuleList(Block(m, i) for i in range(m["n_layer"]))
         self.norm = RMSNorm(m["n_embd"], m["norm_eps"])
         self.mtp_head = (
             nn.Linear(m["n_embd"], m["vocab_size"], bias=False) if m["mtp"] else None
         )
-        self.head = nn.Linear(m["n_embd"], m["vocab_size"], bias=False)
+        if kas:
+            self.head = KASHead(rows, lengths, m["n_embd"], self.codec)
+            self.prior_identity = initialize_prior(self.head, m.get("kas_prior", {}))
+        else:
+            self.head = nn.Linear(m["n_embd"], m["vocab_size"], bias=False)
 
     def hidden(self, ids, valid):
-        x = self.embedding(ids)
+        return self.hidden_from_embeddings(self.embedding(ids), valid)
+
+    def hidden_from_embeddings(self, x, valid):
+        """Run the normal stack on caller-supplied [B, T, n_embd] inputs.
+
+        Recipe code owns any embedding aggregation and its validity mask. This
+        path applies no additional embedding lookup or aggregation. Positions
+        retain the stack's existing RoPE treatment at the supplied sequence length.
+        """
         for block in self.blocks:
             x = block(x, valid)
         return self.norm(x)
