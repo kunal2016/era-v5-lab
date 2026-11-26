@@ -192,6 +192,39 @@ p < 0.01.
 - **MILU is again only a control:** gemma-2-2b scores 29.5 to 30.5% at bf16. Q4_K_M's Telugu drop (p 0.042) is the
   only one under 0.05.
 
+### gemma-2-2b at Q6_K and Q5_K_M (26 Nov)
+
+Assigned by the Team 12 lead on 26 Nov. Same model and revision, runner (`66f9de0b…`), guard prompt
+(`EVAL_GUARD_CONTEXT`), `CAP = 2500`, `n_ctx` 4,096, seed 42 and Kaggle 2 × Tesla T4 as the rows above; output layer
+(the tied token embedding) Q8_0; nothing truncated. Run on a member's own Kaggle quota with `../eval_wide.ipynb`.
+
+| | Q6_K | Q5_K_M |
+|---|---:|---:|
+| GGUF size | 2.29 GB | 2.07 GB |
+| Guard test: log p(' Paris'), prefix-cache diff | PASS, −0.420, 0.0000 | PASS, −0.437, 0.0000 |
+| Scoring time, all 12 tasks | 3.2 h | 3.2 h |
+
+| Task | Items | bf16 | Q8_0 | Q6_K | Q5_K_M | Q4_K_M | Q6_K against bf16 | p | Q5_K_M against bf16 | p |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---|---:|
+| MMLU | 14,042 | 49.57 | 49.58 | 49.46 | 49.66 | 48.11 | −0.11 (−0.40 to +0.18) | 0.472 | +0.09 (−0.29 to +0.46) | 0.682 |
+| ARC-C | 1,172 | 49.57 | 49.74 | 50.34 | 49.06 | 48.38 | +0.77 (+0.04 to +1.50) | 0.064 | −0.51 (−1.49 to +0.46) | 0.392 |
+| Belebele Kannada | 900 | 40.89 | 41.22 | 40.33 | 39.22 | 38.56 | −0.56 (−1.69 to +0.58) | 0.442 | −1.67 (−3.52 to +0.19) | 0.101 |
+| Belebele Hindi | 900 | 48.89 | 49.00 | 48.89 | 48.44 | 49.56 | +0.00 (−1.19 to +1.19) | 1.000 | −0.44 (−1.95 to +1.06) | 0.665 |
+| Belebele Telugu | 900 | 38.78 | 38.78 | 38.67 | 38.11 | 38.56 | −0.11 (−1.28 to +1.06) | 1.000 | −0.67 (−2.44 to +1.10) | 0.539 |
+| Belebele Tamil | 900 | 45.44 | 45.11 | 45.78 | 44.44 | 44.33 | +0.33 (−0.80 to +1.46) | 0.701 | −1.00 (−2.67 to +0.67) | 0.298 |
+| Belebele Bengali | 900 | 46.89 | 46.11 | 47.33 | 45.44 | 44.89 | +0.44 (−0.93 to +1.82) | 0.636 | −1.44 (−3.35 to +0.46) | 0.171 |
+| MILU Kannada (control) | 2,500 | 29.52 | 29.80 | 29.24 | 30.28 | 29.28 | −0.28 (−1.10 to +0.54) | 0.566 | +0.76 (−0.30 to +1.82) | 0.183 |
+| MILU Hindi (control) | 2,500 | 30.48 | 30.28 | 30.60 | 30.92 | 30.24 | +0.12 (−0.63 to +0.87) | 0.834 | +0.44 (−0.54 to +1.42) | 0.425 |
+| MILU Telugu (control) | 2,500 | 29.48 | 29.60 | 29.60 | 28.80 | 28.04 | +0.12 (−0.73 to +0.97) | 0.853 | −0.68 (−1.73 to +0.37) | 0.234 |
+| MILU Tamil (control) | 2,500 | 30.04 | 29.84 | 29.84 | 29.44 | 28.84 | −0.20 (−1.00 to +0.60) | 0.694 | −0.60 (−1.62 to +0.42) | 0.284 |
+| MILU Bengali (control) | 2,500 | 30.16 | 30.48 | 30.88 | 29.84 | 29.96 | +0.72 (−0.10 to +1.54) | 0.105 | −0.32 (−1.35 to +0.71) | 0.594 |
+
+- **Both pass the proposal:** no task is under p 0.01 at either format, and no drop comes near a limit. MMLU moves
+  −0.11 (Q6_K) and +0.09 (Q5_K_M), against Q4_K_M's −1.46.
+- **Q5_K_M passes on gemma-2-2b.** Its largest drop is Belebele Kannada −1.67 (p 0.101); the lowest p at either format
+  is Q6_K's ARC-C gain (+0.77, p 0.064).
+- Q6_K is 82% and Q5_K_M 74% of Q8_0's size (2.29 and 2.07 against 2.78 GB). Logs: `raw/gemma-2-2b/logs/`.
+
 ## 8. All three models together
 
 | Model | Format | MMLU against bf16 | Indic (Belebele, 5 languages) | Under the proposal |
@@ -201,6 +234,8 @@ p < 0.01.
 | Granite 3.0 3B-A800M (MoE, English) | Q8_0 | −0.04, p 0.84 | not run | pass |
 | Granite 3.0 3B-A800M | Q4_K_M | −2.31, p < 0.001 | not run | fail |
 | gemma-2-2b (dense, multilingual) | Q8_0 | +0.01, p 1.00 | −0.78 to +0.33, all p ≥ 0.28 | pass |
+| gemma-2-2b | Q6_K | −0.11, p 0.47 | −0.56 to +0.44, all p ≥ 0.44 | pass |
+| gemma-2-2b | Q5_K_M | +0.09, p 0.68 | −1.67 to −0.44, all p ≥ 0.10 | pass |
 | gemma-2-2b | Q4_K_M | −1.46, p < 0.001 | −2.33 to +0.67, all p ≥ 0.099 | fail (MMLU) |
 
 On all three models Q4_K_M's MMLU loss is real once the benchmark has enough items, and Q8_0's is not measurable. On
