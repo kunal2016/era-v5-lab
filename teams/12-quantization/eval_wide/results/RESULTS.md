@@ -145,6 +145,14 @@ truncated. English tasks only: Granite 3.0 is not trained on Indic languages. Fu
 - **ARC-C does not move** at either format. With 1,172 items it cannot rule out a drop of about 2 points.
 - **The guard margin on this MoE held:** prefix-cache diff 0.0434 (bf16), 0.0097 (Q8_0), 0.0424 (Q4_K_M), all under
   0.05, as the lab asked us to watch. Q3_K_M was left out of this run (sarvam-1 Q3_K_M failed the same check, section 4).
+- **Q6_K and Q5_K_M (26 Nov): not scored, guard test.** Run with `../eval_wide.ipynb` on Kaggle 2 × T4 (MMLU and ARC-C,
+  no cap), as assigned by the Team 12 lead. Checks 1 and 2 pass for both, so the shifted-logprob bug is not back.
+  - **Q6_K fails check 3:** the prefix cache moves a score by **0.0784** nats (limit 0.05), above bf16's 0.0434 and
+    Q4_K_M's 0.0424, so the margin above does not hold at Q6_K. It also fails check 4: the easy item's right answer
+    scores −1.60 and a wrong one −1.53.
+  - **Q5_K_M passes check 3 just under the limit (0.0498)** and fails check 4: right answer −1.84, a wrong one −1.84 at two
+    decimals, and the wrong one is higher.
+  - The guard was not loosened (as in section 4). Logs: `raw/granite-3.0-3b-a800m/logs/`.
 
 ## 7. gemma-2-2b (base)
 
