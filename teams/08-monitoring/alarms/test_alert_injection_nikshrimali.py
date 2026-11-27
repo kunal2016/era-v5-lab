@@ -319,12 +319,35 @@ def test_flush_lag_and_timings(mock_metrics_jsonl):
             assert a["flush_to_alert_ms"] >= 0
 
 
+def _cli_steps(path, extra=()):
+    out = subprocess.run([sys.executable, str(HERE / "alarms.py"), "--jsonl", str(path), *extra],
+                         capture_output=True, text=True, check=True)
+    return sorted((a["step"], a["rule"], a["metric"]) for a in map(json.loads, out.stdout.splitlines()))
+
+
 def test_cli_matches_monitor_a(mock_metrics_jsonl):
     run = mock_metrics_jsonl(expert0=collapse)
-    out = subprocess.run([sys.executable, str(HERE / "alarms.py"), "--jsonl", str(run.path)],
-                         capture_output=True, text=True, check=True)
-    cli = sorted((a["step"], a["rule"], a["metric"]) for a in map(json.loads, out.stdout.splitlines()))
-    assert cli == run.steps("A")
+    assert _cli_steps(run.path) == run.steps("A")
+
+
+# Issue #33: the same files, with monitor B passed as flags. gpu_memory_used in the file is bytes.
+B_CLI = (
+    "--moe-patience", str(TUNED_PATIENCE),
+    "--bound", f"dead_experts_count::{DEAD_BOUND}",
+    "--bound", f"model_flops_utilization:{MFU_BOUND}:",
+    "--bound", f"gpu_memory_used::{MEM_BOUND_GIB * GIB:.0f}",
+)
+
+
+def test_cli_matches_monitor_b(mock_metrics_jsonl):
+    cases = (
+        dict(expert0=sudden_zero),
+        dict(steps=OOM_STEP + 1, mem_gib=mem_climb, crash_at=OOM_STEP),
+        dict(steps=700, speed=speed_ramp(FAST_RAMP)),
+    )
+    for faults in cases:
+        run = mock_metrics_jsonl(**faults)
+        assert _cli_steps(run.path, B_CLI) == run.steps("B")
 
 
 # Table rows for docs/alert_tests.md (monitor B unless the mode says A).

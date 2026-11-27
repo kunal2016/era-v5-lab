@@ -6,8 +6,11 @@ and tests all rules on 3,000 synthetic steps.
 ```bash
 python -I teams/08-monitoring/alarms/alarms.py --synthetic 3000
 python -I teams/08-monitoring/alarms/alarms.py --jsonl teams/05-architecture/experiments/evidence/run_a/metrics.jsonl
+python -I teams/08-monitoring/alarms/alarms.py --jsonl path/to/metrics.jsonl --moe-patience 10 --bound model_flops_utilization:0.30:
 python -m pytest teams/08-monitoring/alarms/tests -q
 ```
+
+`--bound` is `name:lo:hi` and may be repeated once per metric. An empty side is open. Omit both flags and the replay keeps `moe_patience` at 1,000 and `static_bound` off. `gpu_memory_used` in the file is bytes, so a 76 GiB ceiling is `--bound gpu_memory_used::81604378624`.
 
 Tests require `pytest`, `numpy`, and `torch` in the active Python environment.
 
