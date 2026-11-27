@@ -10,6 +10,9 @@ the evidence supports serving **Q8_0, not Q4_K_M**.
 **gemma-2-2b (base) loses less at Q4_K_M:** MMLU −1.46 (p < 0.001, so it still fails the proposal's p < 0.01 rule),
 no Indic task significant at p < 0.01, Q8_0 within ±0.8 points of bf16 on all 12 tasks (section 7).
 
+**sarvam-1 at Q6_K and Q5_K_M (section 10):** Q6_K passes the proposal (MMLU −0.01, no task at p < 0.01). Q5_K_M
+fails on MMLU by the p < 0.01 rule (−0.70, p 0.002), a quarter of Q4_K_M's loss, and passes every Indic task.
+
 Scope and sample sizes: [`../../docs/wide_benchmark_scope.md`](../../docs/wide_benchmark_scope.md). Approved job
 requests: [`../../jobs/2026-11-22-wide-bench-sarvam1.md`](../../jobs/2026-11-22-wide-bench-sarvam1.md),
 [`../../jobs/2026-11-22-wide-bench-granite30-3b.md`](../../jobs/2026-11-22-wide-bench-granite30-3b.md). The runs were
@@ -238,6 +241,8 @@ Assigned by the Team 12 lead on 26 Nov. Same model and revision, runner (`66f9de
 | Model | Format | MMLU against bf16 | Indic (Belebele, 5 languages) | Under the proposal |
 |---|---|---|---|---|
 | sarvam-1 (dense, Indic) | Q8_0 | −0.24, p 0.19 | −1.22 to +0.00, all p ≥ 0.07 | pass |
+| sarvam-1 | Q6_K | −0.01, p 1.00 | −1.78 to −0.11, all p ≥ 0.029 | pass |
+| sarvam-1 | Q5_K_M | −0.70, p 0.002 | −1.89 to +0.89, all p ≥ 0.057 | fail (MMLU) |
 | sarvam-1 | Q4_K_M | −2.94, p < 0.001 | −4.00 to −7.56, all p ≤ 0.002 | fail |
 | Granite 3.0 3B-A800M (MoE, English) | Q8_0 | −0.04, p 0.84 | not run | pass |
 | Granite 3.0 3B-A800M | Q4_K_M | −2.31, p < 0.001 | not run | fail |
@@ -256,8 +261,64 @@ drop significantly.
 |---|---|
 | `raw/<model>/<format>/<task>.samples.jsonl` | per-item results (task, doc_id, filter, metric) |
 | `raw/<model>/<format>/summary*.json` | run metadata and one record per task (sarvam-1 Q4_K_M: one file per run) |
+| `raw/sarvam-1/logs/` | guard-test and quantize logs of the sarvam-1 Q6_K / Q5_K_M run (section 10) |
 | [`paired_sarvam-1.md`](paired_sarvam-1.md), [`paired_granite-3.0-3b-a800m.md`](paired_granite-3.0-3b-a800m.md), [`paired_gemma-2-2b.md`](paired_gemma-2-2b.md) | the paired tables, written by `../paired.py` |
 
 Rebuild a paired table, from this folder: `python ../paired.py raw/sarvam-1 --base bf16 --out paired_sarvam-1.md`
 (Granite: `raw/granite-3.0-3b-a800m`; gemma-2-2b: `raw/gemma-2-2b`). Rerun a format: `../eval_wide.ipynb` on Kaggle, `CAP = 2500`, the model and revision above, and `TASKS` for
 a subset.
+
+## 10. sarvam-1: Q6_K and Q5_K_M (26 Nov)
+
+Assigned by the Team 12 lead on 26 Nov. Same model and revision, llama.cpp b11669 GGUF files (output layer Q8_0),
+llama-cpp-python 0.3.36 in-process on Kaggle 2 × Tesla T4, `n_ctx` 4,096 (no request truncated), seed 42,
+`CAP = 2500`, runner `run_wide_gguf.py` `66f9de0b…` (as Q8_0; bf16's MMLU, ARC-C and MILU were scored by `46190a8a…`,
+which scores them the same way, section 5). Run on a member's own Kaggle quota with `../eval_wide.ipynb`. Accuracy
+in %; the other columns are from section 1.
+
+| Task | Items | Shots | bf16 | Q8_0 | Q6_K | Q5_K_M | Q4_K_M |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| MMLU | 14,042 | 0 | 48.89 | 48.65 | 48.88 | 48.19 | 45.95 |
+| ARC-C | 1,172 | 0 | 51.11 | 50.26 | 51.45 | 50.34 | 49.74 |
+| Belebele Kannada | 900 | 5 | 57.67 | 57.11 | 57.56 | 56.67 | 50.11 |
+| Belebele Hindi | 900 | 5 | 59.22 | 58.89 | 58.56 | 57.33 | 54.56 |
+| Belebele Telugu | 900 | 5 | 52.22 | 52.22 | 51.67 | 53.11 | 47.22 |
+| Belebele Tamil | 900 | 5 | 56.11 | 56.11 | 55.78 | 55.44 | 51.89 |
+| Belebele Bengali | 900 | 5 | 51.22 | 50.00 | 49.44 | 49.67 | 47.22 |
+| MILU Kannada (control) | 2,500 | 5 | 27.96 | 28.00 | 28.48 | 27.16 | 27.44 |
+| MILU Hindi (control) | 2,500 | 5 | 29.96 | 29.68 | 29.76 | 29.56 | 28.96 |
+| MILU Telugu (control) | 2,500 | 5 | 28.92 | 28.44 | 27.88 | 27.72 | 26.88 |
+| MILU Tamil (control) | 2,500 | 5 | 29.24 | 29.44 | 28.76 | 29.00 | 27.08 |
+| MILU Bengali (control) | 2,500 | 5 | 28.52 | 28.32 | 28.84 | 27.92 | 27.44 |
+
+| | Q6_K | Q5_K_M |
+|---|---:|---:|
+| GGUF size | 2.11 GB | 1.84 GB |
+| Guard test (`test_llamacpp_lm.py`), prefix-cache diff | PASS, 0.0232 | PASS, 0.0347 |
+| Scoring time, all 12 tasks | 1.5 h | 1.4 h |
+
+Against bf16 on the same items (statistics as in section 2; full table in [`paired_sarvam-1.md`](paired_sarvam-1.md)).
+**Bold**: p < 0.01.
+
+| Task | Q6_K | p | Q5_K_M | p |
+|---|---|---:|---|---:|
+| MMLU | −0.01 (−0.38 to +0.36) | 1.000 | **−0.70** (−1.14 to −0.25) | 0.002 |
+| ARC-C | +0.34 (−0.69 to +1.37) | 0.627 | −0.77 (−1.96 to +0.43) | 0.262 |
+| Belebele Kannada | −0.11 (−1.40 to +1.18) | 1.000 | −1.00 (−2.98 to +0.98) | 0.380 |
+| Belebele Hindi | −0.67 (−1.86 to +0.53) | 0.362 | −1.89 (−3.72 to −0.06) | 0.057 |
+| Belebele Telugu | −0.56 (−1.92 to +0.80) | 0.522 | +0.89 (−1.08 to +2.86) | 0.440 |
+| Belebele Tamil | −0.33 (−1.62 to +0.95) | 0.736 | −0.67 (−2.61 to +1.28) | 0.576 |
+| Belebele Bengali | −1.78 (−3.28 to −0.27) | 0.029 | −1.56 (−3.35 to +0.24) | 0.114 |
+| MILU Kannada (control) | +0.52 (−0.24 to +1.28) | 0.213 | −0.80 (−1.75 to +0.15) | 0.118 |
+| MILU Hindi (control) | −0.20 (−1.03 to +0.63) | 0.704 | −0.40 (−1.31 to +0.51) | 0.440 |
+| MILU Telugu (control) | −1.04 (−1.85 to −0.23) | 0.015 | −1.20 (−2.22 to −0.18) | 0.026 |
+| MILU Tamil (control) | −0.48 (−1.32 to +0.36) | 0.307 | −0.24 (−1.25 to +0.77) | 0.698 |
+| MILU Bengali (control) | +0.32 (−0.49 to +1.13) | 0.501 | −0.60 (−1.56 to +0.36) | 0.255 |
+
+- **Q6_K passes the proposal.** MMLU does not move (−0.01, p 1.000). Two tasks are under 0.05 and none under 0.01:
+  Belebele Bengali −1.78 (p 0.029; Q8_0 also loses 1.22 there, p 0.071) and MILU Telugu −1.04 (p 0.015).
+- **Q5_K_M fails on MMLU by the p < 0.01 rule:** −0.70 (−1.14 to −0.25), p 0.002, well inside the −3 point limit and
+  a quarter of Q4_K_M's −2.94. Every other task has p ≥ 0.026, so it passes the Indic tasks.
+- On MMLU the loss grows Q8_0 −0.24, Q6_K −0.01, Q5_K_M −0.70, Q4_K_M −2.94; on the five Belebele languages the
+  worst drop is Q8_0 −1.22, Q6_K −1.78, Q5_K_M −1.89, Q4_K_M −7.56. Q6_K is 78% of Q8_0's size (2.11 against 2.69 GB).
+- One model and one seed, as in section 3.
