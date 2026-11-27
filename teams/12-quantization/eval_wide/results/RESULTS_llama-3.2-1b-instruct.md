@@ -5,6 +5,8 @@ The 570-item MMLU slice of eval_mini saw −0.2 (p 1.0) for the same model (#295
 fails MMLU on the p < 0.01 rule, although its point drop is far inside the −3 limit. Q8_0 passes everything. This is the
 third model of the wide pass, after sarvam-1 and Granite 3.0 3B-A800M ([`RESULTS.md`](RESULTS.md)), and it points the same way.
 
+**Q6_K passes as well (26 Nov, section 6): MMLU +0.12, p 0.50. Q5_K_M was not scored: it failed check 4 of the guard test.**
+
 Belebele Kannada, Telugu, Tamil and Bengali needed a longer context than #737's 4,096 tokens for this model (their 5-shot
 prompts are 2 to 3.4 times as long as Hindi's). Rerun at `n_ctx` 12,288 with no truncation, bf16 scores 25 to 29% on them,
 chance level, so they cannot show quantization drift for Llama-3.2-1B-Instruct (section 4). Hindi is the only
@@ -121,3 +123,42 @@ and Belebele Hindi, full splits, `RUN_BY = "vpw"`. The code is unchanged (`run_w
 - Files: [`raw/llama-3.2-1b-instruct/`](raw/llama-3.2-1b-instruct/) has per-item samples and `summary.json` per format, plus the guard-test
   and quantize logs. [`raw/llama-3.2-1b-instruct/indic_n12288/`](raw/llama-3.2-1b-instruct/indic_n12288/) has the same for the
   four-language rerun, with its run logs, `token_counts.py` and `token_counts.txt`.
+
+## 6. Q6_K and Q5_K_M (26 Nov)
+
+Assigned by the Team 12 lead on 26 Nov. Same model and revision, runner (`run_wide_gguf.py` `66f9de0b…`), `n_ctx` 4,096,
+seed 42, full splits and tasks as sections 1 and 2, output layer (the tied token embedding) Q8_0 as in the files above, no
+request truncated. Run with `../eval_wide.ipynb` on a member's own Kaggle quota, on **2 × Tesla T4** (see the last point).
+
+| Task | Items | Shots | bf16 | Q8_0 | Q6_K | Q4_K_M |
+|---|---:|---:|---:|---:|---:|---:|
+| MMLU | 14,042 | 0 | 48.24 | 48.35 | 48.36 | 47.35 |
+| ARC-C | 1,172 | 0 | 37.88 | 38.05 | 37.88 | 38.14 |
+| Belebele Hindi | 900 | 5 | 34.00 | 34.22 | 32.67 | 32.67 |
+
+| | Q6_K | Q5_K_M |
+|---|---:|---:|
+| GGUF size | 1.09 GB | not scored |
+| Guard test (`test_llamacpp_lm.py`) | PASS, prefix-cache diff 0.0002 | **FAIL, check 4** (checks 1 to 3 pass, prefix-cache diff 0.0002) |
+
+Q6_K against bf16 on the same items (statistics as in section 2; full table in
+[`paired_llama-3.2-1b-instruct.md`](paired_llama-3.2-1b-instruct.md)):
+
+| Task | Q6_K | p | b / c |
+|---|---|---:|---:|
+| MMLU | +0.12 (−0.21 to +0.45) | 0.502 | 275 / 292 |
+| ARC-C | +0.00 (−0.85 to +0.85) | 1.000 | 13 / 13 |
+| Belebele Hindi | −1.33 (−2.64 to −0.03) | 0.065 | 24 / 12 |
+
+- **Q6_K passes `docs/bitwidth_proposal.md`:** no task at p < 0.01, and MMLU and ARC-C are inside their limits. MMLU moves
+  as little as at Q8_0 (+0.11). Belebele Hindi loses 1.33, the same as Q4_K_M; as section 3 says, this task is 9 points
+  above chance and not informative for this model.
+- **Q5_K_M was not scored.** Check 4 of the guard asks an easy multiple-choice item and requires the right answer to score
+  highest. The Q5_K_M file gives the right answer −0.96 and a wrong one −0.92, so it fails by 0.04 nats. Checks 1 to 3, which
+  test the scoring path itself, pass. The guard is not loosened for one format, as in [`RESULTS.md`](RESULTS.md) section 4.
+- **Hardware differs from the rows above.** bf16, Q8_0 and Q4_K_M ran on one T4; Q6_K ran on two, where llama.cpp splits the
+  layers across both GPUs. Section 5 shows bf16 reproducing exactly across two one-T4 machines, but a two-GPU bf16 run was not
+  made, so how much of Q6_K's per-item difference comes from the split is not measured. The scoring time (29 min for the 3
+  tasks) is not comparable with section 1's.
+- Files: `raw/llama-3.2-1b-instruct/Q6_K/` (per-item rows and `summary.json`, no item text) and, in
+  `raw/llama-3.2-1b-instruct/logs/`, the guard-test and quantize logs of both formats.
