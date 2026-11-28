@@ -29,7 +29,8 @@ import torch
 
 NS_COEFFS = (3.4445, -4.7750, 2.0315)
 MUON_DEFAULTS = {"momentum": 0.95, "nesterov": True, "ns_steps": 5}
-_no_grad = torch.no_grad  # undotted alias avoids pr-guard dotted-decorator email lint
+# Alias torch.no_grad to an undotted name so pr-guard's email regex does not flag a dotted decorator line.
+_no_grad = torch.no_grad
 
 
 def _native_bf16() -> bool:
