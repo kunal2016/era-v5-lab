@@ -15,9 +15,12 @@ Raw output: [`lab5_dt_muon_recompute.json`](lab5_dt_muon_recompute.json).
 
 ## 1. Does Deletion Tuning Work with Shape-Based Hybrid Muon and Activation Recompute?
 
-**Yes, mechanically — with two important engineering findings:**
+**Summary verdict (including negative result):**
+- **Activation recompute (`use_reentrant=False`) + DT:** **PASS** (gradient-equivalent, `<= 1e-6`).
+- **Muon on DT `.gate` logits (`--dt-gate-optim shape`, matched `lr = 5e-4`):** **REJECTED (negative result).** Training is finite, but AdamW drops loss **~3.3x faster** (`-0.3458` / `-0.3292` vs `-0.1033` / `-0.0992` across 2 seeds) at **< half the optimizer step-time share** (`8.4–8.9%` vs `20.2–21.7%` on CPU). Reason: Newton-Schulz orthogonalizes the 2D gate gradient (`rms ~ lr / sqrt(cols)`), coupling entries of an element-wise binary mask. Under Hybrid Muon, keep DT `.gate` logits on AdamW (`--dt-gate-optim adamw`, default in `capstone/sft_g5.py`) while routing non-gate 2D matrices to Muon. *(Scope caveat: higher `muon_lr` and 7B+ widths were not swept here.)*
 
-1. **DT + Hybrid Muon (`dt_adamw` vs `dt_muon_shape`):** Under TSAI's 28 Nov shape-based rule (`ndim == 2 -> Muon`, `non-2D -> AdamW`), `MaskedLinear.gate` (`[out, in]`) is 2D and routes to Muon. Training is finite and loss decreases across both seeds, **but** at matched `lr = 5e-4`, AdamW reduces loss **~3.3x faster** (`-0.3458` / `-0.3292` vs `-0.1033` / `-0.0992`) with lower optimizer step-time share (`8.4–8.9%` vs `20.2–21.7%` on CPU). Reason: Newton-Schulz orthogonalizes the 2D gate gradient (`rms ~ lr / sqrt(cols)`), coupling entries of an element-wise binary mask. `capstone/hybrid_optim.py` and `capstone/sft_g5.py` support both `--dt-gate-optim shape` (pure shape rule) and `--dt-gate-optim adamw` (element-wise AdamW on `.gate`, Muon on non-gate 2D matrices), plus full Muon momentum buffer (`buf`) checkpoint save/restore (`test_hybrid_muon_shape_routing_and_momentum_checkpoint_roundtrip` passes bit-exact).
+Details:
+1. **DT + Hybrid Muon (`dt_adamw` vs `dt_muon_shape`):** Under TSAI's 28 Nov shape-based rule (`ndim == 2 -> Muon`, `non-2D -> AdamW`), `MaskedLinear.gate` (`[out, in]`) is 2D and routes to Muon. `capstone/hybrid_optim.py` and `capstone/sft_g5.py` support both `--dt-gate-optim shape` (pure shape rule) and `--dt-gate-optim adamw` (recommended), plus full Muon momentum buffer (`buf`) checkpoint save/restore (`test_hybrid_muon_shape_routing_and_momentum_checkpoint_roundtrip` passes bit-exact).
 2. **DT + Activation Recompute (`torch.utils.checkpoint(..., use_reentrant=False)`):** Compatible and gradient-equivalent. `MaskedLinear.weight` recomputes `W * sigmoid(alpha * G)` deterministically within a step (since `dtmask.step_all()` runs after `backward()`), and `regulariser_backward_()` is already graph-free. `test_dt_with_activation_recompute_matches_standard_gradients` matches uncheckpointed `.gate.grad` within `atol=1e-6, rtol=1e-5`, and 20-step runs match to 4 decimal places (`loss_end` `4.2050` vs `4.2051` on seed 1; `4.3416` vs `4.3416` on seed 2).
 
 ### Measured 2-Seed Stand-In Comparison (20 steps, identical base weights per seed)
@@ -44,6 +47,7 @@ In a fused/stacked MoE forward (such as Team 5's `torch.stack` over routed exper
 - Measured on a `32x16` matrix at `muon_lr = 0.006`:
   - `skip_zero_grad=False`: max abs weight drift on an all-zero gradient step = **`0.003745`**.
   - `skip_zero_grad=True` (`capstone/hybrid_optim.py`): max abs weight drift = **`0.0`** (bit-exact unchanged).
+- Note: the same bug is still live in `teams/05-architecture/harness/week2/optim.py:78` on `main`; an independent failing test against Team 5's `optim.py` (`#875`) reproduces `2.78x` weight-norm growth over 50 zero-grad steps and leaves the fix to Team 5 / TSAI.
 
 ---
 
