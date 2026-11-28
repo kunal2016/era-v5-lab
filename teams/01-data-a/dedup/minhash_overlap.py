@@ -12,7 +12,8 @@ HOW IT WORKS
    code packs also the code-token shingles (overlap_rules.code_shingles) and their signature. A part larger than
    `chunk_rows` is worked on in row ranges in parallel, then joined in row order into the same per-part files. Each
    part's result is saved under `work` with the part's input sha256; a rerun reuses every part whose input and
-   settings are unchanged.
+   settings are unchanged. Row ranges are not reused: a part whose join did not finish is redone from its input
+   (see join_job).
 2. H1: documents with the same H1 sha256 are exact copies (rule H1). Each group is written as star edges (every member
    with the group's first row); dedup.py joins matches by connected components, so the groups are the same.
 3. LSH across all packs and both splits: `bands` bands of `hashes / bands` rows. Two documents whose band values agree
@@ -158,9 +159,16 @@ def read_file(path, lo=0, hi=None):
         start += n
     if not groups:
         return
+    # `row` must be the row's number in the whole part at every point: work files and outputs are byte-identical to a
+    # whole-part read only while it is. It starts at the first row of the first selected row group (not at lo), and
+    # every skipped batch, sliced-off head and yielded row moves it forward by the rows passed. The assert checks it
+    # against the rows read from the selected row groups so far; keep it when changing this loop.
+    first, read = row, 0
     for batch in pf.iter_batches(batch_size=1000, columns=columns, row_groups=groups):
         if row >= hi:
             break
+        assert row == first + read, f"read_file: row {row} is not the part row {first + read} ({path})"
+        read += batch.num_rows
         if row + batch.num_rows <= lo:
             row += batch.num_rows
             continue
@@ -309,7 +317,11 @@ def part_job(job):
 
 def join_job(job):
     """Join a part's row ranges, in row order, into the part's own work files, exactly as one whole-part task writes
-    them, then delete the range files. The part's .json is written last, so an interrupted join is redone."""
+    them, then delete the range files. The part's .json is written last, so an interrupted join is redone.
+
+    A rerun after an interrupted step 1 or join recomputes every row range of that part from the input: finished range
+    files are not reused, only finished parts are. That is safe but wasteful. Reusing range files would need its own
+    test first (a range file from other settings, input or chunk_rows, or one cut off mid-write, must never be joined)."""
     import numpy as np
     split, part, digest, work, hashes, seed, k, los = job
     stem = part_stem(work, split, part)

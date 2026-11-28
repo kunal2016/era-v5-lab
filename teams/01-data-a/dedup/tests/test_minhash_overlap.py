@@ -213,6 +213,21 @@ def test_read_file_row_ranges_match_the_whole_part_across_row_groups(tmp_path):
         assert list(mh.read_file(p, lo, hi)) == whole[lo:hi]
 
 
+def test_read_file_row_ranges_inside_large_row_groups_across_batches(tmp_path):
+    # Row groups larger than read_file's 1,000-row batches: ranges that start and end inside a group and across batch
+    # boundaries go through the skip-whole-batch and slice-head paths that keep `row` the row number in the part.
+    docs = [(f"d{i}", f"text number {i}") for i in range(6000)]
+    write(tmp_path, {"train/en-a/part-00000.parquet": docs}, row_group_size=2500)
+    p = tmp_path / "inputs/cleaned/train/en-a/part-00000.parquet"
+    assert pq.ParquetFile(p).metadata.num_row_groups == 3
+    whole = list(mh.read_file(p))
+    assert [r for r, *_ in whole] == list(range(6000))
+    for lo, hi in [(0, 1000), (999, 1001), (1500, 2600), (2000, 2500), (2499, 5001), (3100, 3200), (4999, 6000),
+                   (5999, 6000), (1000, 1000)]:
+        got = list(mh.read_file(p, lo, hi))
+        assert got == whole[lo:hi] and [r for r, *_ in got] == list(range(lo, hi))
+
+
 @pytest.mark.parametrize("chunk_rows, row_group_size", [(1, None), (2, None), (3, 2), (4, 1)])
 def test_row_ranges_give_the_same_work_files_and_outputs_as_whole_parts(tmp_path, monkeypatch, chunk_rows, row_group_size):
     write(tmp_path, sample(), row_group_size=row_group_size)
