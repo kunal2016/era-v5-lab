@@ -244,10 +244,12 @@ def build_optimizer(
     adamw_main: list[torch.Tensor] = []
     adamw_marker: list[torch.Tensor] = []
     for name, p in trainable:
-        use_muon = is_muon_param(name, p, dt_gate_optim=dt_gate_optim)
         is_m = marker_param is not None and p is marker_param
+        # A grad-masked marker_param (9 active rows inside a [V, d] matrix) MUST stay elementwise (AdamW):
+        # Newton-Schulz orthogonalization on a 2D matrix bleeds updates into the frozen non-marker rows.
+        use_muon = False if is_m else is_muon_param(name, p, dt_gate_optim=dt_gate_optim)
         if use_muon:
-            (muon_marker if is_m else muon_main).append(p)
+            muon_main.append(p)
         else:
             (adamw_marker if is_m else adamw_main).append(p)
 

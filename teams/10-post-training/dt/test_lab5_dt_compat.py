@@ -239,3 +239,30 @@ def test_dt_trains_with_hybrid_muon_shape_and_adamw_gate_modes():
             losses.append(float(loss.detach()))
         assert all(torch.isfinite(torch.tensor(losses)))
         assert losses[-1] < losses[0], f"DT loss did not decrease under gate_mode={gate_mode}: {losses}"
+
+
+def test_hybrid_muon_keeps_grad_masked_marker_param_elementwise_without_frozen_row_bleed():
+    """A 2D marker_param masked to a few rows must route to AdamW so Muon does not bleed into frozen rows."""
+    torch.manual_seed(55)
+    head = nn.Parameter(torch.randn(32, 8))
+    block_w = nn.Parameter(torch.randn(8, 8))
+    active = [2, 5]
+    rowmask = torch.zeros_like(head)
+    rowmask[active] = 1.0
+    head.register_hook(lambda g: g * rowmask)
+
+    before = head.detach().clone()
+    opt = ho.build_optimizer(
+        [("head.weight", head), ("blocks.0.w", block_w)],
+        kind="hybrid_muon", lr=1e-3, muon_lr=6e-3, marker_param=head, marker_lr=1e-2,
+    )
+    for _ in range(3):
+        opt.zero_grad()
+        loss = (head @ block_w).pow(2).mean()
+        loss.backward()
+        opt.step()
+
+    frozen_rows = [i for i in range(32) if i not in active]
+    assert torch.equal(head.detach()[frozen_rows], before[frozen_rows]), "frozen non-marker rows drifted"
+    assert not torch.equal(head.detach()[active], before[active]), "active marker rows did not update"
+
