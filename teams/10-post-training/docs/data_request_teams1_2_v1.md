@@ -13,10 +13,10 @@ Every candidate SFT or RL dataset handed from Teams 1 & 2 to Team 10 must satisf
   - Strip invisible zero-width junk (`U+200B`, `U+FEFF`) and upstream chat ghost markers (`[INST]`, `[/INST]`, `<think>`, `### Assistant:`).
   - **Do NOT apply NFKC** to content; **preserve `ZWJ` (`U+200D`) and `ZWNJ` (`U+200C`)** verbatim for Indic scripts.
   - Pass F2 contamination/integrity checks and Team 9 `decontam_check.py` (fingerprints v2, `set_sha256` `2826a3b883210c653979103c09ce1c79e40fc4f7034b54027f2836482370d22a`) + `canary_scan.py` with **0 flagged** rows.
-- **Licence & generator rule (`licences/licence_table.md`):**
-  - Record both dataset licence AND generator model + generator licence for every source before staging.
-  - **In:** human-written data, execution-verified synthesis, and outputs of permissive MIT / Apache-2.0 open-weight models (`DeepSeek-R1/V3.2`, `Qwen2.5/Qwen3` Apache-2.0, `QwQ`, `Mixtral`, `gpt-oss`, `GLM-4.6/5.1`).
-  - **Out (`excluded`):** closed models (OpenAI, Anthropic, Google), Llama-generated outputs, `OpenRAIL-M` derivatives (e.g., `StarCoder2`), unknown generators, and non-commercial/no-derivatives (`NC`, `ND`, unstated — *note: Team 10 flagged the apparent "allowed" typo in the 28 Nov slide 1 for TSAI confirmation*).
+- **Licence & generator rule (`licences/licence_table.md` — TSAI 28 Nov rule):**
+  - **NC, ND and unstated licences are allowed** for all data, post-training data included (TSAI 28 Nov Lab Rules #1).
+  - For every source, record the **licence** and **where you found it**; if a model made the data, also record the **generator model** and the **licence terms of that model**.
+  - **Benchmark exclusion:** Do not stage benchmark datasets as training data (`rl-math-hendrycks` excluded 21 Nov; HellaSwag excluded 28 Nov due to wikiHow DMCA takedown HTTP 451).
 
 ---
 

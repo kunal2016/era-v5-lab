@@ -2162,7 +2162,4 @@ from. Downloadable is not the same as licensed. It is the one benchmark of the 1
 **Unclear licence — keep internal-only** (already marked ⚠️ in `teams/09-evaluation/benchmarks_v1.md`): τ²-bench,
 WebArena, WorkArena, BrowseComp, OSWorld, Aider Polyglot.
 
-**Note on the Lab 5 Task 1 rule.** The Team 10 brief says *"NC, ND and unstated are allowed"*. This table does not
-rely on that reading: every row above is permissive (MIT, Apache-2.0, CC-BY-4.0, CC-BY-SA-4.0). If TSAI confirms the
-brief's wording is literal, nothing here changes; if it is a typo, nothing here changes either. The ambiguity only
-affects NC/ND/unstated rows elsewhere in the table, which are recorded as `excluded` with a note.
+**Update on the Lab 5 Task 1 rule (TSAI 28 Nov Lab Rules #1):** TSAI confirmed on 28 Nov that **NC, ND and unstated licences are allowed for all data, post-training data too** — fill in the licence and where it was found, and if a model made the data, also write the model and the licence terms of that model. Every evaluation row above is already permissive (`MIT`, `Apache-2.0`, `CC-BY-4.0`, `CC-BY-SA-4.0`); `BBH` (`MIT` on original release, unstated on Hub mirror) is eligible under this rule, while **HellaSwag remains `excluded` due to the 2026-09-14 wikiHow DMCA takedown (HTTP 451)**, not because of an NC/ND tag. Earlier NC/ND/unstated rows marked `excluded` in historical Gate 2/3 tables stay documented as historical entries until re-reviewed for staging.
