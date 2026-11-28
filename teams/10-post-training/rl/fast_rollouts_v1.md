@@ -22,18 +22,18 @@ Rollout generation accounts for **70–85%** of wall-clock time in verifiable-re
 
 ### First Measured Quantization-Only Mismatch Data (Team 12 `#894`, merged on `main`)
 
-Source: `teams/12-quantization/rollout/results/rollout_mismatch_sarvam-1.md` (`#894`). `sarvam-1`, Kaggle T4 x2, `384` rollouts/format, `max_new = 256`, Team 10 defaults `eps = 0.2` (`grpo.TR_EPSILON`) and `temperature = 1.0`. **Limits:** reference is `llama.cpp`'s `bf16` (measures quantization gap only, not the `llama.cpp`-to-PyTorch trainer engine gap), no confidence intervals yet, and no `bf16` decode `tok/s` baseline yet.
+Source: `teams/12-quantization/rollout/results/rollout_mismatch_sarvam-1.md` (`#894`). `sarvam-1`, Kaggle T4 x2, `384` rollouts/format (`48` prompts: **40 English, 8 Indic, 0 code**), `max_new = 256`, Team 10 defaults `eps = 0.2` (`grpo.TR_EPSILON`) and `temperature = 1.0`. **Limits:** single model, mostly English prompts (no code), reference is `llama.cpp`'s `bf16` (measures quantization gap only, not the `llama.cpp`-to-PyTorch trainer engine gap), no confidence intervals yet, and no `bf16` decode `tok/s` baseline yet. Treat `Q8_0` as a **provisional** pick-first until the balanced 50-prompt (`10` each: English, Indic, code, tool-call, reasoning) PyTorch-`bf16`-reference re-runs with prompt-clustered intervals on `sarvam-1` and `Qwen2.5-Coder-1.5B` land.
 
-| Format | Tokens Outside `[0.8, 1.2]` | Top-1 Agreement | `k3` Mismatch | Mean `KL(bf16 \|\| quant)` | Rollout `tok/s` (T4) | Team 10 Gate (`k3 <= 0.05`) |
+| Format | Tokens Outside `[0.8, 1.2]` | Top-1 Agreement | `k3` Mismatch | Mean `KL(bf16 \|\| quant)` | Rollout `tok/s` (T4) | Team 10 Gate (`k3 <= 0.05`, provisional) |
 |---|---:|---:|---:|---:|---:|---|
-| `Q8_0` | **9.18%** | **94.34%** | **0.0065** | `0.00684` | `77.4` | **PASS (pick-first)** |
-| `Q6_K` | **16.75%** | **93.19%** | **0.0127** | `0.01281` | `84.1` | **PASS (secondary)** |
+| `Q8_0` | **9.18%** | **94.34%** | **0.0065** | `0.00684` | `77.4` | **PASS (provisional pick-first)** |
+| `Q6_K` | **16.75%** | **93.19%** | **0.0127** | `0.01281` | `84.1` | **PASS (provisional secondary)** |
 | `Q5_K_M` | `27.51%` | `90.35%` | `0.0264` | `0.02654` | `97.0` | Marginal (>1 in 4 tokens masked under `objective_v1`) |
 | `Q4_K_M` | `40.99%` | `84.73%` | **`0.0739`** | `0.07335` | `105.6` | **REJECTED** (`k3 > 0.05`; ~2 in 5 tokens masked) |
 
 **Implications for GRPO:**
-1. **`Q4_K_M` is ruled out for GRPO rollouts** (`k3 = 0.0739` breaches our `0.05` stop threshold and masks `40.99%` of tokens under `objective_v1` from quantization alone, matching Team 12 `#853`'s Indic quality drop).
-2. **`Q8_0` is the clear first test** (`k3 = 0.0065`, `94.34%` top-1), with `Q6_K` as a secondary candidate (`k3 = 0.0127`). Because `objective_v1` hard-masks `9.18%` (`Q8_0`) to `16.75%` (`Q6_K`) of tokens before engine drift, we should compare **`objective_v1` (hard mask)** against **`grpo --tis-clip 2.0` (TIS reweighting)** once Team 12's PyTorch `bf16` reference run lands.
+1. **`Q4_K_M` is ruled out for GRPO rollouts** (`k3 = 0.0739` breaches our `0.05` stop threshold and masks `40.99%` of tokens under `objective_v1` from quantization alone on `#894`'s 48 mostly-English prompts; this is a rollout-divergence check, not an Indic-eval claim).
+2. **`Q8_0` is the provisional first test** (`k3 = 0.0065`, `94.34%` top-1), with `Q6_K` as a secondary candidate (`k3 = 0.0127`), to be confirmed on the balanced 50-prompt PyTorch-`bf16`-reference runs. Because `objective_v1` hard-masks `9.18%` (`Q8_0`) to `16.75%` (`Q6_K`) of tokens before engine drift, we should compare **`objective_v1` (hard mask)** against **`grpo --tis-clip 2.0` (TIS reweighting)** once Team 12's PyTorch `bf16` reference run lands.
 3. **Existing mismatch instrumentation:** `rl-loop/grpo.py` and `rl-loop/train.py` already compute per-step `mismatch_k3`, `mismatch_abs_logratio`, `tis_clip` importance weights, and `objective_v1`'s closed trust-region mask (`tr_epsilon = 0.2`), plus `capstone/mismatch_g5.py` tracks MoE top-k expert flip rates between engines.
 4. **Zero extra model needed:** Unlike speculative decoding, it needs no separate `p1536` draft model.
 
@@ -51,5 +51,5 @@ Source: `teams/12-quantization/rollout/results/rollout_mismatch_sarvam-1.md` (`#
    - **Hard stop rule:** abort quantized rollouts if `mean_mismatch_k3 > 0.05` or if Team 9 mini-benchmark drops by `> 2 * stderr` relative to the `bf16` control arm.
 
 ### External Dependencies to Execute Live Run
-- **Team 12:** PyTorch `bf16` trainer-reference mismatch run on `sarvam-1` + `Qwen2.5-Coder-1.5B` (follow-up to merged `#894`, adding `bf16` decode `tok/s` for real speedup ratio and prompt-resampled CIs) + quantized `Q8_0`/`Q6_K` policy copy for the RL loop.
+- **Team 12:** Balanced 50-prompt (`10` each: English, Indic, code, tool-call, reasoning) PyTorch `bf16` trainer-reference mismatch run with prompt-clustered intervals on `sarvam-1` + `Qwen2.5-Coder-1.5B` (follow-up to merged `#894`, adding `Speedup vs llama.cpp bf16` in the same harness/session) + quantized `Q8_0`/`Q6_K` policy copy for the RL loop.
 - **Team 9:** Mini-benchmark suite definition for every-`N`-step rollout policy checks.
