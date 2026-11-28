@@ -50,7 +50,7 @@ From TSAI's week-4 work order (21 Nov). Dedup's part of the lead's corpus-v1 run
 | Tue 24 (D3) | **Corpus-v1 run** (task 1, lead with Sourav Dhar); dry run 2 starts | Dedup and overlap stages complete in the run |
 | Wed 25 (D4) | **Week-4 task 3:** H3 rule with TSAI, per #625: `h3_design_v1.md` (with this PR). Team 2: H3's Indic pairs and scope | TSAI confirms or corrects the proposed reading in "Decisions" |
 | Thu 26 | **Dedup audit** of the corpus-v1 run (the five checks in Week 3) | Five lines in the daily audit pack |
-| By Fri 27, 23:59 IST | Gate 4 evidence: everything on `main` or in a PR linked in the team group. **Dedup section of `data_card_v1.md`** (method, survivor rules, counts per pack, held-out handling, harm check, known limits: H3 report-only; Indic minimum under review (E4); truncated copies under 80%) | Reviewed by Vijay |
+| By Fri 27, 23:59 IST | Gate 4 evidence: everything on `main` or in a PR linked in the team group. **Dedup section of `data_card_v1.md`** (method, survivor rules, counts per pack, held-out handling, harm check, known limits: H3 report-only; Indic minimum kept at 50 words after E4 found no copies among 106 short near-identical pairs; truncated copies under 80%) | Reviewed by Vijay |
 | Sat 28 | Go or no-go on the main run | Dedup part of the data report sent |
 
 ## After training starts: the v2 backlog
@@ -62,7 +62,7 @@ Week 3 because the run at scale needs them (item 5 just after TSAI's dedup run).
 |---|---|---|
 | 1, 2 | Same-URL rule; math numbers on the body (behind switches, off = v1) | The first overlap rerun after launch |
 | 4 | Code threshold hand review | The run's pairs |
-| 3, 9 | Indic length minimum; Indic shingles if needed. Kannada done 18 Nov (#393): 20/20 template, the 50-word minimum stays | E4 readers' labels for Telugu (#394) and Tamil (#395) |
+| 3, 9 | Indic length minimum; Indic shingles if needed. **Closed 27 Nov:** Kannada 20/20 template (#393), Tamil 54/54 template (#395), Telugu 10 template, 22 unsure, 0 copy (#394); the 50-word minimum stays, item 9 not needed | Done |
 | 7a | H3 encoder comparison on Sanskrit: `labse_check.py --model BAAI/bge-m3` (or a multilingual-e5 model), and a margin score in place of the plain cosine (H3-h, H3-i); measurement only, nothing removed. **BGE-M3 done 16 Nov** (`h3_bge_m3_check_results_v1.md`: 82–95% of Sanskrit blocks at 0.7, 8 times slower); margin score open | Nothing; can run any time, and is evidence for TSAI's ruling |
 | 7b | H3: `h3.py` and the dedup side, report-only. **Merged 18 Nov (#610)**; E5c measurement job #625 | Ruled 19 Nov (#625): removal once E5c and the harm check pass, direct edges only (#663); E5d readers for the Sanskrit threshold |
 | 8, 10, 11 | Containment; "changed least" survivor rule; MinHash + LSH test | The run's outputs; full-data size |
@@ -79,7 +79,7 @@ decisions, configs); a rule they change goes into job 2 or 3. The H3 harm test r
 |---|---|---|---|---|---|
 | 1 | H3 E5c measurement (#625), report-only | 7 | 1 GPU, ≤ 120 min | Merged 20 Nov | TSAI's run |
 | 1b | H3 second encoder: BGE-M3 on E5c's Sanskrit pairs (#666), report-only | 7 | 1 GPU, ≤ 180 min | Merged 20 Nov | TSAI's run |
-| 2 | Overlap v1.1 rerun: same URL, math body, Indic minimum, code threshold; containment pairs written too | 1–4, 8 | CPU, about 80–90 min (the rerun took 77) | First week after launch | The team's call on items 1–2; E4 labels for item 3 |
+| 2 | Overlap v1.1 rerun: same URL, math body, code threshold; containment pairs written too (the Indic minimum stays, item 3) | 1–2, 4, 8 | CPU, about 80–90 min (the rerun took 77) | First week after launch | The team's call on items 1–2 |
 | 3 | Dedup v1.1 on that rerun | 1–4, 6 | CPU, minutes | Right after job 2 | Job 2 |
 | 4 | H3 removal run (`dedup.py` with `h3.remove: true`), in v1 | 7 | CPU, minutes | After E5c and the H3 harm test pass | TSAI's ruling (19 Nov); #663 merged; E5d for the Sanskrit threshold |
 | 5 | "Changed least" survivor test (raw and cleaned text) | 10 | CPU, under an hour | After job 3 | Job 3's groups |
@@ -145,3 +145,4 @@ Status: **Met** (with evidence), **This week** (with the day), **Waiting** (on w
 | 19 Nov | TSAI ruled on H3 (#625): rule 0 removal in v1 once E5c and the harm check pass, direct edges only; #663 fixes `h3_join.py`; harm test on the diagnosis packs (Aneesha); job 4 moves to after E5c and the harm test |
 | 20 Nov | #625 and #666 merged; LaBSE pinned at `836121a`; G10 signs off the H3 encoders (#634); TSAI's 38-pack rehearsal (#599) merged |
 | 21 Nov | Week-4 work order: corpus-v1 run (D3), H3 rule as week-4 task 3 (D4, `h3_design_v1.md`); Week 4 section rewritten for it |
+| 27 Nov | E4 Telugu (#394) and Tamil (#395) scored: Tamil 54/54 template, Telugu 10 template and 22 unsure, 0 copy. With Kannada, no copy among the 106 pairs: item 3 closed, the 50-word minimum stays, item 9 not needed |
